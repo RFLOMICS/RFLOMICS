@@ -23,12 +23,6 @@ The acquisition of **multi-omics data** in the context of **complex experimental
 - 1 to 2 batch factors and at least 3 replicates per condition
 - Complete (mandatory) and balanced (recommended) design 
 
-**Repositories:**
-
-- [forgeMIA](https://forgemia.inra.fr/flomics/rflomics/): official repository
-- [github](https://github.com/ijpb-bioinformatics/RFLOMICS/): mirror repository
-
-
 ## Use Rflomics
 
 ### SK8 platform
@@ -41,47 +35,27 @@ only if your data have a small number of samples and features.
 
 ### Locally 
 
-#### Install from archive 
-
-Download the archive from 
-[forgeMIA](https://forgemia.inra.fr/flomics/rflomics/-/archive/master/rflomics-master.tar.gz)
-(tar.gz) or from the 
-[github mirror](https://github.com/ijpb-bioinformatics/RFLOMICS/archive/refs/heads/master.zip) (zip)
-
-You can then install the package from the archive using either the install 
-utility from Rstudio or running the following command:
+#### Install from github using remotes 
+In a R console, use the following command to install from the github repository:
 
 ``` r
-install.packages("rflomics-master.tar.gz", repos = NULL, type = "source")
+remotes::install_github("https://github.com/RFLOMICS/RFLOMICS")
 ```
-
-#### Install from forgeMIA or github using remotes 
-In a R console, use the following command to install from either the forgeMIA
-repository or the github repository:
-
-``` r
-remotes::install_gitlab(repo = "flomics/rflomics", host = "https://forgemia.inra.fr/")
-```
-
-``` r
-remotes::install_github("https://github.com/ijpb-bioinformatics/RFLOMICS")
-```
-
 
 #### Install with git repository 
 
-You can clone the repository from forgeMIA using the following command in a 
+You can clone the repository from GitHub using the following command in a 
 shell terminal: 
 
 ```  
-git clone https://forgemia.inra.fr/flomics/rflomics.git
+git clone git@github.com:RFLOMICS/RFLOMICS.git
 ```
 
 In a R console, set the working directory to the git repository, then install
 the package:
 
 ``` r
-setwd("rflomics/")
+setwd("RFLOMICS/")
 remotes::install_local(upgrade="never")
 ```
 
