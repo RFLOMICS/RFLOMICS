@@ -103,8 +103,6 @@ library(RFLOMICS)
 runRFLOMICS()
 ```
 
-## For additional information: [vignettes](https://flomics.pages.mia.inra.fr/rflomics/index.html)
-
 ## Licence
 Artistic-2.0
 
@@ -114,5 +112,5 @@ Artistic-2.0
 
 ## References
 -   [CATI Sysmics](https://sysmics.cati.inrae.fr/),
--   [Ilana L. et al. (2020)](http://eutils.ncbi.nlm.nih.gov/entrez/eutils/elink.fcgi?dbfrom=pubmed&id=32426025&retmode=ref&cmd=prlinks)
--   [Efstathiou G, et al. 2017]()
+-   [Lambert I. et al. (2020)](https://plantmethods.biomedcentral.com/articles/10.1186/s13007-020-00611-7)
+-   [Efstathiou G, et al. 2017](https://academic.oup.com/nar/article/45/W1/W300/3829200)
