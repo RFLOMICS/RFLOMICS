@@ -756,10 +756,10 @@ setMethod(f          = "plotBoxplotDE",
                                 raw = FALSE){
             
             # check variable name
-            if (is.null(features) || features == "" || length(features) != 1) {
-              message("set variable name")
+            if (is.null(features) || setequal(features, "") || length(features) != 1) {
+              message("Please set variable name or provide a unique feature name")
               
-              p <- ggplot() + theme_void() + ggtitle("set variable name")
+              p <- ggplot() + theme_void() + ggtitle("Set a unique variable name")
               
               return(p)
             }

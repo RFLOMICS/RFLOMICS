@@ -485,7 +485,11 @@ setGeneric(
 
 setGeneric(
   name = "plotBoxplotDE",
-  def  = function(object, ...) {
+  def  = function(object, 
+                  features = NULL, 
+                  groupColor="groups", 
+                  raw = FALSE, 
+                  ...) {
     standardGeneric("plotBoxplotDE")
   }
 )
