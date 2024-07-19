@@ -36,14 +36,28 @@ knitr::opts_chunk$set(
 )
 ```
 
-# Run RFLOMICS
+# Introduction
 
-```{r, eval=FALSE}
-library(RFLOMICS)
-runRFLOMICS()
+<!-- In here put the bioconductor requirements about comparing to other packages. -->
+
+
+# Install and run RFLOMICS
+
+You can install the latest RFLOMICS development using the remotes package:
+
+```{r fromGithub, message=FALSE}
+# remotes::install_github("https://github.com/RFLOMICS/RFLOMICS")
 ```
 
-This vignette will follow the different steps of multi-omics analysis trough the 
+Then you can access the interface with the following commands:
+
+```{r loadRflomics, message=FALSE}
+library(RFLOMICS)
+```
+
+# Tour of the interface
+
+This part of the vignette will follow the different steps of a multi-omics analysis trough the 
 RFLOMICS interface which are: 
 
 - Data loading
@@ -57,12 +71,18 @@ They will appear in the left tab menu of the interface along with the analysis
 progression. Whereas single omics analysis steps will be displayed in tab panel 
 associated to each dataset .
 
-# Load Data
+The interface can be accessed using:
 
-Data loading start by setting a project name (it is mandatory), then load the 
+```{r runInterface}
+# runRFLOMICS()
+```
+
+## Load Data
+
+Data loading starts by setting a project name (it is mandatory), then load the 
 experimental design and finally the different omics datasets.
 
-## Dataset example description:
+### Dataset example description
 
 Data used for this vignette have been provided by Pr. Loic Rajjou and Gwendal 
 Cueff. It is included in the 'ExamplesFiles' directory of the package.
@@ -74,7 +94,7 @@ environmental stresses (on the mother plant): influences of temperature
 EI and late imbibition: LI). See(https://www.uibk.ac.at/botany/ecoseed/home/) 
 
 
-## Load Experimental Design
+### Load Experimental Design
 
 The experimental design file must contain experimental information/conditions 
 for each sample in a tab separated values format (see RFLOMICS-input-data.html).
@@ -88,7 +108,7 @@ metadata information: meta) and a reference level.
 
 * *It is also possible to re-order factor modalities* 
 
-## Load Omics data
+### Load Omics data
 
   Experimental data must be loaded as matrix files in a tab separated values format.
   (for more information see RFLOMICS-input-data.html).
@@ -108,7 +128,7 @@ and the number of datasets per combination of biological factors.
 
 ![ ](Images/01_loadData.png){width=80%}
 
-# Set the statistical framework
+## Set the statistical framework
 
  The interface provides models written from the simplest one to the most complete
  one. Only the second order interaction terms between the biological factors appear. 
@@ -127,7 +147,7 @@ This statistical framework will be applied on all loaded datasets.
 
 ![ ](Images/02_setModel.png){width=80%}
 
-# Single omics data analysis
+## Single omics data analysis
 
 Once the contrasts are chosen, 3 Item menus appear in the side bar menu that 
 correspond to the 3 loaded omics types.
@@ -138,7 +158,7 @@ between datasets.
 However, you cannot perform a new task until the previous one is completed. 
 A progress bar is displayed indicating the progress status.
 
-## Data processing and quality check
+### Data processing and quality check
 
 In this tab panel we access a data quality control screen and we perform the 
 appropriate data filtering and processing according to the type of omics.
@@ -148,7 +168,7 @@ By default, features with 0 count in all conditions are removed from the data.
 Specifically for each data we have the possibility to exclude samples or to 
 select a subset of samples to analyze, provided the completeness condition is met. 
 
-### Completeness check
+#### Completeness check
 
  The design must be complete and as possible balanced. A **Complete design (mandatory)** 
  mean that all possible combinations of biological factors' levels (called groups) 
@@ -167,26 +187,17 @@ many QC graphs. For each QC, a graph is built on each raw data and filtered data
 to allow the comparison.
 
 
-###  Transcriptomics data
+#### Transcriptomics data
 
 For RNAseq data, low expressed genes are filtered so that only genes whose cpm 
 expression is greater than **"CPM cutoff"** in x samples are kept. The value of 
 x is given by **"Filtering strategy"** (NbOfsample_over_cpm <= NbConditions). 
 By default the data are filtered based on NbCondition strategy with CPM cutoff 
-equal to 5. In this example, there are 9 conditions. So, the number of genes 
+equal to 5. In this example, there are 9 conditions. The genes 
 with a CPM less than 5 in at least 9 samples are removed.
 
-```{r}
-# geneToKeep <- counts[rowSums(edgeR::cpm(counts) >= CPM_Cutoff) >= x, ]
-```
-
-To correct for differences in sequencing depths (library size), Rflomics proposes
-one method for normalization, **"TMM method"** from edgeR package.
-
-```{r}
-# dge <- edgeR::DGEList(counts=counts, group=groups)
-# dge <- edgeR::calcNormFactors(dge, method="TMM")
-```
+To correct for differences in sequencing depths (library size), RFLOMICS proposes
+one method for normalization, **"TMM method"** from the edgeR package.
 
 For RNAseq data the QC graphs are drawn before and after the filtering and 
 normalization steps. The following graphs are displayed:
@@ -203,7 +214,7 @@ factor of the design to decode the main sources of variation in the data.
 ![ ](Images/03_DataProcess.png){width=80%}
 
 
-## Differential expression analysis
+### Differential expression analysis
 
 In this tab panel, we can run the differential expression analysis. The analysis
 is run by contrast.  
@@ -238,7 +249,7 @@ enrichment step.
  
 ![ ](Images/04_diffAnal.png){width=80%}
  
-## Coexpression analysis
+### Coexpression analysis
 
 * In this tab panel, choice is given to merge (**union**) or intersect  
 (**intersection**) the lists of differentially expressed genes/proteins/metabolites 
@@ -276,14 +287,14 @@ the Cluster button (see Rflomics_configure-cluster-access).
 
 ![ ](Images/05_coExpAnal.png){width=80%}
 
-## Annotation and Enrichment analysis using clusterProfilR
+### Annotation and Enrichment analysis using clusterProfilR
 
  We select the lists of DE genes or clusters to annotate. All available lists 
  are selected by default. 
 
  The enrichment analysis is performed using the [clusterProfiler R-package](https://www.sciencedirect.com/science/article/pii/S2666675821000667).
  For more information on the methods and the package, please see 
- [The article](https://www.sciencedirect.com/science/article/pii/S2666675821000667), 
+ [the article](https://www.sciencedirect.com/science/article/pii/S2666675821000667), 
  [Bioconductor Package](https://bioconductor.org/packages/release/bioc/html/clusterProfiler.html) 
  and the [clusterProfiler Vignette](https://yulab-smu.top/biomedical-knowledge-mining-book/). 
 
@@ -306,7 +317,7 @@ to show the results.
 
 ![Results of the analysis for multiple lists](Images/06_ORAAnal.png){width=80%}
 
-## Dataset analysis summary 
+### Dataset analysis summary 
 
  This panel summarizes the effects of the filtering steps on the selected datasets
  and the results of the differential analyses. The first row shows how many 
@@ -317,7 +328,7 @@ to show the results.
 
 
 
-# Integration
+## Integration
 
  Once at least two tables have passed the pre-processing step, the Integration 
  tab will appear in the side bar menu. Two sub menus are available. For each of 
@@ -342,7 +353,7 @@ to show the results.
 
 ![](Images/07_prepData.png){width=100%}
 
-## MOFA
+### MOFA
 
  This integration analysis is performed using the **MOFA2** R-package. It is an 
  unsupervised method that searches for latent factors to decompose the variance 
@@ -365,7 +376,7 @@ to show the results.
  
 Several figure are provided by the interface once the analysis is done.
 
-## MixOmics
+### MixOmics
 
  This integration analysis is performed using the **MixOmics** R-package. 
  In RFLOMICS, we focused on the supervised analyses using the functions 
@@ -392,5 +403,249 @@ Several figures are provided by the interface once the analysis is done, for
 each selected response variable.  
 
 ![](Images/07_mixOmics.png){width=100%} 
+# Exploring results from RFLOMICS
 
+Weather the results are obtained as a .RData object downloaded from the 
+interface or directly using the command line functions, the structure of 
+the results is the same and visualization functions 
+(from RFLOMICS, MultiAssayExperiment or SummarizedExperiment) 
+can be used to further investigate the analyses results
+and produce suitable figures for an article. 
+Most visualization functions from RFLOMICS return a ggplot object and can be
+modified using the ggplto2 functions.
+
+Each of the analysis step has their own plot and getters methods. 
+Please refer to the "Using RFLOMICS with command line" part of the vignette
+to have examples of visualization functions for each steps.
+
+# Using RFLOMICS with command line
+
+This part of the vignette will focus on the use of RFLOMICS as a command line  package. 
+All the pipeline, results and figures produced in the interface can be obtained 
+by running methods directly in the R console. 
+
+## Load example data
+
+Ecoseed data can be accessed using the following command:
+
+```{r}
+data("ecoseed")
+```
+
+```{r}
+names(ecoseed)
+```
+
+## Create a RflomicsMAE object
+
+The first step is to create the object containing all the data that can be 
+used by RFLOMICS.
+This requires a project name, the datasets to be analyzed, a design matrix and 
+information for each factor: the type (biological, batch or meta-factor) and a
+reference level, all in the form of data.frames. 
+The reference level must be set with a particular care, as it will be used to
+define all contrasts in the differential analysis. 
+All you need is contained in the ecoseed object:
+
+```{r}
+ecoseed$factorRef
+```
+
+```{r createRMAE}
+testObject <- createRflomicsMAE(
+  projectName = "VignetteProject",
+  omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
+  omicsNames  = c("RNAtest", "metatest", "protetest"),
+  omicsTypes  = c("RNAseq","metabolomics","proteomics"),
+  ExpDesign   = ecoseed$design,
+  factorRef   = ecoseed$factorRef
+)
+```
+
+```{r}
+class(testObject)
+```
+RFLOMICS uses a structure derived from the [MultiAssayExperiment](https://www.bioconductor.org/packages/release/bioc/html/MultiAssayExperiment.html) 
+package. 
+Each dataset is stored as a RflomicsSE (derived from [SummarizedExperiment](https://bioconductor.org/packages/release/bioc/html/SummarizedExperiment.html))
+in a RflomicsMAE object.
+All methods from the MultiAssayExperiment package are also available for RFLOMICS objects. 
+
+```{r}
+is(testObject, "MultiAssayExperiment")
+```
+
+```{r}
+upsetSamples(testObject)
+```
+
+Notice the ".raw" suffix that was added to each of the names. 
+This serve as a security measure for the interface pipeline. 
+For this example, we won't use it. 
+
+```{r}
+names(testObject) <- gsub("[.]raw", "", names(testObject))
+```
+
+Most methods from the RFLOMICS package are designed to work direclty applied to 
+a RflomicsSE object or to a RflomicsMAE object and indicating the dataset name
+with the SE.name argument.
+Analysis methods return the same class of object (RflomicsSE or RflomicsMAE) 
+as the entry object type with the correct slot or list entry completed with 
+the results.
+
+## Pre-processing of data
+
+The next is step is to pre-process data. 
+Proteomics and metabolomics data can already be processed, 
+but it is important to use counts data for transcriptomics data. 
+There are two settings to set: the normalization and the transformation. 
+The function `runNormalization` allows you to set the normalization method, 
+and the `runTransformData` the transformation one.
+
+```{r}
+testObject <- runNormalization(testObject, 
+                               SE.name = "metatest", 
+                               normMethod = "median") |>
+    runTransformData(SE.name = "metatest", transformMethod = "log2") |>
+    runTransformData(SE.name = "protetest", transformMethod = "log2") |>
+    runOmicsPCA(SE.name = "metatest")
+getNormSettings(testObject[["metatest"]])
+```
+
+It is important to note that none of the data are directly transformed 
+in the assay, except if specifically asked by the user with setting the 
+argument `modifyAssay` to TRUE.
+This way, you can always change your mind and test several normalization or 
+transformation processes.
+
+You can access all results and plot them.
+
+```{r}
+plotOmicsPCA(testObject[["metatest"]], raw = "raw")
+plotOmicsPCA(testObject[["metatest"]], raw = "norm")
+```
+
+```{r}
+plotDataDistribution(testObject[["metatest"]], raw = TRUE)
+plotDataDistribution(testObject[["metatest"]], raw = FALSE)
+```
+
+### Counts data
+
+As always, the process for counts data is a bit different: there is no 
+transformation method to set, the log2 transformation will be used (when needed)
+if the type of omics if set to RNAseq when creating the object. 
+
+```{r}
+testObject <- filterLowAbundance(testObject, SE.name = "RNAtest", 
+                                 filterMethod = "CPM",
+                                 filterStrategy = "NbReplicates",
+                                 cpmCutoff = 5) |>
+    runNormalization(SE.name = "RNAtest", normMethod = "TMM")
+```
+
+```{r}
+getFilteredFeatures(testObject[["RNAtest"]])[1:10]
+```
+## Statistical settings
+
+The next step is to define the model used by all following steps.
+The function `generateModelFormulae` finds all the possible models given the 
+experimental design:
+
+```{r}
+form <- generateModelFormulae(testObject)
+form
+```
+For the rest of the example, we select the second formula:
+
+```{r}
+testObject <- setModelFormula(testObject, form[2])
+getModelFormula(testObject)
+```
+Given the chosen formula, all contrasts can be computed:
+
+```{r}
+possibleContrasts <- generateExpressionContrast(testObject)
+possibleContrasts
+```
+
+```{r}
+testObject <- setSelectedContrasts(testObject, 
+                                   contrastList = possibleContrasts$averaged[1:3])
+```
+
+## Differential analysis
+
+Once the contrasts have been set, the differential analysis can be run.
+For this example, only the RNAseq data will be used. 
+The method (either from edgeR package or limma package) can be manually set or 
+left to the function to decide what is the best method to use given the omics type.
+
+```{r}
+testObject <- runDiffAnalysis(testObject, SE.name = "RNAtest")
+```
+```{r}
+getDiffSettings(testObject, SE.name = "RNAtest")
+```
+## Differential analysis visualization
+
+To explore the results from a differential analysis run, you have to indicate
+which contrast you want to consider. You can refer to your selected contrasts 
+using the `getSelectedContrasts` function.
+
+```{r}
+getSelectedContrasts(testObject)$contrastName
+```
+
+```{r}
+plotDiffAnalysis(testObject, 
+                 SE.name = "RNAtest", 
+                 contrastName = "(temperatureMedium - temperatureLow) in mean", 
+                 typeofplots = "volcano")
+```
+
+```{r}
+plotBoxplotDE(testObject[["RNAtest"]], 
+              features = "AT4G04810")
+```
+## Multi-Omics integration
+
+The multi-omics step in RFLOMICS takes two steps: the preparation of the object,
+based on the user-selected method, and the actual run of the selected method. 
+This is done using `prepareForIntegration` and `runOmicsIntegration`. 
+In this example, we will use only the proteomics and metabolomics dataset with
+the mixOmics package (block.plsda function). 
+
+`prepareForIntegration` does not return a RflomicsMAE object, it returns the
+corresponding type to be an input for either MOFA2 or mixOmics functions.
+
+```{r}
+listIntegration <- prepareForIntegration(testObject, 
+                                         omicsNames = c("metatest", "protetest"),
+                                         method = "mixOmics"
+)
+```
+
+```{r}
+testObject <- runOmicsIntegration(object = testObject, 
+                                  preparedObject = listIntegration, 
+                                  method = "mixOmics", 
+                                  selectedResponse = "temperature", 
+                                  ncomp = 3)
+```
+
+Visualizing results is made through the original package functions. 
+
+```{r}
+mixOmics::plotIndiv(getMixOmics(testObject, response = "temperature"))
+```
+
+
+# Session Info
+
+```{r}
+sessionInfo()
+```
 
