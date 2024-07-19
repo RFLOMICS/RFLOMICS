@@ -127,7 +127,8 @@ setMethod(
 #' @param rnaSeq_transfo character string, only supports 'limma (voom)'
 #' for now.
 #' Transformation of the rnaSeq data from counts to continuous data.
-#' @param variableLists list of variables to keep per dataset.
+#' @param variableLists list of variables to keep per dataset. Default is 
+#' keeping all features.
 #' @param group Not implemented yet in the interface. Useful for MOFA2 run.
 #' @param method one of MOFA or mixOmics. 
 #' Method for which the object is prepared.
@@ -165,6 +166,10 @@ setMethod(
             omicsNames <- names(object)
         
         object <- object[, , omicsNames]
+        
+        if (is.null(variableLists)) {
+            variableLists <- rownames(object)
+        }
         
         # Checking for batch effects
         correct_batch <- FALSE
