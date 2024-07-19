@@ -585,20 +585,21 @@ setMethod(f          = "runNormalization",
 #' @rdname runDataProcessing
 #'
 setMethod(
-  f          = "runOmicsPCA",
-  signature  = "RflomicsSE",
-  definition = function(object, ncomp = 5, raw = FALSE) {
-    object2 <- .checkTransNorm(object, raw = raw)
-    pseudo  <- assay(object2)
-    if (raw)
-      object@metadata[["PCAlist"]][["raw"]] <-
-      PCA(t(pseudo), ncp = ncomp, graph = FALSE)
-    else
-      object@metadata[["PCAlist"]][["norm"]] <-
-      PCA(t(pseudo), ncp = ncomp, graph = FALSE)
-    return(object)
-    
-  }
+    f          = "runOmicsPCA",
+    signature  = "RflomicsSE",
+    definition = function(object, ncomp = 5, raw = FALSE) {
+        object2 <- .checkTransNorm(object, raw = raw)
+        pseudo  <- assay(object2)
+        if (raw) {
+            object@metadata[["PCAlist"]][["raw"]] <-
+                PCA(t(pseudo), ncp = ncomp, graph = FALSE)
+        } else {
+            object@metadata[["PCAlist"]][["norm"]] <-
+                PCA(t(pseudo), ncp = ncomp, graph = FALSE)
+        }
+        return(object)
+        
+    }
 )
 
 #' @rdname runDataProcessing
@@ -1153,6 +1154,10 @@ setMethod(f = "plotOmicsPCA",
               stop("PCA axes must be a vector of length 2")
             }
             
+            if (is.logical(raw)) {
+               raw <- ifelse(isTRUE(raw), "raw", "norm") 
+            }
+              
             ExpDesign <- getDesignMat(object)
             
             PC1 <- paste("Dim.", axes[1], sep = "")
@@ -1258,15 +1263,19 @@ setMethod(f = "plotOmicsPCA",
 #' @name plotOmicsPCA
 #' @aliases plotOmicsPCA,RflomicsMAE-method
 #' @exportMethod plotOmicsPCA
+
 setMethod(
   f          = "plotOmicsPCA",
   signature  = "RflomicsMAE",
   definition = function(object,
                         SE.name,
-                        raw,
+                        raw = c("raw", "norm"),
                         axes = c(1, 2),
                         groupColor = "groups") {
-    plotOmicsPCA(object[[SE.name]], raw, axes, groupColor)
+    plotOmicsPCA(object[[SE.name]], 
+                 raw = raw,
+                 axes = axes,
+                 groupColor = groupColor)
     
   }
 )
