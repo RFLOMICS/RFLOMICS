@@ -667,6 +667,7 @@ Visualizing results is made through the original package functions.
 ```{r}
 mixOmics::plotIndiv(getMixOmics(testObject, response = "temperature"))
 ```
+
 # Session Info
 
 ```{r}
