@@ -38,8 +38,34 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-<!-- In here put the bioconductor requirements about comparing to other packages. -->
+RFLOMICS is a R package providing a shiny interface. 
+It allows the user to analyze transcriptomics, proteomics or metabolomics data, 
+from the definition of the statistical model to the multi-omics integration,
+and explore the results. 
 
+In that regard, it is complementary to packages like [ExploreModelMatrix](https://www.bioconductor.org/packages/ExploreModelMatrix), [pcaExplorer](https://www.bioconductor.org/packages/pcaExplorer)
+[MatrixQCvis](https://bioconductor.org/packages/MatrixQCvis/) or
+[ideal](https://bioconductor.org/packages/ideal/), 
+which each allows to perform one particular step of the analysis, or to 
+[MSstatsShiny](https://bioconductor.org/packages/MSstatsShiny/)., 
+which is designed for one particular omics type. 
+
+The shiny interface provide a friendly working environment for users who are 
+not comfortable enough with R as a language, but still have knowledge about 
+omics statistical analyses and data to analyze. 
+
+To use the package, the following input are needed:
+
+* for the interface: tabulated separated files (.tsv)
+* for the command-line use: 
+    + a data.frame for each omics data
+    + a data.frame for the experimental design
+
+At any step of the analysis, a report and all results can be exported and saved. 
+The package relies on an extension of the 
+[MultiAssayExperiment](https://bioconductor.org/packages/MultiAssayExperiment/) 
+class, the results can be loaded into R and analyzed with more classic tools if
+needed. 
 
 # Install and run RFLOMICS
 
@@ -55,7 +81,7 @@ Then you can access the interface with the following commands:
 library(RFLOMICS)
 ```
 
-# Tour of the interface
+# Guided tour of the interface
 
 This part of the vignette will follow the different steps of a multi-omics analysis trough the 
 RFLOMICS interface which are: 
@@ -418,9 +444,9 @@ Each of the analysis step has their own plot and getters methods.
 Please refer to the "Using RFLOMICS with command line" part of the vignette
 to have examples of visualization functions for each steps.
 
-# Using RFLOMICS with command line
+# Using RFLOMICS without the interface
 
-This part of the vignette will focus on the use of RFLOMICS as a command line  package. 
+This part of the vignette will focus on the use of RFLOMICS as a command-line package. 
 All the pipeline, results and figures produced in the interface can be obtained 
 by running methods directly in the R console. 
 
@@ -641,8 +667,6 @@ Visualizing results is made through the original package functions.
 ```{r}
 mixOmics::plotIndiv(getMixOmics(testObject, response = "temperature"))
 ```
-
-
 # Session Info
 
 ```{r}
