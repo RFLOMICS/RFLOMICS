@@ -1070,7 +1070,7 @@ setMethod(
       }
     }
     
-    pseudo.gg <- pseudo %>% reshape2::melt()
+    pseudo.gg <- pseudo %>% melt()
     colnames(pseudo.gg) <- c("features", "samples", "value")
     
     pseudo.gg <- pseudo.gg %>%
@@ -1089,8 +1089,8 @@ setMethod(
                ggtitle(title)
            },
            "boxplot" = {
-             p <-  ggplot(pseudo.gg,  aes(x = samples, y = value, label = features)) +
-               geom_boxplot( aes(fill = groups), outlier.size = 0.3) +
+             p <-  ggplot(pseudo.gg,  aes(x = samples, y = value)) +
+               geom_boxplot(aes(fill = groups), outlier.size = 0.3) +
                theme(axis.text.x =  element_text(angle = 45, hjust = 1), legend.position = "none",
                      plot.margin= margin(0.5,0.5,0.5,1,"cm")) +
                xlab("") +
