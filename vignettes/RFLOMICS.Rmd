@@ -40,35 +40,17 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-RFLOMICS is a R package providing a shiny interface. 
-It allows the user to analyze transcriptomics, proteomics or metabolomics data, 
-from the definition of the statistical model to the multi-omics integration,
-and explore the results in a single application. 
+The acquisition of multi-omics data with complex experimental designs is a widely adopted practice to identify entities and unravel the biological processes they are involved in.
 
-In that regard, it is complementary to packages like [ExploreModelMatrix](https://www.bioconductor.org/packages/ExploreModelMatrix), [pcaExplorer](https://www.bioconductor.org/packages/pcaExplorer)
-[MatrixQCvis](https://bioconductor.org/packages/MatrixQCvis/) or
-[ideal](https://bioconductor.org/packages/ideal/), 
-which each allows to perform one particular step of the analysis, or to 
-[MSstatsShiny](https://bioconductor.org/packages/MSstatsShiny/)., 
-which is designed for one particular omics type. 
+Exploring each omics layer usually serves as an initial step to investigate and extract relevant biological variability. Statistical integration can then focus on pertinent omics layers and features.
 
-The shiny interface provides a friendly working environment for users who are 
-not comfortable enough with R as a language, but still have knowledge about 
-omics statistical analyses and the data to analyze. 
+Most existing solutions for the analysis of such data are command-line based, which limits accessibility for many users. Handling many packages, methods and their results can become a burden even for experienced R-users. Interface solutions exist, like ExploreModelMatrix, pcaExplorer, MatrixQCvis or ideal, which each allows perform one particular step of the analysis, or MSstatsShiny, which is designed for one particular omics type.
 
-To use the package, the following input are needed:
+Here we present RFLOMICS, an R package with a Shiny interface, designed to ensure a guided, comprehensive analysis and visualization of transcriptomics, proteomics, or metabolomics data. RFLOMICS covers the entire process from defining the statistical model to multi-omics integration, all within a single application.
 
-* for the interface: tabulated separated files (.tsv)
-* for the command-line use: 
-    + a data.frame for each omics data
-    + a data.frame for the experimental design
+RFLOMICS uses extended classes of the MultiAssayExperiment and SummarizedExperiment classes to ensure efficient data management of heterogeneous data.
 
-At any step of the analysis, a report and all results can be exported and saved. 
-The package relies on an extension of the 
-[MultiAssayExperiment](https://bioconductor.org/packages/MultiAssayExperiment/) 
-class, the results can be loaded into R and analyzed with more classic tools if
-needed. 
-
+A flexible HTML report can be generated at any stage of the analysis, providing results, methods, and settings to facilitate the analysis reproducibility. Additionally, users can download an archive containing all produced results.
 # Install and run RFLOMICS
 
 You can install the latest RFLOMICS development from github:
