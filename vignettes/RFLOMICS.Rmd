@@ -71,10 +71,10 @@ needed.
 
 # Install and run RFLOMICS
 
-You can install the latest RFLOMICS development using the remotes package:
+You can install the latest RFLOMICS development from github:
 
 ```{r fromGithub, message=FALSE}
-# remotes::install_github("https://github.com/RFLOMICS/RFLOMICS")
+# BiocManager::install("RFLOMICS/RFLOMICS")
 ```
 
 Then you can access the interface with the following commands:
