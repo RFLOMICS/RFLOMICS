@@ -443,12 +443,9 @@ Most visualization functions from RFLOMICS return a ggplot object and can be
 modified using the ggplto2 functions.
 
 Each of the analysis step has their own plot and getters methods. 
-Please refer to the "Using RFLOMICS with command line" part of the vignette
-to have examples of visualization functions for each steps.
 
 # Using RFLOMICS without the interface
 
-This part of the vignette will focus on the use of RFLOMICS as a command-line package. 
 All the pipeline, results and figures produced in the interface can be obtained 
 by running methods directly in the R console. 
 
