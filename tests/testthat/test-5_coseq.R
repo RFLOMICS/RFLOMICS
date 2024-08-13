@@ -384,13 +384,13 @@ test_that("Coseq on Proteomics equivalence", {
     # set.seed(12345)
     co <- capture.output(suppressMessages(
         coseq_res <-  lapply(1:replicates, function(x){
-            coseq::coseq(countMat2, K = K, 
+          suppressWarnings(coseq::coseq(countMat2, K = K, 
                          model = param.list$model, 
                          transformation = param.list$transformation, 
                          GaussianModel = param.list$GaussianModel, 
                          normFactors = param.list$normFactors, 
                          meanFilterCutoff = param.list$meanFilterCutoff, 
-                         parallel = TRUE, seed = x)
+                         parallel = TRUE, seed = x))
         })
     ))
     names(coseq_res) <- c(1:replicates)

@@ -249,8 +249,9 @@ test_that("test getMetaFactors", {
 ## ---- sub set of RflomicsMAE ----
 test_that("test subRflomicsMAE", {
     
-    miniMAE <- MAE[,, c("RNAtest", "metatest")]
-    miniMAE.rf <- subRflomicsMAE(MAE, c("RNAtest", "metatest"))
+    miniMAE <- suppressWarnings(MAE[,, c("RNAtest", "metatest")])
+    miniMAE.rf <- 
+      suppressWarnings(subRflomicsMAE(MAE, c("RNAtest", "metatest")))
     expect_equal(miniMAE.rf, miniMAE)
     
 })

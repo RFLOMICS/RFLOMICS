@@ -1,3 +1,5 @@
+
+
 library(testthat)
 library(RFLOMICS)
 library(MOFA2)
@@ -8,31 +10,31 @@ library(MOFA2)
 data(ecoseed)
 # create rflomicsMAE object with ecoseed data
 MAE <- createRflomicsMAE(
-    projectName = "Tests",
-    omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
-    omicsNames  = c("RNAtest", "metatest", "protetest"),
-    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
-    ExpDesign   = ecoseed$design,
-    factorRef   = ecoseed$factorRef)
+  projectName = "Tests",
+  omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
+  omicsNames  = c("RNAtest", "metatest", "protetest"),
+  omicsTypes  = c("RNAseq","metabolomics","proteomics"),
+  ExpDesign   = ecoseed$design,
+  factorRef   = ecoseed$factorRef)
 names(MAE) <- c("RNAtest", "metatest", "protetest")
 
 formulae <- generateModelFormulae( MAE) 
 MAE <- setModelFormula(MAE, formulae[[1]])
 
 contrastList <- generateExpressionContrast(object = MAE) |> 
-    purrr::reduce(rbind) |>
-    dplyr::filter(contrast %in% c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)",
-                                  "((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS))/3",
-                                  "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))" ))
+  purrr::reduce(rbind) |>
+  dplyr::filter(contrast %in% c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)",
+                                "((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS))/3",
+                                "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))" ))
 MAE <- MAE |>
-    setSelectedContrasts(contrastList) |>
-    runTransformData(SE.name = "metatest", transformMethod = "log2") |>
-    runNormalization(SE.name = "metatest", normMethod = "median")  |>
-    runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")     |>
-    runNormalization(SE.name = "protetest", normMethod = "median")  |>
-    filterLowAbundance(SE.name = "RNAtest")                          |>
-    runNormalization(SE.name = "RNAtest", normMethod = "TMM")        |>
-    runDiffAnalysis(SE.name = "RNAtest", method = "edgeRglmfit")
+  setSelectedContrasts(contrastList) |>
+  runTransformData(SE.name = "metatest", transformMethod = "log2") |>
+  runNormalization(SE.name = "metatest", normMethod = "median")  |>
+  runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")     |>
+  runNormalization(SE.name = "protetest", normMethod = "median")  |>
+  filterLowAbundance(SE.name = "RNAtest")                          |>
+  runNormalization(SE.name = "RNAtest", normMethod = "TMM")        |>
+  runDiffAnalysis(SE.name = "RNAtest", method = "edgeRglmfit")
 
 MAE0 <- MAE
 
@@ -71,17 +73,17 @@ selectMethod <- c("metatest" = "diff", "protetest" = "none")
 operation <- c("metatest" = "union", "protetest" = "union")
 
 variableList <- 
-    lapply(selectedData, function(set) {
-        switch(
-            selectMethod[[set]],
-            "diff"  = getDEList(
-                object = MAE[[set]],
-                contrasts = getSelectedContrasts(MAE)$contrastName,
-                operation = operation[[set]]
-            ),
-            "none"  = names(MAE[[set]])
-        )
-    })
+  lapply(selectedData, function(set) {
+    switch(
+      selectMethod[[set]],
+      "diff"  = getDEList(
+        object = MAE[[set]],
+        contrasts = getSelectedContrasts(MAE)$contrastName,
+        operation = operation[[set]]
+      ),
+      "none"  = names(MAE[[set]])
+    )
+  })
 names(variableList) <- selectedData
 
 
@@ -97,11 +99,11 @@ protMat3 <- t(scale(t(protMat2), center = TRUE, scale = TRUE))
 # from .rbeFunction
 colBatch <- getBatchFactors(MAE)
 newFormula <-
-    gsub(pattern = paste(paste(colBatch, "[+]"),  collapse = "|"),
-         "", getModelFormula(MAE))
+  gsub(pattern = paste(paste(colBatch, "[+]"),  collapse = "|"),
+       "", getModelFormula(MAE))
 colData <- getDesignMat(MAE)
 designToPreserve <-
-    model.matrix(as.formula(newFormula), data = colData)
+  model.matrix(as.formula(newFormula), data = colData)
 
 metMat4 <- limma::removeBatchEffect(metMat3, batch = colData[, colBatch],
                                     design = designToPreserve)
@@ -111,45 +113,50 @@ protMat4 <- limma::removeBatchEffect(protMat3, batch = colData[, colBatch],
 # ----- TESTS -----
 
 test_that("Equivalence", {
-    
-    MAE2 <- prepareForIntegration(object           = MAE,
-                                  omicsNames       = selectedData,
-                                  variableLists    = variableList,
-                                  method           = "MOFA", 
-                                  transformData    = TRUE
-    )
-    
-    # ---- Equivalence after preparation : ----
-    expect(is(MAE2, "MOFA"), failure_message = "Prepared MAE is not a MOFA object")
-    expect_equal(get_dimensions(MAE2)$D, lengths(variableList))
-    
-    protRes <- MAE2@data$protetest$group1
-    
-    expect_equal(dim(protMat4), dim(protRes))
-    expect(identical(rownames(protMat4), rownames(protRes),
-                     attrib.as.set = FALSE), 
-           failure_message = "proteins rownames are not identical")
-    expect(identical(colnames(protMat4), colnames(protRes),
-                     attrib.as.set = FALSE), 
-           failure_message = "proteins colnames are not identical")
-    expect_identical(as.data.frame(protMat4), as.data.frame(protRes))
-    
-    metaRes <- MAE2@data$metatest$group1
-    
-    expect_equal(dim(metMat4), dim(metaRes))
-    expect(identical(rownames(metMat4), rownames(metaRes), 
-                     attrib.as.set = FALSE), 
-           failure_message = "metabolites rownames are not identical")
-    expect(identical(colnames(metMat4), colnames(metaRes),
-                     attrib.as.set = FALSE), 
-           failure_message = "metabolites colnames are not identical")
-    expect_identical(as.data.frame(metMat4), as.data.frame(metaRes))
-    
-    # ---- Equivalence on results: ----
-    
-    MAE3 <- runOmicsIntegration(MAE, preparedObject = MAE2, 
-                                method = "MOFA", scale_views = TRUE, 
-                                maxiter = 1000, num_factors = 5)
+  
+  MAE2 <- suppressWarnings(
+    prepareForIntegration(object           = MAE,
+                          omicsNames       = selectedData,
+                          variableLists    = variableList,
+                          method           = "MOFA", 
+                          transformData    = TRUE
+    ))
+  
+  # ---- Equivalence after preparation : ----
+  expect(is(MAE2, "MOFA"), failure_message = "Prepared MAE is not a MOFA object")
+  expect_equal(get_dimensions(MAE2)$D, lengths(variableList))
+  
+  protRes <- MAE2@data$protetest$group1
+  
+  expect_equal(dim(protMat4), dim(protRes))
+  expect(identical(rownames(protMat4), rownames(protRes),
+                   attrib.as.set = FALSE), 
+         failure_message = "proteins rownames are not identical")
+  expect(identical(colnames(protMat4), colnames(protRes),
+                   attrib.as.set = FALSE), 
+         failure_message = "proteins colnames are not identical")
+  expect_identical(as.data.frame(protMat4), as.data.frame(protRes))
+  
+  metaRes <- MAE2@data$metatest$group1
+  
+  expect_equal(dim(metMat4), dim(metaRes))
+  expect(identical(rownames(metMat4), rownames(metaRes), 
+                   attrib.as.set = FALSE), 
+         failure_message = "metabolites rownames are not identical")
+  expect(identical(colnames(metMat4), colnames(metaRes),
+                   attrib.as.set = FALSE), 
+         failure_message = "metabolites colnames are not identical")
+  expect_identical(as.data.frame(metMat4), as.data.frame(metaRes))
+  
+  # ---- Equivalence on results: ----
+  
+  catchRes <- RFLOMICS:::.tryCatch_rflomics(
+    runOmicsIntegration(MAE, preparedObject = MAE2, 
+                        method = "MOFA", scale_views = TRUE, 
+                        maxiter = 1000, num_factors = 5))
+  
+  if(!is.null(catchRes$result)){
+    MAE3 <- catchRes$result
     
     # equivalence
     mofaobject <- create_mofa(data = list("protetest" = protMat4, 
@@ -164,16 +171,16 @@ test_that("Equivalence", {
     train_opts$verbose     <- FALSE
     model_opts$num_factors <- 5
     MOFAObject.untrained <- prepare_mofa(
-        object           = mofaobject,
-        data_options     = data_opts,
-        model_options    = model_opts,
-        training_options = train_opts
+      object           = mofaobject,
+      data_options     = data_opts,
+      model_options    = model_opts,
+      training_options = train_opts
     )
     
     MOFAObject.trained <-
-        run_mofa(MOFAObject.untrained,
-                 use_basilisk = FALSE,
-                 save_data = TRUE)
+      run_mofa(MOFAObject.untrained,
+               use_basilisk = FALSE,
+               save_data = TRUE)
     
     resRFLOMICS <- get_factors(getMOFA(MAE3))$group1
     resEquivalence <- get_factors(MOFAObject.trained)$group1
@@ -183,5 +190,19 @@ test_that("Equivalence", {
     
     expect_equal(resRFLOMICSW, resEquivalenceW)
     expect_equal(resRFLOMICS, resEquivalence, tolerance = 10^-5)
+    
+  }
+  else if(!is.null(catchRes$error)){
+    
+    grepRes <-
+      grep(pattern = "mofapy", catchRes$error)
+    
+    if(length(grepRes) != 0 &&  grepRes == 1)
+      warning("To use MOFA2, you need to correctly set up a python environment. ", 
+              "We recommend reading the README (Troubleshooting MOFA2 section).")
+    
+    expect(length(grepRes) != 0 &&  grepRes == 1, 
+           failure_message = catchRes$error)
+    
+  }
 })
-

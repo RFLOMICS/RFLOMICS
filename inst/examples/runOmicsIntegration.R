@@ -31,10 +31,10 @@ mofaObj <- prepareForIntegration(MAE,
                                  variableLists = rownames(MAE), 
                                  method = "MOFA")
 
-# Perform integration:
-MAEtest <- runOmicsIntegration(MAE, 
-                               preparedObject = mofaObj, 
-                               method = "MOFA", num_factors = 5)
+# Perform integration: 
+# Not run: MAEtest <- runOmicsIntegration(MAE, 
+#                                preparedObject = mofaObj, 
+#                                method = "MOFA", num_factors = 5)
 
 # Integration using MixOmics
 mixObj <- prepareForIntegration(MAE,
@@ -51,7 +51,7 @@ getMixOmicsSettings(MAEtest)
 # mixOmics::plotIndiv(getMixOmics(MAEtest, response = "imbibition"))
 
 # Access MOFA2 results:
-getMOFA(MAEtest)
-getMOFASettings(MAEtest)
+# getMOFA(MAEtest)
+# getMOFASettings(MAEtest)
 # MOFA2::plot_variance_explained(getMOFA(MAEtest))
 
