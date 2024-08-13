@@ -118,7 +118,7 @@ setMethod(f          = "generateExpressionContrast",
             
             if (is(modelFormula, "formula"))
               modelFormula <- 
-                paste(as.character(modelFormula), collapse = " ")
+              paste(as.character(modelFormula), collapse = " ")
             
             # args for getExpressionContrastF()
             factorBio <- getBioFactors(object)
@@ -156,8 +156,8 @@ setMethod(f          = "generateExpressionContrast",
             
             if (is(modelFormula, "formula"))
               modelFormula <- 
-                paste(as.character(modelFormula), collapse = " ")
-
+              paste(as.character(modelFormula), collapse = " ")
+            
             # args for getExpressionContrastF()
             factorBio <- getBioFactors(object)
             ExpDesign <- getDesignMat(object)
@@ -190,22 +190,23 @@ setMethod(f          = "generateExpressionContrast",
 #' @exportMethod setSelectedContrasts
 #' @name setSelectedContrasts
 #' @aliases setSelectedContrasts,RflomicsMAE-method
-setMethod(f          = "setSelectedContrasts",
-          signature  = "RflomicsMAE",
-          definition = function(object, contrastList=NULL){
-            
-            object@metadata$design$Contrasts.Sel <- 
-              updateSelectedContrasts(object, contrastList)
-            
-            # for each dataset
-            for(SE.name in names(object)){
-              
-              object[[SE.name]] <- 
-                setSelectedContrasts(object[[SE.name]], contrastList)
-            }
-            
-            return(object)
-          })
+setMethod(
+  f          = "setSelectedContrasts",
+  signature  = "RflomicsMAE",
+  definition = function(object, contrastList=NULL){
+    
+    metadata(object)$design$Contrasts.Sel <- 
+      updateSelectedContrasts(object, contrastList)
+    
+    # for each dataset
+    for(SE.name in names(object)){
+      
+      object[[SE.name]] <- 
+        setSelectedContrasts(object[[SE.name]], contrastList)
+    }
+    
+    return(object)
+  })
 
 
 #' @rdname generateExpressionContrast

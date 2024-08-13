@@ -734,10 +734,8 @@ updateSelectedContrasts <- function(object, contrastList=NULL){
     stop("")
   
   allcontrasts <- 
-    generateExpressionContrast(object) |>
-    reduce(rbind)
-  
-  allcontrasts <- allcontrasts |>
+    generateExpressionContrast(object) |> 
+    reduce(rbind) |> 
     filter(contrast %in% contrastList$contrast)
   
   return(allcontrasts)

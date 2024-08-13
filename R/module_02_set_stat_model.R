@@ -64,20 +64,22 @@
     rea.values$datasetDiff    <- NULL
     rea.values$datasetProcess <- NULL
     
+    # reset design and SO analysis and MO analysis
     session$userData$FlomicsMultiAssay <- 
       resetRflomicsMAE(
         object=session$userData$FlomicsMultiAssay,
-        datasetNames = getDatasetNames(session$userData$FlomicsMultiAssay),
-        multiAnalyses = c("IntegrationAnalysis"))
+        datasetNames = getDatasetNames(session$userData$FlomicsMultiAssay))
     
     message("[RFLOMICS] # 02- Statistical setting...")
     message("[RFLOMICS] #    => model formula: ", input$model.formulae)
     
     # => Set the model formulae
-    session$userData$FlomicsMultiAssay <- setModelFormula(session$userData$FlomicsMultiAssay, input$model.formulae)
+    session$userData$FlomicsMultiAssay <- 
+      setModelFormula(session$userData$FlomicsMultiAssay, input$model.formulae)
     
     # => get list of expression contrast (hypothesis)
-    local.rea.values$contrast <- generateExpressionContrast(session$userData$FlomicsMultiAssay)
+    local.rea.values$contrast <- 
+      generateExpressionContrast(session$userData$FlomicsMultiAssay)
     
     rea.values$model <- TRUE
     

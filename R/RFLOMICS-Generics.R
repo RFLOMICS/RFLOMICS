@@ -50,6 +50,17 @@ setGeneric(
   }
 )
 
+setGeneric(
+  name = "getLabs4plot",
+  def  = function(object, 
+                  processedData = FALSE,
+                  filtredData = FALSE,
+                  log = TRUE,
+                  ...) {
+    standardGeneric("getLabs4plot")
+  }
+)
+
 #---- 01 load data ----
 
 setGeneric(
@@ -355,7 +366,11 @@ setGeneric(
 
 setGeneric(
   name = "getProcessedData",
-  def  = function(object, SE.name, ...) {
+  def  = function(object, SE.name,
+                  filter = FALSE,
+                  trans = FALSE,
+                  norm = FALSE,
+                  log = FALSE, ...) {
     standardGeneric("getProcessedData")
   }
 )
@@ -378,6 +393,36 @@ setGeneric(
   name = "plotExpDesignCompleteness",
   def  = function(object, sampleList = NULL, ...) {
     standardGeneric("plotExpDesignCompleteness")
+  }
+)
+
+setGeneric(
+  name = "getOmicData",
+  def  = function(object, 
+                  processedData = FALSE,
+                  filtredData = FALSE, 
+                  log = c("log+1", "log+E", "none"),
+                  ...) {
+    standardGeneric("getOmicData")
+  }
+)
+
+
+setGeneric(
+  name = "setSelectedSamples",
+  def  = function(object, 
+                  samples = NULL,
+                  ...) {
+    standardGeneric("setSelectedSamples")
+  }
+)
+
+setGeneric(
+  name = "getSelectedSamples",
+  def  = function(object, 
+                  samples = NULL,
+                  ...) {
+    standardGeneric("getSelectedSamples")
   }
 )
 
@@ -485,11 +530,11 @@ setGeneric(
 
 setGeneric(
   name = "plotBoxplotDE",
-  def  = function(object, 
-                  features = NULL, 
+  def  = function(object, SE.name, 
+                  featureName = NULL, 
                   groupColor="groups", 
-                  raw = FALSE, 
-                  ...) {
+                  raw = FALSE, ...) {
+    
     standardGeneric("plotBoxplotDE")
   }
 )

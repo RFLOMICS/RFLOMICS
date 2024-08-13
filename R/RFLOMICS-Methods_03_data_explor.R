@@ -51,79 +51,100 @@
 #' Plant Methods 16, 68 (2020).
 #' 
 #' @example inst/examples/runDataProcessing.R
-setMethod(f          = "runDataProcessing",
-          signature  = "RflomicsSE",
-          definition = function(object, 
-                                samples=NULL, 
-                                lowCountFiltering_strategy = "NbReplicates", 
-                                lowCountFiltering_CPM_Cutoff = 1, 
-                                normMethod = "none", 
-                                transformMethod = "none")
-          {
-            
-            # keep selected samples
-            message("[RFLOMICS] #    => select samples...")
-            object <- runSampleFiltering(object, samples)
-            
-            if(nrow(getDesignMat(object)) == 0) stop("no samples in object!")
-            
-            # spported values:
-            lowCountFiltering_strategy.sup     <- c("NbReplicates","NbConditions")
-            transformation_method.sup          <- c("log2", "none")
-            normalisation_method.abundance.sup <- c("median", "totalSum", "none")
-            normalisation_method.count.sup     <- c("TMM")
-            
-            # apply data processing
-            switch(object@metadata$omicType,
-                   "RNAseq" = {
-                     
-                     # Filter low abundance
-                     message("[RFLOMICS] #    => Low counts Filtering...")
-                     if(is.null(lowCountFiltering_strategy)   || !lowCountFiltering_strategy %in% lowCountFiltering_strategy.sup) 
-                       stop("the low count filtering strategy : ", lowCountFiltering_strategy, " isn't supported by rflomics package. Supported values : ",  paste(lowCountFiltering_strategy.sup, collapse = ", "))
-                     
-                     if(is.null(lowCountFiltering_CPM_Cutoff) || !is.numeric(lowCountFiltering_CPM_Cutoff)) 
-                       stop(lowCountFiltering_CPM_Cutoff, " must be a integer value > 1")
-                     
-                     SE.processed <- filterLowAbundance(object = object, filterMethod= "CPM", filterStrategy = lowCountFiltering_strategy, cpmCutoff = lowCountFiltering_CPM_Cutoff)
-                     
-                     # Run Normalisation 
-                     message("[RFLOMICS] #    => Counts normalization...")
-                     if(is.null(normMethod) || normMethod != "TMM"){
-                       normMethod <- "TMM"
-                       warning("only ", normalisation_method.count.sup, 
-                               " method is supported for ", 
-                               object@metadata$omicType, " normalisation.")
-                     }
-                     
-                     SE.processed <- runNormalization(SE.processed, normMethod = normMethod)
-                   },
-                   {
-                     message("[RFLOMICS] #    => transformation data...")
-                     if(is.null(transformMethod)) transformMethod <- "none"
-                     if(! transformMethod %in% transformation_method.sup) 
-                       stop("the transformation method ", transformMethod,
-                            " is not support in rflomics package.Supported values : ", 
-                            paste(transformation_method.sup, collapse = ", "))
-                     SE.processed <- runTransformData(object, transformMethod = transformMethod)
-                     
-                     message("[RFLOMICS] #    => Run normalization...")
-                     if(is.null(normMethod)) normMethod <- "none"
-                     if(! normMethod %in% normalisation_method.abundance.sup) 
-                       stop("the normalisation method ", normMethod,
-                            " is not support in rflomics package. Supported values : ", 
-                            paste(normalisation_method.abundance.sup, collapse = ", "))
-                     SE.processed <- runNormalization(SE.processed, normMethod = normMethod)
-                   }
-            )
-            
-            # Run PCA for filtred & normalized data 
-            message("[RFLOMICS] #    => Compute PCA ")
-            SE.processed <- runOmicsPCA(SE.processed,ncomp = 5, raw = FALSE)  
-            SE.processed@metadata$DataProcessing[["done"]] <- TRUE
-            
-            return(SE.processed)
-          })
+setMethod(
+  f          = "runDataProcessing",
+  signature  = "RflomicsSE",
+  definition = function(object, 
+                        samples=colnames(object),
+                        lowCountFiltering_strategy = "NbReplicates", 
+                        lowCountFiltering_CPM_Cutoff = 1, 
+                        normMethod = "none", 
+                        transformMethod = "none")
+  {
+    
+    # keep selected samples
+    if(!is.null(samples))
+      samples <- colnames(object)
+    
+    message("[RFLOMICS] #    => select samples...")
+    object <- runSampleFiltering(object, samples)
+    
+    if(nrow(getDesignMat(object)) == 0) 
+      stop("no samples in object!")
+    
+    # spported values:
+    lowCountFiltering_strategy.sup     <- c("NbReplicates","NbConditions")
+    transformation_method.sup          <- c("log2", "none")
+    normalisation_method.abundance.sup <- c("median", "totalSum", "none")
+    normalisation_method.count.sup     <- c("TMM")
+    
+    # apply data processing
+    switch(
+      object@metadata$omicType,
+      "RNAseq" = {
+        
+        # Filter low abundance
+        message("[RFLOMICS] #    => Low counts Filtering...")
+        if(is.null(lowCountFiltering_strategy)   || 
+           !lowCountFiltering_strategy %in% lowCountFiltering_strategy.sup) 
+          stop("the low count filtering strategy : ", 
+               lowCountFiltering_strategy, 
+               " isn't supported by rflomics package. Supported values : ",  
+               paste(lowCountFiltering_strategy.sup, collapse = ", "))
+        
+        if(is.null(lowCountFiltering_CPM_Cutoff) || 
+           !is.numeric(lowCountFiltering_CPM_Cutoff)) 
+          stop(lowCountFiltering_CPM_Cutoff, " must be a integer value > 1")
+        
+        SE.processed <- 
+          filterLowAbundance(object = object, 
+                             filterMethod= "CPM", 
+                             filterStrategy = lowCountFiltering_strategy, 
+                             cpmCutoff = lowCountFiltering_CPM_Cutoff)
+        
+        # Run Normalisation 
+        message("[RFLOMICS] #    => Counts normalization...")
+        if(is.null(normMethod) || normMethod != "TMM"){
+          normMethod <- "TMM"
+          warning("only ", normalisation_method.count.sup, 
+                  " method is supported for ", 
+                  getOmicsTypes(object), " normalisation.")
+        }
+        
+        SE.processed <- 
+          runNormalization(SE.processed, 
+                           normMethod = normMethod)
+      },
+      {
+        message("[RFLOMICS] #    => transformation data...")
+        if(is.null(transformMethod)) transformMethod <- "none"
+        if(! transformMethod %in% transformation_method.sup) 
+          stop("the transformation method ", transformMethod,
+               " is not support in rflomics package.Supported values : ", 
+               paste(transformation_method.sup, collapse = ", "))
+        SE.processed <- 
+          runTransformData(object, 
+                           transformMethod = transformMethod)
+        
+        message("[RFLOMICS] #    => Run normalization...")
+        if(is.null(normMethod)) normMethod <- "none"
+        if(! normMethod %in% normalisation_method.abundance.sup) 
+          stop("the normalisation method ", normMethod,
+               " is not support in rflomics package. Supported values : ", 
+               paste(normalisation_method.abundance.sup, collapse = ", "))
+        SE.processed <- 
+          runNormalization(SE.processed, 
+                           normMethod = normMethod)
+      }
+    )
+    
+    # Run PCA for filtered & normalized data 
+    message("[RFLOMICS] #    => Compute PCA ")
+    SE.processed <- runOmicsPCA(SE.processed, ncomp = 5, raw = FALSE)  
+    SE.processed@metadata$DataProcessing[["done"]] <- TRUE
+    
+    return(SE.processed)
+  })
 
 
 #' @rdname runDataProcessing
@@ -132,47 +153,33 @@ setMethod(f          = "runDataProcessing",
 #' @param SE.name SE.name the name of the dataset if the input object 
 #' is a \link{RflomicsMAE-class}
 #' @exportMethod runDataProcessing
-setMethod(f          = "runDataProcessing",
-          signature  = "RflomicsMAE",
-          definition = function(object, 
-                                samples=NULL, 
-                                lowCountFiltering_strategy = "NbReplicates", 
-                                lowCountFiltering_CPM_Cutoff = 1, 
-                                normMethod= "none", 
-                                transformMethod = "none", 
-                                SE.name){
-            
-            # if paste0(SE.name, ".raw") exist
-            if (!paste0(SE.name, ".raw") %in% names(object)){
-              stop("SE name must be part of this list of names: ",
-                   getDatasetNames(object))
-            }
-            
-            # if paste0(SE.name, ".raw") exist
-            if(is.null(object[[paste0(SE.name, ".raw")]])) {
-              stop("SE name must be part of this list of names: ",
-                   getDatasetNames(object))
-            }
-            
-            SE.raw       <- object[[paste0(SE.name, ".raw")]]
-            SE.processed <- 
-              runDataProcessing(
-                object = SE.raw,
-                samples = samples, 
-                lowCountFiltering_strategy = lowCountFiltering_strategy, 
-                lowCountFiltering_CPM_Cutoff = lowCountFiltering_CPM_Cutoff,
-                normMethod= normMethod, 
-                transformMethod = transformMethod)
-            
-            
-            # remove SE processed if exist
-            if (SE.name %in% names(object)) object <- object[,, -which(names(object) == SE.name)]
-            
-            # add new SE with processed data
-            object <- eval(parse(text = paste0('c( object ,', SE.name, ' = SE.processed )')))
-            
-            return(object)
-          })
+setMethod(
+  f          = "runDataProcessing",
+  signature  = "RflomicsMAE",
+  definition = function(object, SE.name,
+                        samples=NULL, 
+                        lowCountFiltering_strategy = "NbReplicates", 
+                        lowCountFiltering_CPM_Cutoff = 1, 
+                        normMethod= "none", 
+                        transformMethod = "none"){
+    
+    if (!SE.name %in% names(object))
+      stop("SE name must be part of this list of names: ",
+           getDatasetNames(object))
+    
+    SE.processed <- 
+      runDataProcessing(
+        object = object[[SE.name]],
+        samples = samples, 
+        lowCountFiltering_strategy = lowCountFiltering_strategy, 
+        lowCountFiltering_CPM_Cutoff = lowCountFiltering_CPM_Cutoff,
+        normMethod= normMethod, 
+        transformMethod = transformMethod)
+    
+    object[[SE.name]] <- SE.processed
+    
+    return(object)
+  })
 
 ###==== filterLowAbundance ====
 
@@ -218,51 +225,67 @@ setMethod(f         = "filterLowAbundance",
                                 filterStrategy = "NbConditions", 
                                 cpmCutoff = 5){
             
-            if (isFALSE(filterStrategy %in% c("NbReplicates","NbConditions"))) {
-              stop("filterStrategy argument must be one of this tow options : NbReplicates or NbConditions")
-            }
             
-            objectFilt <- object
-            assayFilt  <- assay(objectFilt)
-            Groups     <- getDesignMat(object)
+            if (getOmicsTypes(object) != "RNAseq")
+              stop("Can't apply this method to omics types other than RNAseq.")
             
-            ## nbr of genes with 0 count
-            genes_flt0  <- objectFilt[rowSums(assayFilt) <= 0, ]@NAMES
             
-            ## remove 0 count
-            objectFilt  <- objectFilt[rowSums(assayFilt)  > 0, ]
+            if (isFALSE(filterStrategy %in% c("NbReplicates","NbConditions")))
+              stop("filterStrategy argument must be one of this tow options : ", 
+                   "NbReplicates or NbConditions")
+            
+            if(filterMethod != "CPM")
+              stop("filterMethod argument must be one of this tow options : ", 
+                   "CPM")
+            
+            assayFilt  <- assay(object)
+            
+            # nbr of genes with 0 count
+            genes_flt0  <- object[rowSums(assayFilt) <= 0, ]@NAMES
+            
+            # remove 0 count
+            objectFilt  <- object[rowSums(assayFilt)  > 0, ]
             assayFilt   <- assay(objectFilt)
             
-            ## filter cpm
+            # filter cpm
+            Groups       <- getDesignMat(object)
             NbReplicate  <- table(Groups$groups)
             NbConditions <- length(unique(Groups$groups))
             
-            switch(filterStrategy,
-                   "NbConditions" = { keep <- rowSums(cpm(assayFilt) >= cpmCutoff) >=  NbConditions },
-                   "NbReplicates" = { keep <- rowSums(cpm(assayFilt) >= cpmCutoff) >=  min(NbReplicate) },
-                   "filterByExpr" = { dge  <- DGEList(counts = assayFilt, genes = rownames(assayFilt))
-                   keep <- filterByExpr(dge)
-                   }
-            )
+            # low count filtering
+            keep <-
+              switch(filterStrategy,
+                     "NbConditions" = { 
+                       rowSums(cpm(assayFilt) >= cpmCutoff) >= NbConditions },
+                     "NbReplicates" = { 
+                       rowSums(cpm(assayFilt) >= cpmCutoff) >= min(NbReplicate)},
+                     "filterByExpr" = { 
+                       dge <- DGEList(counts = assayFilt, 
+                                      genes = rownames(assayFilt))
+                       filterByExpr(dge)
+                     }
+              )
             
-            ## nbr of genes filtered
+            # features to filtered
             genes_flt1  <- objectFilt[!keep]@NAMES
             
-            object <- objectFilt[keep]
+            # object <- objectFilt[keep]
+            # output
+            Filtering <- list(
+              setting = list(method         = filterMethod,
+                             filterStrategy = filterStrategy,
+                             cpmCutoff      = cpmCutoff),
+              results = list(filteredFeatures = c(genes_flt0, genes_flt1)),
+              filtered = FALSE
+            )
             
-            Filtering <- list()
-            Filtering[["setting"]][["method"]]           <- filterMethod
-            Filtering[["setting"]][["filterStrategy"]]   <- filterStrategy
-            Filtering[["setting"]][["cpmCutoff"]]        <- cpmCutoff
-            Filtering[["results"]][["filteredFeatures"]] <- c(genes_flt0, genes_flt1)
-            
-            if (is.null(object@metadata$DataProcessing)) {
-              object@metadata$DataProcessing <- list()
-            }
-            object@metadata$DataProcessing$Filtering <- Filtering
+            object <- 
+              setElementToMetadata(object, 
+                                   name    = "DataProcessing", 
+                                   subName = "featureFiltering", 
+                                   content =  Filtering)
             
             return(object)
-            
           })
 
 
@@ -278,16 +301,13 @@ setMethod(f          = "filterLowAbundance",
                                 filterStrategy = "NbConditions", 
                                 cpmCutoff = 5){
             
-            if (getOmicsTypes(object[[SE.name]]) == "RNAseq") {
-              object[[SE.name]] <-  filterLowAbundance(object          = object[[SE.name]], 
-                                                       filterStrategy = filterStrategy,
-                                                       filterMethod   = filterMethod,
-                                                       cpmCutoff      = cpmCutoff)
-              return(object)
-            }else{
-              message("Can't apply this method to omics types other than RNAseq.")
-            }
+            object[[SE.name]] <-  
+              filterLowAbundance(object          = object[[SE.name]], 
+                                 filterStrategy = filterStrategy,
+                                 filterMethod   = filterMethod,
+                                 cpmCutoff      = cpmCutoff)
             
+            return(object)
           })
 
 ###==== runSampleFiltering ====
@@ -303,64 +323,38 @@ setMethod(f          = "filterLowAbundance",
 #' }
 #' @exportMethod runSampleFiltering
 #' @importFrom dplyr filter
-setMethod(f          = "runSampleFiltering",
-          signature  = "RflomicsSE",
-          definition = function(object, 
-                                samples=NULL) {
-            
-            # if no samples to filter
-            if (is.null(samples)) return(object) 
-            
-            # check if samples overlap with
-            samples <- intersect(colnames(object), samples)
-            
-            # if no iverlap with data colnames
-            if (length(intersect(samples, colnames(object))) == 0) {
-              warning("No overlap between samples and colnames of data")
-              return(object)
-            }
-            
-            # if 100% ovelap!
-            if (length(samples) == length(colnames(object))) return(object)
-            
-            # keep selected samples
-            # keep only samples in data matrix, and colData
-            SE.new <- object[, object$samples %in% samples]
-            
-            # if we remove all samples :
-            if (nrow(SE.new@colData) == 0) SE.new@colData <- SE.new@colData[c("samples", "groups")]
-            
-            for (factor in c(getBioFactors(object), getBatchFactors(object))){
-              
-              # if only one category remains after the filter, it's will be removed
-              if (length(unique(SE.new@colData[[factor]])) <= 1 ) {
-                SE.new@colData[[factor]] <- NULL
-                factor.types <- getFactorTypes(SE.new)
-                SE.new@metadata$design$factorType <- factor.types[which(names(factor.types) != factor)]
-                # replace with setFactorTypes
-              }
-              else{
-                F.levels <- levels(SE.new@colData[[factor]])
-                SE.new@colData[[factor]] <- factor(SE.new@colData[[factor]], 
-                                                   levels = intersect(F.levels, unique(SE.new@colData[[factor]])))
-              }
-            }
-            colData <- as.data.frame(SE.new@colData)
-            order_levels <- with(colData, do.call(order, colData[c(getBioFactors(SE.new), getBatchFactors(SE.new))]))
-            SE.new$samples <- factor(SE.new$samples, levels = unique(SE.new$samples[order_levels]))
-            SE.new$groups  <- factor(SE.new$groups,  levels = unique(SE.new$groups[order_levels]))
-            
-            # à retirer dès que je remplace Groups par colData
-            #SE.new@metadata$Groups <- filter(SE.new@metadata$Groups, samples %in% SE.new$samples)
-            
-            SE.new@metadata$DataProcessing$filteredSamples <- setdiff(colnames(object), samples)
-            
-            selectedContrasts <- getSelectedContrasts(object)
-            
-            SE.new <- setSelectedContrasts(SE.new, selectedContrasts)
-            
-            return(SE.new)
-          })
+setMethod(
+  f          = "runSampleFiltering",
+  signature  = "RflomicsSE",
+  definition = function(object, samples = NULL) {
+    
+    if(is.null(samples))
+      return(object)
+    
+    # check if samples overlap with
+    if(any(!samples %in% colnames(object)))
+      stop("Some sample names are not part of the colnames of the object")
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DataProcessing", 
+                           subName = "selectedSamples",
+                           content = samples)
+    
+    
+    
+    # keep selected samples
+    # keep only samples in data matrix, and colData
+    SE.new <- object[, samples]
+    
+    SE.new <- .updateColData(SE.new)
+    selectedContrasts  <- getSelectedContrasts(object)
+    selectedContrasts2 <- updateSelectedContrasts(SE.new, selectedContrasts)
+
+    object <- setSelectedContrasts(object, selectedContrasts2)
+    
+    return(object)
+  })
 
 
 #' @rdname runDataProcessing
@@ -401,39 +395,45 @@ setMethod(f          = "runTransformData",
                                 transformMethod = NULL, 
                                 modifyAssay = FALSE){
             
-            transformation.setting <- getAnalysis(object,
-                                                  name = "DataProcessing",
-                                                  subName = "Transformation")
+            if (getOmicsTypes(object) == "RNAseq")
+              stop("It is not recommended to transform RNAseq data.")
             
-            if (is.null(transformMethod)) {
-              if (!modifyAssay && getOmicsTypes(object) == "RNAseq") {
-                message("No transform method indicated, no assay modification asked, RNAseq detected -> transformation_method set to \"none\"")
-                transformMethod <- "none"
-              } else {
-                message("No transform method indicated, using log2 transformation")
-                transformMethod <- "log2"
-              }
+            # accepted value for normMethod
+            # default value : 1rst element
+            default.methods <- 
+              switch (getOmicsTypes(object),
+                      "proteomics"   = c("log2", "none"),
+                      "metabolomics" = c("log2", "none")
+              )
+            
+            # check normMethod param
+            if(is.null(transformMethod)){
+              transformMethod <- default.methods[1]
+              message("The default method applied will be: ", transformMethod)
+              
+            }else if(!transformMethod %in% default.methods){
+              stop(transformMethod, 
+                   " is not an allowed value for the parameter transformMethod",
+                   " Accepted values: ", paste0(default.methods, collapse = ", "))
             }
             
-            if ( getOmicsTypes(object) == "RNAseq" && transformMethod != "none") {
-              message("Transformation other than 'none' are not allowed for RNAseq for now. Forcing none transformation. 
-                               Data will be transformed using log2 after the normalization is ran.")
-              transformMethod <- "none"
-            }
+            # output
+            transformation <- list(setting  = list(method = transformMethod), 
+                                   results  = NULL,  
+                                   transformed = FALSE)
             
-            transformation.setting[["setting"]][["method"]] <- transformMethod
+            object <- 
+              setElementToMetadata(object,
+                                   name = "DataProcessing",
+                                   subName = "Transformation",
+                                   content = transformation)
             
-            object <- setElementToMetadata(object,
-                                           name = "DataProcessing",
-                                           subName = "Transformation",
-                                           content = transformation.setting)
-            
+            # @audrey je ne comprends pas l'interet de cette ligne de cmd
             if (modifyAssay) {
               object <-  .applyTransformation(object)
             }
             
             return(object)
-            
           })
 
 #' @rdname runDataProcessing
@@ -469,9 +469,12 @@ setMethod(f          = "runTransformData",
 #' The normalisation method is chosen according to dataset omic type 
 #' (RNAseq: TMM, metabolics/proteomics: median) 
 #' }
-#' @param normMethod Normalization method
-#' @param modifyAssay Does the normalization have to be applied or just 
-#' stored for later? Recommended it stays FALSE.
+#' @param normMethod Normalization method. Accepted values: TMM for RNAseq, and
+#' median, totalSum, or none for proteomics and metabolomics data.
+#' Default values: TMM for RNAseq data and median for proteomics and metabolomics
+#' data
+#' @param modifyAssay Does the normalization have to be applied or just stored 
+#' for later? Recommended it stays FALSE.
 #' @return An object of class \link{RflomicsSE}
 #' The applied normalization method and computed scaling factors 
 #' (by samples) are stored as a named list
@@ -479,61 +482,69 @@ setMethod(f          = "runTransformData",
 #' "coefNorm") in the metadata slot of a
 #' given data set, stored itself in the ExperimentList slot of a 
 #' \link{RflomicsSE} object.
-#' @importFrom stats median
 #' @exportMethod runNormalization
 setMethod(f          = "runNormalization",
           signature  = "RflomicsSE",
-          definition = function(object, normMethod = NULL, modifyAssay = FALSE){
+          definition = function(object, 
+                                normMethod = NULL, 
+                                modifyAssay = FALSE){
             
-            Groups     <- getDesignMat(object)
+            # accepted value for normMethod
+            # default value : 1rst element
+            default.methods <- 
+              switch (getOmicsTypes(object),
+                      "RNAseq"       = c("TMM"),
+                      "proteomics"   = c("median", "totalSum", "none"),
+                      "metabolomics" = c("median", "totalSum", "none")
+              )
             
-            if (.isNorm(object)) 
-              warning("Data were already normalized before!")
-            
-            if (.isTransformed(object)) 
-              warning("Data were transformed before!")
-            
-            if (is.null(normMethod)) {
-              if (getOmicsTypes(object) == "RNAseq" && getTransSettings(object)$method == "none") {
-                message("Using TMM normalization for RNAseq (counts) data")
-                normMethod <- "TMM"
-              } else {
-                normMethod <- "none"
-              }
+            # check normMethod param
+            if(is.null(normMethod)){
+              normMethod <- default.methods[1]
+              message("The default method applied will be: ", normMethod)
+              
+            }else if(!normMethod %in% default.methods){
+              stop(normMethod, 
+                   " is not an allowed value for the parameter normMethod.",
+                   " Accepted values: ", paste0(default.methods, collapse = ", "))
             }
             
-            if (getOmicsTypes(object) == "RNAseq" && normMethod != "TMM") {
-              message("Forcing TMM normalization for RNAseq (counts) data")
-              normMethod <- "TMM"
-            }
+            # check if proteomics or metabolomics data are transformed 
+            if (getOmicsTypes(object) %in% c("proteomics", "metabolomics") &
+                is.null(getTransSettings(object)$method))
+              warning(getOmicsTypes(object), 
+                      " data should be transformed before normalization.")
             
-            object2 <- object
+            if (getOmicsTypes(object) == "RNAseq" &
+                is.null(getFilterSettings(object)$method))
+              warning(getOmicsTypes(object), 
+                      " data should be filtered (low count).")
             
-            # Run normalization on transformed data (except for RNAseq data, transformation is expected to be "none" anyway)
-            if (!.isTransformed(object) && getTransSettings(object)$method != "none")
-              object2 <-  .applyTransformation(object2)
+            object2 <- getProcessedData(object, filter = TRUE, trans = TRUE)
             
-            switch(normMethod,
-                   "TMM"        = {coefNorm  <- .tmmNormalization(assay(object2), Groups$groups) },
-                   "median"     = {coefNorm  <- apply(assay(object2), 2, FUN = function(sample_vect) {median(sample_vect)}) },
-                   "totalSum"   = {coefNorm  <- apply(assay(object2), 2, FUN = function(sample_vect) {sum(sample_vect^2)}) },
-                   "none"       = {coefNorm  <- rep(1, ncol(assay(object2))) },
-                   { message("Could not recognize the normalization method, applying 'none'. Please check your parameters.")
-                     normMethod <- "none"
-                     coefNorm  <-  rep(1, ncol(assay(object2)))
-                   }
+            # calculation normalization coefficient
+            coefNorm <- 
+              switch(normMethod,
+                     "TMM"      = .tmmNormalization(object2),
+                     "median"   = .medianNormalization(object2),
+                     "totalSum" = .totalSumNormalization(object2),
+                     "none"     =  rep(1, ncol(assay(object2)))
+              )
+            
+            # output
+            Normalization <- list(
+              setting = list(method = normMethod),
+              results = list(coefNorm = coefNorm),
+              normalized = FALSE
             )
             
-            Normalization <- list()
-            Normalization[["setting"]][["method"]]   <- normMethod
-            Normalization[["results"]][["coefNorm"]] <- coefNorm
-            Normalization[["normalized"]]            <- FALSE
+            object <- 
+              setElementToMetadata(object,
+                                   name    = "DataProcessing",
+                                   subName = "Normalization",
+                                   content =  Normalization)
             
-            if (is.null(object@metadata$DataProcessing)) { 
-              object@metadata$DataProcessing <- list()
-            }
-            object@metadata$DataProcessing[["Normalization"]] <- Normalization
-            
+            # @audrey, je ne vois pas l'interet de cette ligne. Nadia
             if (modifyAssay) object <- .applyNorm(object)
             
             return(object)
@@ -545,11 +556,15 @@ setMethod(f          = "runNormalization",
 #' @exportMethod runNormalization
 setMethod(f          = "runNormalization",
           signature  = "RflomicsMAE",
-          definition = function(object, SE.name, normMethod = NULL, modifyAssay = FALSE){
+          definition = function(object, 
+                                SE.name, 
+                                normMethod = NULL, 
+                                modifyAssay = FALSE){
             
-            object[[SE.name]] <-  runNormalization(object       = object[[SE.name]],
-                                                   normMethod   = normMethod,
-                                                   modifyAssay = modifyAssay)
+            object[[SE.name]] <-  
+              runNormalization(object       = object[[SE.name]],
+                               normMethod   = normMethod,
+                               modifyAssay  = modifyAssay)
             return(object)
           })
 
@@ -584,23 +599,29 @@ setMethod(f          = "runNormalization",
 #' @importFrom FactoMineR PCA
 #' @rdname runDataProcessing
 #'
-setMethod(
-    f          = "runOmicsPCA",
-    signature  = "RflomicsSE",
-    definition = function(object, ncomp = 5, raw = FALSE) {
-        object2 <- .checkTransNorm(object, raw = raw)
-        pseudo  <- assay(object2)
-        if (raw) {
-            object@metadata[["PCAlist"]][["raw"]] <-
-                PCA(t(pseudo), ncp = ncomp, graph = FALSE)
-        } else {
-            object@metadata[["PCAlist"]][["norm"]] <-
-                PCA(t(pseudo), ncp = ncomp, graph = FALSE)
-        }
-        return(object)
-        
-    }
-)
+setMethod(f          = "runOmicsPCA",
+          signature  = "RflomicsSE",
+          definition = function(object, ncomp = 5, raw = FALSE) {
+            
+            log <- ifelse(getOmicsTypes(object) == "RNAseq", TRUE, FALSE)
+            
+            if(isFALSE(raw)){
+              object2 <- getProcessedData(object, norm = TRUE, log = log)
+              tag = "norm"
+            }
+            else{
+              object2 <- getProcessedData(object, log = log)
+              tag = "raw"
+            }
+            
+            pseudo  <- assay(object2)
+            
+            object@metadata[["PCAlist"]][[tag]] <-
+              PCA(t(pseudo), ncp = ncomp, graph = FALSE)
+            
+            return(object)
+            
+          })
 
 #' @rdname runDataProcessing
 #' @aliases runOmicsPCA,RflomicsMAE-method
@@ -608,21 +629,20 @@ setMethod(
 #' @title runOmicsPCA
 #' @param SE.name the name of the data the normalization have to be applied to.
 #' @exportMethod runOmicsPCA
-setMethod(
-  f          = "runOmicsPCA",
-  signature  = "RflomicsMAE",
-  definition = function(object,
-                        SE.name,
-                        ncomp = 5,
-                        raw = FALSE) {
-    object[[SE.name]] <-  runOmicsPCA(object[[SE.name]],
-                                      ncomp = ncomp,
-                                      raw  = raw)
-    
-    return(object)
-    
-  }
-)
+setMethod(f          = "runOmicsPCA",
+          signature  = "RflomicsMAE",
+          definition = function(object,
+                                SE.name,
+                                ncomp = 5,
+                                raw = FALSE) {
+            
+            object[[SE.name]] <-  runOmicsPCA(object[[SE.name]],
+                                              ncomp = ncomp,
+                                              raw  = raw)
+            
+            return(object)
+            
+          })
 
 ## ---- checkExpDesignCompleteness ----
 
@@ -644,7 +664,8 @@ setMethod(f         = "checkExpDesignCompleteness",
           signature = "RflomicsSE",
           definition <- function(object, sampleList=NULL){
             
-            object <- runSampleFiltering(object, samples = sampleList)
+            if(!is.null(sampleList))
+              object <- object[,sampleList]
             
             output <- list()
             output[["error"]] <- FALSE
@@ -712,6 +733,79 @@ setMethod(f         = "checkExpDesignCompleteness",
 
 ##==== ACCESSORS ====
 
+###==== getOmicData ====
+
+#' @rdname runDataProcessing
+#' @name getOmicData
+#' @param processedData boolean If TRUE, returned filtred data 
+#' @param NormTrans boolean. If TRUE, apply normalisation and/or transformation
+#' coefficients.
+#' @param log boolean. If TRUE, apply log2 tranformation (for RNAseq data)
+#' @aliases getOmicData,RflomicsSE-method
+#' @section Accessors: 
+#' \itemize{
+#'    \item getOmicData: return a processed data matrix  
+#'    (filtering, normalization and/or transformation)}
+#' @exportMethod getOmicData
+#' @importFrom SummarizedExperiment assay
+setMethod(f          = "getOmicData",
+          signature  = "RflomicsSE",
+          definition = function(object, 
+                                processedData = FALSE,
+                                NormTrans = FALSE, 
+                                log = FALSE,
+                                ...){
+            
+            dataType <- getOmicsTypes(object)
+            
+            if(isTRUE(processedData)){
+              
+              omicData <- getProcessedData(object, 
+                                           NormTrans = NormTrans)
+            }else{
+              
+              omicData <- assay(object)
+            }
+            
+            if(isTRUE(log)){
+              
+              omicData <- 
+                switch(dataType,
+                       "RNAseq" = log2(omicData + 1),
+                       log2(omicData + 10^10)
+                )
+            }
+            
+            return(data.frame(omicData))
+          })
+
+#' @rdname runDataProcessing
+#' @name getOmicData
+#' @aliases getOmicData,RflomicsMAE-method
+#' @exportMethod getOmicData
+setMethod(f          = "getOmicData",
+          signature  = "RflomicsMAE",
+          definition = function(object, SE.name,
+                                processedData = FALSE,
+                                NormTrans = FALSE, 
+                                log = FALSE,
+                                ...){
+            
+            if (!SE.name %in% getDatasetNames(object)){
+              stop("SE name must be part of this list of names: ",
+                   getDatasetNames(object))
+            }
+            
+            pseudo <- getOmicData(object[[SE.name]],
+                                  processedData = processedData,
+                                  NormTrans = NormTrans, 
+                                  log = log,
+                                  ...)
+            
+            return(pseudo)
+          })
+
+
 ###==== getProcessedData ====
 
 #' @rdname runDataProcessing
@@ -721,47 +815,49 @@ setMethod(f         = "checkExpDesignCompleteness",
 #' @aliases getProcessedData,RflomicsSE-method
 #' @section Accessors: 
 #' \itemize{
-#'    \item getProcessedData: return a processed data matrix  
+#'    \item getProcessedData: return Rflomics object with a processed data  
 #'    (filtering, normalization and/or transformation)}
 #' @exportMethod getProcessedData
-#' @examples
-#' # See runDataProcessing for an example that includes getProcessedData
-setMethod(f          = "getProcessedData",
-          signature  = "RflomicsSE",
-          definition = function(object, 
-                                NormTrans = TRUE)
-          {
-            
-            dataType <- getOmicsTypes(object)
-            
-            switch(
-              dataType,
-              
-              "RNAseq" = {
-                # Filtering
-                filtering.res <- 
-                  getAnalysis(object, name = "DataProcessing", 
-                              subName = "Filtering")
-                
-                keepedFeatures <- 
-                  setdiff(rownames(object), 
-                          filtering.res$results$filteredFeatures)
-                
-                object <- object[keepedFeatures,]
-              },
-              {
-                # imputation if prot or meta
-              }
-            )
-            
-            # apply normalisation and/or tranformation coef on matrix
-            if(isTRUE(NormTrans))
-              object <- .checkTransNorm(object, raw = FALSE)
-            
-            pseudo <- assay(object)
-            
-            return(data.frame(pseudo))
-          })
+#' @importFrom SummarizedExperiment assay
+setMethod(
+  f          = "getProcessedData",
+  signature  = "RflomicsSE",
+  definition = function(object,
+                        filter = FALSE,
+                        trans = FALSE,
+                        norm = FALSE,
+                        log = FALSE){
+    
+    
+    if(norm)  filter = trans = TRUE
+    if(trans) filter = TRUE
+    
+    # filtering process
+    if(filter){
+      # filter samples
+      selectedSamples <- getSelectedSamples(object)
+      object <- object[, selectedSamples]
+      object <- .updateColData(object)
+      
+      # filter features
+      object <- .applyFiltering(object)
+    }
+    
+    
+    # transformation process
+    if(trans && getOmicsTypes(object) %in% c("metabolomics", "proteomics"))
+      object <- .applyTransformation(object)
+    
+    # transformation process
+    if(norm)
+      object <- .applyNorm(object)
+    
+    # log
+    if(log && getOmicsTypes(object) == "RNAseq")
+      object <- .applyLog(object, log = "log2")
+    
+    return(object)
+  })
 
 #' @rdname runDataProcessing
 #' @name getProcessedData
@@ -769,18 +865,28 @@ setMethod(f          = "getProcessedData",
 #' @exportMethod getProcessedData
 setMethod(f          = "getProcessedData",
           signature  = "RflomicsMAE",
-          definition = function(object, SE.name,
-                                NormTrans = TRUE){
+          definition = function(object, 
+                                SE.name,
+                                filter = FALSE,
+                                trans = FALSE,
+                                norm = FALSE,
+                                log = FALSE){
             
             if (!SE.name %in% getDatasetNames(object)){
               stop("SE name must be part of this list of names: ",
                    getDatasetNames(object))
             }
             
-            pseudo <- getProcessedData(object[[SE.name]])
+            object[[SE.name]] <- 
+              getProcessedData(object[[SE.name]],
+                               filter = filter,
+                               trans = trans,
+                               norm = norm,
+                               log = log)
             
-            return(pseudo)
+            return(object)
           })
+
 
 ###==== getTransSettings ====
 
@@ -829,7 +935,7 @@ setMethod(f          = "getFilterSettings",
           signature  = "RflomicsSE",
           
           definition = function(object){
-            return(object@metadata$DataProcessing$Filtering$setting)   
+            return(object@metadata$DataProcessing$featureFiltering$setting)   
           })
 
 #' @rdname runDataProcessing
@@ -859,7 +965,7 @@ setMethod(f          = "getFilteredFeatures",
           signature  = "RflomicsSE",
           
           definition = function(object){
-            return(object@metadata$DataProcessing$Filtering$results$filteredFeatures)   
+            return(object@metadata$DataProcessing$featureFiltering$results$filteredFeatures)   
           })
 
 #' @rdname runDataProcessing
@@ -870,6 +976,44 @@ setMethod(f          = "getFilteredFeatures",
           signature  = "RflomicsMAE",
           definition = function(object, SE.name){
             getFilteredFeatures(object = object[[SE.name]])
+          })
+
+
+
+###==== getSelectedSamples ====
+
+# Get filtred samples
+#' @rdname runDataProcessing
+#' @name getSelectedSamples
+#' @aliases getFilteredSamples,RflomicsSE-method
+#' @section Accessors: 
+#' \itemize{
+#'    \item getSelectedSamples: return a vector of selected samples of a given 
+#'    omic dataset}
+#' @exportMethod getSelectedSamples 
+#' @examples
+#' # See runDataProcessing for an example that includes getSelectedSamples
+setMethod(f          = "getSelectedSamples",
+          signature  = "RflomicsSE",
+          definition = function(object){
+            
+            selectedSamples <- 
+              getAnalysis(object, 
+                          name = "DataProcessing", 
+                          subName = "selectedSamples")
+            
+            return(selectedSamples)
+          })
+
+#' @rdname runDataProcessing
+#' @exportMethod getSelectedSamples 
+#' @name getSelectedSamples
+#' @aliases getSelectedSamples,RflomicsMAE-method
+setMethod(f          = "getSelectedSamples",
+          signature  = "RflomicsMAE",
+          definition = function(object, SE.name){
+            
+            getSelectedSamples(object[[SE.name]])
           })
 
 ###==== getCoeffNorm ====
@@ -931,6 +1075,56 @@ setMethod(f          = "getNormSettings",
             getNormSettings(object = object[[SE.name]])
           })
 
+
+
+###==== set selected sample list ====
+
+#' @rdname runDataProcessing
+#' @name setSelectedSamples
+#' @param samples sample names to keep
+#' @aliases setSelectedSamples,RflomicsSE-method
+#' @section Accessors: 
+#' \itemize{
+#'    \item setSelectedSamples: }
+#' @exportMethod setSelectedSamples
+#' @examples
+#' # See runDataProcessing for an example that includes setSelectedSamples
+setMethod(f          = "setSelectedSamples",
+          signature  = "RflomicsSE",
+          definition = function(object, samples = NULL){
+            
+            if(is.null(samples))
+              return(object)
+            
+            # check if samples overlap with
+            if(any(!samples %in% colnames(object)))
+              stop("Some sample names are not part of the colnames of the object")
+            
+            object <- 
+              setElementToMetadata(object, 
+                                   name = "DataProcessing", 
+                                   subName = "selectedSamples",
+                                   content = samples)
+            
+            return(object)
+          })
+
+#' @rdname runDataProcessing
+#' @name setSelectedSamples
+#' @aliases setSelectedSamples,RflomicsMAE-method
+#' @exportMethod setSelectedSamples 
+
+setMethod(f          = "setSelectedSamples",
+          signature  = "RflomicsMAE",
+          definition = function(object, SE.name, samples = NULL){
+            
+            object[[SE.name]] <- 
+              setSelectedSamples(object[[SE.name]], samples = samples)
+            
+            return(object)
+          })
+
+
 ##==== GRAPHICAL METHOD ====
 
 ###==== plotLibrarySize ====
@@ -950,47 +1144,36 @@ setMethod(f          = "getNormSettings",
 #' # See runDataProcessing for an example that includes plotLibrarySize
 setMethod(f          = "plotLibrarySize",
           signature  = "RflomicsSE",
-          definition = function(object, raw = FALSE){
+          definition = function(object, raw = FALSE)
+          {
             
-            if (getOmicsTypes(object) != "RNAseq") {
+            if (getOmicsTypes(object) != "RNAseq")
               stop("Data are not RNAseq!")
-            }
             
-            abundances <- assay(object)
-            Groups     <- getDesignMat(object)
-            samples    <- colnames(abundances)
             
-            if (raw) {
-              pseudo <- assay(object) %>% colSums(., na.rm = TRUE)
-              title  <- "Raw data"
-            }else {
-              # RNAseq, not expected to find any 
-              # transformation method.
-              if (!.isNorm(object)) {
-                pseudo <- assay(.applyNorm(object))
-              }
-              
-              pseudo <- pseudo %>% colSums(., na.rm = TRUE)
-              title <- paste0("Filtered and normalized (",
-                              getNormSettings(object)$method, 
-                              ") data")
-            }
+            if(isFALSE(raw))
+              object <- getProcessedData(object, norm = TRUE)
             
-            libSizeNorm <-  full_join(Groups, 
-                                      data.frame("value" = pseudo , 
-                                                 "samples" = names(pseudo)), 
-                                      by = "samples") %>%
-              arrange(groups)
+            labels <- getLabs4plot(object)
             
-            libSizeNorm$samples <- factor(libSizeNorm$samples, 
-                                          levels = levels(Groups$samples))
+            pseudo <- colSums(assay(object), na.rm = TRUE)
             
-            p <- ggplot(libSizeNorm,  aes(x = samples, y = value, fill = groups)) + 
+            Groups      <- getDesignMat(object)
+            libSizeNorm <- 
+              full_join(Groups, 
+                        data.frame("value" = pseudo, "samples" = names(pseudo)), 
+                        by = "samples") |> arrange(groups)
+            
+            libSizeNorm$samples <- 
+              factor(libSizeNorm$samples, levels = levels(Groups$samples))
+            
+            p <- 
+              ggplot(libSizeNorm, aes(x = samples, y = value, fill = groups)) + 
               geom_bar(stat = "identity" ) + 
-              ylab(ylab) + 
-              theme(axis.text.x =  element_text(angle = 45, hjust = 1), legend.position  = "none") + 
+              theme(axis.text.x =  element_text(angle = 45, hjust = 1), 
+                    legend.position  = "none") + 
               labs(x = "", y = "Total read count per sample") + 
-              ggtitle(title)
+              ggtitle(labels$title)
             
             return(p)
             
@@ -1036,39 +1219,48 @@ setMethod(
   signature = "RflomicsSE",
   definition = function(object, plot = "boxplot", raw = FALSE) {
     
-    object2 <- .checkTransNorm(object, raw = raw)
-    pseudo <- assay(object2)
+    log <- ifelse(getOmicsTypes(object) == "RNAseq", TRUE, FALSE)
+    
+    if(isFALSE(raw))
+      object <- getProcessedData(object, norm = TRUE, log = log)
+    else
+      object <- getProcessedData(object, log = log)
+    
+    labels <- getLabs4plot(object)
+    
+    # object2 <- .checkTransNorm(object, raw = raw)
+    pseudo <- assay(object)
     Groups <- getDesignMat(object)
     
-    omicsType <- getOmicsTypes(object2)
-    
-    x_lab <- paste0(omicsType, " data")
-    if (omicsType == "RNAseq") {
-      x_lab <- paste0("log2(", omicsType, " data)")
-    }
-    
-    # Raw data
-    if (raw) {
-      title <- paste0(omicsType, " raw data")
-    } else {
-      # Already normalized or transformed Data
-      title <- paste0(omicsType, " data")
-      
-      if (.isTransformed(object2)) {
-        title <- paste0("Transformed (", 
-                        getTransSettings(object2)$method, ") ", 
-                        title)
-      }
-      
-      if (.isNorm(object2)) {
-        title <- paste0(title, " - normalization: ", 
-                        getNormSettings(object2)$method)
-      }
-      
-      if (omicsType == "RNAseq") {
-        x_lab <- paste0("log2(", omicsType, " data)")
-      }
-    }
+    # omicsType <- getOmicsTypes(object2)
+    # 
+    # x_lab <- paste0(omicsType, " data")
+    # if (omicsType == "RNAseq") {
+    #   x_lab <- paste0("log2(", omicsType, " data)")
+    # }
+    # 
+    # # Raw data
+    # if (raw) {
+    #   title <- paste0(omicsType, " raw data")
+    # } else {
+    #   # Already normalized or transformed Data
+    #   title <- paste0(omicsType, " data")
+    #   
+    #   if (.isTransformed(object2)) {
+    #     title <- paste0("Transformed (", 
+    #                     getTransSettings(object2)$method, ") ", 
+    #                     title)
+    #   }
+    #   
+    #   if (.isNorm(object2)) {
+    #     title <- paste0(title, " - normalization: ", 
+    #                     getNormSettings(object2)$method)
+    #   }
+    #   
+    #   if (omicsType == "RNAseq") {
+    #     x_lab <- paste0("log2(", omicsType, " data)")
+    #   }
+    # }
     
     pseudo.gg <- pseudo %>% melt()
     colnames(pseudo.gg) <- c("features", "samples", "value")
@@ -1083,19 +1275,21 @@ setMethod(
     switch(plot,
            "density" = {
              p <- ggplot(pseudo.gg) +
-               geom_density( aes(x = value, group = samples, color = groups), trim = FALSE) +
-               xlab(x_lab) +
+               geom_density( aes(x = value, group = samples, color = groups), 
+                             trim = FALSE) +
+               xlab(labels$x_lab) +
                theme(legend.position = "none") +
-               ggtitle(title)
+               ggtitle(labels$title)
            },
            "boxplot" = {
-             p <-  ggplot(pseudo.gg,  aes(x = samples, y = value)) +
-               geom_boxplot(aes(fill = groups), outlier.size = 0.3) +
-               theme(axis.text.x =  element_text(angle = 45, hjust = 1), legend.position = "none",
+             p <-  ggplot(pseudo.gg, aes(x = samples, y = value)) +
+               geom_boxplot( aes(fill = groups), outlier.size = 0.3) +
+               theme(axis.text.x =  element_text(angle = 45, hjust = 1), 
+                     legend.position = "none",
                      plot.margin= margin(0.5,0.5,0.5,1,"cm")) +
                xlab("") +
-               ylab(x_lab) +
-               ggtitle(title) #+
+               ylab(labels$x_lab) +
+               ggtitle(labels$title) #+
              # geom_point(alpha = 1/100,size=0)
            }
     )
@@ -1144,120 +1338,71 @@ setMethod(
 #' @exportMethod plotOmicsPCA
 #' @examples
 #' # See runDataProcessing for an example that includes plotOmicsPCA
-setMethod(f = "plotOmicsPCA",
-          signature = "RflomicsSE",
-          definition = function(object,
-                                raw = c("raw", "norm"),
-                                axes = c(1, 2),
-                                groupColor = "groups") {
-            if (length(axes) != 2) {
-              stop("PCA axes must be a vector of length 2")
-            }
-            
-            if (is.logical(raw)) {
-               raw <- ifelse(isTRUE(raw), "raw", "norm") 
-            }
-              
-            ExpDesign <- getDesignMat(object)
-            
-            PC1 <- paste("Dim.", axes[1], sep = "")
-            PC2 <- paste("Dim.", axes[2], sep = "")
-            
-            if (PC1 == PC2) PC2 <- PC1 + 1
-            
-            score <- metadata(object)$PCAlist[[raw]]$ind$coord[, axes] %>% 
-              as.data.frame() %>%
-              mutate(samples = row.names(.)) %>% 
-              right_join(., ExpDesign, by = "samples")
-            
-            var1 <- round(metadata(object)$PCAlist[[raw]]$eig[axes, 2][1], digits = 3)
-            var2 <- round(metadata(object)$PCAlist[[raw]]$eig[axes, 2][2], digits = 3)
-            
-            omicsType <- getOmicsTypes(object)
-            
-            switch(raw,
-                   "raw"  = {
-                     title <- paste0("Raw ", omicsType, " data")
-                   },
-                   "norm" = {
-                     title <- switch (
-                       omicsType,
-                       "RNAseq" = {
-                         paste0(
-                           "Filtred and normalized ",
-                           omicsType,
-                           " data (",
-                           getNormSettings(object)$method,
-                           ")"
-                         )
-                       },
-                       "proteomics" = {
-                         paste0(
-                           "Transformed and normalized ",
-                           omicsType,
-                           " data (",
-                           getTransSettings(object)$method,
-                           " - norm: ",
-                           getNormSettings(object)$method,
-                           ")"
-                         )
-                       },
-                       "metabolomics" = {
-                         paste0(
-                           "Transformed and normalized ",
-                           omicsType,
-                           " data (",
-                           getTransSettings(object)$method,
-                           " - norm: ",
-                           getNormSettings(object)$method,
-                           ")"
-                         )
-                       }
-                     )
-                   })
-            
-            
-            
-            p <- ggplot(score,
-                        aes_string(x = PC1, y = PC2, color = groupColor))  +
-              geom_point(size = 2) +
-              geom_text(
-                aes(label = samples),
-                size = 2,
-                vjust = "inward",
-                hjust = "inward"
-              ) +
-              xlab(paste(PC1, " (", var1, "%)", sep =
-                           "")) +
-              ylab(paste(PC2, " (", var2, "%)", sep =
-                           "")) +
-              geom_hline(yintercept = 0,
-                         linetype = "dashed",
-                         color = "red") +
-              geom_vline(xintercept = 0,
-                         linetype = "dashed",
-                         color = "red") +
-              theme(
-                strip.text.x =  element_text(size = 8, 
-                                             face = "bold.italic"),
-                strip.text.y =  element_text(size = 8, 
-                                             face = "bold.italic")
-              ) +
-              ggtitle(title)
-            
-            # ellipse corr
-            aa <- select(score, all_of(groupColor), PC1, PC2)
-            bb <- coord.ellipse(aa, bary = TRUE)
-            p <- p + geom_polygon(
-              data = bb$res,
-              aes_string(x = PC1, y = PC2, fill = groupColor),
-              show.legend = FALSE,
-              alpha = 0.1
-            )
-            
-            return(p)
-            
-          })
+setMethod(
+  f          = "plotOmicsPCA",
+  signature  = "RflomicsSE",
+  definition = function(object,
+                        raw = c("raw", "norm"),
+                        axes = c(1, 2),
+                        groupColor = "groups") 
+  {
+    
+    # define pca axis
+    if (length(axes) != 2)
+      stop("PCA axes must be a vector of length 2")
+    
+    PC1 <- paste("Dim.", axes[1], sep = "")
+    PC2 <- paste("Dim.", axes[2], sep = "")
+    
+    if (PC1 == PC2) PC2 <- PC1 + 1
+    
+    
+    # get labels
+    log <- ifelse(getOmicsTypes(object) == "RNAseq", TRUE, FALSE)
+    if(raw != "raw")
+      object <- getProcessedData(object, norm = TRUE, log = log)
+    else
+      object <- getProcessedData(object, log = log)
+    
+    labels <- getLabs4plot(object)
+    
+    # get pca score
+    ExpDesign <- getDesignMat(object)
+    score <- as.data.frame(metadata(object)$PCAlist[[raw]]$ind$coord[, axes])
+    score$samples <- row.names(score)
+    score <- right_join(score, ExpDesign, by = "samples")
+    
+    var1 <- round(metadata(object)$PCAlist[[raw]]$eig[axes, 2][1], digits = 3)
+    var2 <- round(metadata(object)$PCAlist[[raw]]$eig[axes, 2][2], digits = 3)
+    
+    
+    
+    p <- ggplot(score, aes_string(x = PC1, y = PC2, color = groupColor))  +
+      geom_point(size = 2) +
+      geom_text(aes(label = samples), 
+                size = 2, vjust = "inward", hjust = "inward") +
+      xlab(paste(PC1, " (", var1, "%)", sep = "")) +
+      ylab(paste(PC2, " (", var2, "%)", sep = "")) +
+      geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+      geom_vline(xintercept = 0, linetype = "dashed", color = "red") +
+      theme(
+        strip.text.x =  element_text(size = 8, face = "bold.italic"),
+        strip.text.y =  element_text(size = 8, face = "bold.italic")
+      ) +
+      ggtitle(labels$title)
+    
+    # ellipse corr
+    aa <- select(score, all_of(groupColor), PC1, PC2)
+    bb <- coord.ellipse(aa, bary = TRUE)
+    p <- p + geom_polygon(
+      data = bb$res,
+      aes_string(x = PC1, y = PC2, fill = groupColor),
+      show.legend = FALSE,
+      alpha = 0.1
+    )
+    
+    return(p)
+  })
 
 #' @rdname runDataProcessing
 #' @name plotOmicsPCA
@@ -1302,7 +1447,8 @@ setMethod(f         = "plotExpDesignCompleteness",
           definition <- function(object, sampleList=NULL){
             
             # reduce object to sample list
-            object <- runSampleFiltering(object, samples = sampleList)
+            if(!is.null(sampleList))
+              object <- object[,sampleList]
             
             check <- checkExpDesignCompleteness(object)
             

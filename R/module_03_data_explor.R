@@ -1,5 +1,3 @@
-
-
 ##########################################
 # Part3 : Data Exploratory & Pre-processing
 ##########################################
@@ -87,28 +85,29 @@ QCNormalizationTabUI <- function(id) {
       )
     )
   ),
-  fluidRow(column(
-    4,
-    box(
-      width = 14,
-      title = span(tagList(icon("sliders-h"), "  ", "Setting")),
-      status = "warning",
-      uiOutput(ns("selectSamplesUI")),
-      plotOutput(ns("completenessUI")),
-      hr(),
-      uiOutput(ns("paramUI"))
+  fluidRow(
+    column(
+      width = 4,
+      box(
+        width = 14,
+        title = span(tagList(icon("sliders-h"), "  ", "Setting")),
+        status = "warning",
+        uiOutput(ns("selectSamplesUI")),
+        plotOutput(ns("completenessUI")),
+        hr(),
+        uiOutput(ns("paramUI"))
+      ),
+      fluidRow(uiOutput(ns(
+        "filtSummary1UI"
+      ))),
+      fluidRow(uiOutput(ns(
+        "filtSummary2UI"
+      )))
     ),
-    fluidRow(uiOutput(ns(
-      "filtSummary1UI"
-    ))),
-    fluidRow(uiOutput(ns(
-      "filtSummary2UI"
-    )))
-  ),
-  
-  column(8, uiOutput(
-    ns("tabPanelUI")
-  ))))
+    
+    column(8, uiOutput(
+      ns("tabPanelUI")
+    ))))
 }
 
 
@@ -119,10 +118,11 @@ QCNormalizationTab <-
            session,
            dataset,
            rea.values) {
+    
     #---- sample list----
     output$selectSamplesUI <- renderUI({
       sampleList <-
-        colnames(session$userData$FlomicsMultiAssay[[paste0(dataset, ".raw")]])
+        colnames(session$userData$FlomicsMultiAssay[[dataset]])
       pickerInput(
         inputId  = session$ns("selectSamples"),
         label    = .addBSpopify(label = 'Samples list:', 
@@ -142,7 +142,7 @@ QCNormalizationTab <-
     #---- Completeness----
     output$completenessUI <- renderPlot({
       plotExpDesignCompleteness(
-        object = session$userData$FlomicsMultiAssay[[paste0(dataset, ".raw")]],
+        object = session$userData$FlomicsMultiAssay[[dataset]],
         sampleList = input$selectSamples
       )
     })
@@ -224,7 +224,7 @@ QCNormalizationTab <-
       )
       
       switch(
-        getOmicsTypes(session$userData$FlomicsMultiAssay[[paste0(dataset, ".raw")]]),
+        getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
         "RNAseq"       = {
           paramRNAseq.list
         },
@@ -248,7 +248,7 @@ QCNormalizationTab <-
     #---- dataset filtering summary----
     output$filtSummary1UI <- renderUI({
       SE.data  <-
-        session$userData$FlomicsMultiAssay[[paste0(dataset, ".raw")]]
+        session$userData$FlomicsMultiAssay[[dataset]]
       
       tagList(
         box(
@@ -299,7 +299,7 @@ QCNormalizationTab <-
         return()
       
       MAE.data <- session$userData$FlomicsMultiAssay
-      SE.data <- MAE.data[[paste0(dataset, ".raw")]]
+      SE.data <- MAE.data[[dataset]]
       
       tabPanel.default.list <- list(
         tabPanel(
@@ -392,7 +392,7 @@ QCNormalizationTab <-
     # library size plot only for RNAseq data
     output$LibSizeUI <- renderUI({
       plot <- renderPlot(
-        plotLibrarySize(session$userData$FlomicsMultiAssay[[paste0(dataset, ".raw")]], raw = TRUE))
+        plotLibrarySize(session$userData$FlomicsMultiAssay[[dataset]], raw = TRUE))
       
       if (rea.values[[dataset]]$process != FALSE) {
         plot <- list(renderPlot(
@@ -407,7 +407,7 @@ QCNormalizationTab <-
     output$boxplotUI <- renderUI({
       plot <- renderPlot(
         plotDataDistribution(
-          session$userData$FlomicsMultiAssay[[paste0(dataset, ".raw")]],
+          session$userData$FlomicsMultiAssay[[dataset]],
           plot = "boxplot",
           raw = TRUE
         )
@@ -429,7 +429,7 @@ QCNormalizationTab <-
     output$CountDistUI <- renderUI({
       plot <- renderPlot(
         plotDataDistribution(
-          session$userData$FlomicsMultiAssay[[paste0(dataset, ".raw")]],
+          session$userData$FlomicsMultiAssay[[dataset]],
           plot = "density",
           raw = TRUE
         )
@@ -484,7 +484,7 @@ QCNormalizationTab <-
       condGroup <- input$PCA.factor.condition
       
       plotOmicsPCA(
-        session$userData$FlomicsMultiAssay[[paste0(dataset, ".raw")]],
+        session$userData$FlomicsMultiAssay[[dataset]],
         raw = "raw",
         axes = c(PC1.value, PC2.value),
         groupColor = condGroup
@@ -523,7 +523,7 @@ QCNormalizationTab <-
       # check completeness for curent dataset
       completeCheckRes <-
         checkExpDesignCompleteness(
-          session$userData$FlomicsMultiAssay[[paste0(dataset, ".raw")]],
+          session$userData$FlomicsMultiAssay[[dataset]],
           sampleList = input$selectSamples)
       
       if (isTRUE(completeCheckRes[["error"]])) {
@@ -537,23 +537,22 @@ QCNormalizationTab <-
       
       # get parameters
       switch(
-        getOmicsTypes(session$userData$FlomicsMultiAssay[[paste0(dataset,".raw")]]),
-             "RNAseq" = {
-               param.list <- list(
-                 Filter_Strategy = input$Filter_Strategy,
-                 CPM_Cutoff = input$FilterSeuil,
-                 NormMethod = input$selectNormMethod
-               )
-             },
-             {
-               param.list <- list(
-                 transform_method = input$dataTransform,
-                 NormMethod = input$selectProtMetNormMethod
-               )
-             })
+        getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
+        "RNAseq" = {
+          param.list <- list(
+            Filter_Strategy = input$Filter_Strategy,
+            CPM_Cutoff = input$FilterSeuil,
+            NormMethod = input$selectNormMethod
+          )
+        },
+        {
+          param.list <- list(
+            transform_method = input$dataTransform,
+            NormMethod = input$selectProtMetNormMethod
+          )
+        })
       param.list <-
         c(param.list, list(samples = input$selectSamples))
-      
       
       if (check_run_process_execution(
         session$userData$FlomicsMultiAssay,
@@ -574,7 +573,7 @@ QCNormalizationTab <-
       # re-initialize list of diff analized dataset
       # rea.values$datasetProcess <- NULL
       # rea.values$datasetDiff <- NULL
-      
+
       # remove integration analysis
       session$userData$FlomicsMultiAssay <-
         resetRflomicsMAE(session$userData$FlomicsMultiAssay,
@@ -592,7 +591,7 @@ QCNormalizationTab <-
           normMethod = param.list[["NormMethod"]],
           transformMethod = param.list[["transform_method"]]
         )
-      
+
       rea.values[[dataset]]$process <- TRUE
       
       # re-initialize list of diff analized dataset
@@ -611,7 +610,7 @@ QCNormalizationTab <-
       rea.values$datasetCoExAnnot <-
         getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
                                 analyses = "CoExpEnrichAnal")
-      
+
     }, ignoreInit = TRUE)
     
     return(input)
@@ -624,37 +623,50 @@ QCNormalizationTab <-
 # ----- check run norm execution ------
 check_run_process_execution <-
   function(object.MAE, dataset, param.list = NULL) {
-    if (!dataset %in% names(object.MAE))
-      return(TRUE)
     
     SE <- object.MAE[[dataset]]
     
-    if (!dplyr::setequal(SE$samples, param.list$samples))
+    # check filtred samples
+    samples <- 
+      setdiff(
+        SE$samples, 
+        getAnalysis(SE, 
+                   name = "DataProcessing", 
+                   subName = "sampleFiltering")$filteredSamples)
+    
+    if (!dplyr::setequal(samples, param.list$samples))
       return(TRUE)
     
     switch(
-      getOmicsTypes(object.MAE[[dataset]]),
+      getOmicsTypes(SE),
       "RNAseq" = {
         # filtering setting
-        if (param.list$Filter_Strategy != getFilterSettings(SE)$filterStrategy)
+        if (is.null(getFilterSettings(SE)$filterStrategy) || 
+            param.list$Filter_Strategy != getFilterSettings(SE)$filterStrategy)
           return(TRUE)
-        if (param.list$CPM_Cutoff      != getFilterSettings(SE)$cpmCutoff)
+        if (is.null(getFilterSettings(SE)$cpmCutoff) ||
+            param.list$CPM_Cutoff != getFilterSettings(SE)$cpmCutoff)
           return(TRUE)
         
         # normalisation setting
-        if (param.list$NormMethod      != getNormSettings(SE)$method)
+        if (is.null(getNormSettings(SE)$method) ||
+            param.list$NormMethod != getNormSettings(SE)$method)
           return(TRUE)
       },
       "proteomics" = {
-        if (param.list$transform_method != getTransSettings(SE)$method)
+        if (is.null(getTransSettings(SE)$method) ||
+            param.list$transform_method != getTransSettings(SE)$method)
           return(TRUE)
-        if (param.list$NormMethod       != getNormSettings(SE)$method)
+        if (is.null(getNormSettings(SE)$method) ||
+            param.list$NormMethod != getNormSettings(SE)$method)
           return(TRUE)
       },
       "metabolomics" = {
-        if (param.list$transform_method != getTransSettings(SE)$method)
+        if (is.null(getTransSettings(SE)$method) ||
+            param.list$transform_method != getTransSettings(SE)$method)
           return(TRUE)
-        if (param.list$NormMethod       != getNormSettings(SE)$method)
+        if (is.null(getNormSettings(SE)$method) ||
+            param.list$NormMethod != getNormSettings(SE)$method)
           return(TRUE)
       }
     )

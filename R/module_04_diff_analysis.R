@@ -624,7 +624,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                     column(
                       width = 9,
                       renderPlot({
-                        plotBoxplotDE(object=dataset.SE, features=input[[paste0(vect["contrastName"], "-DE")]], 
+                        plotBoxplotDE(object=dataset.SE, featureName=input[[paste0(vect["contrastName"], "-DE")]], 
                                       groupColor=input[[paste0(vect["contrastName"], "-DEcondition")]]) })
                     )
                   )

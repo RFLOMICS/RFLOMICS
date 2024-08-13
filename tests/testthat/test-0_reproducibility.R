@@ -20,9 +20,9 @@ MAE <- RFLOMICS::createRflomicsMAE(
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
   factorInfo  = factorInfo)
 
-SE <- getRflomicsSE(MAE, "RNAtest.raw")
+SE <- getRflomicsSE(MAE, "RNAtest")
 
-sampleToKeep <- colnames(MAE[["protetest.raw"]])[-7]
+sampleToKeep <- colnames(MAE[["protetest"]])[-7]
 
 # ---- check design ----
 

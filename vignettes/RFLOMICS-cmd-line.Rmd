@@ -1,0 +1,179 @@
+---
+title: "RFLOMICS"
+output: 
+  BiocStyle::html_document:
+        toc: true
+        toc_depth : 2
+        number_sections: true
+package: RFLOMICS
+vignette: >
+%\VignetteIndexEntry{RFLOMICS-cmd-line}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+  
+  
+  abstract: > 
+  Ecoseed...
+  ---
+  
+  
+  ```{r, include = FALSE}
+  knitr::opts_chunk$set(
+  eval = FALSE,
+  collapse = TRUE, 
+  comment = "#>"
+  )
+  ```
+  
+  # Create RFLOMICS object
+  
+  ```{r, eval=FALSE}
+  library(RFLOMICS)
+data("ecoseed")
+```
+
+## Load data
+```{r}
+# create rflomicsMAE object with ecoseed data
+MAE <- createRflomicsMAE(
+  projectName = "Tests",
+  omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
+  omicsNames  = c("RNAtest", "metatest", "protetest"),
+  omicsTypes  = c("RNAseq","metabolomics","proteomics"),
+  ExpDesign   = ecoseed$design,
+  factorRef   = ecoseed$factorRef)
+```
+
+## Set statistical model
+```{r}
+## choice of model formulae
+formulae <- generateModelFormulae(MAE)
+
+MAE <- setModelFormula(MAE, modelFormula = formulae[[2]])
+```
+
+```{r}
+Contrasts.List <- generateExpressionContrast(MAE)
+## choice of hypothesis
+MAE <- setSelectedContrasts(MAE, contrastList = Contrasts.List$averaged)
+```
+
+## Data processing
+```{r}
+MAE <- runDataProcessing(MAE, SE.name = "RNAtest",
+                         lowCountFiltering_strategy = "NbReplicates",
+                         lowCountFiltering_CPM_Cutoff = 1,
+                         normMethod = "TMM",
+                         transformMethod = "none")
+
+samples <- 
+  colnames(MAE[[1]])[!stringr::str_detect(colnames(MAE[[1]]), pattern = "Elevated")]
+
+MAE <- runDataProcessing(MAE, SE.name = "RNAtest",
+                         samples = samples)
+
+MAE <- runDataProcessing(MAE, SE.name = "protetest")
+
+# MAE.proc <- MAE
+
+# MAE.proc[["RNAtest"]] <- getProcessedData(MAE[["RNAtest"]], filter = TRUE)
+
+
+# MAE <- getProcessedData(MAE, SE.name = "RNAtest", filter = TRUE)
+
+
+# MAE <- setSelectedSamples(MAE, SE.name = "RNAtest", samples = colnames(MAE[["RNAtest"]])[-1])
+# 
+# MAE <- filterLowAbundance(MAE, 
+#                           SE.name = "RNAtest", 
+#                           filterMethod = "CPM",
+#                           filterStrategy = "NbReplicates", 
+#                           cpmCutoff = 1)
+# 
+# MAE <- runNormalization(MAE, SE.name = "RNAtest", 
+#                         normMethod = "TMM")
+# 
+# MAE <- runOmicsPCA(MAE, SE.name = "RNAtest", ncomp = 5, raw = TRUE)
+
+```
+
+```{r, eval=FALSE}
+MAE <- runTransformData(MAE, SE.name = "metatest", 
+                        transformMethod = "log2")
+
+MAE <- runNormalization(MAE, SE.name = "metatest", 
+                        normMethod = "median")
+
+```
+
+
+```{r}
+plotLibrarySize(MAE, SE.name = "RNAtest",
+                raw = TRUE)
+
+plotLibrarySize(MAE, SE.name = "RNAtest",
+                raw = FALSE)
+```
+
+
+```{r}
+plotDataDistribution(MAE, SE.name = "RNAtest",
+                     raw = TRUE, plot = "density")
+
+plotDataDistribution(MAE, SE.name = "RNAtest",
+                     raw = FALSE, plot = "density")
+```
+
+```{r}
+
+plotOmicsPCA(MAE, SE.name = "RNAtest", groupColor = "imbibition",
+             raw = "raw")
+
+plotOmicsPCA(MAE, SE.name = "RNAtest", groupColor = "temperature",
+             raw = "norm")
+```
+
+
+## Diff analysis
+```{r}
+
+MAE <- runDiffAnalysis(MAE, SE.name = "RNAtest", cmd = TRUE)
+MAE <- filterDiffAnalysis(MAE, SE.name = "RNAtest", logFC.cutoff = 1)
+
+MAE <- runDiffAnalysis(MAE, SE.name = "protetest", cmd = TRUE)
+
+```
+
+```{r}
+plotDiffAnalysis(MAE, SE.name = "RNAtest",
+                 contrastName = "(temperatureMedium - temperatureLow) in mean")
+
+
+plotHeatmapDesign(MAE, SE.name = "RNAtest",
+                  contrastName = "(temperatureMedium - temperatureLow) in mean")
+
+plotBoxplotDE(MAE, SE.name = "RNAtest", featureName = "AT2G29090", raw = TRUE)
+plotBoxplotDE(MAE, SE.name = "RNAtest", featureName = "AT2G29090", raw = FALSE)
+```
+
+
+
+
+## Co-expression analysis
+
+
+## Enrichment analysis
+
+
+
+```{r}
+data.frame(MultiAssayExperiment::assay(MAE[["RNAtest"]]))
+SE.proc <- getProcessedData(MAE[["RNAtest"]], norm= TRUE, log = TRUE)
+data.frame(SummarizedExperiment::assay(SE.proc))
+```
+
+
+```{r}
+SE.proc <- getProcessedData(MAE[[2]], filter= TRUE)
+```
+

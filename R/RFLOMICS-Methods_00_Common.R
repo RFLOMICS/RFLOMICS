@@ -22,63 +22,95 @@
 #' @return An object of class \link{RflomicsMAE-class}
 #' @noRd
 #' @keywords internal
-setMethod(f = "resetRflomicsMAE", 
-          signature = "RflomicsMAE",
-          definition = function(object,
-                                singleAnalyses = NULL, 
-                                multiAnalyses  = NULL,
-                                datasetNames   = NULL) {
-            
-            all.datasets <- getDatasetNames(object)
-            
-            if(!is.null(datasetNames)) {
-              datasetNames <- intersect(datasetNames, all.datasets)
-              if(length(datasetNames) == 0) stop("")
-            }
-            
-            if(is.null(datasetNames) && is.null(singleAnalyses) && is.null(multiAnalyses)) stop("")
-            
-            # if analyses is null and datasetNames not null -> remove 
-            if(is.null(singleAnalyses)){
-              
-              if(!is.null(datasetNames)){
+setMethod(
+  f = "resetRflomicsMAE", 
+  signature = "RflomicsMAE",
+  definition = function(object,
+                        singleAnalyses = NULL, 
+                        multiAnalyses  = NULL,
+                        datasetNames   = NULL) 
+  {
+    
+    #default values
+    all.datasets <- getDatasetNames(object)
+    all.singleAnalyses <- c("DataProcessing",
+                            "DiffExpAnal",
+                            "DiffExpEnrichAnal",
+                            "CoExpAnal",
+                            "CoExpEnrichAnal")
+    all.multiAnalyses <- c("IntegrationAnalysis")
+    
+    if(is.null(datasetNames) && 
+       is.null(singleAnalyses) && 
+       is.null(multiAnalyses)) stop("")
+    
+    if(is.null(datasetNames) && 
+       !is.null(singleAnalyses)) stop("")
+    
+    # for specific datasets
+    if(!is.null(datasetNames)){
+      
+      datasetNames <- intersect(datasetNames, all.datasets)
+      if(length(datasetNames) == 0) stop("")
+      
+      if(is.null(singleAnalyses))
+        singleAnalyses <- all.singleAnalyses
+      
+      singleAnalyses <- intersect(singleAnalyses, all.singleAnalyses)
+      if(length(singleAnalyses) == 0) stop("")
+      
+      # reset SO analysis
+      for (data in datasetNames) {
+        
+        for (analysis in singleAnalyses) {
+          
+          object[[data]]@metadata[[analysis]] <- 
+            switch (
+              analysis,
+              "DataProcessing" = {
+                genes_flt0 <- 
+                  metadata(object[[data]])[["DataProcessing"]][["rowSumsZero"]]
                 
-                index <- names(object) %in% datasetNames
-                object <- object[,, !index]
-                
+                list(
+                  rowSumsZero      = genes_flt0,
+                  sampleFiltering  = list(setting  = NULL, 
+                                          results  = list(filteredSamples=NULL),
+                                          filtered = FALSE), 
+                  featureFiltering = list(setting  = NULL, 
+                                          results  = list(filteredFeatures=NULL),
+                                          filtered = FALSE), 
+                  Normalization    = list(setting  = list(method = NULL), 
+                                          results  = NULL,  
+                                          normalized = FALSE), 
+                  Transformation   = list(setting  = list(method = NULL), 
+                                          results  = NULL,  
+                                          transformed = FALSE),
+                  log = NULL)
+              },
+              {
+                list()
               }
-            }
-            else{
-              
-              # if dataset is null we take all datasets 
-              # present in RflomicsMAE object
-              if (is.null(datasetNames)) {
-                datasetNames <- getDatasetNames(object)
-              }
-              
-              for (data in datasetNames) {
-                
-                for (analysis in singleAnalyses) {
-                  
-                  if(!is.null(object[[data]]@metadata[[analysis]])){
-                    object[[data]]@metadata[[analysis]] <- list()
-                  }
-                }
-              }
-            }
-            
-            if(!is.null(multiAnalyses)){
-              
-              for (analysis in multiAnalyses) {
-                
-                if(!is.null(object@metadata[[analysis]])){
-                  object@metadata[[analysis]] <- list()
-                }
-              }
-            }
-            
-            return(object)
-          })
+            )
+        }
+      }
+      
+      # reset MO analysis
+      multiAnalyses <- all.multiAnalyses
+    }
+    
+    # reset multi-omics analysis 
+    if(!is.null(multiAnalyses)){
+      
+      multiAnalyses <- intersect(multiAnalyses, all.multiAnalyses)
+      if(length(multiAnalyses) == 0) stop("")
+      
+      for (analysis in multiAnalyses) {
+        object@metadata[[analysis]] <- list()
+      }
+    }
+    
+    return(object)
+  })
 
 
 # ---- generateReport ----
@@ -366,3 +398,62 @@ setMethod(
   }
 )
 
+
+## ---- getLabs4plot ----
+#' @title getLabs4plot
+#' @description get title, x label, y label for plot
+#' @param object An object of class \link{RflomicsSE} or
+#' \link{RflomicsMAE-class}. It is expected the SE object is produced by
+#' rflomics previous analyses, as it relies on their results.. 
+#' @param log .
+#' @param processedData .
+#' @param filtredData .
+#' @return list of strings
+#' @keywords internal
+#' @noRd
+setMethod(
+  f = "getLabs4plot",
+  signature = "RflomicsSE",
+  definition = function(object,
+                        ...) {
+    
+    labels <- list()
+    omicsType <- getOmicsTypes(object)
+    
+    title <- NULL
+    x_lab <- paste0(omicsType, " data")
+    
+    if(.isFiltered(object))
+      title <- c(title, 
+                 paste0("filtred (", 
+                        getFilterSettings(object)$method,")"))
+    
+    if(.isTransformed(object))
+      title <- c(title, 
+                 paste0("transformed (", 
+                        getTransSettings(object)$method, ")"))
+    
+    if(.isNorm(object))
+      title <- c(title, 
+                 paste0("normalized (", 
+                        getNormSettings(object)$method, ")"))
+    
+    
+    if(!is.null(title)){
+      title <- paste0(names(omicsType), ": ", 
+                      paste(title, collapse = " and "), " ", 
+                      omicsType, " data")
+    } else {
+      title <- paste0(names(omicsType), ": ", 
+                      "raw ", omicsType, " data")
+    }
+    
+    if (!is.null(object@metadata$DataProcessing$log)) {
+      x_lab <- paste0(object@metadata$DataProcessing$log, "(", omicsType, " data)")
+    }
+    
+    labels$title <- title
+    labels$x_lab <- x_lab
+    
+    return(labels)
+  })

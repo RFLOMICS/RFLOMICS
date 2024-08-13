@@ -16,13 +16,20 @@
 #'
 
 .applyTransformation <- function(object) {
+  
   if (is.null(getTransSettings(object)$method)) {
-    stop("Expect transformation method.")
+    warning("Expect transformation method.")
+    return(object)
   }
   
   if (.isTransformed(object)) {
     warning("Data were already transformed before!")
+    return(object)
   }
+  
+  transformation.res <- getAnalysis(object,
+                                    name = "DataProcessing", 
+                                    subName = "Transformation")
   
   transform_method <- getTransSettings(object)$method
   assayTransform <- assay(object, withDimnames = TRUE)
@@ -52,7 +59,13 @@
          } # default is none
   )
   
-  if (transform_method != "none" && validTransform) object@metadata[["DataProcessing"]][["Transformation"]][["transformed"]] <- TRUE
+  if (transform_method != "none" && validTransform)
+    transformation.res[["transformed"]] <- TRUE
+  
+  object <- setElementToMetadata(object, 
+                                 name = "DataProcessing", 
+                                 subName = "Transformation", 
+                                 content = transformation.res)
   
   return(object)
 }
@@ -70,13 +83,20 @@
 #'
 
 .applyNorm <- function(object) {
+  
   if (is.null(getNormSettings(object)$method)) {
-    stop("Expects normalization method.")
+    warning("Expects normalization method.")
+    return(object)
   }
   
   if (.isNorm(object)) {
     warning("Data were already normalized before!")
+    return(object)
   }
+  
+  normalization.res <- getAnalysis(object,
+                                   name = "DataProcessing", 
+                                   subName = "Normalization")
   
   norm_method <- getNormSettings(object)$method
   coefNorm <- getCoeffNorm(object)
@@ -93,7 +113,9 @@
          },
          "TMM" = {
            scales_factors <- coefNorm$norm.factors * coefNorm$lib.size
-           assay(object) <- scale(assayTransform + 1, center = FALSE, scale = scales_factors)
+           assay(object) <- scale(assayTransform + 1, 
+                                  center = FALSE, 
+                                  scale = scales_factors)
          },
          "none" = {
            assay(object) <- assayTransform
@@ -105,10 +127,91 @@
          }
   )
   
-  if (norm_method != "none" && validNorm) object@metadata[["DataProcessing"]][["Normalization"]][["normalized"]] <- TRUE
+  if (norm_method != "none" && validNorm) 
+    normalization.res[["normalized"]] <- TRUE
+  
+  object <- setElementToMetadata(object, 
+                                 name = "DataProcessing", 
+                                 subName = "Normalization", 
+                                 content = normalization.res)
+  return(object)
+}
+
+
+######## INTERNAL - Filtred the Data ###########
+
+# .applyFiltering: apply the normalization method stored in object@metadata[["Normalization"]] and modify the assay.
+#' @title .applyFiltering
+#'
+#' @param object An object of class \link{RflomicsSE}
+#' @description apply the filtering to the assay. Usually.
+#' @keywords internal
+#' @noRd
+#'
+
+.applyFiltering <- function(object) {
+  
+  # apply low count filtering
+  if(is.null(getFilterSettings(object)$method)){
+    return(object)
+  }
+  
+  if (.isFiltered(object)) {
+    warning("Data were already filtred before!")
+    return(object)
+  }
+  
+  
+  filtering.res <- 
+    getAnalysis(object, 
+                name = "DataProcessing", 
+                subName = "featureFiltering")
+  
+  filteredFeatures <- getFilteredFeatures(object)
+  if(!is.null(filteredFeatures)){
+    object <- 
+      object[setdiff(names(object), filteredFeatures)]
+    
+    filtering.res[["filtered"]] <- TRUE
+  }
+  
+  object <- setElementToMetadata(object, 
+                                 name    = "DataProcessing", 
+                                 subName = "featureFiltering", 
+                                 content = filtering.res)
+  return(object)
+}
+
+
+#' @title .applyLog
+#'
+#' @param object An object of class \link{RflomicsSE}
+#' @param log log type
+#' @description apply the log to the assay. Usually.
+#' @keywords internal
+#' @noRd
+#'
+.applyLog <- function(object, log = "log2") {
+  
+  if(getOmicsTypes(object) != "RNAseq")
+    return(object)
+  
+  assay(object) <- 
+    switch(log,
+           "log2" = {
+             if(.isNorm(object))
+               log2(assay(object))
+             else
+               log2(assay(object) + 1)
+           }
+    )
+  
+  metadata(object)[["DataProcessing"]][["log"]] <- "log2"
   
   return(object)
 }
+
+
 
 ######## INTERNAL - Check, transform and normalize the data ###########
 
@@ -142,7 +245,8 @@
            "RNAseq" = {
              # Really depends if TMM is the normalization or not.
              # Make it easier: force TMM and log2.
-             if (.isTransformed(object)) stop("Expect untransformed RNAseq data at this point.")
+             if (.isTransformed(object)) 
+               stop("Expect untransformed RNAseq data at this point.")
              
              if (.isNorm(object)) {
                switch(getNormSettings(object)$method, 
@@ -199,6 +303,10 @@
 #' @noRd
 #'
 
+.isFiltered <- function(object) {
+  metadata(object)[["DataProcessing"]][["featureFiltering"]][["filtered"]]
+}
+
 .isTransformed <- function(object) {
   metadata(object)[["DataProcessing"]][["Transformation"]][["transformed"]]
 }
@@ -226,17 +334,101 @@
 ######## INTERNAL
 
 #' @title .tmmNormalization
-#' Interface to the calcNormFactors function of the edgeR package  with the choosen TMM parameters as the normalization method
-#' @param counts numeric matrix of read counts
-#' @param groups vector or factor giving the experimental group/condition for each sample/library.
-#' @return a data.frame with a row for each sample and columns group, lib.size and norm.factors containing the group labels, library sizes and normalization factors. Other columns can be optionally added to give more detailed sample information.
+#' Interface to the calcNormFactors function of the edgeR package  with the 
+#' choosen TMM parameters as the normalization method
+#' @param object rflomicsSE object
+#' @return a data.frame with a row for each sample and columns group, lib.size 
+#' and norm.factors containing the group labels, library sizes and normalization 
+#' factors. Other columns can be optionally added to give more detailed sample 
+#' information.
 #' @keywords internal
 #' @importFrom edgeR DGEList calcNormFactors
 #' @noRd
 
-.tmmNormalization <- function(counts, groups){
-  dge <- edgeR::DGEList(counts=counts, group=groups)
+.tmmNormalization <- function(object){
+  
+  groups <- getDesignMat(object)
+  counts <- assay(object)
+  
+  dge <- edgeR::DGEList(counts=counts, group=groups$groups)
   dge <- edgeR::calcNormFactors(dge,method="TMM")
   nf  <- dge$samples
   return(nf)
+}
+
+
+#' @title .medianNormalization
+#' Interface to calculate the median normalization coefficient 
+#' @param object rflomicsSE object
+#' @return a data.frame with a row for each sample and columns group, lib.size 
+#' and norm.factors containing the group labels, library sizes and normalization 
+#' factors. Other columns can be optionally added to give more detailed sample 
+#' information.
+#' @keywords internal
+#' @importFrom stats median
+#' @noRd
+
+.medianNormalization <- function(object){
+  
+  coef <- 
+    apply(assay(object), 2, FUN = function(sample_vect) {median(sample_vect)})
+  
+  return(coef)
+}
+
+#' @title .totalSumNormalization
+#' Interface to calculate the totalSum normalization coefficient 
+#' @param object rflomicsSE object
+#' @return a data.frame with a row for each sample and columns group, lib.size 
+#' and norm.factors containing the group labels, library sizes and normalization 
+#' factors. Other columns can be optionally added to give more detailed sample 
+#' information.
+#' @keywords internal
+#' @noRd
+
+.totalSumNormalization <- function(object){
+  
+  coef <- 
+    apply(assay(object), 2, FUN = function(sample_vect) {sum(sample_vect^2)})
+  
+  return(coef)
+}
+
+#' @title .updateColData
+#' @param object rflomicsSE object
+#' @return object rflomicsSE object
+#' @keywords internal
+#' @noRd
+.updateColData <- function(object){
+  
+  colData.df <- colData(object)
+  
+  for (factor in c(getBioFactors(object), getBatchFactors(object))){
+    
+    # if only one category remains after the filter, it's will be removed
+    if (length(unique(colData.df[[factor]])) <= 1 ) {
+      colData.df[[factor]] <- NULL
+      factor.types <- getFactorTypes(object)
+      metadata(object)$design$factorType <- 
+        factor.types[which(names(factor.types) != factor)]
+      # replace with setFactorTypes
+    }
+    else{
+      F.levels <- levels(colData.df[[factor]])
+      colData.df[[factor]] <- 
+        factor(colData.df[[factor]], 
+               levels = intersect(F.levels, unique(colData.df[[factor]])))
+    }
+  }
+  colData <- as.data.frame(colData.df)
+  order_levels <- 
+    with(colData, 
+         do.call(order, 
+                 colData[c(getBioFactors(object), getBatchFactors(object))]))
+  object$samples <- 
+    factor(object$samples, levels = unique(object$samples[order_levels]))
+  object$groups  <- 
+    factor(object$groups, levels = unique(object$groups[order_levels]))
+  
+  return(object)
 }

@@ -236,7 +236,7 @@ createRflomicsMAE <- function(projectName = NULL,
   
   # tag as raw data (le temps de trouver une solution pour 
   # ne pas faire co-exister les raw et les process)
-  names(RfMAE) <- paste(names(RfMAE), "raw", sep = ".")
+  # names(RfMAE) <- paste(names(RfMAE), "raw", sep = ".")
   
   return(RfMAE)
 }
@@ -349,23 +349,27 @@ createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
   colData$samples <- factor(colData$samples, levels = unique(colData$samples[order_levels]))
   colData$groups  <- factor(colData$groups,  levels = unique(colData$groups[order_levels]))
   
-  # metadata <- list(omicType = omicType,
-  #                  design = list(factorType = design[intersect(names(design), names(colData))]), 
-  #                  DataProcessing = list(rowSumsZero = genes_flt0,
-  #                                        Filtering = NULL, 
-  #                                        Normalization =  list(setting = list(method = "none"), results = NULL,  normalized = FALSE), 
-  #                                        Transformation = list(setting = list(method = "none"), results = NULL,  transformed = FALSE)
-  #                  ))
+  dataProcessing <- 
+    list(rowSumsZero      = genes_flt0,
+         selectedSamples  = colData$samples, 
+         featureFiltering = list(setting  = NULL, 
+                                 results  = list(filteredFeatures=NULL),
+                                 filtered = FALSE), 
+         Normalization    = list(setting  = list(method = NULL), 
+                                 results  = NULL,  
+                                 normalized = FALSE), 
+         Transformation   = list(setting  = list(method = NULL), 
+                                 results  = NULL,  
+                                 transformed = FALSE),
+         log = NULL)
   
-  rflomicsSE <- RflomicsSE(assays = matrix.filt, 
-                           colData = DataFrame(colData), 
-                           omicType = omicType,
-                           design = list(factorType = design[intersect(names(design), names(colData))]),
-                           DataProcessing = list(rowSumsZero = genes_flt0,
-                                                 Filtering = NULL, 
-                                                 Normalization =  list(setting = list(method = "none"), results = NULL,  normalized = FALSE), 
-                                                 Transformation = list(setting = list(method = "none"), results = NULL,  transformed = FALSE))
-  )
+  rflomicsSE <- 
+    RflomicsSE(assays = matrix.filt, 
+               colData = DataFrame(colData), 
+               omicType = omicType,
+               design = 
+                 list(factorType = design[intersect(names(design), names(colData))]),
+               DataProcessing = dataProcessing)
   return(rflomicsSE)
 }
 
