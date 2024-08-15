@@ -22,7 +22,6 @@
 #' @aliases ecoseed
 #' @docType data
 #' @usage data("ecoseed")
-#' @details
 #' @keywords datasets
 #' @references FP7-KBBE; Impacts of Environmental Conditions on Seed Quality
 #' @examples
@@ -38,7 +37,7 @@
 #' ecoseed.mae
 #' 
 #' # An overview of the datasets contained in this package can be found in the vignette "Input Data".
-"ecoseed"
+NULL
 
 #' @name ecoseed.df
 #' @description 
@@ -53,7 +52,6 @@
 #'  }
 #'      
 #' @rdname ecoseed
-#' @aliases ecoseed.df
 "ecoseed.df"
 
 #' @name ecoseed.mae
@@ -74,5 +72,4 @@
 #'  }
 #'      
 #' @rdname ecoseed
-#' @aliases ecoseed.mae
 "ecoseed.mae"
