@@ -448,10 +448,6 @@ Ecoseed data can be accessed using the following command:
 data("ecoseed")
 ```
 
-```{r}
-names(ecoseed)
-```
-
 ## Create a RflomicsMAE object
 
 The first step is to create the object containing all the data that can be 
@@ -461,20 +457,20 @@ information for each factor: the type (biological, batch or meta-factor) and a
 reference level, all in the form of data.frames. 
 The reference level must be set with a particular care, as it will be used to
 define all contrasts in the differential analysis. 
-All you need is contained in the ecoseed object:
 
 ```{r}
-ecoseed$factorRef
+factorInfo <- data.frame(
+  "factorName"   = c("Repeat", "temperature", "imbibition"),
+  "factorType"   = c("batch", "Bio", "Bio")
+)
 ```
 
 ```{r createRMAE}
 testObject <- createRflomicsMAE(
   projectName = "VignetteProject",
-  omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
-  omicsNames  = c("RNAtest", "metatest", "protetest"),
-  omicsTypes  = c("RNAseq","metabolomics","proteomics"),
-  ExpDesign   = ecoseed$design,
-  factorRef   = ecoseed$factorRef
+  omicsData   = ecoseed.mae,
+  omicsTypes  = c("RNAseq","proteomics","metabolomics"),
+  factorInfo  = factorInfo
 )
 ```
 

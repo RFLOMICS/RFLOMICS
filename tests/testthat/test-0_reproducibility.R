@@ -8,17 +8,21 @@ library(RFLOMICS)
 # load ecoseed data
 data(ecoseed)
 
+factorInfo <- data.frame(
+  "factorName"   = c("Repeat", "temperature", "imbibition"),
+  "factorType"   = c("batch", "Bio", "Bio")
+)
+
 # create rflomicsMAE object with ecoseed data
-MAE <- createRflomicsMAE(
-    projectName = "Tests",
-    omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
-    omicsNames  = c("RNAtest", "metatest", "protetest"),
-    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
-    ExpDesign   = ecoseed$design,
-    factorRef   = ecoseed$factorRef)
+MAE <- RFLOMICS::createRflomicsMAE(
+  projectName = "Tests",
+  omicsData   = ecoseed.mae,
+  omicsTypes  = c("RNAseq","proteomics","metabolomics"),
+  factorInfo  = factorInfo)
 
 SE <- getRflomicsSE(MAE, "RNAtest.raw")
-sampleToKeep <- colnames(MAE[["protetest.raw"]])[-1]
+
+sampleToKeep <- colnames(MAE[["protetest.raw"]])[-7]
 
 # ---- check design ----
 
@@ -128,9 +132,9 @@ test_that("test getDatasetNames", {
 ## ---- getOmicsTypes ----
 test_that("test getOmicsTypes", {
     
-    exp.res <- c("RNAseq", "metabolomics", "proteomics")
-    names(exp.res) <- c("RNAtest", "metatest", "protetest")
-    expect_equal(getOmicsTypes(MAE), exp.res)
+    exp.res <- c("RNAseq", "proteomics", "metabolomics")
+    names(exp.res) <- c("RNAtest", "protetest", "metatest")
+    expect_equal(as.vector(getOmicsTypes(MAE)), as.vector(exp.res))
 })
 
 ## ---- colData ----
@@ -138,10 +142,10 @@ test_that("colData", {
     
     Repeat      <- factor(rep(c("rep1", "rep2", "rep3"), 9), 
                           levels =c("rep1", "rep2", "rep3"))
-    temperature <- factor(c(rep("Elevated", 9), rep("Low", 9), rep("Medium", 9)), 
+    imbibition  <- factor(c(rep("DS", 9), rep("EI", 9), rep("LI", 9)), 
+                          levels =c("DS", "EI", "LI"))    
+    temperature <- factor(rep(c(rep("Low",3), rep("Medium", 3), rep("Elevated", 3)), 3),  
                           levels =c("Low", "Medium", "Elevated"))
-    imbibition  <- factor(rep(c(rep("DS",3), rep("EI", 3), rep("LI", 3)), 3),  
-                          levels =c("DS", "EI", "LI"))
     Repeat      <- relevel(as.factor(Repeat),      ref="rep1")
     temperature <- relevel(as.factor(temperature), ref="Low")
     imbibition  <- relevel(as.factor(imbibition),  ref="DS")
@@ -178,7 +182,7 @@ test_that("colData", {
     
     rownames(colData) <- samples
     
-    expect_equal(as.data.frame(getDesignMat(MAE)), colData)
+    expect_equal(as.data.frame(getDesignMat(MAE)), as.data.frame(colData))
 })
 
 
@@ -306,7 +310,7 @@ test_that("data processing", {
     
     ## low count Filtering
     # remplacer par le bon getter
-    nb_lowGene <- length(MAE[["RNAtest"]]@metadata$DataProcessing$Filtering$results$filteredFeatures)
+    nb_lowGene <- length(getFilteredFeatures(MAE[["RNAtest"]]))
     expect_equal(nb_lowGene, 6725)
     expect_equal(MAE[["protetest"]]@metadata$DataProcessing$Filtering, NULL)
     expect_equal(MAE[["metatest"]]@metadata$DataProcessing$Filtering, NULL)

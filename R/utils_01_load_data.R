@@ -22,12 +22,13 @@
 #' from a list of omics datasets, a vector of dataset names, 
 #' a vector of omics types, and an experimental design.
 #' @param projectName Project name
-#' @param omicsData list of omics dataset.
+#' @param omicsData list of omics dataset, list of data.frame, matrix or 
+#' \link{SummarizedExperiment} objects, or \link{MultiAssayExperiment} object.
 #' @param omicsNames vector of dataset names.
 #' @param omicsTypes vector of dataset types: 
 #' "RNAseq", "metabolomics", "proteomics"
 #' @param ExpDesign a data.frame which describes the experimental design.
-#' @param factorRef a data.frame describing the experimental factors.
+#' @param factorInfo a data.frame describing the experimental factors.
 #' \itemize{
 #' \item factorName: factor names 
 #' \item factorRef: factor references 
@@ -40,122 +41,155 @@
 #' @rdname createRflomicsMAE
 #' @export
 #' @example inst/examples/loadData.R
-createRflomicsMAE <- function(projectName=NULL, omicsData=NULL, 
-                              omicsNames=NULL, omicsTypes=NULL, 
-                              ExpDesign=NULL, factorRef=NULL){
+createRflomicsMAE <- function(projectName = NULL, 
+                              omicsData   = NULL, 
+                              omicsNames  = NULL, 
+                              omicsTypes  = NULL, 
+                              ExpDesign   = NULL, 
+                              factorInfo  = NULL){
   
-  #check arg
-  ##projectName
+  # check arg
+  ## => projectName
   if(is.null(projectName)) stop("projectName is mandatory.")
-  projectName <- str_replace_all(string = projectName, pattern = "[# /-]", replacement = "")
+  projectName <- 
+    str_replace_all(string = projectName, pattern = "[# /-]", replacement = "")
   
-  ## omicsNames
-  if(is.null(omicsNames)) stop("list of omicsNames is mandatory.")
-  nb_omicsData <- length(omicsNames)
-  omicsNames <- str_replace_all(string = omicsNames, pattern = "[# /-]", replacement = "")
-  if (isTRUE(any(duplicated(omicsNames)))) {
-    stop("presence of duplicates in the omicsNames")
-  }
+  ## => omicsData
+  if(is.null(omicsData) || length(omicsData) == 0) 
+    stop("the omicsData arg is mandatory.")
   
-  ## omicsData
-  if(!is.list(omicsData) || length(omicsData) == 0) {
-    stop("the omicsData list is mandatory.")
+  ### => check class of omicsData
+  omicsDataClass <- class(omicsData)
+  if(!omicsDataClass %in% c("list", "MultiAssayExperiment"))
+    stop("The omicsData argument must be of class list or MultiAssayExperiment.")
+
+  ## => omicsNames
+  if(is.null(omicsNames)){
+    if(is.null(names(omicsData))) 
+      stop("The omicsData must be named; otherwise, you need to use the omicsNames argument.")
+    omicsNames <- names(omicsData)
   }
-  if(nb_omicsData != length(omicsData)) {
+  else if(length(omicsNames) != length(omicsData))
     stop("the number of omicsData matrix must match the number of omicsNames.")
-  }
+  
+  omicsNames <- 
+    str_replace_all(string = omicsNames, pattern = "[# /-]", replacement = "")
+  if (isTRUE(any(duplicated(omicsNames))))
+    stop("presence of duplicates in the omicsNames")
+  
   names(omicsData) <- omicsNames
   
-  ## omicsTypes
-  if(is.null(omicsTypes)) {
+  ## => omicsData to list of data.frames
+  omicsData.df <- list()
+  for(dataName in names(omicsData)){
+    
+    omicsData.df[[dataName]] <-
+      switch (
+        class(omicsData[[dataName]])[1],
+        "data.frame" = omicsData[[dataName]],
+        "matrix" = as.data.frame(omicsData[[dataName]]),
+        "SummarizedExperiment" = as.data.frame(assay(omicsData[[dataName]])),
+        stop("The components of the omicsData object must be of class list, ", 
+             "SummarizedExperiment, or matrix.")
+      )
+  }
+  
+  ## => omicsTypes
+  if(is.null(omicsTypes))
     stop("the list of omicsTypes is mandatory.")
-  } 
-  if(nb_omicsData != length(omicsTypes)) {
+  
+  if(length(omicsData.df) != length(omicsTypes))
     stop("the number of omicsData matrix must match the number of omicsTypes")
-  }
-  if(isTRUE(any(!unique(omicsTypes) %in% c("RNAseq","metabolomics","proteomics")))) {
+  
+  if(isTRUE(any(!unique(omicsTypes) %in% c("RNAseq","metabolomics","proteomics"))))
     stop("omicsTypes must be part of RNAseq, metabolomics, or proteomics.")
-  }
+  
   names(omicsTypes) <- omicsNames
   
-  ## ExpDesign
-  if (is.null(ExpDesign)) {
-    stop("the ExpDesign is mandatory.")
+  
+  ## => ExpDesign
+  if (is.null(ExpDesign)){
+    ExpDesign <- 
+      switch (omicsDataClass,
+              "MultiAssayExperiment" = as.data.frame(colData(omicsData)),
+              stop("the ExpDesign is mandatory.")
+      )
   }
-  if (nrow(ExpDesign) == 0 || ncol(ExpDesign) == 0) {
+  if (nrow(ExpDesign) == 0 || ncol(ExpDesign) == 0)
     stop("the ExpDesign is mandatory.")
-  }
-  designRownames <- str_replace_all(string = rownames(ExpDesign), pattern = "[*# -/]", replacement = "")
-  if (isTRUE(any(duplicated(designRownames)))) {
+  
+  designRownames <- 
+    str_replace_all(string = rownames(ExpDesign), pattern = "[*# -/]", replacement = "")
+  if (isTRUE(any(duplicated(designRownames))))
     stop("presence of duplicates in the ExpDesign colnames")
-  }
+  
   rownames(ExpDesign) <- designRownames
   
-  ## factorRef
-  if (is.null(factorRef)) stop("data.frame factorRef is mandatory.")
-  if (is.null(factorRef$factorName)) {
-    stop("factorRef$factorName is mandatory")
-  }
-  if (any(!factorRef$factorName %in% colnames(ExpDesign))) {
-    stop("factorRef$factorName don't match ExpDesign colnames")
-  }
+  ## => factorInfo
+  if (is.null(factorInfo)) stop("data.frame factorInfo is mandatory.")
   
-  if (is.null(factorRef$factorType)) {
-    stop("factorRef$factorType is mandatory.")
-  }
-  if (any(!unique(factorRef$factorType) %in% c("batch", "Bio", "Meta"))) {
-    stop("factorRef$factorType must be part of batch, Bio or Meta")
-  }
+  ### => factorInfo$factorName
+  if (is.null(factorInfo$factorName)) stop("factorInfo$factorName is mandatory")
   
-  factorBio   <- filter(factorRef, factorType == "Bio")$factorName
-  factorBatch <- filter(factorRef, factorType == "batch")$factorName
+  if (any(!factorInfo$factorName %in% colnames(ExpDesign)))
+    stop("factorInfo$factorName don't match ExpDesign colnames")
+  
+  ### => factorInfo$factorType
+  if (is.null(factorInfo$factorType)) stop("factorInfo$factorType is mandatory.")
+  
+  if (any(!unique(factorInfo$factorType) %in% c("batch", "Bio", "Meta")))
+    stop("factorInfo$factorType must be part of batch, Bio or Meta")
+  
+  factorBio   <- filter(factorInfo, factorType == "Bio")$factorName
+  factorBatch <- filter(factorInfo, factorType == "batch")$factorName
   
   ## set ref and levels to ExpDesign
-  for (i in 1:nrow(factorRef)){
+  refList <- vector()
+  for (i in 1:nrow(factorInfo)){
     
     # set ref 
-    if (!is.null(factorRef$factorRef)){
+    if (!is.null(factorInfo$factorRef)){
       
-      if(!factorRef[i,]$factorRef %in% ExpDesign[[factorRef[i,]$factorName]]) {
-        stop("The factor ref: ", factorRef[i,]$factorRef, " don't exist")
-      }
-      ref <- factorRef[i,]$factorRef
+      if(!factorInfo[i,]$factorRef %in% ExpDesign[[factorInfo[i,]$factorName]])
+        stop("The factor ref: ", factorInfo[i,]$factorRef, " don't exist")
+      
+      ref <- factorInfo[i,]$factorRef
     }
     else{
-      ref <- sort(ExpDesign[[factorRef[i,]$factorName]])[1]
+      ref <- as.character(unique(ExpDesign[[factorInfo[i,]$factorName]])[1])
     }
-    ExpDesign <- ExpDesign[order(row.names(ExpDesign)), ]
-    ExpDesign[[factorRef[i,]$factorName]] <- relevel(as.factor(ExpDesign[[factorRef[i,]$factorName]]), ref=ref)
+    #ExpDesign <- ExpDesign[order(row.names(ExpDesign)), ]
+    ExpDesign[[factorInfo[i,]$factorName]] <- 
+      relevel(as.factor(ExpDesign[[factorInfo[i,]$factorName]]), ref=ref)
+    
+    refList <- c(refList, ref)
     
     # set level
-    if (!is.null(factorRef$factorLevels)){
+    if (!is.null(factorInfo$factorLevels)){
       
-      levels <- str_split(factorRef[i,]$factorLevels, ",") |> 
+      levels <- str_split(factorInfo[i,]$factorLevels, ",") |> 
         unlist() %>%
         str_remove(" ")
-      if(any(!levels %in% ExpDesign[[factorRef[i,]$factorName]])) {
-        stop("The factor levels: ", factorRef[i,]$factorLevels, " don't exist")
-      }
+      if(any(!levels %in% ExpDesign[[factorInfo[i,]$factorName]]))
+        stop("The factor levels: ", factorInfo[i,]$factorLevels, " don't exist")
       
-      ExpDesign[[factorRef[i,]$factorName]] <- factor(ExpDesign[[factorRef[i,]$factorName]], levels = levels)
+      
+      ExpDesign[[factorInfo[i,]$factorName]] <- factor(ExpDesign[[factorInfo[i,]$factorName]], levels = levels)
     }
   }
   
   ## consctuct ExpDesign object
-  refList  <- factorRef$factorRef;  names(refList)  <- factorRef$factorName
-  typeList <- factorRef$factorType; names(typeList) <- factorRef$factorName
+  names(refList)  <- factorInfo$factorName
+  typeList <- factorInfo$factorType; names(typeList) <- factorInfo$factorName
   
   # Create the List.Factors list with the choosen level of 
   # reference for each factor
   names(typeList) <- names(ExpDesign)
-  
-  
+
   Design <- list(Factors.Type  = typeList, 
                  Model.formula = vector(), 
                  Contrasts.Sel = data.frame())
-  
-  
-  #
+
   ExpDesign   <- mutate(ExpDesign, samples=row.names(ExpDesign)) |>
     unite("groups", all_of(factorBio), sep = "_", remove = FALSE)
   
@@ -175,27 +209,22 @@ createRflomicsMAE <- function(projectName=NULL, omicsData=NULL,
   for(data in omicsNames){
     
     k <- k+1
-    
     omicType <- omicsTypes[data]
     
-    RflomicsSE <- createRflomicsSE(omicsData[[data]], omicType, ExpDesign, typeList)
+    RflomicsSE <- createRflomicsSE(omicsData.df[[data]], omicType, ExpDesign, typeList)
     
     #### run PCA for raw count
     SummarizedExperimentList[[data]] <- runOmicsPCA(RflomicsSE, raw = TRUE)
-    #SummarizedExperimentList[[data]] <- RflomicsSE
-    
-    
+
     # metadata for sampleMap for RflomicsMAE
     listmap[[data]] <- data.frame(
       primary = as.vector(SummarizedExperimentList[[data]]@colData$samples),
       colname = as.vector(SummarizedExperimentList[[data]]@colData$samples),
       stringsAsFactors = FALSE)
     
-    # 
     colnames <- c(names(omicList[[omicType]]), k)
     omicList[[omicType]] <- c(omicList[[omicType]] ,data)
     names(omicList[[omicType]]) <- colnames
-    
   }
   
   RfMAE <- RflomicsMAE(experiments = SummarizedExperimentList,
@@ -732,34 +761,44 @@ check_NA <- function(object) {
   
   data(ecoseed)
   
-  ExpDesign <- ecoseed$design
+  factorInfo <- data.frame(
+    "factorName"   = c("Repeat", "temperature", "imbibition"),
+    "factorRef"    = c("rep1", "Low", "DS"),
+    "factorType"   = c("batch", "Bio", "Bio"),
+    "factorLevels" = c("rep1,rep2,rep3", "Low,Medium,Elevated", "DS,EI,LI")
+  )
+  
+  ExpDesign <- ecoseed.df$design
   
   ExpDesign[["imbibition"]]  <- 
     factor(ExpDesign[["imbibition"]], 
            unlist(stringr::str_split(
-             ecoseed$factorRef$factorLevels[ecoseed$factorRef$factorName == "imbibition"], ",")))
+             factorInfo$factorLevels[factorInfo$factorName == "imbibition"], ",")))
   
   ExpDesign[["temperature"]] <- 
     factor(ExpDesign[["temperature"]], 
            unlist(stringr::str_split(
-             ecoseed$factorRef$factorLevels[ecoseed$factorRef$factorName == "temperature"], ",")))
+             factorInfo$factorLevels[factorInfo$factorName == "temperature"], ",")))
   
   ExpDesign[["Repeat"]]      <- 
     factor(ExpDesign[["Repeat"]],
            unlist(stringr::str_split(
-             ecoseed$factorRef$factorLevels[ecoseed$factorRef$factorName == "Repeat"], ",")))
+             factorInfo$factorLevels[factorInfo$factorName == "Repeat"], ",")))
+  
+  factorRef <- factorInfo$factorRef
+  names(factorRef) <- factorInfo$factorName
   
   exampleData <- list(
     projectName   = "Ecoseed",
     ExpDesign     = ExpDesign,
-    dF.List.ref   = c("Repeat" = "rep1",  "temperature" = "Low", "imbibition" = "DS"),
-    dF.Type.dFac  = c("Repeat" = "batch", "temperature" = "Bio", "imbibition" = "Bio"),
-    omicsNames    = c("RNAseq.set1", "metabolomics.set2", "proteomics.set3"),
-    omicsTypes    = c("RNAseq.set1" = "RNAseq", "metabolomics.set2"= "metabolomics", "proteomics.set3" = "proteomics"),
+    dF.List.ref   = factorRef,
+    dF.Type.dFac  = factorInfo$factorType,
+    omicsNames    = c("RNAseq.set1", "proteomics.set3", "metabolomics.set2"),
+    omicsTypes    = c("RNAseq", "proteomics", "metabolomics"),
     omicsData     = 
-      list("RNAseq.set1"       = ecoseed$RNAtest,
-           "metabolomics.set2" = ecoseed$metatest,
-           "proteomics.set3"   = ecoseed$protetest)
+      list("RNAseq.set1"       = ecoseed.df$RNAtest,
+           "proteomics.set3"   = ecoseed.df$protetest,
+           "metabolomics.set2" = ecoseed.df$metatest)
   )
   
   return(exampleData)

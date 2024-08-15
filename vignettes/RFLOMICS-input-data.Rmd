@@ -36,7 +36,7 @@ It is advised that each factor's level starts with a letter (for example, for a 
 
 ```{r ImportDesign, output="asis"}
 data(ecoseed)
-DT::datatable(ecoseed$design)
+DT::datatable(ecoseed.df$design)
 ```
 
 ## Omic data file
@@ -51,7 +51,7 @@ The matrix-like file with abundance of omics data is needed. The first column in
 For RNAseq data the values correspond to raw read counts per genes or transcripts.
 
 ```{r RNAseq, output="asis"}
-geneCount  <- ecoseed$RNAtest
+geneCount  <- ecoseed.df$RNAtest
 DT::datatable(geneCount[1:10, 1:5])
 ```
 
@@ -62,7 +62,7 @@ For proteomics data the values correspond to intensity of proteins.
 
 
 ```{r Proteomics, output="asis"}
-protAbundance <- ecoseed$protetest
+protAbundance <- ecoseed.df$protetest
 DT::datatable(protAbundance[1:10, 1:5])
 ```
 
@@ -72,7 +72,7 @@ DT::datatable(protAbundance[1:10, 1:5])
 For metabolomics data the values correspond to intensity of metabolites.
 
 ```{r Metabolomics, output="asis"}
-metaAbundance <- ecoseed$metatest
+metaAbundance <- ecoseed.df$metatest
 DT::datatable(metaAbundance[1:10, 1:5])
 ```
 

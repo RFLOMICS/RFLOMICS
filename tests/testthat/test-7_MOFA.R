@@ -7,16 +7,21 @@ library(MOFA2)
 # ---- Construction of objects for the tests ----
 
 ## ---- Construction MAE RFLOMICS ready for integration analysis : ----
+# load ecoseed data
 data(ecoseed)
+
+factorInfo <- data.frame(
+  "factorName"   = c("Repeat", "temperature", "imbibition"),
+  "factorType"   = c("batch", "Bio", "Bio")
+)
+
 # create rflomicsMAE object with ecoseed data
-MAE <- createRflomicsMAE(
+MAE <- RFLOMICS::createRflomicsMAE(
   projectName = "Tests",
-  omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
-  omicsNames  = c("RNAtest", "metatest", "protetest"),
-  omicsTypes  = c("RNAseq","metabolomics","proteomics"),
-  ExpDesign   = ecoseed$design,
-  factorRef   = ecoseed$factorRef)
-names(MAE) <- c("RNAtest", "metatest", "protetest")
+  omicsData   = ecoseed.mae,
+  omicsTypes  = c("RNAseq","proteomics","metabolomics"),
+  factorInfo  = factorInfo)
+names(MAE) <- c("RNAtest", "protetest", "metatest")
 
 formulae <- generateModelFormulae( MAE) 
 MAE <- setModelFormula(MAE, formulae[[1]])
@@ -40,9 +45,9 @@ MAE0 <- MAE
 
 # ---- Comparison data: ----
 
-protMat <- ecoseed$protetest
-metMat <- ecoseed$metatest
-condMat <- ecoseed$design
+protMat <- ecoseed.df$protetest
+metMat <- ecoseed.df$metatest
+condMat <- ecoseed.df$design
 
 condMat$Repeat      <- factor(condMat$Repeat, 
                               levels = c("rep1", "rep2", "rep3"))
