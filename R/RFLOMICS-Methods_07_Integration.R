@@ -43,70 +43,70 @@
 #' @noRd
 #' @keywords internal
 setMethod(
-    f = "integrationWrapper",
-    signature = "RflomicsMAE",
-    definition = function(object,
-                          omicsNames = names(object),
-                          rnaSeq_transfo = "limma (voom)",
-                          selOpt = rep(list("DE"), length(omicsNames)),
-                          type = rep(list("union"), length(selOpt)),
-                          group = NULL,
-                          method = "MOFA",
-                          scale_views = FALSE,
-                          maxiter = 1000,
-                          num_factors = 10,
-                          selectedResponse = NULL,
-                          ncomp = 2,
-                          link_datasets = 1,
-                          link_response = 1,
-                          sparsity = FALSE,
-                          cases_to_try = 5,
-                          cmd = FALSE,
-                          ...) {
-        if (any(!omicsNames %in% names(object))) {
-            stop("There are omics to integrate that are not names from the object")
-        }
-        
-        if (cmd)
-            message("[RFLOMICS] #     => Preparing for multi-omics analysis")
-        
-        objectfilt <- filterFeatures(object = object,
-                                     selOpt = selOpt,
-                                     type = type)
-        
-        variableLists <- lapply(experiments(objectfilt), names)
-        
-        preparedObject <- prepareForIntegration(
-            object = object,
-            omicsNames = omicsNames,
-            rnaSeq_transfo = rnaSeq_transfo,
-            variableLists = variableLists,
-            group = group,
-            method = method,
-            cmd = cmd
-        )
-        
-        if (cmd)
-            message("[RFLOMICS] #     => run data integration")
-        
-        object <- runOmicsIntegration(
-            object = object,
-            preparedObject = preparedObject,
-            method = method,
-            scale_views = scale_views,
-            maxiter = maxiter,
-            num_factors = num_factors,
-            selectedResponse = selectedResponse,
-            ncomp = ncomp,
-            link_datasets = link_datasets,
-            link_response = link_response,
-            sparsity = sparsity,
-            cases_to_try = cases_to_try,
-            cmd = FALSE
-        )
-        
-        return(object)
+  f = "integrationWrapper",
+  signature = "RflomicsMAE",
+  definition = function(object,
+                        omicsNames = names(object),
+                        rnaSeq_transfo = "limma (voom)",
+                        selOpt = rep(list("DE"), length(omicsNames)),
+                        type = rep(list("union"), length(selOpt)),
+                        group = NULL,
+                        method = "MOFA",
+                        scale_views = FALSE,
+                        maxiter = 1000,
+                        num_factors = 10,
+                        selectedResponse = NULL,
+                        ncomp = 2,
+                        link_datasets = 1,
+                        link_response = 1,
+                        sparsity = FALSE,
+                        cases_to_try = 5,
+                        cmd = FALSE,
+                        ...) {
+    if (any(!omicsNames %in% names(object))) {
+      stop("There are omics to integrate that are not names from the object")
     }
+    
+    if (cmd)
+      message("[RFLOMICS] #     => Preparing for multi-omics analysis")
+    
+    objectfilt <- filterFeatures(object = object,
+                                 selOpt = selOpt,
+                                 type = type)
+    
+    variableLists <- lapply(experiments(objectfilt), names)
+    
+    preparedObject <- prepareForIntegration(
+      object = object,
+      omicsNames = omicsNames,
+      rnaSeq_transfo = rnaSeq_transfo,
+      variableLists = variableLists,
+      group = group,
+      method = method,
+      cmd = cmd
+    )
+    
+    if (cmd)
+      message("[RFLOMICS] #     => run data integration")
+    
+    object <- runOmicsIntegration(
+      object = object,
+      preparedObject = preparedObject,
+      method = method,
+      scale_views = scale_views,
+      maxiter = maxiter,
+      num_factors = num_factors,
+      selectedResponse = selectedResponse,
+      ncomp = ncomp,
+      link_datasets = link_datasets,
+      link_response = link_response,
+      sparsity = sparsity,
+      cases_to_try = cases_to_try,
+      cmd = FALSE
+    )
+    
+    return(object)
+  }
 )
 
 # ---- prepareForIntegration ----
@@ -143,167 +143,167 @@ setMethod(
 #' @importFrom MOFA2 create_mofa
 #' @example inst/examples/prepareForIntegration.R
 setMethod(
-    f = "prepareForIntegration",
-    signature = "RflomicsMAE",
-    definition = function(object,
-                          omicsNames = NULL,
-                          rnaSeq_transfo = "limma (voom)",
-                          variableLists = NULL,
-                          group = NULL,
-                          method = "MOFA",
-                          transformData = TRUE,
-                          cmd = FALSE) {
-        method <- switch(
-            toupper(method),
-            "MIXOMICS" = "MixOmics",
-            "MOFA"  = "MOFA",
-            "MOFA2" = "MOFA",
-            "MOFA+" = "MOFA"
-        )
-        
-        # if no omicsNames we keep all SE
-        if (is.null(omicsNames))
-            omicsNames <- names(object)
-        
-        object <- object[, , omicsNames]
-        
-        if (is.null(variableLists)) {
-            variableLists <- rownames(object)
-        }
-        
-        # Checking for batch effects
-        correct_batch <- FALSE
-        ftypes <- getFactorTypes(object)
-        
-        if (any(ftypes == "batch")) {
-            correct_batch <- TRUE
-        }
-        
-        # Transformation before anything else, except for RNAseq data.
-        if (transformData) {
-            for (SEname in omicsNames) {
-                if (getOmicsTypes(object[[SEname]]) != "RNAseq") {
-                    object[[SEname]] <- .checkTransNorm(object[[SEname]])
-                }
-            }
-        }
-        
-        # On each selected omics, according to its type,
-        # apply transformation if demanded.
-        # Filter DE entities
-        for (SEname in omicsNames) {
-            SEobject <- object[[SEname]]
-            omicsType <- getOmicsTypes(SEobject)
-            
-            list_args <- list(
-                object = object,
-                SEname = SEname,
-                correctBatch = correct_batch,
-                variableNames = variableLists[[SEname]],
-                cmd = cmd
-            )
-            
-            object <- switch(
-                omicsType,
-                "RNAseq" = {
-                    list_args$transformation <- rnaSeq_transfo
-                    do.call(".rnaseqRBETransform", list_args)
-                },
-                "proteomics" = do.call(".rbeTransform", list_args),
-                "metabolomics" = do.call(".rbeTransform", list_args)
-            )
-        }
-        
-        # Check for duplicated features names across tables
-        # MOFA add the entire view name if it's the case, MixOmics do not care.
-        # For visualization purpose and coherence,
-        # add .index at the end of duplicated variables.
-        commonVarNames <- sum(duplicated(unlist(rownames(object))))
-        if (commonVarNames > 0) {
-            if (cmd) {
-                message("[RFLOMICS] #   => Duplicated features names across tables,
-                changing names for integration")
-            }
-            
-            dupTab <- data.frame(
-                "dataTable" = rep(names(object),
-                                  time = vapply(experiments(object), nrow, c(1))),
-                "rownames" = unlist(rownames(object)),
-                "dup" = duplicated(unlist(rownames(object))) +
-                    duplicated(unlist(rownames(object)), fromLast = TRUE)
-            )
-            dupTab <- dupTab[which(dupTab$dup == 1), ]
-            omicstochange <- unique(dupTab$dataTable)
-            
-            res <- lapply(
-                seq_len(length(object)),
-                FUN = function(i) {
-                    SE.object <- object[[names(object)[i]]]
-                    if (names(object)[i] %in% omicstochange) {
-                        rownames(SE.object) <- paste(rownames(SE.object), i, sep = ".")
-                    }
-                    return(SE.object)
-                }
-            )
-            names(res) <- names(object)
-            
-            object <- RflomicsMAE(
-                experiments = res,
-                colData   = colData(object),
-                sampleMap = sampleMap(object),
-                omicList    = metadata(object)$omicList, 
-                projectName = getProjectName(object), 
-                design      = metadata(object)$design
-            )
-            
-            if (cmd) {
-                message("[RFLOMICS] #   => Done replacing features names")
-            }
-        }
-        
-        # keep only columns corresponding to design factors
-        # (remove samples and groups)
-        colData(object) <- colData(object)[c(getBioFactors(object),
-                                             getBatchFactors(object),
-                                             getMetaFactors(object))]
-        
-        if (method == "MOFA") {
-            
-            MOFAObject <- create_mofa(object,
-                                      groups = group,
-                                      extract_metadata = TRUE)
-            
-            return(MOFAObject)
-            
-        } else if (method == "MixOmics") {
-            # Common samples names:
-            nsamp <- nrow(colData(object))
-            object <- intersectColumns(object)
-            
-            if (nsamp != nrow(colData(object))) {
-                warning("Removing ",
-                        nsamp - nrow(colData(object)),
-                        " samples not present in every experiment.")
-            }
-            
-            MixOmicsObject <- list(blocks   = lapply(
-                experiments(object),
-                FUN = function(SE) {
-                    t(assay(SE))
-                }
-            ), metadata = colData(object))
-            
-            MixOmicsObject$blocks <- lapply(
-                MixOmicsObject$blocks,
-                FUN = function(mat) {
-                    mat[match(rownames(mat), rownames(MixOmicsObject$metadata)),]
-                }
-            )
-            
-            
-            return(MixOmicsObject)
-        }
+  f = "prepareForIntegration",
+  signature = "RflomicsMAE",
+  definition = function(object,
+                        omicsNames = NULL,
+                        rnaSeq_transfo = "limma (voom)",
+                        variableLists = NULL,
+                        group = NULL,
+                        method = "MOFA",
+                        transformData = TRUE,
+                        cmd = FALSE) {
+    method <- switch(
+      toupper(method),
+      "MIXOMICS" = "MixOmics",
+      "MOFA"  = "MOFA",
+      "MOFA2" = "MOFA",
+      "MOFA+" = "MOFA"
+    )
+    
+    # if no omicsNames we keep all SE
+    if (is.null(omicsNames))
+      omicsNames <- names(object)
+    
+    object <- object[, , omicsNames]
+    
+    # Checking for batch effects
+    correct_batch <- FALSE
+    ftypes <- getFactorTypes(object)
+    
+    if (any(ftypes == "batch")) {
+      correct_batch <- TRUE
     }
+    
+    # Transformation before anything else, except for RNAseq data.
+    if (transformData) {
+      for (SEname in omicsNames) {
+        if (getOmicsTypes(object[[SEname]]) != "RNAseq") {
+          #object[[SEname]] <- .checkTransNorm(object[[SEname]])
+          object[[SEname]] <- getProcessedData(object[[SEname]], norm = TRUE)
+        }
+        else{
+          object[[SEname]] <- getProcessedData(object[[SEname]], filter = TRUE)
+        }
+      }
+    }
+    
+    # On each selected omics, according to its type,
+    # apply transformation if demanded.
+    # Filter DE entities
+    for (SEname in omicsNames) {
+      SEobject <- object[[SEname]]
+      omicsType <- getOmicsTypes(SEobject)
+      
+      list_args <- list(
+        object = object,
+        SEname = SEname,
+        correctBatch = correct_batch,
+        variableNames = variableLists[[SEname]],
+        cmd = cmd
+      )
+      
+      object <- switch(
+        omicsType,
+        "RNAseq" = {
+          list_args$transformation <- rnaSeq_transfo
+          do.call(".rnaseqRBETransform", list_args)
+        },
+        "proteomics" = do.call(".rbeTransform", list_args),
+        "metabolomics" = do.call(".rbeTransform", list_args)
+      )
+    }
+    
+    # Check for duplicated features names across tables
+    # MOFA add the entire view name if it's the case, MixOmics do not care.
+    # For visualization purpose and coherence,
+    # add .index at the end of duplicated variables.
+    commonVarNames <- sum(duplicated(unlist(rownames(object))))
+    if (commonVarNames > 0) {
+      if (cmd) {
+        message("[RFLOMICS] #   => Duplicated features names across tables,
+                changing names for integration")
+      }
+      
+      dupTab <- data.frame(
+        "dataTable" = rep(names(object),
+                          time = vapply(experiments(object), nrow, c(1))),
+        "rownames" = unlist(rownames(object)),
+        "dup" = duplicated(unlist(rownames(object))) +
+          duplicated(unlist(rownames(object)), fromLast = TRUE)
+      )
+      dupTab <- dupTab[which(dupTab$dup == 1), ]
+      omicstochange <- unique(dupTab$dataTable)
+      
+      res <- lapply(
+        seq_len(length(object)),
+        FUN = function(i) {
+          SE.object <- object[[names(object)[i]]]
+          if (names(object)[i] %in% omicstochange) {
+            rownames(SE.object) <- paste(rownames(SE.object), i, sep = ".")
+          }
+          return(SE.object)
+        }
+      )
+      names(res) <- names(object)
+      
+      object <- RflomicsMAE(
+        experiments = res,
+        colData   = colData(object),
+        sampleMap = sampleMap(object),
+        omicList    = metadata(object)$omicList, 
+        projectName = getProjectName(object), 
+        design      = metadata(object)$design
+      )
+      
+      if (cmd) {
+        message("[RFLOMICS] #   => Done replacing features names")
+      }
+    }
+    
+    # keep only columns corresponding to design factors
+    # (remove samples and groups)
+    colData(object) <- colData(object)[c(getBioFactors(object),
+                                         getBatchFactors(object),
+                                         getMetaFactors(object))]
+    
+    if (method == "MOFA") {
+      
+      MOFAObject <- create_mofa(object,
+                                groups = group,
+                                extract_metadata = TRUE)
+      
+      return(MOFAObject)
+      
+    } else if (method == "MixOmics") {
+      # Common samples names:
+      nsamp <- nrow(colData(object))
+      object <- intersectColumns(object)
+      
+      if (nsamp != nrow(colData(object))) {
+        warning("Removing ",
+                nsamp - nrow(colData(object)),
+                " samples not present in every experiment.")
+      }
+      
+      MixOmicsObject <- list(blocks   = lapply(
+        experiments(object),
+        FUN = function(SE) {
+          t(assay(SE))
+        }
+      ), metadata = colData(object))
+      
+      MixOmicsObject$blocks <- lapply(
+        MixOmicsObject$blocks,
+        FUN = function(mat) {
+          mat[match(rownames(mat), rownames(MixOmicsObject$metadata)),]
+        }
+      )
+      
+      
+      return(MixOmicsObject)
+    }
+  }
 )
 
 
@@ -336,108 +336,108 @@ setMethod(
 #' @example inst/examples/filterFeatures.R
 #' 
 setMethod(
-    f = "filterFeatures",
-    signature = "RflomicsMAE",
-    definition = function(object,
-                          selOpt = rep(list("all"), length(object)),
-                          type = rep(list("union"), length(selOpt))) {
-        # check if named vector
-        if (is.null(names(selOpt))) {
-            names(selOpt) <- names(object)[seq_along(selOpt)]
-        }
-        
-        if (is.null(names(type))) {
-            names(type) <- names(selOpt)[seq_along(selOpt)]
-        }
-        
-        # Applying corresponding filtering
-        res <- lapply(
-            names(selOpt),
-            FUN = function(nam) {
-                SE.object <- object[[nam]]
-                vectSel <- selOpt[[nam]]
-                typeSel <- type[[nam]]
-                
-                if (is.null(typeSel))
-                    typeSel <- "union"
-                
-                # intermediate list: list of features for each selectiontype
-                # default: take all if typo somewhere.
-                resInter <- lapply(
-                    vectSel,
-                    FUN = function(listSel) {
-                        if (!listSel %in% c("all", "none", "DE")) {
-                            originList <- .getOrigin(SE.object, listSel)
-                        } else {
-                            originList <- listSel
-                        }
-                        
-                        switch(
-                            originList,
-                            "all" = {
-                                names(SE.object)
-                            },
-                            "none" = {
-                                NULL
-                            },
-                            "DE"  = {
-                                getDEMatrix(object = SE.object)$DEF
-                            },
-                            "Contrast" = {
-                                getDEList(object = SE.object, contrasts = listSel)
-                            },
-                            "Tag" = {
-                                getDEList(object = SE.object, contrasts = listSel)
-                                # TODO problem when only one selected
-                            },
-                            "CoexCluster" = {
-                                getClusterEntities(SE.object, clusterName = listSel)
-                            },
-                            {
-                                # Default: all
-                                message("Cannot detect origin of ",
-                                        listSel,
-                                        " for ",
-                                        nam ,
-                                        " taking all features")
-                                names(SE.object)
-                            }
-                        )
-                        
-                    }
-                )
-                
-                # Union or intersection of all selected features
-                filtKeep <- if (!is.null(typeSel)) {
-                    switch(typeSel,
-                           unique(unlist(resInter)),
-                           # default
-                           "intersection" = Reduce(intersect, resInter))
-                }
-                if (length(filtKeep) == 0) {
-                    message("No feature to keep in ", nam,
-                            ", it will be dropped.")
-                }
-                return(SE.object[filtKeep, ])
-                
-            }
-        )
-        names(res) <- names(selOpt)
-        
-        res <- res[lengths(res) > 0]
-        
-        return(
-            RflomicsMAE(
-                experiments = res,
-                colData = colData(object),
-                sampleMap = sampleMap(object),
-                omicList    = metadata(object)$omicList, 
-                projectName = getProjectName(object), 
-                design      = metadata(object)$design
-            )
-        )
-        
+  f = "filterFeatures",
+  signature = "RflomicsMAE",
+  definition = function(object,
+                        selOpt = rep(list("all"), length(object)),
+                        type = rep(list("union"), length(selOpt))) {
+    # check if named vector
+    if (is.null(names(selOpt))) {
+      names(selOpt) <- names(object)[seq_along(selOpt)]
     }
+    
+    if (is.null(names(type))) {
+      names(type) <- names(selOpt)[seq_along(selOpt)]
+    }
+    
+    # Applying corresponding filtering
+    res <- lapply(
+      names(selOpt),
+      FUN = function(nam) {
+        SE.object <- object[[nam]]
+        vectSel <- selOpt[[nam]]
+        typeSel <- type[[nam]]
+        
+        if (is.null(typeSel))
+          typeSel <- "union"
+        
+        # intermediate list: list of features for each selectiontype
+        # default: take all if typo somewhere.
+        resInter <- lapply(
+          vectSel,
+          FUN = function(listSel) {
+            if (!listSel %in% c("all", "none", "DE")) {
+              originList <- .getOrigin(SE.object, listSel)
+            } else {
+              originList <- listSel
+            }
+            
+            switch(
+              originList,
+              "all" = {
+                names(SE.object)
+              },
+              "none" = {
+                NULL
+              },
+              "DE"  = {
+                getDEMatrix(object = SE.object)$DEF
+              },
+              "Contrast" = {
+                getDEList(object = SE.object, contrasts = listSel)
+              },
+              "Tag" = {
+                getDEList(object = SE.object, contrasts = listSel)
+                # TODO problem when only one selected
+              },
+              "CoexCluster" = {
+                getClusterEntities(SE.object, clusterName = listSel)
+              },
+              {
+                # Default: all
+                message("Cannot detect origin of ",
+                        listSel,
+                        " for ",
+                        nam ,
+                        " taking all features")
+                names(SE.object)
+              }
+            )
+            
+          }
+        )
+        
+        # Union or intersection of all selected features
+        filtKeep <- if (!is.null(typeSel)) {
+          switch(typeSel,
+                 unique(unlist(resInter)),
+                 # default
+                 "intersection" = Reduce(intersect, resInter))
+        }
+        if (length(filtKeep) == 0) {
+          message("No feature to keep in ", nam,
+                  ", it will be dropped.")
+        }
+        return(SE.object[filtKeep, ])
+        
+      }
+    )
+    names(res) <- names(selOpt)
+    
+    res <- res[lengths(res) > 0]
+    
+    return(
+      RflomicsMAE(
+        experiments = res,
+        colData = colData(object),
+        sampleMap = sampleMap(object),
+        omicList    = metadata(object)$omicList, 
+        projectName = getProjectName(object), 
+        design      = metadata(object)$design
+      )
+    )
+    
+  }
 )
 
 
@@ -478,108 +478,108 @@ setMethod(
 #' @example inst/examples/runOmicsIntegration.R
 #'
 setMethod(
-    f = "runOmicsIntegration",
-    signature = "RflomicsMAE",
-    definition = function(object,
-                          preparedObject = NULL,
-                          method = "MOFA",
-                          scale_views = FALSE,
-                          maxiter = 1000,
-                          num_factors = 10,
-                          selectedResponse = NULL,
-                          ncomp = 2,
-                          link_datasets = 1,
-                          link_response = 1,
-                          sparsity = FALSE,
-                          cases_to_try = 5,
-                          cmd = FALSE,
-                          ...) {
-        method <- switch(
-            toupper(method),
-            "MIXOMICS" = "MixOmics",
-            "MOFA"  = "MOFA",
-            "MOFA2" = "MOFA",
-            "MOFA+" = "MOFA"
+  f = "runOmicsIntegration",
+  signature = "RflomicsMAE",
+  definition = function(object,
+                        preparedObject = NULL,
+                        method = "MOFA",
+                        scale_views = FALSE,
+                        maxiter = 1000,
+                        num_factors = 10,
+                        selectedResponse = NULL,
+                        ncomp = 2,
+                        link_datasets = 1,
+                        link_response = 1,
+                        sparsity = FALSE,
+                        cases_to_try = 5,
+                        cmd = FALSE,
+                        ...) {
+    method <- switch(
+      toupper(method),
+      "MIXOMICS" = "MixOmics",
+      "MOFA"  = "MOFA",
+      "MOFA2" = "MOFA",
+      "MOFA+" = "MOFA"
+    )
+    
+    if (toupper(method) == "MOFA") {
+      # object@metadata[["MOFA"]] <- NULL
+      object <- setMOFA(object, NULL)
+      
+      if (cmd)
+        message("[RFLOMICS] #     => Running MOFA analysis")
+      
+      MOFA_run <- .runMOFAAnalysis(
+        object = preparedObject,
+        scale_views = scale_views,
+        maxiter = maxiter,
+        num_factors = num_factors
+      )
+      
+      object <- setMOFA(
+        object,
+        list(
+          "MOFA_results" = MOFA_run$MOFAObject.trained,
+          "MOFA_untrained" = MOFA_run$MOFAObject.untrained,
+          "MOFA_messages" = MOFA_run$MOFA.messages,
+          "settings" = list(
+            scale_views = scale_views,
+            maxiter     = maxiter,
+            num_factors = num_factors,
+            selectData  = names(preparedObject@data)
+          )
         )
-        
-        if (toupper(method) == "MOFA") {
-            # object@metadata[["MOFA"]] <- NULL
-            object <- setMOFA(object, NULL)
-            
-            if (cmd)
-                message("[RFLOMICS] #     => Running MOFA analysis")
-            
-            MOFA_run <- .runMOFAAnalysis(
-                object = preparedObject,
-                scale_views = scale_views,
-                maxiter = maxiter,
-                num_factors = num_factors
+      )
+      
+    } else if (toupper(method) == "MIXOMICS") {
+      # metadata(object)[["mixOmics"]] <- NULL
+      object <- setMixOmics(object, NULL)
+      
+      if (cmd)
+        message("[RFLOMICS] #     => Running mixOmics analysis")
+      
+      if (is.null(selectedResponse))
+        selectedResponse <- getBioFactors(object)
+      
+      MixOmics_res <- lapply(
+        selectedResponse,
+        FUN = function(response_var) {
+          res_mixOmics <- .runMixOmicsAnalysis(
+            object = preparedObject,
+            selectedResponse = response_var,
+            scale_views = scale_views,
+            ncomp = ncomp,
+            link_datasets = link_datasets,
+            link_response = link_response,
+            sparsity = sparsity,
+            cases_to_try = cases_to_try
+          )
+          
+          return(
+            list(
+              "MixOmics_tuning_results" = res_mixOmics$tuning_res,
+              "MixOmics_results"        = res_mixOmics$analysis_res
             )
-            
-            object <- setMOFA(
-                object,
-                list(
-                    "MOFA_results" = MOFA_run$MOFAObject.trained,
-                    "MOFA_untrained" = MOFA_run$MOFAObject.untrained,
-                    "MOFA_messages" = MOFA_run$MOFA.messages,
-                    "settings" = list(
-                        scale_views = scale_views,
-                        maxiter     = maxiter,
-                        num_factors = num_factors,
-                        selectData  = names(preparedObject@data)
-                    )
-                )
-            )
-            
-        } else if (toupper(method) == "MIXOMICS") {
-            # metadata(object)[["mixOmics"]] <- NULL
-            object <- setMixOmics(object, NULL)
-            
-            if (cmd)
-                message("[RFLOMICS] #     => Running mixOmics analysis")
-            
-            if (is.null(selectedResponse))
-                selectedResponse <- getBioFactors(object)
-            
-            MixOmics_res <- lapply(
-                selectedResponse,
-                FUN = function(response_var) {
-                    res_mixOmics <- .runMixOmicsAnalysis(
-                        object = preparedObject,
-                        selectedResponse = response_var,
-                        scale_views = scale_views,
-                        ncomp = ncomp,
-                        link_datasets = link_datasets,
-                        link_response = link_response,
-                        sparsity = sparsity,
-                        cases_to_try = cases_to_try
-                    )
-                    
-                    return(
-                        list(
-                            "MixOmics_tuning_results" = res_mixOmics$tuning_res,
-                            "MixOmics_results"        = res_mixOmics$analysis_res
-                        )
-                    )
-                }
-            )
-            
-            
-            names(MixOmics_res) <- selectedResponse
-            MixOmics_res$settings <- list(
-                scale_views      = scale_views,
-                ncomp            = ncomp,
-                sparsity         = sparsity,
-                cases_to_try     = cases_to_try,
-                selectedResponse = selectedResponse,
-                selectData  = names(preparedObject$blocks)
-            )
-            
-            object <- setMixOmics(object, MixOmics_res)
-            
+          )
         }
-        return(object)
+      )
+      
+      
+      names(MixOmics_res) <- selectedResponse
+      MixOmics_res$settings <- list(
+        scale_views      = scale_views,
+        ncomp            = ncomp,
+        sparsity         = sparsity,
+        cases_to_try     = cases_to_try,
+        selectedResponse = selectedResponse,
+        selectData  = names(preparedObject$blocks)
+      )
+      
+      object <- setMixOmics(object, MixOmics_res)
+      
     }
+    return(object)
+  }
 )
 
 # ----  Get a particular multi-omics result ----
@@ -613,43 +613,43 @@ setMethod(
 #' @rdname runOmicsIntegration
 
 setMethod(
-    f = "getMixOmics",
-    signature = "RflomicsMAE",
-    definition = function(object,
-                          response = NULL,
-                          onlyResults = TRUE) {
-        toreturn <- metadata(object)[["IntegrationAnalysis"]][["mixOmics"]]
-        
-        if (is.null(toreturn)) {
-            return(toreturn)
-        }
-        
-        if (!is.null(response)) {
-            toreturn <- toreturn[[response]]
-            if (onlyResults)
-                toreturn <- toreturn$MixOmics_results
-            return(toreturn)
-        } else{
-            return(toreturn)
-        }
-        
+  f = "getMixOmics",
+  signature = "RflomicsMAE",
+  definition = function(object,
+                        response = NULL,
+                        onlyResults = TRUE) {
+    toreturn <- metadata(object)[["IntegrationAnalysis"]][["mixOmics"]]
+    
+    if (is.null(toreturn)) {
+      return(toreturn)
     }
+    
+    if (!is.null(response)) {
+      toreturn <- toreturn[[response]]
+      if (onlyResults)
+        toreturn <- toreturn$MixOmics_results
+      return(toreturn)
+    } else{
+      return(toreturn)
+    }
+    
+  }
 )
 
 #' @rdname runOmicsIntegration
 #' @exportMethod getMOFA
 #' @aliases getMOFA
 setMethod(
-    f = "getMOFA",
-    signature = "RflomicsMAE",
-    definition = function(object, onlyResults = TRUE) {
-        toreturn <- metadata(object)[["IntegrationAnalysis"]][["MOFA"]]
-        if (onlyResults && !is.null(toreturn)) {
-            toreturn <- toreturn[["MOFA_results"]]
-        }
-        
-        return(toreturn)
+  f = "getMOFA",
+  signature = "RflomicsMAE",
+  definition = function(object, onlyResults = TRUE) {
+    toreturn <- metadata(object)[["IntegrationAnalysis"]][["MOFA"]]
+    if (onlyResults && !is.null(toreturn)) {
+      toreturn <- toreturn[["MOFA_results"]]
     }
+    
+    return(toreturn)
+  }
 )
 # ---- Get integration setting ----
 
@@ -657,22 +657,22 @@ setMethod(
 #' @rdname runOmicsIntegration
 #' @aliases getMOFASettings
 setMethod(
-    f = "getMOFASettings",
-    signature = "RflomicsMAE",
-    definition = function(object) {
-        return(getMOFA(object, onlyResults = FALSE)$settings)
-    }
+  f = "getMOFASettings",
+  signature = "RflomicsMAE",
+  definition = function(object) {
+    return(getMOFA(object, onlyResults = FALSE)$settings)
+  }
 )
 
 #' @exportMethod getMixOmicsSettings
 #' @rdname runOmicsIntegration
 #' @aliases getMixOmicsSettings
 setMethod(
-    f = "getMixOmicsSettings",
-    signature = "RflomicsMAE",
-    definition = function(object) {
-        return(metadata(object)[["IntegrationAnalysis"]][["mixOmics"]][["settings"]])
-    }
+  f = "getMixOmicsSettings",
+  signature = "RflomicsMAE",
+  definition = function(object) {
+    return(metadata(object)[["IntegrationAnalysis"]][["mixOmics"]][["settings"]])
+  }
 )
 
 # ---- Set Integration Results ----
@@ -683,24 +683,24 @@ setMethod(
 #' If null, set to NULL.
 #' @exportMethod setMOFA
 setMethod(
-    f = "setMOFA",
-    signature = "RflomicsMAE",
-    definition = function(object, results = NULL) {
-        metadata(object)[["IntegrationAnalysis"]][["MOFA"]] <- results
-        return(object)
-    }
+  f = "setMOFA",
+  signature = "RflomicsMAE",
+  definition = function(object, results = NULL) {
+    metadata(object)[["IntegrationAnalysis"]][["MOFA"]] <- results
+    return(object)
+  }
 )
 
 #' @rdname runOmicsIntegration
 #' @exportMethod setMixOmics
 #' @aliases setMixOmics
 setMethod(
-    f = "setMixOmics",
-    signature = "RflomicsMAE",
-    definition =  function(object, results = NULL) {
-        metadata(object)[["IntegrationAnalysis"]][["mixOmics"]] <- results
-        return(object)
-    }
+  f = "setMixOmics",
+  signature = "RflomicsMAE",
+  definition =  function(object, results = NULL) {
+    metadata(object)[["IntegrationAnalysis"]][["mixOmics"]] <- results
+    return(object)
+  }
 )
 
 
@@ -721,28 +721,28 @@ setMethod(
 #' @exportMethod sumMixOmics
 
 setMethod(
-    f = "sumMixOmics",
-    signature = "RflomicsMAE",
-    definition =  function(object, selectedResponse = NULL) {
-        if (is.null(metadata(object)$IntegrationAnalysis$mixOmics)) {
-            stop("It seems this object has no mixOmics results.")
-        }
-        
-        if (is.null(selectedResponse)) {
-            posResponse <- names(metadata(object)$IntegrationAnalysis$mixOmics)
-            posResponse <- posResponse[-which(posResponse == "settings")]
-            res <- lapply(
-                posResponse,
-                FUN = function(selResponse) {
-                    .getOneMORes(object, selectedResponse = selResponse)
-                }
-            )
-            names(res) <- posResponse
-            return(res)
-        } else {
-            .getOneMORes(object, selectedResponse = selectedResponse)
-        }
+  f = "sumMixOmics",
+  signature = "RflomicsMAE",
+  definition =  function(object, selectedResponse = NULL) {
+    if (is.null(metadata(object)$IntegrationAnalysis$mixOmics)) {
+      stop("It seems this object has no mixOmics results.")
     }
+    
+    if (is.null(selectedResponse)) {
+      posResponse <- names(metadata(object)$IntegrationAnalysis$mixOmics)
+      posResponse <- posResponse[-which(posResponse == "settings")]
+      res <- lapply(
+        posResponse,
+        FUN = function(selResponse) {
+          .getOneMORes(object, selectedResponse = selResponse)
+        }
+      )
+      names(res) <- posResponse
+      return(res)
+    } else {
+      .getOneMORes(object, selectedResponse = selectedResponse)
+    }
+  }
 )
 
 #' @title get one MixOmics result
@@ -755,24 +755,24 @@ setMethod(
 #' @noRd
 
 setMethod(
-    f = ".getOneMORes",
-    signature = "RflomicsMAE",
-    definition =   function(object, selectedResponse) {
-        res <- getMixOmics(object, response = selectedResponse)
-        # Data_res <- res$MixOmics_results
-        Data_res <- res
-        
-        df <- t(sapply(Data_res$X, dim))
-        colnames(df) <- c("Ind", "Features")
-        
-        if (!is.null(res$MixOmics_tuning_results)) {
-            df <- cbind(df, do.call("rbind", Data_res$keepX))
-            colnames(df)[!colnames(df) %in% c("Ind", "Features")] <-
-                paste("Comp", seq_len(length(Data_res$keepX[[1]])))
-        }
-        
-        return(df)
+  f = ".getOneMORes",
+  signature = "RflomicsMAE",
+  definition =   function(object, selectedResponse) {
+    res <- getMixOmics(object, response = selectedResponse)
+    # Data_res <- res$MixOmics_results
+    Data_res <- res
+    
+    df <- t(sapply(Data_res$X, dim))
+    colnames(df) <- c("Ind", "Features")
+    
+    if (!is.null(res$MixOmics_tuning_results)) {
+      df <- cbind(df, do.call("rbind", Data_res$keepX))
+      colnames(df)[!colnames(df) %in% c("Ind", "Features")] <-
+        paste("Comp", seq_len(length(Data_res$keepX[[1]])))
     }
+    
+    return(df)
+  }
 )
 
 # ----- MixOmics: plot variance explained ----
@@ -790,37 +790,37 @@ setMethod(
 #' @noRd
 #'
 setMethod(
-    f = "plotMOVarExp",
-    signature = "RflomicsMAE",
-    definition =   function(object, selectedResponse, mode = NULL) {
-        if (is.null(getMixOmics(object,
-                                response = NULL,
-                                onlyResults = TRUE))) {
-            stop("It seems this object has no mixOmics results.")
-        }
-        if (is.null(getMixOmics(object,
-                                response = selectedResponse,
-                                onlyResults = TRUE))) {
-            stop("It seems you didn't run MixOmics on this particular variable.")
-        }
-        
-        Data_res <- getMixOmics(object,
-                                response = selectedResponse,
-                                onlyResults = TRUE)
-        gg_return <- NULL
-        
-        if (is.null(mode)) {
-            gg_return <- ggarrange(.plot_MO_1(Data_res),
-                                   .plot_MO_2(Data_res),
-                                   ncol = 2)
-        }
-        else if (tolower(mode) == "cumulative") {
-            gg_return <- .plot_MO_1(Data_res)
-        }
-        else if (tolower(mode) == "comp") {
-            gg_return <- .plot_MO_2(Data_res)
-        }
-        
-        return(gg_return)
+  f = "plotMOVarExp",
+  signature = "RflomicsMAE",
+  definition =   function(object, selectedResponse, mode = NULL) {
+    if (is.null(getMixOmics(object,
+                            response = NULL,
+                            onlyResults = TRUE))) {
+      stop("It seems this object has no mixOmics results.")
     }
+    if (is.null(getMixOmics(object,
+                            response = selectedResponse,
+                            onlyResults = TRUE))) {
+      stop("It seems you didn't run MixOmics on this particular variable.")
+    }
+    
+    Data_res <- getMixOmics(object,
+                            response = selectedResponse,
+                            onlyResults = TRUE)
+    gg_return <- NULL
+    
+    if (is.null(mode)) {
+      gg_return <- ggarrange(.plot_MO_1(Data_res),
+                             .plot_MO_2(Data_res),
+                             ncol = 2)
+    }
+    else if (tolower(mode) == "cumulative") {
+      gg_return <- .plot_MO_1(Data_res)
+    }
+    else if (tolower(mode) == "comp") {
+      gg_return <- .plot_MO_2(Data_res)
+    }
+    
+    return(gg_return)
+  }
 )

@@ -219,8 +219,17 @@
                     operation = input[[paste0("unionORintersect", set)]]
                 ),
                 "CV" = {
-                    transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]], 
-                                                     raw = FALSE)
+                    # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]], 
+                    #                                  raw = FALSE)
+                    transformedSE <- 
+                      switch (
+                        getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
+                        "RNAseq" =  
+                          getProcessedData(session$userData$FlomicsMultiAssay[[set]], 
+                                           filter = TRUE, log = TRUE ),
+                        getProcessedData(session$userData$FlomicsMultiAssay[[set]], 
+                                         norm = TRUE)
+                      )
                     transformedSE <- assay(transformedSE)
                     
                     cv_vect <- unlist(
@@ -784,8 +793,17 @@
                     session$userData$FlomicsMultiAssay[[set]][variable.to.keep]
                 
             } else if (input[[paste0("selectmethode", set)]] == "CV") {
-                transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]], 
-                                                 raw = FALSE)
+                # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]], 
+                #                                  raw = FALSE)
+                transformedSE <- 
+                  switch (
+                    getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
+                    "RNAseq" =  
+                      getProcessedData(session$userData$FlomicsMultiAssay[[set]], 
+                                       filter = TRUE, log = TRUE ),
+                    getProcessedData(session$userData$FlomicsMultiAssay[[set]], 
+                                     norm = TRUE)
+                )
                 transformedSE <- assay(transformedSE)
                 cv_vect <- unlist(
                     lapply(seq_len(nrow(transformedSE)),

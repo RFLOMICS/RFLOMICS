@@ -7,33 +7,38 @@ output:
         number_sections: true
 package: RFLOMICS
 vignette: >
-%\VignetteIndexEntry{RFLOMICS-cmd-line}
+  %\VignetteIndexEntry{RFLOMICS-input-data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+
+---
   
   
-  abstract: > 
-  Ecoseed...
-  ---
-  
-  
-  ```{r, include = FALSE}
+```{r, include = FALSE}
   knitr::opts_chunk$set(
   eval = FALSE,
   collapse = TRUE, 
   comment = "#>"
   )
-  ```
+```
   
-  # Create RFLOMICS object
+# Create RFLOMICS object
   
-  ```{r, eval=FALSE}
-  library(RFLOMICS)
+```{r, eval=TRUE}
+library(RFLOMICS)
 data("ecoseed")
 ```
 
 ## Load data
 ```{r}
+
+factorInfo <- data.frame(
+  "factorName"   = c("Repeat", "temperature", "imbibition"),
+  "factorRef"    = c("rep1", "Low", "DS"),
+  "factorType"   = c("batch", "Bio", "Bio"),
+  "factorLevels" = c("rep1,rep2,rep3", "Low,Medium,Elevated", "DS,EI,LI")
+)
+
 # create rflomicsMAE object with ecoseed data
 MAE <- createRflomicsMAE(
   projectName = "Tests",
@@ -41,7 +46,7 @@ MAE <- createRflomicsMAE(
   omicsNames  = c("RNAtest", "metatest", "protetest"),
   omicsTypes  = c("RNAseq","metabolomics","proteomics"),
   ExpDesign   = ecoseed$design,
-  factorRef   = ecoseed$factorRef)
+  factorRef   = factorInfo)
 ```
 
 ## Set statistical model
@@ -156,13 +161,29 @@ plotBoxplotDE(MAE, SE.name = "RNAtest", featureName = "AT2G29090", raw = TRUE)
 plotBoxplotDE(MAE, SE.name = "RNAtest", featureName = "AT2G29090", raw = FALSE)
 ```
 
-
-
-
 ## Co-expression analysis
+
+```{r}
+MAE <- runCoExpression(MAE, SE.name = "protetest")
+
+plotCoExpression(MAE, SE.name = "protetest")
+plotCoExpressionProfile(MAE, SE.name = "protetest")
+plotCoseqContrasts(MAE, SE.name = "protetest")
+getCoExpAnalysesSummary(MAE)
+```
+
 
 
 ## Enrichment analysis
+
+```{r}
+MAE <- runAnnotationEnrichment(MAE, SE.name = "protetest", 
+                               database = "GO", domain = c("BP"),
+                               list_args = list(OrgDb = "org.At.tair.db",
+                                                keyType = "TAIR",
+                                                pvalueCutoff = 0.05))
+```
+
 
 
 
