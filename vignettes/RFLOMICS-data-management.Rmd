@@ -108,77 +108,26 @@ In this example we will Instantiate a RflomicsMAE object from an existing MAE ob
 library(RFLOMICS)
 ```
 
-```{r ecoseed2mae, echo=FALSE}
-
+```{r createRlomisMAE, echo = TRUE}
 data(ecoseed)
 
-## Create the SummarizedExperiment objects from the 3 data.frames 
+factorInfo <- data.frame(
+  "factorName"   = c("Repeat", "temperature", "imbibition"),
+  "factorRef"    = c("rep1", "Low", "DS"),
+  "factorType"   = c("batch", "Bio", "Bio"),
+  "factorLevels" = c("rep1,rep2,rep3", "Low,Medium,Elevated", "DS,EI,LI")
+)
 
-RNAtest.SE <- SummarizedExperiment( assays  = as.matrix(ecoseed$RNAtest)) 
+# create rflomicsMAE object with ecoseed data
+testObject <- RFLOMICS::createRflomicsMAE(
+  projectName = "Tests",
+  omicsData   = list(ecoseed.df$RNAtest, ecoseed.df$protetest, ecoseed.df$metatest),
+  omicsNames  = c("RNAtest", "protetest", "metatest"),
+  omicsTypes  = c("RNAseq","proteomics","metabolomics"),
+  ExpDesign   = ecoseed.df$design,
+  factorInfo   = factorInfo)
+names(testObject) <- c("RNAtest", "protetest", "metatest")
 
-protetest.SE <- SummarizedExperiment( assays  = as.matrix(ecoseed$protetest)) 
-
-metatest.SE <- SummarizedExperiment( assays  = as.matrix(ecoseed$metatest)) 
-
-## Combine to a named list and call the ExperimentList constructor function 
-
-assayList <- list(RNAtest=RNAtest.SE, protetest=protetest.SE, metatest=metatest.SE)
-
-ExpList <- ExperimentList(assayList)
-
-## Create the sampleMap
-
-RNAtest.map <- data.frame(
-    primary = colnames(ecoseed$RNAtest),
-    colname = colnames(ecoseed$RNAtest),
-    stringsAsFactors = FALSE)
-
-protetest.map <- data.frame(
-    primary = colnames(ecoseed$protetest),
-    colname = colnames(ecoseed$protetest),
-    stringsAsFactors = FALSE)
-
-metatest.map <- data.frame(
-    primary = colnames(ecoseed$metatest),
-    colname = colnames(ecoseed$metatest),
-    stringsAsFactors = FALSE)
-
-maplist <- list(RNAtest=RNAtest.map, protetest=protetest.map, metatest=metatest.map)
-
-sampMap <- listToMap(maplist)
-
-## Create a colData
-
-colDat <- ecoseed$design
-
-## Create an example phenotype data
-mae <- MultiAssayExperiment(experiments = ExpList, colData = colDat, sampleMap = sampMap, metadata = list("DataRef"="https://www.uibk.ac.at/botany/ecoseed/home/"))
-
-# save(mae, file="mae.RData")
-```
-
-```{r createRlomisMAE, echo = TRUE}
-# à venir
-# testObject <- createRlomisMAE(
-#  projectName = "Tests",
-#  omicsData=ecoseed$mae, 
-#  omicsNames  = c("RNAtest", "metatest", "protetest"),
-#  omicsTypes  = c("RNAseq","metabolomics","proteomics"),
-#  ExpDesign   = colData(ecoseed$mae),
-#  factorRef   = ecoseed$factorRef)
-
-# now
-testObject <- createRflomicsMAE(
-    projectName = "Tests",
-    omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
-    omicsNames  = c("RNAtest", "metatest", "protetest"),
-    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
-    ExpDesign   = ecoseed$design,
-    factorRef   = ecoseed$factorRef)
-
-# Note the ".raw" suffix that was added to each of the names. This serves as a security measure for the interface pipeline. For this example, we won't use it.
-
-names(testObject) <- gsub("[.]raw", "", names(testObject))
 ```
 
 ### Statistical settings
