@@ -1,0 +1,311 @@
+---
+title: "RFLOMICS data management"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{RFLOMICS-data-management}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r, echo = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  echo = FALSE,
+  comment = "#>"
+)
+
+```
+
+RFLOMICS is a R package that provides a complete workflow for the
+analysis of multi-omics data within complex experimental designs
+framework.
+
+To ensure an efficient data management (statistical design, data,
+analysis parameters and results) we used the MultiAssayExperiment and
+SummarizedExperiment classes that we extended to fix a given
+organization for the slot metadata.
+
+# The RflomicsMAE and RflomicsSE classes:
+
+The RflomicsMAE (which extend the MultiAssayExperiment class) will store
+the statistical design and multi-omics data integration analysis
+parameters and results in the metadata slot. It will contain an
+ExperimentList of RflomicsSE (which extend SummarizedExperiment class)
+storing single-omics data and analysis parameters and results in the
+metadata slot.
+
+In this vignette, we will use an example to show how the metadata slots
+of the two RflomicsMAE and RflomicsSE objects are organised and can be
+accessed with the progress of the analysis workflow.
+
+RFLOMICS workflow is structured into three main parts:
+
+-   The first one involves loading the experimental design and omics
+    data, setting up the statistical model, and defining contrasts
+    (hypotheses) associated with the biological issues. The design List
+    of the metadata slot of the RflomicsMAE object stores this
+    statistical settings (in green in Fig 1).
+
+![Fig 1: Organization of the metadata slot of the RflomicsMAE
+object](Images/DM_RflomicsMAE-design.png){width="80%"}
+
+-   The second part allows for complete single-omics analysis for each
+    dataset. Both raw and processed omic datasets are stored in the
+    ExperimentList as RflomicsSE. For each analysis step, settings and
+    results are stored (in green in Fig 2)
+
+    -   i- Quality control to check for batch effects or identify
+        outlier samples:
+
+    -   ii- The DataProcessing List of the metadata slot keeps
+        pre-processing which may include filtering, normalization,
+        and/or transformation.
+
+    -   iii- The DiffExpAnal List of the metadata slot stores the
+        Differential expression analysis settings and results.
+
+    -   vi- The CoExpAnal List of the metadata slot stores co-expression
+        analysis on differentially expressed entities settings and
+        results.
+
+    -   vii- DiffExpEnrichAnal and CoExpEnrichAnal List of the metadata
+        slot keeps Functional enrichment analysis results and settings
+        for respectively the Differential expression analysis and
+        CoExpression analysis.
+
+![Fig 2: Organization of the metadata slot of the RflomicsSE
+objects](Images/DM_RflomicsSE-overview.png){width="100%"}
+
+-   The third part is the multi-omics integration, with two proposed
+    methods: a supervised approach using the MixOmics package (DIABLO),
+    and an unsupervised approach using MOFA2. (settings and results
+    stored in RflomicsMAE object)
+
+![Fig 3: storage of multi-omics integration settings and results in the
+metadata slot of the RflomicsMAE
+object](Images/DM_RflomicsMAE-integration.png){width="80%"}
+
+As you will see, this analysis workflow is implemented as methods of the
+two classes (RflomicsMAE and RflomicsSE), providing a generic interface
+regardless of the type of omics data being analyzed (RNAseq, proteomics,
+metabolomics, etc.). This methods will return the same class of object
+(RflomicsSE or RflomicsMAE) as the entry object type with the metadata
+slot enriched with the parameters and results. We also defined getter
+and setter to access this objects.
+
+# Setter and getter for the RflomicsMAE and RflomicsSE metadata slots:
+
+## Instantiate a RflomicsMAE from MAE:
+
+In this example we will Instantiate a RflomicsMAE object from an existing MAE object and a design data.frame.
+
+```{r, echo=FALSE}
+library(RFLOMICS)
+```
+
+```{r ecoseed2mae, echo=FALSE}
+
+data(ecoseed)
+
+## Create the SummarizedExperiment objects from the 3 data.frames 
+
+RNAtest.SE <- SummarizedExperiment( assays  = as.matrix(ecoseed$RNAtest)) 
+
+protetest.SE <- SummarizedExperiment( assays  = as.matrix(ecoseed$protetest)) 
+
+metatest.SE <- SummarizedExperiment( assays  = as.matrix(ecoseed$metatest)) 
+
+## Combine to a named list and call the ExperimentList constructor function 
+
+assayList <- list(RNAtest=RNAtest.SE, protetest=protetest.SE, metatest=metatest.SE)
+
+ExpList <- ExperimentList(assayList)
+
+## Create the sampleMap
+
+RNAtest.map <- data.frame(
+    primary = colnames(ecoseed$RNAtest),
+    colname = colnames(ecoseed$RNAtest),
+    stringsAsFactors = FALSE)
+
+protetest.map <- data.frame(
+    primary = colnames(ecoseed$protetest),
+    colname = colnames(ecoseed$protetest),
+    stringsAsFactors = FALSE)
+
+metatest.map <- data.frame(
+    primary = colnames(ecoseed$metatest),
+    colname = colnames(ecoseed$metatest),
+    stringsAsFactors = FALSE)
+
+maplist <- list(RNAtest=RNAtest.map, protetest=protetest.map, metatest=metatest.map)
+
+sampMap <- listToMap(maplist)
+
+## Create a colData
+
+colDat <- ecoseed$design
+
+## Create an example phenotype data
+mae <- MultiAssayExperiment(experiments = ExpList, colData = colDat, sampleMap = sampMap, metadata = list("DataRef"="https://www.uibk.ac.at/botany/ecoseed/home/"))
+
+# save(mae, file="mae.RData")
+```
+
+```{r createRlomisMAE, echo = TRUE}
+# à venir
+# testObject <- createRlomisMAE(
+#  projectName = "Tests",
+#  omicsData=ecoseed$mae, 
+#  omicsNames  = c("RNAtest", "metatest", "protetest"),
+#  omicsTypes  = c("RNAseq","metabolomics","proteomics"),
+#  ExpDesign   = colData(ecoseed$mae),
+#  factorRef   = ecoseed$factorRef)
+
+# now
+testObject <- createRflomicsMAE(
+    projectName = "Tests",
+    omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
+    omicsNames  = c("RNAtest", "metatest", "protetest"),
+    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
+    ExpDesign   = ecoseed$design,
+    factorRef   = ecoseed$factorRef)
+
+# Note the ".raw" suffix that was added to each of the names. This serves as a security measure for the interface pipeline. For this example, we won't use it.
+
+names(testObject) <- gsub("[.]raw", "", names(testObject))
+```
+
+### Statistical settings
+
+- set the model formulae
+
+```{r designMetadata, echo = TRUE}
+# generate the model formulae
+form <- generateModelFormulae(testObject)
+
+# set the model formulae
+testObject <- setModelFormula(testObject, form[2])
+
+# get the m model formulae
+getModelFormula(testObject)
+```
+
+- set contrasts:
+
+```{r contr, echo =TRUE}
+# generate the possible contrasts
+possibleContrasts <- generateExpressionContrast(testObject)
+
+# set the contrasts
+testObject <- setSelectedContrasts(testObject, 
+                                   contrastList = possibleContrasts$averaged[1:3])
+
+# get the contrasts
+getSelectedContrasts(testObject)
+```
+
+
+## Set and get Single-Omic analysis settings and results
+
+- Pre-processing of data: normalization and transformation settings and results
+
+```{r runNorm, echo=TRUE}
+
+# Noramlize and transform proteomics and metabolomics data 
+testObject <- runNormalization(testObject, 
+                               SE.name = "metatest", 
+                               normMethod = "median") |>
+    runTransformData(SE.name = "metatest", transformMethod = "log2") |>
+    runTransformData(SE.name = "protetest", transformMethod = "log2") |>
+    runOmicsPCA(SE.name = "metatest")
+
+# Access the normalization settings
+getNormSettings(testObject[["metatest"]])
+
+# Noramlize RNAseq data
+testObject <- filterLowAbundance(testObject, SE.name = "RNAtest", 
+                                 filterMethod = "CPM",
+                                 filterStrategy = "NbReplicates",
+                                 cpmCutoff = 5) |>
+    runNormalization(SE.name = "RNAtest", normMethod = "TMM")
+
+getFilteredFeatures(testObject[["RNAtest"]])[1:10]
+```
+
+It is important to note that none of the data are directly transformed
+in the assay, except if specifically asked by the user with setting the
+argument `modifyAssay` to TRUE. This way, you can always change your
+mind and test several normalization or transformation processes.
+
+You can access all results and plot them.
+
+```{r plotPCA, echo=TRUE}
+plotOmicsPCA(testObject[["metatest"]], raw = "raw")
+plotOmicsPCA(testObject[["metatest"]], raw = "norm")
+```
+
+```{r plotDataDistribution, echo=TRUE}
+plotDataDistribution(testObject[["metatest"]], raw = TRUE)
+plotDataDistribution(testObject[["metatest"]], raw = FALSE)
+```
+
+- Differential analysis: settings and results
+
+```{r diff, echo=TRUE}
+# run differential analysis on RNAseq data
+testObject <- runDiffAnalysis(testObject, SE.name = "RNAtest")
+
+# access to the settings
+getDiffSettings(testObject, SE.name = "RNAtest")
+
+# plot results as volcano
+plotDiffAnalysis(testObject, 
+                 SE.name = "RNAtest", 
+                 contrastName = "(temperatureMedium - temperatureLow) in mean", 
+                 typeofplots = "volcano")
+
+# as boxplot for a given gene
+plotBoxplotDE(testObject[["RNAtest"]], 
+              features = "AT4G04810")
+
+```
+
+## Set and get Multi-Omics integration analysis settings and results 
+
+The multi-omics step in RFLOMICS takes two steps: the preparation of the
+object, based on the user-selected method, and the actual run of the
+selected method. This is done using `prepareForIntegration` and
+`runOmicsIntegration`. In this example, we will use only the proteomics
+and metabolomics dataset with the mixOmics package (block.plsda
+function).
+
+`prepareForIntegration` does not return a RflomicsMAE object, it returns
+the corresponding type to be an input for either MOFA2 or mixOmics
+functions.
+
+```{r, echo=TRUE}
+listIntegration <- prepareForIntegration(testObject, 
+                                         omicsNames = c("metatest", "protetest"),
+                                         method = "mixOmics"
+)
+
+testObject <- runOmicsIntegration(object = testObject, 
+                                  preparedObject = listIntegration, 
+                                  method = "mixOmics", 
+                                  selectedResponse = "temperature", 
+                                  ncomp = 3)
+```
+
+Visualizing results is made through the original package functions.
+
+```{r , echo=TRUE}
+mixOmics::plotIndiv(getMixOmics(testObject, response = "temperature"))
+```
+
+
