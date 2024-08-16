@@ -34,7 +34,7 @@
                 omicsNames  = local.rea.values$omicsNames,
                 omicsTypes  = local.rea.values$omicsTypes,
                 ExpDesign   = local.rea.values$ExpDesign,
-                factorRef   = data.frame(
+                factorInfo   = data.frame(
                     factorName = names(local.rea.values$dF.List.ref),
                     factorRef  = local.rea.values$dF.List.ref,
                     factorType = local.rea.values$dF.Type.dFac

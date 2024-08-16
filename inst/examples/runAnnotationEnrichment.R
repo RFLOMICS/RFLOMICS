@@ -2,15 +2,18 @@
 library(RFLOMICS)
 data(ecoseed)
 
+factorInfo <- data.frame(
+  "factorName"   = c("Repeat", "temperature", "imbibition"),
+  "factorType"   = c("batch", "Bio", "Bio")
+)
+
 # create rflomicsMAE object with ecoseed data
-MAE <- createRflomicsMAE(
-    projectName = "Tests",
-    omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
-    omicsNames  = c("RNAtest", "metatest", "protetest"),
-    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
-    ExpDesign   = ecoseed$design,
-    factorRef   = ecoseed$factorRef)
-# names(MAE) <- c("RNAtest", "metatest", "protetest")
+MAE <- RFLOMICS::createRflomicsMAE(
+  projectName = "Tests",
+  omicsData   = ecoseed.mae,
+  omicsTypes  = c("RNAseq","proteomics","metabolomics"),
+  factorInfo  = factorInfo)
+#names(MAE) <- c("RNAtest", "protetest", "metatest")
 
 # Set the statistical model and contrasts to test
 formulae <- generateModelFormulae(MAE)

@@ -10,15 +10,18 @@ library(RFLOMICS)
 # load ecoseed data
 data(ecoseed)
 
+factorInfo <- data.frame(
+  "factorName"   = c("Repeat", "temperature", "imbibition"),
+  "factorType"   = c("batch", "Bio", "Bio")
+)
+
 # create rflomicsMAE object with ecoseed data
-MAE <- createRflomicsMAE(
-    projectName = "Tests",
-    omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
-    omicsNames  = c("RNAtest", "metatest", "protetest"),
-    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
-    ExpDesign   = ecoseed$design,
-    factorRef   = ecoseed$factorRef)
-names(MAE) <- c("RNAtest", "metatest", "protetest")
+MAE <- RFLOMICS::createRflomicsMAE(
+  projectName = "Tests",
+  omicsData   = ecoseed.mae,
+  omicsTypes  = c("RNAseq","proteomics","metabolomics"),
+  factorInfo  = factorInfo)
+names(MAE) <- c("RNAtest", "protetest", "metatest")
 
 formulae <- generateModelFormulae( MAE) 
 MAE <- setModelFormula(MAE, formulae[[1]])
@@ -32,10 +35,10 @@ contrastList <- generateExpressionContrast(object = MAE) |>
 
 # ---- Construction of data tables differential analysis : ----
 
-protMat <- ecoseed$protetest
-rnaMat <- ecoseed$RNAtest
-metMat <- ecoseed$metatest
-condMat <- ecoseed$design
+protMat <- ecoseed.df$protetest
+rnaMat <- ecoseed.df$RNAtest
+metMat <- ecoseed.df$metatest
+condMat <- ecoseed.df$design
 
 condMat$Repeat      <- factor(condMat$Repeat, levels = c("rep1", "rep2", "rep3"))
 condMat$imbibition  <- factor(condMat$imbibition, levels = c("DS", "EI", "LI"))

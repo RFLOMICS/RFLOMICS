@@ -1,14 +1,19 @@
+library(RFLOMICS)
+
 # load ecoseed data
 data(ecoseed)
+
+factorInfo <- data.frame(
+  "factorName"   = c("Repeat", "temperature", "imbibition"),
+  "factorType"   = c("batch", "Bio", "Bio")
+)
 
 # create rflomicsMAE object with ecoseed data
 MAE <- RFLOMICS::createRflomicsMAE(
   projectName = "Tests",
-  omicsData   = list(ecoseed$RNAtest, ecoseed$metatest, ecoseed$protetest),
-  omicsNames  = c("RNAtest", "metatest", "protetest"),
-  omicsTypes  = c("RNAseq","metabolomics","proteomics"),
-  ExpDesign   = ecoseed$design,
-  factorRef   = ecoseed$factorRef)
+  omicsData   = ecoseed.mae,
+  omicsTypes  = c("RNAseq","proteomics","metabolomics"),
+  factorInfo  = factorInfo)
 
 # generate all statistical model formulae
 formulae <- generateModelFormulae(MAE)
@@ -21,3 +26,4 @@ contrastList <- generateExpressionContrast(MAE, "averaged")
 
 # Set the contrasts List and choose the first 3 contrasts of type averaged
 MAE <- setSelectedContrasts(MAE, contrastList = contrastList[c(1,2,3),])
+
