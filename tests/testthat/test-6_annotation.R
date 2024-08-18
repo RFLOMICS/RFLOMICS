@@ -1,3 +1,8 @@
+### ============================================================================
+### [06_clusterProfiler] 
+### ----------------------------------------------------------------------------
+# A. Hulot, 
+
 library(testthat)
 library(RFLOMICS)
 
@@ -21,7 +26,6 @@ MAE <- createRflomicsMAE(
   omicsData   = ecoseed.mae,
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
   factorInfo  = factorInfo)
-names(MAE) <- c("RNAtest", "protetest", "metatest")
 
 formulae <- generateModelFormulae( MAE)
 MAE <- setModelFormula(MAE, formulae[[1]])
@@ -33,13 +37,11 @@ contrastList <- generateExpressionContrast(object = MAE) |>
                                   "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))" ))
 MAE <- MAE |>
     setSelectedContrasts(contrastList = contrastList) |>
-    runNormalization(SE.name = "protetest", normMethod = "median")  |>
+    runDataProcessing(SE.name = "protetest", 
+                      normMethod = "median",
+                      transformMethod = "none")  |>
     runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")
 
-# |>
-#     runCoExpression(SE.name = "RNAtest",
-#                     K = 2:12,
-#                     replicates = 2)
 
 # ---- Annotation test function - DiffExpEnrichment ----
 # 

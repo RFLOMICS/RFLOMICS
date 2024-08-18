@@ -1,3 +1,8 @@
+### ============================================================================
+### [05_coseq] 
+### ----------------------------------------------------------------------------
+# A. Hulot, 
+
 library(testthat)
 library(RFLOMICS)
 library(coseq)
@@ -20,7 +25,6 @@ MAE <- RFLOMICS::createRflomicsMAE(
   omicsData   = ecoseed.mae,
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
   factorInfo  = factorInfo)
-names(MAE) <- c("RNAtest", "protetest", "metatest")
 
 formulae <- generateModelFormulae( MAE) 
 MAE <- setModelFormula(MAE, formulae[[1]])
@@ -35,6 +39,7 @@ MAE <- MAE |>
   runTransformData(SE.name = "metatest", transformMethod = "log2") |>
   runNormalization(SE.name = "metatest", normMethod = "totalSum")  |>
   runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")     |>
+  runTransformData(SE.name = "protetest", transformMethod = "none") |>
   runNormalization(SE.name = "protetest", normMethod = "median")  |>
   runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")     |>
   filterLowAbundance(SE.name = "RNAtest")                          |>

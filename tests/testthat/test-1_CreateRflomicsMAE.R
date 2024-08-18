@@ -1,5 +1,5 @@
 ### ============================================================================
-### [01_LoadData] 
+### [01_CreateRflomicsMAE] 
 ### ----------------------------------------------------------------------------
 # N. Bessoltane, 
 
@@ -9,10 +9,9 @@ library(testthat)
 # ---- Tests RFLOMICS constructor ----
 
 # load data
-# load ecoseed data
-data(ecoseed.df)
-data(ecoseed.mae)
+data(ecoseed)
 
+# information about factors
 factorInfo <- data.frame(
   "factorName"   = c("Repeat", "temperature", "imbibition"),
   "factorRef"    = c("rep1", "Low", "DS"),
@@ -20,30 +19,115 @@ factorInfo <- data.frame(
   "factorLevels" = c("rep1,rep2,rep3", "Low,Medium,Elevated", "DS,EI,LI")
 )
 
-# create rflomicsMAE object with ecoseed data
+# create rflomicsMAE object
 MAE <- RFLOMICS::createRflomicsMAE(
   projectName = "Tests",
   omicsData   = list(ecoseed.df$RNAtest, ecoseed.df$protetest, ecoseed.df$metatest),
   omicsNames  = c("RNAtest", "protetest", "metatest"),
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
   ExpDesign   = ecoseed.df$design,
-  factorInfo   = factorInfo)
+  factorInfo  = factorInfo)
 
 # ---- test output class ----
-test_that("FlomicsMultiAssay.constructor fonction return MultiAssayExperiment object", {
+test_that("createRflomicsMAE returns RflomicsMAE/MultiAssayExperiment object", {
   
   # test type if MAE class
+  expect_true("RflomicsMAE" %in% is(MAE))
   expect_true("MultiAssayExperiment" %in% is(MAE))
   
   # test type if element of MAE class
   for (SE in names(MAE)) {
+    expect_true("RflomicsSE" %in% is(MAE[[SE]]))
     expect_true("SummarizedExperiment" %in% is(MAE[[SE]]))
   }
 })
 
-test_that("test if RflomicsMAE / RflomicsSE", {
-  expect_true(is(MAE, "RflomicsMAE"))
+test_that("test MAE project name.", {
+  
+  # test type if MAE class
+  expect_identical(getProjectName(MAE), "Tests")
 })
+
+test_that("test MAE names.", {
+  
+  # test type if MAE class
+  expect_identical(names(MAE), c("RNAtest", "protetest", "metatest"))
+})
+
+test_that("test MAE omics types", {
+  
+  # test type if MAE class
+  omicsType <- c("RNAseq","proteomics","metabolomics")
+  names(omicsType) <- c("RNAtest", "protetest", "metatest")
+  
+  expect_identical(getOmicsTypes(MAE), omicsType)
+})
+
+
+test_that("test MAE metadtata", {
+  
+  # design
+  expect_identical(getModelFormula(MAE), logical(0))
+  expect_identical(getSelectedContrasts(MAE), data.frame())
+  expect_identical(getFactorNames(MAE), factorInfo$factorName)
+  
+  # IntegrationAnalysis
+  # expect_identical(getAnalysis(MAE, name = "IntegrationAnalysis"), list()) !!!!!!!
+})
+
+
+test_that("test SE metadtata", {
+  
+  for (SE in names(MAE)) {
+    
+    # design
+    # expect_identical(getModelFormula(MAE[[SE]]), logical(0)) !!!!!!!!
+    # expect_identical(getSelectedContrasts(MAE[[SE]]), data.frame()) !!!!!!!!
+    expect_identical(getFactorNames(MAE[[SE]]), factorInfo$factorName)
+    
+    # DataProcessing
+    if(getOmicsTypes(MAE[[SE]]) == "RNAseq"){
+      expect(!is.null(MAE[[SE]]@metadata$DataProcessing$rowSumsZero), 
+             failure_message = "This value should not be 0.")
+    }
+    else{
+      expect_equal(MAE[[SE]]@metadata$DataProcessing$rowSumsZero, NULL)
+    }
+    expect_equal(as.vector(getSelectedSamples(MAE[[SE]])), colnames(MAE[[SE]]))
+    expect_equal(getAnalysis(object  = MAE[[SE]], 
+                             name    = "DataProcessing", 
+                             subName = "featureFiltering"), 
+                 list())
+    expect_equal(getAnalysis(object  = MAE[[SE]], 
+                             name    = "DataProcessing", 
+                             subName = "Normalization"), 
+                 list())
+    expect_equal(getAnalysis(object  = MAE[[SE]], 
+                             name    = "DataProcessing", 
+                             subName = "Normalization"),
+                 list())
+    expect_equal(getAnalysis(object  = MAE[[SE]], 
+                             name    = "DataProcessing", 
+                             subName = "log"),
+                 NULL)
+  }
+  
+  # PCAlist
+  expect_no_error(getAnalysis(MAE[[SE]], name = "PCAlist", subName = "raw"))
+  expect_error(getAnalysis(MAE[[SE]], name = "PCAlist", subName = "norm"))
+  
+  # Analyses
+  expect_equal(getAnalysis(MAE[[SE]], name = "DiffExpAnal"),       list())
+  expect_equal(getAnalysis(MAE[[SE]], name = "CoExpAnal"),         list())
+  expect_equal(getAnalysis(MAE[[SE]], name = "DiffExpEnrichAnal"), list())
+  expect_equal(getAnalysis(MAE[[SE]], name = "CoExpEnrichAnal"),   list())
+})
+
+
+
+expect_identical(getFilterSettings(MAE[["RNAtest"]]), NULL)
+
+
 
 ## ---- if input is mae object ----
 test_that("test mae/se input", {
@@ -51,15 +135,18 @@ test_that("test mae/se input", {
   MAE2 <- RFLOMICS::createRflomicsMAE(
     projectName = "Tests",
     omicsData   = ecoseed.mae,
-    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
+    omicsTypes  = c("RNAseq","proteomics","metabolomics"),
     factorInfo   = factorInfo)
-  names(MAE) <- c("RNAtest", "metatest", "protetest")
-  
+
   expect_true(is(MAE2, "RflomicsMAE"))
   for (SE in names(MAE2)) {
     expect_true("SummarizedExperiment" %in% is(MAE2[[SE]]))
   }
-  
+
+  expect_equal(colData(MAE), colData(MAE2))
+  for(SE in names(MAE2)){
+    expect_equal(MAE[[SE]], MAE2[[SE]])
+  }
 })
 
 ## ---- if input is list of se ----
@@ -67,8 +154,8 @@ test_that("test mae/se input", {
   
   omicsData3 <- list(
     RNAtest = ecoseed.mae[["RNAtest"]], 
-    metatest = ecoseed.mae[["metatest"]], 
-    protetest = ecoseed.mae[["protetest"]]
+    protetest = ecoseed.mae[["protetest"]],
+    metatest = ecoseed.mae[["metatest"]]
   )
   
   factorInfo3 <- factorInfo[,c(-2, -4)]
@@ -76,16 +163,19 @@ test_that("test mae/se input", {
   MAE3 <- RFLOMICS::createRflomicsMAE(
     projectName = "Tests",
     omicsData   = omicsData3,
-    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
+    omicsTypes  = c("RNAseq","proteomics","metabolomics"),
     ExpDesign   = as.data.frame(colData(ecoseed.mae)),
     factorInfo  = factorInfo3)
-  names(MAE) <- c("RNAtest", "metatest", "protetest")
-  
+
   expect_true(is(MAE3, "RflomicsMAE"))
   for (SE in names(MAE3)) {
     expect_true("SummarizedExperiment" %in% is(MAE3[[SE]]))
   }
   
+  expect_equal(colData(MAE), colData(MAE3))
+  for(SE in names(MAE3)){
+    expect_equal(MAE[[SE]], MAE3[[SE]])
+  }
 })
 
 ## ---- if input is list of se & data.frame ----
@@ -93,23 +183,26 @@ test_that("test mae/se input", {
   
   omicsData4 <- list(
     RNAtest = ecoseed.mae[["RNAtest"]], 
-    metatest = ecoseed.df$metatest, 
-    protetest = as.matrix(ecoseed.df$protetest)
+    protetest = as.matrix(ecoseed.df$protetest),
+    metatest = ecoseed.df$metatest
   )
   
   MAE4 <- RFLOMICS::createRflomicsMAE(
     projectName = "Tests",
     omicsData   = omicsData4,
-    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
+    omicsTypes  = c("RNAseq","proteomics","metabolomics"),
     ExpDesign   = ecoseed.df$design,
     factorInfo  = factorInfo)
-  names(MAE) <- c("RNAtest", "metatest", "protetest")
-  
+
   expect_true(is(MAE4, "RflomicsMAE"))
   for (SE in names(MAE4)) {
     expect_true("SummarizedExperiment" %in% is(MAE4[[SE]]))
   }
   
+  expect_equal(colData(MAE), colData(MAE4))
+  for(SE in names(MAE4)){
+    expect_equal(MAE[[SE]], MAE4[[SE]])
+  }
 })
 
 

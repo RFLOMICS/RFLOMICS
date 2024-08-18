@@ -1,3 +1,8 @@
+### ============================================================================
+### [04_DE] 
+### ----------------------------------------------------------------------------
+# A. Hulot, 
+
 library(testthat)
 library(RFLOMICS)
 
@@ -22,7 +27,6 @@ MAE <- RFLOMICS::createRflomicsMAE(
   omicsData   = ecoseed.mae,
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
   factorInfo  = factorInfo)
-names(MAE) <- c("RNAtest", "protetest", "metatest")
 
 formulae <- generateModelFormulae( MAE) 
 MAE <- setModelFormula(MAE, formulae[[1]])
@@ -91,13 +95,22 @@ test_that("Differential analysis on RNAseq (counts) returns the same result with
     
     ########################-
     ### equivalent pipeline
+    se.pro <- getProcessedData(MAE[["RNAtest"]], filter = TRUE)
+    rnaMat2 <- rnaMat %>%  dplyr::filter(rownames(.) %in% rownames(se.pro))
+    expect_equal(dim(rnaMat2),  dim(se.pro))
     
-    rnaMat2 <- rnaMat %>% 
-        dplyr::filter(rownames(.) %in% rownames(MAE[["RNAtest"]]))
-    
-    dge <- edgeR::DGEList(counts       = rnaMat2,
-                          group        = paste(condMat$temperature, condMat$imbibition, sep = "_"))
+    dge <- edgeR::DGEList(
+      counts       = rnaMat2,
+      group        = paste(condMat$temperature, condMat$imbibition, sep = "_"))
     dge <- edgeR::calcNormFactors(dge, method = "TMM")
+    
+    
+    rf.coef.norm <- as.data.frame(
+      MAE[["RNAtest"]]@metadata$DataProcessing$Normalization$results$coefNorm)
+    coef.norm <- as.data.frame(dge$samples)
+  
+    expect_equal(rf.coef.norm$norm.factors, coef.norm$norm.factors)
+    expect_equal(rf.coef.norm$lib.size, coef.norm$lib.size)
     
     dge     <- edgeR::estimateGLMCommonDisp(dge, design = design)
     dge     <- edgeR::estimateGLMTrendedDisp(dge, design = design)
@@ -188,6 +201,7 @@ test_that("Diff Analysis on proteomics returns the same result within and outsid
     
     
     MAE <- MAE |>
+        runTransformData(SE.name = "protetest", transformMethod = "none") |>
         runNormalization(SE.name = "protetest", normMethod = "median")    |>
         runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")
     

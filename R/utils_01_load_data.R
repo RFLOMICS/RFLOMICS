@@ -174,7 +174,8 @@ createRflomicsMAE <- function(projectName = NULL,
         stop("The factor levels: ", factorInfo[i,]$factorLevels, " don't exist")
       
       
-      ExpDesign[[factorInfo[i,]$factorName]] <- factor(ExpDesign[[factorInfo[i,]$factorName]], levels = levels)
+      ExpDesign[[factorInfo[i,]$factorName]] <- 
+        factor(ExpDesign[[factorInfo[i,]$factorName]], levels = levels)
     }
   }
   
@@ -352,24 +353,24 @@ createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
   dataProcessing <- 
     list(rowSumsZero      = genes_flt0,
          selectedSamples  = colData$samples, 
-         featureFiltering = list(setting  = NULL, 
-                                 results  = list(filteredFeatures=NULL),
-                                 filtered = FALSE), 
-         Normalization    = list(setting  = list(method = NULL), 
-                                 results  = NULL,  
-                                 normalized = FALSE), 
-         Transformation   = list(setting  = list(method = NULL), 
-                                 results  = NULL,  
-                                 transformed = FALSE),
+         featureFiltering = list(), 
+         Normalization    = list(), 
+         Transformation   = list(),
          log = NULL)
   
+  Design <- list(
+    factorType = design[intersect(names(design), names(colData))],
+    Model.formula = vector(),
+    Contrasts.Sel = data.frame(),
+    ExpDesign = DataFrame(colData))
+  
   rflomicsSE <- 
-    RflomicsSE(assays = matrix.filt, 
-               colData = DataFrame(colData), 
-               omicType = omicType,
-               design = 
-                 list(factorType = design[intersect(names(design), names(colData))]),
+    RflomicsSE(assays         = matrix.filt, 
+               colData        = DataFrame(colData), 
+               omicType       = omicType,
+               design         = Design,
                DataProcessing = dataProcessing)
+  
   return(rflomicsSE)
 }
 

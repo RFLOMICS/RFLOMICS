@@ -263,10 +263,10 @@ setGeneric(
   name = "runDataProcessing",
   def  = function(object, 
                   samples=NULL, 
-                  lowCountFiltering_strategy = "NbReplicates", 
-                  lowCountFiltering_CPM_Cutoff = 1, 
-                  normMethod = "none", 
-                  transformMethod = "none", 
+                  filterStrategy = "NbReplicates", 
+                  cpmCutoff = 1, 
+                  normMethod = NULL, 
+                  transformMethod = NULL, 
                   ...) {
     standardGeneric("runDataProcessing")
   }

@@ -1,3 +1,8 @@
+### ============================================================================
+### [03_normTransform] 
+### ----------------------------------------------------------------------------
+# A. Hulot, 
+
 library(testthat)
 library(RFLOMICS)
 
@@ -21,7 +26,6 @@ MAE <- RFLOMICS::createRflomicsMAE(
   omicsData   = ecoseed.mae,
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
   factorInfo  = factorInfo)
-names(MAE) <- c("RNAtest", "protetest", "metatest")
 
 
 # Comparison data:
@@ -119,24 +123,27 @@ test_that("transformData and apply_transform yield expected results", {
 test_that("RunNormalization and apply_norm yield expected results", {
   
   MAE2 <- MAE3 <- MAE4 <- MAE5 <- MAE5b <- MAE6 <- MAE 
-  rnaSeqMat <- rnaMat %>% dplyr::filter(rownames(.) %in% rownames(MAE[["RNAtest"]]))
+  
+  se.p <- getProcessedData(MAE[["RNAtest"]], filter = TRUE)
+  rnaSeqMat <- rnaMat %>% dplyr::filter(rownames(.) %in% rownames(se.p))
   
   ####
   # --- Missing norm argument
-  
-  MAE2 <- runNormalization(MAE, SE.name = "protetest", modifyAssay = FALSE)
+  MAE2 <- runTransformData(MAE, SE.name = "protetest", transformMethod = "none")
+  MAE2 <- runNormalization(MAE2, SE.name = "protetest", modifyAssay = FALSE)
   expect_equal( assay(MAE2[["protetest"]]), as.matrix(protMat))
   expect( !isNorm(MAE2,"protetest"), failure_message = "It was normalized, it shouldn't be.")
   
-  MAE2 <- runNormalization(MAE, SE.name = "RNAtest", modifyAssay = FALSE)
+  MAE2 <- filterLowAbundance(MAE, SE.name = "RNAtest")
+  MAE2 <- runNormalization(MAE2, SE.name = "RNAtest", modifyAssay = FALSE)
   expect_equal( assay(MAE2[["RNAtest"]]), as.matrix(rnaSeqMat))
   expect(getNormSettings(MAE2[["RNAtest"]])$method == "TMM", failure_message = "TMM was not forced on RNAseq data")
   expect(!isNorm(MAE2,"RNAtest"), failure_message = "It was normalized, it shouldn't be.")
   
   ####
   # --- no norm, no modification asked, nothing is supposed to happen.
-  
-  MAE2 <- runNormalization(MAE, SE.name = "protetest",normMethod = "none",  modifyAssay = FALSE)
+  MAE2 <- runTransformData(MAE, SE.name = "protetest", transformMethod = "none")
+  MAE2 <- runNormalization(MAE2, SE.name = "protetest",normMethod = "none",  modifyAssay = FALSE)
   expect_equal( assay(MAE2[["protetest"]]), as.matrix(protMat))
   expect(!isNorm(MAE2,"protetest"), failure_message = "It was normalized, it shouldn't be.")
   
@@ -182,7 +189,11 @@ test_that("RunNormalization and apply_norm yield expected results", {
   ####
   # --- right transformation.
   
-  MAE5 <- MAE5b <- runNormalization(MAE, SE.name = "protetest", modifyAssay = FALSE, normMethod = "median")
+  MAE5 <- MAE5b <- MAE |>
+    runTransformData(SE.name = "protetest", transformMethod = "none") |>
+    runNormalization(SE.name = "protetest", 
+                     modifyAssay = FALSE, 
+                     normMethod = "median")
   # warning message: proteomics data should be transformed before normalization.
   expect_equal( assay(MAE5[["protetest"]]), as.matrix(protMat)) 
   expect(!isNorm(MAE5, "protetest"), failure_message = "It was normalized, it shouldn't be.")
@@ -199,7 +210,9 @@ test_that("RunNormalization and apply_norm yield expected results", {
   ####
   # --- apply transformation directly: 
   
-  MAE6 <- runNormalization(MAE, SE.name = "protetest", modifyAssay = TRUE, normMethod = "median")
+  MAE6 <- MAE |> 
+    runTransformData(SE.name = "protetest", transformMethod = "none") |>
+    runNormalization(SE.name = "protetest", modifyAssay = TRUE, normMethod = "median")
   # warning message: proteomics data should be transformed before normalization.
   protMed <- apply(protMat, 2, FUN = function(vect) vect - median(vect))
   expect_equal( assay(MAE6[["protetest"]]), as.matrix(protMed)) 
@@ -312,10 +325,13 @@ test_that("Transformation - no method - modification", { #
 test_that("RNAseq - none + TMM + log2", {
   
   
-  # SumarizedExperiment::assay(MAE[["RNAtest"]]) 
+  # RFLOMICS version
+  MAE2 <- MAE
+  # It is not recommended to transform RNAseq data.
+  # MAE2 <- runTransformData(MAE2, SE = "RNAtest", transformMethod = "none")
   
   # matrix version (filtering is done in the FlomicsMultiAssay constructor)
-  rnaSeqMat <- rnaMat %>% dplyr::filter(rownames(.) %in% rownames(MAE[["RNAtest"]]))
+  rnaSeqMat <- rnaMat %>% dplyr::filter(rownames(.) %in% rownames(MAE2[["RNAtest"]]))
   
   pca.raw <- FactoMineR::PCA(t(log2(rnaSeqMat + 1)), ncp = 5, graph = FALSE)
   
@@ -325,7 +341,14 @@ test_that("RNAseq - none + TMM + log2", {
   expect_equal(pca.raw$var, MAE[["RNAtest"]]@metadata$PCAlist$raw$var)
   # the call is obligatory different between the two
   
+  MAE2 <- MAE2 |> 
+    filterLowAbundance(SE.name = "RNAtest") |>
+    runNormalization(SE.name = "RNAtest", normMethod = "TMM") |>
+    RFLOMICS::runOmicsPCA(SE.name = "RNAtest", raw = FALSE)
+  se.p <- getProcessedData(MAE2[["RNAtest"]], filter = TRUE)
+  
   # Manually transforming and normalizing rnaSeqMat
+  rnaSeqMat <- rnaMat %>% dplyr::filter(rownames(.) %in% rownames(se.p))
   normFactors <- edgeR::calcNormFactors(rnaSeqMat, method = "TMM")
   libSize <-  colSums(rnaSeqMat)
   
@@ -333,13 +356,6 @@ test_that("RNAseq - none + TMM + log2", {
   
   pca.norm <- FactoMineR::PCA(t(log2(tnDat)), ncp = 5, graph = FALSE)
   
-  # RFLOMICS version
-  MAE2 <- MAE
-  # It is not recommended to transform RNAseq data.
-  # MAE2 <- runTransformData(MAE2, SE = "RNAtest", transformMethod = "none")
-  MAE2 <- runNormalization(MAE2, SE.name = "RNAtest", normMethod = "TMM")
-  
-  MAE2 <- RFLOMICS::runOmicsPCA(MAE2, SE = "RNAtest")
   expect_equal(pca.norm$eig, MAE2[["RNAtest"]]@metadata$PCAlist$norm$eig)
   expect_equal(pca.norm$svd, MAE2[["RNAtest"]]@metadata$PCAlist$norm$svd)
   expect_equal(pca.norm$ind, MAE2[["RNAtest"]]@metadata$PCAlist$norm$ind)
@@ -359,7 +375,10 @@ test_that("RNAseq - correct behaviour of normalization and transformation",  {
   # expect(!RFLOMICS:::.isTransformed(MAE2[["RNAtest"]]), 
   #        failure_message = "TransformData transformed the data when not asked to")
   
-  MAE2 <- runNormalization(MAE2, SE = "RNAtest")
+  MAE2 <- MAE2 |> 
+    filterLowAbundance(SE.name = "RNAtest") |> 
+    runNormalization(SE = "RNAtest")
+  
   expect(getNormSettings(MAE2[["RNAtest"]])$method == "TMM", 
          failure_message = "Normalization is not defaulted to TMM for RNAseq data.")
   expect(!RFLOMICS:::.isNorm(MAE2[["RNAtest"]]), 

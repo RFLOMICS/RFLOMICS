@@ -140,7 +140,34 @@
 
 ######## INTERNAL - Filtred the Data ###########
 
-# .applyFiltering: apply the normalization method stored in object@metadata[["Normalization"]] and modify the assay.
+# .applySampleFiltering
+#' @title .applySampleFiltering
+#'
+#' @param object An object of class \link{RflomicsSE}
+#' @description apply the filtering to the assay. Usually.
+#' @keywords internal
+#' @noRd
+#'
+
+.applySampleFiltering <- function(object) {
+  
+  selectedSamples <- getSelectedSamples(object)
+  if(setequal(selectedSamples, colnames(object))) return(object)
+  
+  object <- object[, selectedSamples]
+  object <- .updateColData(object)
+  
+  # update contrast list
+  selectedContrasts  <- getSelectedContrasts(object)
+  selectedContrasts2 <- updateSelectedContrasts(object, selectedContrasts)
+  
+  object <- setSelectedContrasts(object, selectedContrasts2)
+  
+  return(object)
+}
+
+
+# .applyFiltering
 #' @title .applyFiltering
 #'
 #' @param object An object of class \link{RflomicsSE}
@@ -304,15 +331,27 @@
 #'
 
 .isFiltered <- function(object) {
-  metadata(object)[["DataProcessing"]][["featureFiltering"]][["filtered"]]
+  featureFiltering <- 
+    getAnalysis(object, name = "DataProcessing", subName = "featureFiltering")
+  
+  if(length(featureFiltering) == 0) return(FALSE)
+  return(featureFiltering[["filtered"]])
 }
 
 .isTransformed <- function(object) {
-  metadata(object)[["DataProcessing"]][["Transformation"]][["transformed"]]
+  Transformation <- 
+    getAnalysis(object, name = "DataProcessing", subName = "Transformation")
+  
+  if(length(Transformation) == 0) return(FALSE)
+  Transformation[["transformed"]]
 }
 
 .isNorm <- function(object) {
-  metadata(object)[["DataProcessing"]][["Normalization"]][["normalized"]]
+  Normalization <- 
+    getAnalysis(object, name = "DataProcessing", subName = "Normalization")
+  
+  if(length(Normalization) == 0) return(FALSE)
+  Normalization[["normalized"]]
 }
 
 

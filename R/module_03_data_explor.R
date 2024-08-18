@@ -123,6 +123,8 @@ QCNormalizationTab <-
     output$selectSamplesUI <- renderUI({
       sampleList <-
         colnames(session$userData$FlomicsMultiAssay[[dataset]])
+      sampleList <<- sampleList
+      object <<- session$userData$FlomicsMultiAssay[[dataset]]
       pickerInput(
         inputId  = session$ns("selectSamples"),
         label    = .addBSpopify(label = 'Samples list:', 
@@ -586,8 +588,8 @@ QCNormalizationTab <-
           object = session$userData$FlomicsMultiAssay,
           SE.name = dataset,
           samples = input$selectSamples,
-          lowCountFiltering_strategy = param.list[["Filter_Strategy"]],
-          lowCountFiltering_CPM_Cutoff = param.list[["CPM_Cutoff"]],
+          filterStrategy = param.list[["Filter_Strategy"]],
+          cpmCutoff = param.list[["CPM_Cutoff"]],
           normMethod = param.list[["NormMethod"]],
           transformMethod = param.list[["transform_method"]]
         )
@@ -628,11 +630,7 @@ check_run_process_execution <-
     
     # check filtred samples
     samples <- 
-      setdiff(
-        SE$samples, 
-        getAnalysis(SE, 
-                   name = "DataProcessing", 
-                   subName = "sampleFiltering")$filteredSamples)
+      setdiff(SE$samples, getSelectedSamples(SE))
     
     if (!dplyr::setequal(samples, param.list$samples))
       return(TRUE)

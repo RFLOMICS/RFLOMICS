@@ -256,17 +256,16 @@ setMethod(
 setMethod(
   f = "getAnalysis",
   signature = "RflomicsMAE",
-  definition = function(object,
-                        SE.name = NULL,
+  definition = function(object, #SE.name = NULL,
                         name    = NULL,
                         subName = NULL){
     
-    if(!is.null(SE.name)){
-      if(!SE.name %in% getDatasetNames(object))
-        stop(SE.name, " ?")
-      
-      object <- object[[SE.name]]
-    }
+    # if(!is.null(SE.name)){
+    #   if(!SE.name %in% getDatasetNames(object))
+    #     stop(SE.name, " ?")
+    #   
+    #   object <- object[[SE.name]]
+    # }
     
     results <- 
       .getAnalysis(object, name, subName)

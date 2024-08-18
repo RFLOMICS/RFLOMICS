@@ -20,9 +20,9 @@
 #' runDataProcessing() calls the following functions:
 #' @param object An object of class \link{RflomicsSE} or class \link{RflomicsSE} 
 #' @param samples samples to keep.
-#' @param lowCountFiltering_strategy strategy of RNAseq low count filtering. 
+#' @param filterStrategy strategy of RNAseq low count filtering. 
 #' Mandatory for RNAseq data. Default value: "NbReplicates".
-#' @param lowCountFiltering_CPM_Cutoff CPM cutoff for RNAseq low count filtering.
+#' @param cpmCutoff CPM cutoff for RNAseq low count filtering.
 #'  Mandatory for RNAseq data. Default value: 1.
 #' @param normMethod of normalization. Mandatory for RNAseq data. 
 #' Default value: RNAseq = TMM.
@@ -54,94 +54,77 @@
 setMethod(
   f          = "runDataProcessing",
   signature  = "RflomicsSE",
-  definition = function(object, 
-                        samples=colnames(object),
-                        lowCountFiltering_strategy = "NbReplicates", 
-                        lowCountFiltering_CPM_Cutoff = 1, 
-                        normMethod = "none", 
-                        transformMethod = "none")
-  {
+  definition = function(object,
+                        samples=NULL,
+                        filterStrategy = NULL, 
+                        cpmCutoff = NULL, 
+                        normMethod = NULL, 
+                        transformMethod = NULL){
+    
+    ## !!!! verifier que il n'est pas apply
+    
+    # supported values:
+    transformation_method.sup          <- c("none", "log2")
+    normalisation_method.abundance.sup <- c("none", "median", "totalSum")
+    normalisation_method.count.sup     <- c("TMM")
     
     # keep selected samples
-    if(!is.null(samples))
-      samples <- colnames(object)
+    if(is.null(samples)) samples <- colnames(object)
     
     message("[RFLOMICS] #    => select samples...")
     object <- runSampleFiltering(object, samples)
-    
-    if(nrow(getDesignMat(object)) == 0) 
-      stop("no samples in object!")
-    
-    # spported values:
-    lowCountFiltering_strategy.sup     <- c("NbReplicates","NbConditions")
-    transformation_method.sup          <- c("log2", "none")
-    normalisation_method.abundance.sup <- c("median", "totalSum", "none")
-    normalisation_method.count.sup     <- c("TMM")
     
     # apply data processing
     switch(
       object@metadata$omicType,
       "RNAseq" = {
+        if(!is.null(transformMethod))
+          warning(object@metadata$omicType, " data don't need to be transformed.")
         
         # Filter low abundance
         message("[RFLOMICS] #    => Low counts Filtering...")
-        if(is.null(lowCountFiltering_strategy)   || 
-           !lowCountFiltering_strategy %in% lowCountFiltering_strategy.sup) 
-          stop("the low count filtering strategy : ", 
-               lowCountFiltering_strategy, 
-               " isn't supported by rflomics package. Supported values : ",  
-               paste(lowCountFiltering_strategy.sup, collapse = ", "))
-        
-        if(is.null(lowCountFiltering_CPM_Cutoff) || 
-           !is.numeric(lowCountFiltering_CPM_Cutoff)) 
-          stop(lowCountFiltering_CPM_Cutoff, " must be a integer value > 1")
-        
-        SE.processed <- 
-          filterLowAbundance(object = object, 
-                             filterMethod= "CPM", 
-                             filterStrategy = lowCountFiltering_strategy, 
-                             cpmCutoff = lowCountFiltering_CPM_Cutoff)
-        
-        # Run Normalisation 
-        message("[RFLOMICS] #    => Counts normalization...")
-        if(is.null(normMethod) || normMethod != "TMM"){
-          normMethod <- "TMM"
-          warning("only ", normalisation_method.count.sup, 
-                  " method is supported for ", 
-                  getOmicsTypes(object), " normalisation.")
-        }
-        
-        SE.processed <- 
-          runNormalization(SE.processed, 
-                           normMethod = normMethod)
+        SE.processed <- filterLowAbundance(object = object, 
+                                           filterStrategy = filterStrategy, 
+                                           cpmCutoff = cpmCutoff)
       },
       {
-        message("[RFLOMICS] #    => transformation data...")
-        if(is.null(transformMethod)) transformMethod <- "none"
-        if(! transformMethod %in% transformation_method.sup) 
-          stop("the transformation method ", transformMethod,
-               " is not support in rflomics package.Supported values : ", 
-               paste(transformation_method.sup, collapse = ", "))
-        SE.processed <- 
-          runTransformData(object, 
-                           transformMethod = transformMethod)
+        if(!is.null(filterStrategy) || !is.null(cpmCutoff))
+          warning(object@metadata$omicType, " data don't need to be filtered")
         
-        message("[RFLOMICS] #    => Run normalization...")
-        if(is.null(normMethod)) normMethod <- "none"
-        if(! normMethod %in% normalisation_method.abundance.sup) 
-          stop("the normalisation method ", normMethod,
-               " is not support in rflomics package. Supported values : ", 
-               paste(normalisation_method.abundance.sup, collapse = ", "))
+        # Run transformation...
+        message("[RFLOMICS] #    => Data transformation...")
         SE.processed <- 
-          runNormalization(SE.processed, 
-                           normMethod = normMethod)
+          runTransformData(object, transformMethod = transformMethod)
       }
     )
     
+    # Run Normalisation
+    message("[RFLOMICS] #    => Data normalization...")
+    SE.processed <- runNormalization(SE.processed, normMethod = normMethod)
+    
     # Run PCA for filtered & normalized data 
     message("[RFLOMICS] #    => Compute PCA ")
-    SE.processed <- runOmicsPCA(SE.processed, ncomp = 5, raw = FALSE)  
+    SE.processed <- runOmicsPCA(SE.processed, ncomp = 5, raw = FALSE)
+    
     SE.processed@metadata$DataProcessing[["done"]] <- TRUE
+    
+    # initiate analysis results
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DiffExpAnal",
+                           content =  list())
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DiffExpEnrichAnal",
+                           content =  list())    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "CoExpAnal",
+                           content =  list())
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "CoExpEnrichAnal",
+                           content =  list())
     
     return(SE.processed)
   })
@@ -158,25 +141,28 @@ setMethod(
   signature  = "RflomicsMAE",
   definition = function(object, SE.name,
                         samples=NULL, 
-                        lowCountFiltering_strategy = "NbReplicates", 
-                        lowCountFiltering_CPM_Cutoff = 1, 
-                        normMethod= "none", 
-                        transformMethod = "none"){
+                        filterStrategy = NULL, 
+                        cpmCutoff = NULL, 
+                        normMethod= NULL, 
+                        transformMethod = NULL){
     
     if (!SE.name %in% names(object))
       stop("SE name must be part of this list of names: ",
            getDatasetNames(object))
     
-    SE.processed <- 
-      runDataProcessing(
-        object = object[[SE.name]],
-        samples = samples, 
-        lowCountFiltering_strategy = lowCountFiltering_strategy, 
-        lowCountFiltering_CPM_Cutoff = lowCountFiltering_CPM_Cutoff,
-        normMethod= normMethod, 
-        transformMethod = transformMethod)
+    SE.processed <-  runDataProcessing(object = object[[SE.name]],
+                                       samples = samples, 
+                                       filterStrategy = filterStrategy, 
+                                       cpmCutoff = cpmCutoff,
+                                       normMethod= normMethod, 
+                                       transformMethod = transformMethod)
     
     object[[SE.name]] <- SE.processed
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "IntegrationAnalysis",
+                           content =  list())
     
     return(object)
   })
@@ -218,97 +204,128 @@ setMethod(
 #' @exportMethod filterLowAbundance
 #' @importFrom edgeR DGEList filterByExpr cpm
 #' @seealso edgeR::filterByExpr
-setMethod(f         = "filterLowAbundance",
-          signature = "RflomicsSE",
-          definition = function(object, 
-                                filterMethod= "CPM", 
-                                filterStrategy = "NbConditions", 
-                                cpmCutoff = 5){
-            
-            
-            if (getOmicsTypes(object) != "RNAseq")
-              stop("Can't apply this method to omics types other than RNAseq.")
-            
-            
-            if (isFALSE(filterStrategy %in% c("NbReplicates","NbConditions")))
-              stop("filterStrategy argument must be one of this tow options : ", 
-                   "NbReplicates or NbConditions")
-            
-            if(filterMethod != "CPM")
-              stop("filterMethod argument must be one of this tow options : ", 
-                   "CPM")
-            
-            assayFilt  <- assay(object)
-            
-            # nbr of genes with 0 count
-            genes_flt0  <- object[rowSums(assayFilt) <= 0, ]@NAMES
-            
-            # remove 0 count
-            objectFilt  <- object[rowSums(assayFilt)  > 0, ]
-            assayFilt   <- assay(objectFilt)
-            
-            # filter cpm
-            Groups       <- getDesignMat(object)
-            NbReplicate  <- table(Groups$groups)
-            NbConditions <- length(unique(Groups$groups))
-            
-            # low count filtering
-            keep <-
-              switch(filterStrategy,
-                     "NbConditions" = { 
-                       rowSums(cpm(assayFilt) >= cpmCutoff) >= NbConditions },
-                     "NbReplicates" = { 
-                       rowSums(cpm(assayFilt) >= cpmCutoff) >= min(NbReplicate)},
-                     "filterByExpr" = { 
-                       dge <- DGEList(counts = assayFilt, 
-                                      genes = rownames(assayFilt))
-                       filterByExpr(dge)
-                     }
-              )
-            
-            # features to filtered
-            genes_flt1  <- objectFilt[!keep]@NAMES
-            
-            # object <- objectFilt[keep]
-            # output
-            Filtering <- list(
-              setting = list(method         = filterMethod,
-                             filterStrategy = filterStrategy,
-                             cpmCutoff      = cpmCutoff),
-              results = list(filteredFeatures = c(genes_flt0, genes_flt1)),
-              filtered = FALSE
-            )
-            
-            object <- 
-              setElementToMetadata(object, 
-                                   name    = "DataProcessing", 
-                                   subName = "featureFiltering", 
-                                   content =  Filtering)
-            
-            return(object)
-          })
+setMethod(
+  f         = "filterLowAbundance",
+  signature = "RflomicsSE",
+  definition = function(object, 
+                        filterMethod = "CPM", 
+                        filterStrategy = "NbReplicates", 
+                        cpmCutoff = 1){
+    
+    suported.strategies <- c("NbReplicates","NbConditions")
+    
+    if (getOmicsTypes(object) != "RNAseq")
+      stop("Can't apply this method to omics types other than RNAseq.")
+    
+    if(.isFiltered(object)) 
+      stop("Data is already filtered!")
+    
+    if (is.null(filterStrategy)) filterStrategy <- suported.strategies[1]
+    if (isFALSE(filterStrategy %in% suported.strategies))
+      stop("filterStrategy argument must be one of this tow options : ", 
+           "NbReplicates or NbConditions")
+    
+    if(is.null(filterMethod)) filterMethod <- "CPM"
+    if(filterMethod != "CPM")
+      stop("filterMethod argument must be one of this tow options : CPM")
+    
+    if(is.null(cpmCutoff)) cpmCutoff <- 1
+    if(!is.numeric(cpmCutoff) || cpmCutoff < 0)
+      stop(cpmCutoff, " must be a integer value > 1")
+    
+    # filter outlier samples
+    object2 <- getProcessedData(object, filter = TRUE)
+    
+    assayFilt  <- assay(object2)
+    
+    # nbr of genes with 0 count
+    genes_flt0  <- object2[rowSums(assayFilt) <= 0, ]@NAMES
+    
+    # remove 0 count
+    objectFilt  <- object2[rowSums(assayFilt)  > 0, ]
+    assayFilt   <- assay(objectFilt)
+    
+    # filter cpm
+    Groups       <- getDesignMat(object2)
+    NbReplicate  <- table(Groups$groups)
+    NbConditions <- length(unique(Groups$groups))
+    
+    # low count filtering
+    keep <-
+      switch(filterStrategy,
+             "NbConditions" = { rowSums(cpm(assayFilt) >= cpmCutoff) >= NbConditions },
+             "NbReplicates" = { rowSums(cpm(assayFilt) >= cpmCutoff) >= min(NbReplicate)},
+             "filterByExpr" = 
+               { 
+                 dge <- DGEList(counts = assayFilt, genes = rownames(assayFilt))
+                 filterByExpr(dge)
+               }
+      )
+    
+    # features to filtered
+    genes_flt1  <- objectFilt[!keep]@NAMES
+    
+    # object <- objectFilt[keep]
+    # output
+    Filtering <- list(
+      setting = list(method         = filterMethod,
+                     filterStrategy = filterStrategy,
+                     cpmCutoff      = cpmCutoff),
+      results = list(filteredFeatures = c(genes_flt0, genes_flt1)),
+      filtered = FALSE
+    )
+    
+    message("[RFLOMICS] #       method: ", filterMethod, 
+            " strategy: ", filterStrategy, " cpmCutoff: ", cpmCutoff)
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DataProcessing", 
+                           subName = "featureFiltering", 
+                           content =  Filtering)
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DataProcessing", 
+                           subName = "Transformation", 
+                           content =  list())
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DataProcessing", 
+                           subName = "Normalization", 
+                           content =  list())
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "PCAlist", 
+                           subName = "norm", 
+                           content =  NULL)
+    return(object)
+  })
 
 
 #' @rdname runDataProcessing
 #' @name filterLowAbundance
 #' @aliases filterLowAbundance,RflomicsMAE-method
 #' @exportMethod filterLowAbundance
-setMethod(f          = "filterLowAbundance",
-          signature  = "RflomicsMAE",
-          definition = function(object, 
-                                SE.name, 
-                                filterMethod= "CPM", 
-                                filterStrategy = "NbConditions", 
-                                cpmCutoff = 5){
-            
-            object[[SE.name]] <-  
-              filterLowAbundance(object          = object[[SE.name]], 
-                                 filterStrategy = filterStrategy,
-                                 filterMethod   = filterMethod,
-                                 cpmCutoff      = cpmCutoff)
-            
-            return(object)
-          })
+setMethod(
+  f          = "filterLowAbundance",
+  signature  = "RflomicsMAE",
+  definition = function(object, 
+                        SE.name, 
+                        filterMethod= "CPM", 
+                        filterStrategy = "NbReplicates", 
+                        cpmCutoff = 1){
+    
+    object[[SE.name]] <-  
+      filterLowAbundance(object         = object[[SE.name]], 
+                         filterStrategy = filterStrategy,
+                         filterMethod   = filterMethod,
+                         cpmCutoff      = cpmCutoff)
+    
+    return(object)
+  })
 
 ###==== runSampleFiltering ====
 # filtering per sample
@@ -328,8 +345,7 @@ setMethod(
   signature  = "RflomicsSE",
   definition = function(object, samples = NULL) {
     
-    if(is.null(samples))
-      return(object)
+    if(is.null(samples)) samples <- colnames(object)
     
     # check if samples overlap with
     if(any(!samples %in% colnames(object)))
@@ -341,19 +357,56 @@ setMethod(
                            subName = "selectedSamples",
                            content = samples)
     
+    # check completness
+    check.res <- checkExpDesignCompleteness(object, raw = FALSE)
+    if(check.res$error) stop(check.res$messages)
+    message("[RFLOMICS] #       ", check.res$messages)
     
+    if(nrow(getDesignMat(object)) == 0) stop("no samples in object!")
     
-    # keep selected samples
-    # keep only samples in data matrix, and colData
-    SE.new <- object[, samples]
+    # new design matrix
+    object2 <- object[, samples]
+    object2 <- .updateColData(object2)
     
-    SE.new <- .updateColData(SE.new)
-    selectedContrasts  <- getSelectedContrasts(object)
-    selectedContrasts2 <- updateSelectedContrasts(SE.new, selectedContrasts)
-
-    object <- setSelectedContrasts(object, selectedContrasts2)
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "design", 
+                           subName = "ExpDesign",
+                           content = as.data.frame(colData(object2)))
+    
+    # initiate
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DataProcessing", 
+                           subName = "featureFiltering", 
+                           content =  list())
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DataProcessing", 
+                           subName = "Transformation", 
+                           content =  list())
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DataProcessing", 
+                           subName = "Normalization", 
+                           content =  list())
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "PCAlist", 
+                           subName = "norm", 
+                           content =  NULL)
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "PCAlist", 
+                           subName = "norm", 
+                           content =  NULL)
     
     return(object)
+    
   })
 
 
@@ -362,7 +415,8 @@ setMethod(
 #' @exportMethod runSampleFiltering
 setMethod(f          = "runSampleFiltering",
           signature  = "RflomicsMAE",
-          definition = function(object, SE.name,
+          definition = function(object, 
+                                SE.name,
                                 samples=NULL) {
             
             object[[SE.name]] <- 
@@ -389,71 +443,87 @@ setMethod(f          = "runSampleFiltering",
 #' @param modifyAssay Boolean. Do the transformation need to be applied on 
 #' the data? The raw data will be replaced by the transformed ones.
 #' @exportMethod runTransformData
-setMethod(f          = "runTransformData",
-          signature  = "RflomicsSE",
-          definition = function(object, 
-                                transformMethod = NULL, 
-                                modifyAssay = FALSE){
-            
-            if (getOmicsTypes(object) == "RNAseq")
-              stop("It is not recommended to transform RNAseq data.")
-            
-            # accepted value for normMethod
-            # default value : 1rst element
-            default.methods <- 
-              switch (getOmicsTypes(object),
-                      "proteomics"   = c("log2", "none"),
-                      "metabolomics" = c("log2", "none")
-              )
-            
-            # check normMethod param
-            if(is.null(transformMethod)){
-              transformMethod <- default.methods[1]
-              message("The default method applied will be: ", transformMethod)
-              
-            }else if(!transformMethod %in% default.methods){
-              stop(transformMethod, 
-                   " is not an allowed value for the parameter transformMethod",
-                   " Accepted values: ", paste0(default.methods, collapse = ", "))
-            }
-            
-            # output
-            transformation <- list(setting  = list(method = transformMethod), 
-                                   results  = NULL,  
-                                   transformed = FALSE)
-            
-            object <- 
-              setElementToMetadata(object,
-                                   name = "DataProcessing",
-                                   subName = "Transformation",
-                                   content = transformation)
-            
-            # @audrey je ne comprends pas l'interet de cette ligne de cmd
-            if (modifyAssay) {
-              object <-  .applyTransformation(object)
-            }
-            
-            return(object)
-          })
+setMethod(
+  f          = "runTransformData",
+  signature  = "RflomicsSE",
+  definition = function(object, 
+                        transformMethod = NULL, 
+                        modifyAssay = FALSE){
+    
+    # accepted value for normMethod
+    # default value : 1rst element
+    default.methods <- 
+      switch (getOmicsTypes(object),
+              "proteomics"   = c("log2", "none"),
+              "metabolomics" = c("log2", "none")
+      )
+    
+    if (getOmicsTypes(object) == "RNAseq")
+      stop("It is not recommended to transform RNAseq data.")
+    
+    if(.isTransformed(object))
+      stop("Data is already transformed!")
+    
+    # check normMethod param
+    if(is.null(transformMethod)) transformMethod <- default.methods[1]
+    if(!transformMethod %in% default.methods)
+      stop(transformMethod, 
+           " is not an allowed value for the parameter transformMethod",
+           " Accepted values: ", paste0(default.methods, collapse = ", "))
+    
+    # output
+    transformation <- list(setting  = list(method = transformMethod), 
+                           results  = NULL,  
+                           transformed = FALSE)
+    
+    message("[RFLOMICS] #       method: ", transformMethod)
+    
+    object <- 
+      setElementToMetadata(object,
+                           name = "DataProcessing",
+                           subName = "Transformation",
+                           content = transformation)
+    
+    # initiate:
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DataProcessing", 
+                           subName = "Normalization", 
+                           content =  list())
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "PCAlist", 
+                           subName = "norm", 
+                           content =  NULL)
+    
+    # @audrey je ne comprends pas l'interet de cette ligne de cmd
+    if (modifyAssay) {
+      object <-  .applyTransformation(object)
+    }
+    
+    return(object)
+  })
 
 #' @rdname runDataProcessing
 #' @name runTransformData
 #' @aliases runTransformData,RflomicsMAE-method
 #' @exportMethod runTransformData
-setMethod(f          = "runTransformData",
-          signature  = "RflomicsMAE",
-          definition = function(object, 
-                                SE.name, 
-                                transformMethod = NULL, 
-                                modifyAssay = FALSE){
-            
-            object[[SE.name]] <-  runTransformData(object[[SE.name]], 
-                                                   transformMethod = transformMethod, 
-                                                   modifyAssay = modifyAssay)
-            
-            return(object)
-            
-          })
+setMethod(
+  f          = "runTransformData",
+  signature  = "RflomicsMAE",
+  definition = function(object, 
+                        SE.name, 
+                        transformMethod = NULL, 
+                        modifyAssay = FALSE){
+    
+    object[[SE.name]] <-  runTransformData(object[[SE.name]], 
+                                           transformMethod = transformMethod, 
+                                           modifyAssay = modifyAssay)
+    
+    return(object)
+    
+  })
 
 ###==== runNormalization ====
 # METHOD to normalize data
@@ -483,90 +553,99 @@ setMethod(f          = "runTransformData",
 #' given data set, stored itself in the ExperimentList slot of a 
 #' \link{RflomicsSE} object.
 #' @exportMethod runNormalization
-setMethod(f          = "runNormalization",
-          signature  = "RflomicsSE",
-          definition = function(object, 
-                                normMethod = NULL, 
-                                modifyAssay = FALSE){
-            
-            # accepted value for normMethod
-            # default value : 1rst element
-            default.methods <- 
-              switch (getOmicsTypes(object),
-                      "RNAseq"       = c("TMM"),
-                      "proteomics"   = c("median", "totalSum", "none"),
-                      "metabolomics" = c("median", "totalSum", "none")
-              )
-            
-            # check normMethod param
-            if(is.null(normMethod)){
-              normMethod <- default.methods[1]
-              message("The default method applied will be: ", normMethod)
-              
-            }else if(!normMethod %in% default.methods){
-              stop(normMethod, 
-                   " is not an allowed value for the parameter normMethod.",
-                   " Accepted values: ", paste0(default.methods, collapse = ", "))
-            }
-            
-            # check if proteomics or metabolomics data are transformed 
-            if (getOmicsTypes(object) %in% c("proteomics", "metabolomics") &
-                is.null(getTransSettings(object)$method))
-              warning(getOmicsTypes(object), 
-                      " data should be transformed before normalization.")
-            
-            if (getOmicsTypes(object) == "RNAseq" &
-                is.null(getFilterSettings(object)$method))
-              warning(getOmicsTypes(object), 
-                      " data should be filtered (low count).")
-            
-            object2 <- getProcessedData(object, filter = TRUE, trans = TRUE)
-            
-            # calculation normalization coefficient
-            coefNorm <- 
-              switch(normMethod,
-                     "TMM"      = .tmmNormalization(object2),
-                     "median"   = .medianNormalization(object2),
-                     "totalSum" = .totalSumNormalization(object2),
-                     "none"     =  rep(1, ncol(assay(object2)))
-              )
-            
-            # output
-            Normalization <- list(
-              setting = list(method = normMethod),
-              results = list(coefNorm = coefNorm),
-              normalized = FALSE
-            )
-            
-            object <- 
-              setElementToMetadata(object,
-                                   name    = "DataProcessing",
-                                   subName = "Normalization",
-                                   content =  Normalization)
-            
-            # @audrey, je ne vois pas l'interet de cette ligne. Nadia
-            if (modifyAssay) object <- .applyNorm(object)
-            
-            return(object)
-          })
+setMethod(
+  f          = "runNormalization",
+  signature  = "RflomicsSE",
+  definition = function(object, 
+                        normMethod = NULL, 
+                        modifyAssay = FALSE){
+    
+    # accepted value for normMethod
+    # default value : 1rst element
+    default.methods <- 
+      switch (getOmicsTypes(object),
+              "RNAseq"       = c("TMM"),
+              "proteomics"   = c("median", "totalSum", "none"),
+              "metabolomics" = c("median", "totalSum", "none")
+      )
+    
+    if(.isNorm(object)) stop("Data is already transformed!")
+    
+    # check normMethod param
+    if(is.null(normMethod)) normMethod <- default.methods[1]
+    if(!normMethod %in% default.methods)
+      stop(normMethod, 
+           " is not an allowed value for the parameter normMethod.",
+           " Accepted values: ", paste0(default.methods, collapse = ", "))
+    
+    # check if proteomics or metabolomics data are transformed 
+    if (getOmicsTypes(object) %in% c("proteomics", "metabolomics") &
+        is.null(getTransSettings(object)$method))
+      stop(getOmicsTypes(object),
+           " data should be transformed before normalization.")
+    
+    if (getOmicsTypes(object) == "RNAseq" &
+        is.null(getFilterSettings(object)$method))
+      stop(getOmicsTypes(object), 
+           " data should be filtered (low count).")
+    
+    object2 <- getProcessedData(object, filter = TRUE, trans = TRUE)
+    
+    # calculation normalization coefficient
+    coefNorm <- 
+      switch(normMethod,
+             "TMM"      = .tmmNormalization(object2),
+             "median"   = .medianNormalization(object2),
+             "totalSum" = .totalSumNormalization(object2),
+             "none"     =  rep(1, ncol(assay(object2)))
+      )
+    
+    # output
+    Normalization <- list(
+      setting = list(method = normMethod),
+      results = list(coefNorm = coefNorm),
+      normalized = FALSE
+    )
+    
+    message("[RFLOMICS] #       method: ", normMethod)
+    
+    object <- 
+      setElementToMetadata(object,
+                           name    = "DataProcessing",
+                           subName = "Normalization",
+                           content =  Normalization)
+    
+    # initiate:
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "PCAlist", 
+                           subName = "norm", 
+                           content =  NULL)
+    
+    # @audrey, je ne vois pas l'interet de cette ligne. Nadia
+    if (modifyAssay) object <- .applyNorm(object)
+    
+    return(object)
+  })
 
 #' @rdname runDataProcessing
 #' @name runNormalization
 #' @aliases runNormalization,RflomicsMAE-method
 #' @exportMethod runNormalization
-setMethod(f          = "runNormalization",
-          signature  = "RflomicsMAE",
-          definition = function(object, 
-                                SE.name, 
-                                normMethod = NULL, 
-                                modifyAssay = FALSE){
-            
-            object[[SE.name]] <-  
-              runNormalization(object       = object[[SE.name]],
-                               normMethod   = normMethod,
-                               modifyAssay  = modifyAssay)
-            return(object)
-          })
+setMethod(
+  f          = "runNormalization",
+  signature  = "RflomicsMAE",
+  definition = function(object, 
+                        SE.name, 
+                        normMethod = NULL, 
+                        modifyAssay = FALSE){
+    
+    object[[SE.name]] <-  
+      runNormalization(object       = object[[SE.name]],
+                       normMethod   = normMethod,
+                       modifyAssay  = modifyAssay)
+    return(object)
+  })
 
 ### ==== runOmicsPCA ====
 
@@ -659,61 +738,66 @@ setMethod(f          = "runOmicsPCA",
 #'    RFLOMICS workflow.}
 #' @exportMethod checkExpDesignCompleteness
 #' @param sampleList list of samples to check.
+#' @param raw booleen.
 #' @exportMethod checkExpDesignCompleteness
-setMethod(f         = "checkExpDesignCompleteness",
-          signature = "RflomicsSE",
-          definition <- function(object, sampleList=NULL){
-            
-            if(!is.null(sampleList))
-              object <- object[,sampleList]
-            
-            output <- list()
-            output[["error"]] <- FALSE
-            
-            # Only works with bio and batch factors for the rest of the function
-            ExpDesign <- getDesignMat(object)
-            bio.fact  <- getBioFactors(object)
-            
-            # check presence of bio factors
-            if (!length(getBioFactors(object)) %in% seq_len(3)){ 
-              output[["messages"]] <-  "Error: You need at least 1 biological factor with at least 2 modalities."
-              output[["error"]]    <- TRUE
-              return(output)
-            }
-            # check presence of bash factors
-            if (!length(getBatchFactors(object)) %in% c(1,2)){ 
-              output[["messages"]] <-  "Error: You need at least 1 batch factor with at least 2 replicats."
-              output[["error"]]    <- TRUE 
-              return(output)
-            }
-            
-            #remplacer le code ci-dessus par celui en bas
-            group_count <- .countSamplesPerCondition(ExpDesign, bio.fact)
-            
-            # check presence of relicat / batch
-            # check if design is complete
-            # check if design is balanced
-            # check nbr of replicats
-            if(min(group_count$Count) == 0){
-              
-              output[["messages"]] <- "Error: The experimental design is not complete."
-              output[["error"]]    <- TRUE
-            }
-            else if(min(group_count$Count) == 1){
-              
-              output[["messages"]] <-  "Error: You need at least 2 biological replicates."
-              output[["error"]]    <- TRUE
-            }
-            else if(length(unique(group_count$Count)) != 1){
-              
-              output[["messages"]] <- "The experimental design is complete but not balanced."
-            }
-            else{
-              output[["messages"]] <- "The experimental design is complete and balanced."
-            }
-            
-            return(output)
-          })
+setMethod(
+  f         = "checkExpDesignCompleteness",
+  signature = "RflomicsSE",
+  definition <- function(object, 
+                         sampleList=NULL,
+                         raw = FALSE){
+    
+    if(!raw) object <- getProcessedData(object, filter = TRUE)
+    
+    if(!is.null(sampleList)) object <- object[,sampleList]
+    
+    output <- list()
+    output[["error"]] <- FALSE
+    
+    # Only works with bio and batch factors for the rest of the function
+    ExpDesign <- getDesignMat(object)
+    bio.fact  <- getBioFactors(object)
+    
+    # check presence of bio factors
+    if (!length(getBioFactors(object)) %in% seq_len(3)){ 
+      output[["messages"]] <-  "Error: You need at least 1 biological factor with at least 2 modalities."
+      output[["error"]]    <- TRUE
+      return(output)
+    }
+    # check presence of bash factors
+    if (!length(getBatchFactors(object)) %in% c(1,2)){ 
+      output[["messages"]] <-  "Error: You need at least 1 batch factor with at least 2 replicats."
+      output[["error"]]    <- TRUE 
+      return(output)
+    }
+    
+    #remplacer le code ci-dessus par celui en bas
+    group_count <- .countSamplesPerCondition(ExpDesign, bio.fact)
+    
+    # check presence of relicat / batch
+    # check if design is complete
+    # check if design is balanced
+    # check nbr of replicats
+    if(min(group_count$Count) == 0){
+      
+      output[["messages"]] <- "Error: The experimental design is not complete."
+      output[["error"]]    <- TRUE
+    }
+    else if(min(group_count$Count) == 1){
+      
+      output[["messages"]] <-  "Error: You need at least 2 biological replicates."
+      output[["error"]]    <- TRUE
+    }
+    else if(length(unique(group_count$Count)) != 1){
+      
+      output[["messages"]] <- "The experimental design is complete but not balanced."
+    }
+    else{
+      output[["messages"]] <- "The experimental design is complete and balanced."
+    }
+    
+    return(output)
+  })
 
 #' @rdname runDataProcessing
 #' @name checkExpDesignCompleteness
@@ -737,10 +821,7 @@ setMethod(f         = "checkExpDesignCompleteness",
 
 #' @rdname runDataProcessing
 #' @name getOmicData
-#' @param processedData boolean If TRUE, returned filtred data 
-#' @param NormTrans boolean. If TRUE, apply normalisation and/or transformation
-#' coefficients.
-#' @param log boolean. If TRUE, apply log2 tranformation (for RNAseq data)
+#' @param raw boolean If TRUE, returned raw data 
 #' @aliases getOmicData,RflomicsSE-method
 #' @section Accessors: 
 #' \itemize{
@@ -751,9 +832,7 @@ setMethod(f         = "checkExpDesignCompleteness",
 setMethod(f          = "getOmicData",
           signature  = "RflomicsSE",
           definition = function(object, 
-                                processedData = FALSE,
-                                NormTrans = FALSE, 
-                                log = FALSE,
+                                raw = FALSE,
                                 ...){
             
             dataType <- getOmicsTypes(object)
@@ -835,14 +914,11 @@ setMethod(
     # filtering process
     if(filter){
       # filter samples
-      selectedSamples <- getSelectedSamples(object)
-      object <- object[, selectedSamples]
-      object <- .updateColData(object)
+      object <- .applySampleFiltering(object)
       
       # filter features
       object <- .applyFiltering(object)
     }
-    
     
     # transformation process
     if(trans && getOmicsTypes(object) %in% c("metabolomics", "proteomics"))

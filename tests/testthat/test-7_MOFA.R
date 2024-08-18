@@ -1,4 +1,7 @@
-
+### ============================================================================
+### [07_MOFA2] test data integration with mofa
+### ----------------------------------------------------------------------------
+# A. Hulot
 
 library(testthat)
 library(RFLOMICS)
@@ -22,7 +25,6 @@ MAE <- RFLOMICS::createRflomicsMAE(
   omicsData   = ecoseed.mae,
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
   factorInfo  = factorInfo)
-names(MAE) <- c("RNAtest", "protetest", "metatest")
 
 formulae <- generateModelFormulae( MAE) 
 MAE <- setModelFormula(MAE, formulae[[1]])
@@ -36,7 +38,8 @@ MAE <- MAE |>
   setSelectedContrasts(contrastList) |>
   runTransformData(SE.name = "metatest", transformMethod = "log2") |>
   runNormalization(SE.name = "metatest", normMethod = "median")  |>
-  runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")     |>
+  runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")    |>
+  runTransformData(SE.name = "protetest", transformMethod = "none") |>
   runNormalization(SE.name = "protetest", normMethod = "median")  |>
   filterLowAbundance(SE.name = "RNAtest")                          |>
   runNormalization(SE.name = "RNAtest", normMethod = "TMM")        |>

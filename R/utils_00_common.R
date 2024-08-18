@@ -302,8 +302,8 @@
   
   if(is.null(name)) 
     warning("Argument name is required")
-  if(is.null(content)) 
-    warning("Argument content is required")
+  # if(is.null(content)) 
+  #   warning("Argument content is required")
   
   if(!is.null(subName)){
     metadata(object)[[name]][[subName]] <- content

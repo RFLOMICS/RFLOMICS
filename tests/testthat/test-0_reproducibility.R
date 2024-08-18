@@ -1,3 +1,10 @@
+### ============================================================================
+### [00_reproducibility] Ensures the reproducibility of results in case of code 
+### modifications or changes in package versions.
+### ----------------------------------------------------------------------------
+# N. Bessoltane, 
+
+
 library(testthat)
 library(RFLOMICS)
 
@@ -59,9 +66,9 @@ MAE <- setSelectedContrasts(MAE, contrastList = selectedContrasts)
 ## Interface function, mostly
 MAE <- MAE |> 
     runDataProcessing(SE.name = "RNAtest", samples = sampleToKeep,
-                      lowCountFiltering_strategy = "NbReplicates", 
-                      lowCountFiltering_CPM_Cutoff = 1, 
-                      normMethod = "TMM",transformMethod = "none") |>
+                      filterStrategy = "NbReplicates", 
+                      cpmCutoff = 1, 
+                      normMethod = "TMM") |>
     runDataProcessing(SE.name = "protetest", samples = NULL,
                       normMethod = "none", transformMethod = "none") |>
     runDataProcessing(SE.name = "metatest", samples = NULL, 
@@ -80,7 +87,7 @@ MAE <- MAE |>
                     logFC.cutoff = 0)
 
 MAE[["RNAtest"]] <- 
-    setValidContrasts(MAE[["RNAtest"]], 
+    setValidContrasts(MAE[["RNAtest"]],
                       contrastList = getSelectedContrasts(MAE[["RNAtest"]]))
 MAE[["protetest"]] <- 
     setValidContrasts(MAE[["protetest"]], 
@@ -294,9 +301,9 @@ test_that("contrast", {
     
     row.names(Contrasts.Coeff) <- Contrasts.names
     
-    expect_equal(MAE[["RNAtest"]]@metadata$design$Contrasts.Coeff, Contrasts.Coeff)
-    expect_equal(MAE[["protetest"]]@metadata$design$Contrasts.Coeff, Contrasts.Coeff)
-    expect_equal(MAE[["metatest"]]@metadata$design$Contrasts.Coeff, Contrasts.Coeff)
+    expect_equal(MAE[["RNAtest"]]@metadata$DiffExpAnal$contrastCoef, Contrasts.Coeff)
+    expect_equal(MAE[["protetest"]]@metadata$DiffExpAnal$contrastCoef, Contrasts.Coeff)
+    expect_equal(MAE[["metatest"]]@metadata$DiffExpAnal$contrastCoef, Contrasts.Coeff)
     
     expect_equal(checkExpDesignCompleteness(MAE[["RNAtest"]])$messages, 
                  "The experimental design is complete but not balanced.")
@@ -312,11 +319,11 @@ test_that("data processing", {
     # remplacer par le bon getter
     nb_lowGene <- length(getFilteredFeatures(MAE[["RNAtest"]]))
     expect_equal(nb_lowGene, 6725)
-    expect_equal(MAE[["protetest"]]@metadata$DataProcessing$Filtering, NULL)
-    expect_equal(MAE[["metatest"]]@metadata$DataProcessing$Filtering, NULL)
+    expect_equal(getFilteredFeatures(MAE[["protetest"]]), NULL)
+    expect_equal(getFilteredFeatures(MAE[["metatest"]]), NULL)
     
     ## sample filtering
-    expect_equal(MAE[["RNAtest"]]@metadata$DataProcessing$filteredSamples, "Elevated_DS_1")
+    expect_equal(getSelectedSamples(MAE[["RNAtest"]]), sampleToKeep)
     
     ## transformation
     
