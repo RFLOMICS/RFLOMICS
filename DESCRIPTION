@@ -73,3 +73,4 @@ Imports:
     UpSetR,
     utils,
     httr
+SystemRequirements: Python (>=3), numpy, pandas, h5py, scipy, argparse, sklearn, mofapy2
