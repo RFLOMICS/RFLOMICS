@@ -15,10 +15,9 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   warning = FALSE,
   message = FALSE,
-  echo = FALSE,
+  echo = TRUE,
   comment = "#>"
 )
-
 ```
 
 RFLOMICS is a R package that provides a complete workflow for the
@@ -30,9 +29,9 @@ analysis parameters and results) we used the MultiAssayExperiment and
 SummarizedExperiment classes that we extended to fix a given
 organization for the slot metadata.
 
-# The RflomicsMAE and RflomicsSE classes:
+# The RflomicsMAE and RflomicsSE classes
 
-The RflomicsMAE (which extend the MultiAssayExperiment class) will store
+The RflomicsMAE (which extends the MultiAssayExperiment class) will store
 the statistical design and multi-omics data integration analysis
 parameters and results in the metadata slot. It will contain an
 ExperimentList of RflomicsSE (which extend SummarizedExperiment class)
@@ -98,9 +97,9 @@ metabolomics, etc.). This methods will return the same class of object
 slot enriched with the parameters and results. We also defined getter
 and setter to access this objects.
 
-# Setter and getter for the RflomicsMAE and RflomicsSE metadata slots:
+# Setter and getter for the RflomicsMAE and RflomicsSE metadata slots
 
-## Instantiate a RflomicsMAE from MAE:
+## Instantiate a RflomicsMAE from MAE
 
 In this example we will Instantiate a RflomicsMAE object from an existing MAE object and a design data.frame.
 
@@ -108,7 +107,7 @@ In this example we will Instantiate a RflomicsMAE object from an existing MAE ob
 library(RFLOMICS)
 ```
 
-```{r createRlomisMAE, echo = TRUE}
+```{r createRlomisMAE}
 data(ecoseed)
 
 factorInfo <- data.frame(
@@ -119,7 +118,7 @@ factorInfo <- data.frame(
 )
 
 # create rflomicsMAE object with ecoseed data
-testObject <- RFLOMICS::createRflomicsMAE(
+testObject <- createRflomicsMAE(
   projectName = "Tests",
   omicsData   = list(ecoseed.df$RNAtest, ecoseed.df$protetest, ecoseed.df$metatest),
   omicsNames  = c("RNAtest", "protetest", "metatest"),
@@ -134,7 +133,7 @@ names(testObject) <- c("RNAtest", "protetest", "metatest")
 
 - set the model formulae
 
-```{r designMetadata, echo = TRUE}
+```{r designMetadata}
 # generate the model formulae
 form <- generateModelFormulae(testObject)
 
@@ -147,7 +146,7 @@ getModelFormula(testObject)
 
 - set contrasts:
 
-```{r contr, echo =TRUE}
+```{r contr}
 # generate the possible contrasts
 possibleContrasts <- generateExpressionContrast(testObject)
 
@@ -164,8 +163,7 @@ getSelectedContrasts(testObject)
 
 - Pre-processing of data: normalization and transformation settings and results
 
-```{r runNorm, echo=TRUE}
-
+```{r runNorm}
 # Noramlize and transform proteomics and metabolomics data 
 testObject <- runNormalization(testObject, 
                                SE.name = "metatest", 
@@ -194,36 +192,41 @@ mind and test several normalization or transformation processes.
 
 You can access all results and plot them.
 
-```{r plotPCA, echo=TRUE}
+```{r plotPCA, fig.width=7, fig.align="center"}
 plotOmicsPCA(testObject[["metatest"]], raw = "raw")
 plotOmicsPCA(testObject[["metatest"]], raw = "norm")
 ```
 
-```{r plotDataDistribution, echo=TRUE}
+```{r plotDataDistribution, fig.width=7, fig.align="center"}
 plotDataDistribution(testObject[["metatest"]], raw = TRUE)
 plotDataDistribution(testObject[["metatest"]], raw = FALSE)
 ```
 
 - Differential analysis: settings and results
 
-```{r diff, echo=TRUE}
+```{r diff}
 # run differential analysis on RNAseq data
 testObject <- runDiffAnalysis(testObject, SE.name = "RNAtest")
 
 # access to the settings
 getDiffSettings(testObject, SE.name = "RNAtest")
+```
 
+```{r volcano, fig.width=7, fig.height = 4.5, fig.align="center"}
 # plot results as volcano
 plotDiffAnalysis(testObject, 
                  SE.name = "RNAtest", 
                  contrastName = "(temperatureMedium - temperatureLow) in mean", 
                  typeofplots = "volcano")
+```
 
+
+```{r boxplot, fig.width=7, fig.align="center"}
 # as boxplot for a given gene
 plotBoxplotDE(testObject[["RNAtest"]], 
               features = "AT4G04810")
-
 ```
+
 
 ## Set and get Multi-Omics integration analysis settings and results 
 
@@ -238,7 +241,7 @@ function).
 the corresponding type to be an input for either MOFA2 or mixOmics
 functions.
 
-```{r, echo=TRUE}
+```{r}
 listIntegration <- prepareForIntegration(testObject, 
                                          omicsNames = c("metatest", "protetest"),
                                          method = "mixOmics"
@@ -253,7 +256,7 @@ testObject <- runOmicsIntegration(object = testObject,
 
 Visualizing results is made through the original package functions.
 
-```{r , echo=TRUE}
+```{r, fig.width = 7, fig.align = "center"}
 mixOmics::plotIndiv(getMixOmics(testObject, response = "temperature"))
 ```
 
