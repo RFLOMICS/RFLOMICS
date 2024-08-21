@@ -25,11 +25,11 @@ RoxygenNote: 7.3.2
 Suggests: 
     testthat,
     BiocStyle,
-    org.At.tair.db,
     org.Hs.eg.db
 VignetteBuilder: knitr
 Imports:
     vroom,
+    org.At.tair.db,
     AnnotationDbi,
     circlize,
     clusterProfiler,
