@@ -20,22 +20,27 @@
 # how-to-get-pathview-plot-displayed-directly-rather-than-saving-as-a-file-in-r
 # It deletes every file created by pathview
 .see_pathview <- function(...) {
-  if (!exists("bods")) {
-    data(bods, package = "pathview")
-  }
-  msg <- capture.output(pathview(...), type = "message")
-  msg <- grep("image file", msg, value = TRUE)
-  filename <- sapply(strsplit(msg, " "), function(x)
-    x[length(x)])
-  if (length(filename) > 0) {
-    img <- readPNG(filename)
-    grid.raster(img)
-    nam <- str_split(filename, "[.]")
-    invisible(file.remove(filename))
-    invisible(file.remove(paste0(nam[[1]][1], ".xml")))
-    invisible(file.remove(paste0(nam[[1]][1], ".png")))
-  }
-  return()
+    
+    if (!exists("bods")) {
+        data(bods, package = "pathview")
+    }
+    
+    msg <- capture.output(pathview(...), type = "message")
+    msg <- grep("image file", msg, value = TRUE)
+    filename <- sapply(strsplit(msg, " "), function(x)
+        x[length(x)])
+    if (length(filename) > 0) {
+        img <- readPNG(filename)
+        grid.raster(img)
+        nam <- str_split(filename, "[.]")
+        invisible(file.remove(filename))
+        invisible(file.remove(paste0(nam[[1]][1], ".xml")))
+        invisible(file.remove(paste0(nam[[1]][1], ".png")))
+    }
+    
+    rm(bods, envir = .GlobalEnv)
+    
+    return()
 }
 
 # ----- Enrichment results ----
