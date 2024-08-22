@@ -759,7 +759,7 @@ check_NA <- function(object) {
 #' @noRd
 .generateEcoseedExampleData <- function(){
   
-  load(paste0(system.file(package = "RFLOMICS"),"/data/ecoseed.rda"))
+  load(paste0(system.file(package = "RFLOMICS"),"/data/ecoseed.df.rda"))
   
   factorInfo <- data.frame(
     "factorName"   = c("Repeat", "temperature", "imbibition"),

@@ -5,7 +5,8 @@ library(testthat)
 
 # load data
 # load ecoseed data
-data(ecoseed)
+data(ecoseed.df)
+data(ecoseed.mae)
 
 factorInfo <- data.frame(
   "factorName"   = c("Repeat", "temperature", "imbibition"),

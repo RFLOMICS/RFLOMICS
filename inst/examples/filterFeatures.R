@@ -1,6 +1,6 @@
 # load ecoseed data
 library(RFLOMICS)
-data(ecoseed)
+data("ecoseed.mae")
 
 factorInfo <- data.frame(
   "factorName"   = c("Repeat", "temperature", "imbibition"),

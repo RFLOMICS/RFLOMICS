@@ -8,7 +8,8 @@ library(MOFA2)
 
 ## ---- Construction MAE RFLOMICS ready for integration analysis : ----
 # load ecoseed data
-data(ecoseed)
+data(ecoseed.mae)
+data(ecoseed.df)
 
 factorInfo <- data.frame(
   "factorName"   = c("Repeat", "temperature", "imbibition"),

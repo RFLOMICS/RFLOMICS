@@ -445,7 +445,7 @@ by running methods directly in the R console.
 Ecoseed data can be accessed using the following command:
 
 ```{r}
-data("ecoseed")
+data("ecoseed.mae")
 ```
 
 ## Create a RflomicsMAE object
