@@ -35,7 +35,7 @@ This file is edited by the user and must contain a header with column names corr
 It is advised that each factor's level starts with a letter (for example, for a factor called Month, it is better to write M1 rather than 1).
 
 ```{r ImportDesign, output="asis"}
-data(ecoseed)
+data(ecoseed.df)
 DT::datatable(ecoseed.df$design)
 ```
 
@@ -89,4 +89,8 @@ This file contains annotation about biological functions of genes/proteins/metab
 | AT1G18745      | GO:0005730        | nucleolus                                 | cellular_component |
 | AT3G00980      | GO:0006396        | RNA processing                            | biological_process |
 | AT3G00980      | GO:0005730        | nucleolus                                 | cellular_component |
+
+```{r}
+sessionInfo()
+```
 
