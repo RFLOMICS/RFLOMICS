@@ -294,7 +294,7 @@ setMethod(
     # Store last results
     #metadata(object)[[fromEnrich]][[database]] <- EnrichAnal
     
-    if (database == "KEGG") rm(kegg_category, envir = .GlobalEnv)
+    # if (database == "KEGG") rm(kegg_category, envir = .GlobalEnv)
     
     object <- 
       setElementToMetadata(object, 

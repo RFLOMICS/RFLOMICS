@@ -38,7 +38,7 @@
         invisible(file.remove(paste0(nam[[1]][1], ".png")))
     }
     
-    rm(bods, envir = .GlobalEnv)
+    # rm(bods, envir = .GlobalEnv)
     
     return()
 }
