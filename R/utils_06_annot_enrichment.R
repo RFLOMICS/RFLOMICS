@@ -22,7 +22,7 @@
 .see_pathview <- function(...) {
     
     if (!exists("bods")) {
-        data(bods, package = "pathview")
+        data("bods", package = "pathview")
     }
     
     msg <- capture.output(pathview(...), type = "message")
