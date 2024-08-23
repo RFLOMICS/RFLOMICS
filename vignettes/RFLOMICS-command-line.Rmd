@@ -1,5 +1,5 @@
 ---
-title: "RFLOMICS-command-line"
+title: "RFLOMICS Command line"
 output: 
   BiocStyle::html_document:
         toc: true
@@ -8,7 +8,7 @@ output:
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 package: RFLOMICS
 vignette: >
-  %\VignetteIndexEntry{RFLOMICS}
+  %\VignetteIndexEntry{RFLOMICS Command line}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -25,59 +25,57 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-RFLOMICS is a R package that provides a complete workflow for the analysis of multi-omics data within complex experimental designs framework. The package was firstly designed to be used through a user interface (see `RFLOMICS` vignette), but has been developed in an object oriented programming with a limited number of classes and methods.This allow to run data analysis as command line in a workflow with the "\|\>" operator, each step being a method of the extended [MultiAssayExperiment](https://bioconductor.org/packages/MultiAssayExperiment/) or [SummarizedExperiment](https://bioconductor.org/packages/SummarizedExperiment/) classes.
+RFLOMICS is a R package that provides a complete workflow for the analysis of multi-omics data within complex experimental designs framework. The package was originally designed to be used through a user interface (see `RFLOMICS` vignette), but has been developed in an object oriented programming with a limited number of classes and methods. This allow to run data analysis as command line in a workflow with the "\|\>" operator, each step being a method of the extended [MultiAssayExperiment](https://bioconductor.org/packages/MultiAssayExperiment/) or [SummarizedExperiment](https://bioconductor.org/packages/SummarizedExperiment/) classes.
 
 # The RflomicsMAE and RflomicsSE classes
 
-To ensure an efficient data management (statistical design, data, analysis parameters and results) the [MultiAssayExperiment](https://bioconductor.org/packages/MultiAssayExperiment/) and [SummarizedExperiment](https://bioconductor.org/packages/SummarizedExperiment/) classes were extended to fix an organization for the metadata slot. The RflomicsMAE class (which extends the [MultiAssayExperiment](https://bioconductor.org/packages/MultiAssayExperiment/) class) stores the statistical design and multi-omics data integration analysis parameters and results in the metadata slot. It contains an ExperimentList of RflomicsSE (which extends the [SummarizedExperiment](https://bioconductor.org/packages/SummarizedExperiment/) class), storing analysis parameters and results in the metadata slot.
+To ensure efficient data management the [MultiAssayExperiment](https://bioconductor.org/packages/MultiAssayExperiment/) and [SummarizedExperiment](https://bioconductor.org/packages/SummarizedExperiment/) classes were extended to fix an organization for the metadata slot. The statistical design and analysis parameters of the multi-omics data integration are stored in the `metadata` slot of the `RflomicsMAE` class, while the parameters and results of the single-omics are stored in the `metadata` slot of `RflomicsSE` objects of the `ExperimentList`.
 
-In this vignette, we will use an example to show how the metadata slots of the two RflomicsMAE and RflomicsSE objects are organised and can be accessed.
+This organisation can be illustred by presenting the workflow of the RFLOMICS package.
 
-RFLOMICS workflow is structured into three main parts:
+The workflow is structured in three main parts:
 
--   The first one involves loading the experimental design and omics data, setting up the statistical model, and defining contrasts (hypotheses) associated with the biological questions. The design list of the metadata slot of the RflomicsMAE object stores this statistical settings (in green in Fig 1).
+-   The first consists of loading the experimental design and omics data, setting up the statistical model and defining the contrasts (hypotheses) associated with the biological questions. The design list of the metadata slot of the RflomicsMAE object stores this statistical settings (in green in Fig 1).
 
 ![Fig 1: Organization of the metadata slot of the RflomicsMAE object](Images/DM_RflomicsMAE-design.png){width="100%"}
 
--   The second part allows for complete single-omics analysis for each dataset. Both raw and processed omic datasets are stored in the ExperimentList as RflomicsSE. For each analysis step, settings and results are stored (in green in Fig 2)
+-   The second part allows a complete single-omics analysis for each dataset. The raw and processed omic datasets are stored in the ExperimentList as RflomicsSE. For each analysis step, settings and results are stored (in green in Fig 2)
 
-    1.  The DataProcessing list of the metadata slot keeps the pre-processing settings and results which include filtering, normalization and transformation.
+    1.  The DataProcessing list in the metadata slot contains the parameters and results of pre-processing including filtering, normalisation and transformation
 
-    2.  The DiffExpAnal list of the metadata slot stores the differential expression analysis settings and results.
+    2.  The DiffExpAnal list in the metadata slot contains the parameters and results of the differential expression analysis.
 
-    3.  The CoExpAnal list of the metadata slot stores co-expression analysis on differentially expressed entities settings and results.
+    3.  The CoExpAnal list in the metadata slot stores the parameters and results of the coexpression analysis on differentially expressed entities.
 
-    4.  DiffExpEnrichAnal and CoExpEnrichAnal lists of the metadata slot keep functional enrichment analysis results and settings for respectively the Differential expression analysis and CoExpression analysis.
+    4.  DiffExpEnrichAnal and CoExpEnrichAnal lists in the metadata slot store the results and parameters of the functional enrichment analysis for the differential expression and the coexpression analysis, respectively.
 
-![Fig 2: Organization of the metadata slot of the RflomicsSE objects](Images/DM_RflomicsSE-overview.png){width="150%"}
+![Fig 2: Organisation of the metadata slot of the RflomicsSE objects](Images/DM_RflomicsSE-overview.png){width="150%"}
 
 -   The third part is the multi-omics integration, with two proposed methods: a supervised approach using the MixOmics package (DIABLO), and an unsupervised approach using MOFA2. (settings and results stored in RflomicsMAE object)
 
 ![Fig 3: storage of multi-omics integration settings and results in the metadata slot of the RflomicsMAE object](Images/DM_RflomicsMAE-integration.png){width="100%"}
 
-As you will see, this analysis workflow is implemented as methods of the two classes (RflomicsMAE and RflomicsSE), providing a generic interface regardless of the type of omics data being analyzed (RNAseq, proteomics, metabolomics, etc.). This methods will return the same class of object (RflomicsSE or RflomicsMAE) as the entry object type with the metadata slot enriched with the parameters and results. We also defined getter and setter to access this objects.
+As you will see, this analysis workflow is implemented as methods of the two classes (`RflomicsMAE` and `RflomicsSE`), providing a generic interface whatever the type of omics data being analysed (RNAseq, proteomics, metabolomics, etc.). These methods return the same class as the input object (`RflomicsMAE` and `RflomicsSE`) with the metadata slot enriched with parameters and results. Getter and Setter methods have been defined to access the metadata objects.
 
 # Methods for RflomicsMAE and RflomicsSE classes
 
-## Instantiate a RflomicsMAE object from a MAE object
+## Instantiating a RflomicsMAE object from a MAE object
 
-In this example we will instantiate a RflomicsMAE object from an existing MAE object and a design data.frame.
+In this example we will instantiate a RflomicsMAE object from an existing MAE object and a design data.frame. We will use the ecoseed dataset from the RFLOMICS package (see `data(ecoseed)`).
 
-We will use the ecoseed dataset from the RFLOMICS package.
+`ecoseed` is a multi-omics dataset composed of three data matrices: transcriptomic (raw RNAseq read count data matrix), metabolomic and proteomic (relative abundance matrix as XIC) obtained from a study examining the effect of seed production temperature on the germination potential of Arabidopsis thaliana.
 
-This dataset is a multi-omics dataset composed of three data matrices: transcriptomic (raw RNAseq read count data matrix), metabolomic and proteomic (relative abundance matrix as XIC) that investigates the effect of seed production temperature on the germination potential of Arabidopsis thaliana.
+The experimental design includes three factors:
 
-The experimental design has three factors:
-
-\- Repeat: batch factor with three conditions: rep1, rep2, rep3
+\- Repeat: batch factor : rep1, rep2, rep3
 
 \- temperature: biological factor with three conditions: Low, Medium, Elevated
 
 \- imbibition: biological factor with three conditions: DS (Dry Deed), EI (Early Imbibition), LI (Late Imbibition)
 
-Important informations are required to complete the design and create the RflomicsMAE object. Experimental factors have to be defined with their type (batch or biological) and a reference level. This informations will be crucial to define the statistical model and the contrasts.
+Crucial informations is needed to complete the design and create the RflomicsMAE object. Experimental factors must be defined with their type (batch or biological) and a reference level. These informations are used to automatically generate the statistical design.
 
-PCA on raw data is done on raw data during the RflomicsMAE instantiation.
+PCA on raw data is performed during the instantiation of the RflomicsMAE object.
 
 ```{r, echo=FALSE}
 library(RFLOMICS)
@@ -107,28 +105,33 @@ head(getDesignMat(MAE))
 
 ```
 
-## Main methods presentation
+## Overview of the main methods
 
-Omics data are heterogeneous and each omics require specific methods and parameters to take into account the nature of data. Rflomics has a set of generic methods than can be applied either to the `RflomicsMAE` or `RflomicsSE` objects and which adapt methods and parameters to the type of omics data: RNAseq, proteomics, metabolomics. When applied to a `RflomicsMAE` object, the name of the `RflomicsSE` object has to be given with the parameter (SE.name).
+Omics data is heterogeneous and each omics requires specific methods and parameters to take into account of the nature of data. Rflomics has a set of generic methods than can be applied to the `RflomicsMAE` or `RflomicsSE` objects and which adapt the methods and parameters to the type of omics data: RNAseq, proteomics, metabolomics.
 
 The main methods are:
 
-| Methods                 | Description                                                                                                     |
-|:----------------------|:------------------------------------------------|
-| createRflomicsMAE       | instantiate a RflomicsMAE object from a MultiAssayExperiment object and a design data.frame                     |
-| runDataProcessing       | run the data processing (filtering: features or samples, normalization and/or transformation, PCA               |
-| runDiffAnalysis         | run a Differential features analysis on omics data                                                              |
-| runCoExpression         | run a CoExpression analysis from the union/intersection of differentially expressed features list.              |
-| runAnnotationEnrichment | run an annotation enrichment analysis (GO, KEGG, custom) of the list of differentially or co-expressed features |
-| runOmicsIntegration     | run an integration analysis (MOFA or DIABLO)                                                                    |
+| Methods                 | Description                                                                                                         |
+|:-----------------------|:-----------------------------------------------|
+| createRflomicsMAE       | instantiate a RflomicsMAE object from a MultiAssayExperiment object and a design data.frame                         |
+| runDataProcessing       | Process data: filtering: features or samples, normalization and/or transformation, PCA                              |
+| runDiffAnalysis         | perform a Differential features analysis on omics data                                                              |
+| runCoExpression         | perform a CoExpression analysis from the union/intersection of differentially expressed features list.              |
+| runAnnotationEnrichment | perform an annotation enrichment analysis (GO, KEGG, custom) on the list of differentially or co-expressed features |
+| runOmicsIntegration     | perform an integration analysis (MOFA or DIABLO)                                                                    |
+| generateReport          | generate a report from the RflomicsMAE object and optionally export the report and results                          |
 
-Table 1: Main methods for the RflomicsMAE and RflomicsSE classes to run a multi-omics analysis workflow
+Table 1: Main methods of the RflomicsMAE and RflomicsSE classes for running a multi-omics analysis workflow.
 
-## Run the workflow:
+When applied to a `RflomicsMAE` object, the name of the `RflomicsSE` object must be specified with the `SE.name` parameter.
 
-### Set the statistical design: model and contrasts
+## Executing the workflow :
 
-The next step is to define the model and associated contrasts translating biological question in statistical terms. The function `generateModelFormulae` finds all possible models given the experimental design settings. Only the second order interaction terms between the biological factors appear. Batch factors never appear in interaction terms. For the remaining of the example, we select the second formula.
+### Define the statistical settings: model and contrasts
+
+The next step is to define the model and associated contrasts by translating the biological question into statistical terms. The `generateModelFormulae` function is used to find all possible models given the experimental design settings.
+
+Rlfomics accepts up to three biological factors and one batch effect. Only second-order interaction terms between biological factors will appear in the model formulae. Batch factors will never appear in the interaction terms. For the rest of the example, we choose the second formula. The model without the interaction term.
 
 -   set the model formulae
 
@@ -143,9 +146,12 @@ MAE <- setModelFormula(MAE, form[2])
 
 getModelFormula(MAE)
 
+
 ```
 
-Given the chosen formula, all hypotheses (contrasts) can be obtained using the `generateExpressionContrast` function. In this example, we will select the three first contrasts of the averaged contrasts.
+Given the formula chosen, all the hypotheses (contrasts) can be obtained using the `generateExpressionContrast` function. Three types of contrast are expressed: pairwise comparison, average expression and interaction expression.
+
+In this example, we will select the first three contrasts from the averaged contrasts.
 
 -   set contrasts:
 
@@ -156,20 +162,19 @@ possibleContrasts$averaged$contrastName
 
 MAE <- setSelectedContrasts(MAE, contrastList = possibleContrasts$averaged[1:3])
 
-
 getSelectedContrasts(MAE)[,-c(1,3)]
 
 ```
 
 This statistical framework will be applied on all loaded datasets.
 
-### Run single-omics analysis
+### Single-omics analysis
 
-#### Run data processing and quality check
+#### Data processing and quality control
 
-Processing of data, including: normalization and transformation settings and results can be run in one step using the `runDataProcessing` method. Or in multiple step thanks to the methods called by `runDataProcessing` which are: `filterLowAbundance` (`RNAseq`), `runNormalization` and `runTransformData`.
+Data processing, including normalisation and transformation parameters and results, can be carried out in a single step using the `runDataProcessing` method. Or in several steps using the methods called by `runDataProcessing`, which are: `filterLowAbundance` (`RNAseq`), `runNormalization` and `runTransformData`.
 
-In this example, the three omics data are processed in one step.
+In this example, the three omics data sets are processed in a single step.
 
 ```{r runNorm}
 
@@ -194,7 +199,7 @@ getFilteredFeatures(object = MAE[["RNAtest"]])[1:10]
 
 ```
 
-It is important to note that none of the data are directly transformed in the assay, except if specifically asked by the user with setting the argument `modifyAssay` to TRUE. This way, you can always change your mind and test several normalization or transformation processes.
+It is important to note that none of the data is directly transformed in the assay, unless the user specifically requests it by setting the `modifyAssay` argument to TRUE. This way, you can always change your mind and test several normalisation or transformation processes.
 
 You can access to processing results and plot them.
 
@@ -212,21 +217,18 @@ plotDataDistribution(MAE[["metatest"]], raw = FALSE)
 
 ```
 
-#### Run differential analysis: settings and results
+#### Differential analysis: settings and results
 
-Differential analysis on contrasts can be run using the `runDiffAnalysis` method. This method is specialized for each omics type and uses the `limma` package for proteomics and metabolomics data and the `edgeR` package for RNAseq data. The method returns the same object with the metadata slot enriched with the parameters and results of the analysis.
+Differential analysis on each contrasts can be performed using the `runDiffAnalysis` method. This method is specialized for each omics type and uses the `limma` package for proteomics and metabolomics data and the `edgeR` package for RNAseq data. The method returns the same object with the metadata slot enriched with the parameters and results of the analysis.
 
 ```{r diff}
 
 MAE <- runDiffAnalysis(MAE , SE.name = "RNAtest", p.adj.method = "BH", 
-                    method = "edgeRglmfit", p.adj.cutoff = 0.05, 
-                    logFC.cutoff = 0) |>
+                    method = "edgeRglmfit", p.adj.cutoff = 0.05, logFC.cutoff = 0) |>
     runDiffAnalysis(SE.name = "protetest", p.adj.method = "BH", 
-                    method = "limmalmFit",  p.adj.cutoff = 0.05, 
-                    logFC.cutoff = 0) |>
+                    method = "limmalmFit",  p.adj.cutoff = 0.05, logFC.cutoff = 0) |>
     runDiffAnalysis(SE.name = "metatest", p.adj.method = "BH", 
-                    method = "limmalmFit",  p.adj.cutoff = 0.05, 
-                    logFC.cutoff = 0)
+                    method = "limmalmFit",  p.adj.cutoff = 0.05, logFC.cutoff = 0)
 
 # access to the settings
 
@@ -252,9 +254,9 @@ plotBoxplotDE(MAE[["RNAtest"]],
               features = "AT4G04810")
 ```
 
-#### Run co-expression analysis: settings and results
+#### Co-expression analysis: settings and results
 
-Co-expression analysis on list of differentially expressed features can be run using the `runCoExpression` method. This method uses methods from the `coseq` package with a set of optimal parameters adatped to each omics. In this example, we will run a co-expression analysis on the `proteomics` data.
+Co-expression analysis on the list of differentially expressed features can be performed using the `runCoExpression` method. This method uses methods from the `coseq` package with a set of optimal parameters tailored to each omics. In this example, we will perform a co-expression analysis on the `proteomics` data.
 
 The results can be plot using the `getCoExpAnalysesSummary` method.
 
@@ -268,14 +270,16 @@ MAE <- runCoExpression(MAE, SE.name = "protetest",
 
 getCoExpAnalysesSummary(MAE)
 
+plotCoExpression(MAE[["protetest"]])$ICL
+
 plotCoExpressionProfile(MAE[["protetest"]], cluster = 2)
 ```
 
-#### Run annotation enrichment analysis: settings and results
+#### Annotation enrichment analysis: settings and results
 
-Annotation enrichment analysis can be run using the `runAnnotationEnrichment` method. This method uses the `clusterProfiler` package. In this example, the `org.At.tair.db` database for Arabidopsis thaliana will be used to perform the GO enrichment analysis of the list of DE proteins.
+Annotation enrichment analysis can be performed using the `runAnnotationEnrichment` method. This method uses the `clusterProfiler` package. In this example, the `org.At.tair.db` database for Arabidopsis thaliana will be used to perform the GO enrichment analysis of the DE protein list.
 
-The results can be accessed using the `getEnrichRes` method and plotted using the `plotEnrichComp` method.
+The results can be viewed using the `getEnrichRes` method, a summary of the number of enriched terms by the `sumORA` function and plotted, by example, using the `plotEnrichComp` method.
 
 ```{r enrich}
 
@@ -289,12 +293,14 @@ MAE <- runAnnotationEnrichment(MAE, SE.name = "protetest",
 results <- getEnrichRes(MAE[["protetest"]],
                          from = "diffexp", database = "GO")
 
+sumORA(MAE[["protetest"]], from = "DiffExp", database = "GO")
+
 plotEnrichComp(MAE[["protetest"]], from = "DiffExp",database = "GO", 
                matrixType = "FC")
 
 ```
 
-### Run a multi-omics integration analysis
+### Multi-omics integration analysis
 
 The multi-omics step in RFLOMICS takes two steps: the preparation of the object, based on the user-selected method, and the actual run of the selected method. This is done using `prepareForIntegration` and `runOmicsIntegration`. In this example, we will use only the proteomics and metabolomics dataset with the mixOmics package (block.plsda function).
 
@@ -316,6 +322,18 @@ Visualizing results is made through the original package functions.
 
 ```{r, fig.width = 7, fig.align = "center"}
 mixOmics::plotIndiv(getMixOmics(MAE, response = "temperature"))
+```
+
+# Generating a report from the RflomicsMAE object
+
+The `generateReport` function is used to generate a report from a RflomicsMAE object. The report is generated in HTML format.
+
+The MAE object can be saved (export = TRUE), exporting the object in a .RData, the report in html format, the graphs in png format and the data in txt (tabulated) format.
+
+```{r report, eval = FALSE}
+
+generateReport(object = MAE, fileName = "ecoseed_report.html", export = FALSE)
+
 ```
 
 # Session information
