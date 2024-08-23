@@ -90,7 +90,5 @@ This file contains annotation about biological functions of genes/proteins/metab
 | AT3G00980      | GO:0006396        | RNA processing                            | biological_process |
 | AT3G00980      | GO:0005730        | nucleolus                                 | cellular_component |
 
-```{r}
-sessionInfo()
-```
+
 
