@@ -2,7 +2,7 @@
 title: "RFLOMICS input format"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{RFLOMICS-input-data}
+  %\VignetteIndexEntry{RFLOMICS input format}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -89,8 +89,3 @@ This file contains annotation about biological functions of genes/proteins/metab
 | AT1G18745      | GO:0005730        | nucleolus                                 | cellular_component |
 | AT3G00980      | GO:0006396        | RNA processing                            | biological_process |
 | AT3G00980      | GO:0005730        | nucleolus                                 | cellular_component |
-
-```{r}
-sessionInfo()
-```
-
