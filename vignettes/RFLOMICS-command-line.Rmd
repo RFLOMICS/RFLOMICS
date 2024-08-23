@@ -330,9 +330,9 @@ The `generateReport` function is used to generate a report from a RflomicsMAE ob
 
 The MAE object can be saved (export = TRUE), exporting the object in a .RData, the report in html format, the graphs in png format and the data in txt (tabulated) format.
 
-```{r report, eval = FALSE}
+```{r report, eval = TRUE}
 
-generateReport(object = MAE, fileName = "ecoseed_report.html", export = FALSE)
+# generateReport(object = MAE, fileName = "ecoseed_report.html", export = FALSE)
 
 ```
 
