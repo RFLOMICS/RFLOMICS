@@ -1,6 +1,7 @@
-# =============================================================================
-# Common modules
-# =============================================================================
+### ============================================================================
+### [00_common] commun modules
+### ----------------------------------------------------------------------------
+# N. Bessoltane,
 
 # ---- update radio button ----
 #' @keywords internal
@@ -241,3 +242,44 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
     })
     
   }
+
+
+# ---- selectizeModuleServer ----
+# Module UI
+.selectizeModuleUI <- function(id) {
+  ns <- NS(id)
+  tagList(
+    uiOutput(ns("select_ui"))
+  )
+}
+
+# Module Server
+.selectizeModuleServer <- function(id, featureType, choices) {
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+    
+    # Dynamically generate the selectizeInput in the server.
+    # Initialize choices to NULL to avoid loading everything on the client side.
+    # choices = NULL 
+    output$select_ui <- renderUI({
+      selectizeInput(
+        inputId = ns("selectFeature"),
+        label = paste0("Select DE ",featureType,":"),
+        multiple = FALSE,
+        choices = NULL, 
+        options = list(maxOptions = 1000)
+      )
+    })
+    
+    # Use server-side mode to handle large lists.
+    updateSelectizeInput(
+      session = session,
+      inputId = "selectFeature",
+      choices = choices,
+      server = TRUE
+    )
+    
+    # Return the reactive selection directly.
+    return(reactive(input$selectFeature))
+  })
+}

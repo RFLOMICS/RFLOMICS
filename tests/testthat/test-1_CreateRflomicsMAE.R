@@ -225,19 +225,18 @@ test_that("Factors types", {
 
 # Test of internal function
 test_that("Omics dictionnary", {
-  expect_identical(RFLOMICS:::omicsDic(MAE, SE.name = "RNAtest"), 
-                   list(variableName = "transcripts", valueType = "counts"))
-  expect_identical(RFLOMICS:::omicsDic(MAE, SE.name = "metatest"), 
-                   list(variableName = "metabolites", valueType = "XIC"))
-  expect_identical(RFLOMICS:::omicsDic(MAE, SE.name = "protetest"), 
-                   list(variableName = "proteins", valueType = "XIC"))
-  expect_identical(RFLOMICS:::omicsDic(MAE, SE.name = "metatest"), 
-                   RFLOMICS:::omicsDic(MAE[["metatest"]]))
-  expect_identical(RFLOMICS:::omicsDic(MAE, SE.name = "RNAtest"), 
-                   RFLOMICS:::omicsDic(MAE[["RNAtest"]]))
+  expect_identical(RFLOMICS:::.omicsDic(MAE, SE.name = "RNAtest"), 
+                   list(variableName = "transcript", valueType = "counts"))
+  expect_identical(RFLOMICS:::.omicsDic(MAE, SE.name = "metatest"), 
+                   list(variableName = "metabolite", valueType = "XIC"))
+  expect_identical(RFLOMICS:::.omicsDic(MAE, SE.name = "protetest"), 
+                   list(variableName = "protein", valueType = "XIC"))
+  expect_identical(RFLOMICS:::.omicsDic(MAE, SE.name = "metatest"), 
+                   RFLOMICS:::.omicsDic(MAE[["metatest"]]))
+  expect_identical(RFLOMICS:::.omicsDic(MAE, SE.name = "RNAtest"), 
+                   RFLOMICS:::.omicsDic(MAE[["RNAtest"]]))
   
-  expect_error(RFLOMICS:::omicsDic(MAE))
-  
+  expect_error(RFLOMICS:::.omicsDic(MAE))
 })
 
 
@@ -281,3 +280,32 @@ test_that("Test if samples in data matrix and rownames in design are orderd in s
   expect_equal(colnames(MAE[[3]]), as.vector(MAE[[3]]$samples))
 })
 
+
+
+test_that("Test check of NA in data", {
+  
+  omicsData <- list(
+    ecoseed.df$RNAtest,
+    ecoseed.df$metatest,
+    ecoseed.df$protetest)
+  
+  omicsData[[1]][6,7] <- NA
+  
+  expect_no_error(RFLOMICS::createRflomicsMAE(
+    projectName = "Tests", 
+    omicsData   = omicsData,
+    omicsNames  = c("RNAtest", "metatest", "protetest"),
+    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
+    ExpDesign   = ecoseed.df$design,
+    factorInfo  = factorInfo))
+  
+  omicsData[[2]][6,7] <- -1
+  
+  expect_error(RFLOMICS::createRflomicsMAE(
+    projectName = "Tests", 
+    omicsData   = omicsData,
+    omicsNames  = c("RNAtest", "metatest", "protetest"),
+    omicsTypes  = c("RNAseq","metabolomics","proteomics"),
+    ExpDesign   = ecoseed.df$design,
+    factorInfo  = factorInfo))
+})

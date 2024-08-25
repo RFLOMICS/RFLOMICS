@@ -1,3 +1,8 @@
+### ============================================================================
+### [shiny server function]
+### ----------------------------------------------------------------------------
+# N. Bessoltane,
+
 #' @importFrom htmltools span tagList p div a h4 h5 hr tags br HTML
 #' @importFrom shinyBS popify
 #' @importFrom shinydashboard box tabBox updateTabItems menuItem menuItemOutput 

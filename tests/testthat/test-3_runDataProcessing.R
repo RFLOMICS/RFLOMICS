@@ -6,11 +6,7 @@
 library(testthat)
 library(RFLOMICS)
 
-##### Checks on transformation and normalization of data through command line functions
-##### Essentially testing the .checkTransNorm pipeline. 
-
 # ---- Construction of objects for the tests ---- 
-
 # load ecoseed data
 data(ecoseed)
 
@@ -20,7 +16,7 @@ factorInfo <- data.frame(
 )
 
 # create rflomicsMAE object with ecoseed data
-MAE <- RFLOMICS::createRflomicsMAE(
+MAE <- createRflomicsMAE(
   projectName = "Tests",
   omicsData   = ecoseed.mae,
   omicsNames  = c("RNAtest", "protetest", "metatest"),
@@ -52,10 +48,12 @@ test_that("runDataProcessing returned value", {
                             normMethod = "TMM")
   MAE1 <- runDataProcessing(MAE1, SE.name = "protetest",
                             transformMethod = "none",
-                            normMethod = "none")
+                            normMethod = "none",
+                            imputMethod = "MVI")
   MAE1 <- runDataProcessing(MAE1, SE.name = "metatest",
                             transformMethod = "log2",
-                            normMethod = "median")
+                            normMethod = "median",
+                            imputMethod = "MVI")
   
   ## returns a value of class RflomicsMAE/MAE
   expect_true("RflomicsMAE" %in% is(MAE1))
@@ -77,12 +75,14 @@ test_that("runDataProcessing returned value", {
   prot.S1 <- MAE[["protetest"]]
   prot.S1 <- runDataProcessing(prot.S1,
                                transformMethod = "none",
-                               normMethod = "none")
+                               normMethod = "none",
+                               imputMethod = "MVI")
   
   meta.S1 <- MAE[["metatest"]]
   meta.S1 <- runDataProcessing(meta.S1,
                                transformMethod = "log2",
-                               normMethod = "median")
+                               normMethod = "median",
+                               imputMethod = "MVI")
   
   ## returns a value of class RflomicsS
   expect_true("RflomicsSE" %in% is(rna.S1))
@@ -124,8 +124,12 @@ test_that("runDataProcessing returned value", {
   expect_identical(
     getFilterSettings(rna.S1),
     list(method = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 1))
-  expect_identical(getFilterSettings(prot.S1), NULL)
-  expect_identical(getFilterSettings(meta.S1), NULL)
+  expect_equal(
+    getFilterSettings(prot.S1), 
+    list(method = "MVI", minValue = 6.226499, suppInfo = "missing value imputation"))
+  expect_equal(
+    getFilterSettings(meta.S1), 
+    list(method = "MVI", minValue = 1.98e-05, suppInfo = "missing value imputation"))
   ### Is it filtered ?
   expect_identical(RFLOMICS:::.isFiltered(rna.S1), FALSE)
   expect_identical(RFLOMICS:::.isFiltered(prot.S1), FALSE)
@@ -133,21 +137,26 @@ test_that("runDataProcessing returned value", {
   
   ### transformation settings
   expect_identical(getTransSettings(rna.S1), NULL)
-  expect_identical(getTransSettings(prot.S1), list(method = "none"))
-  expect_identical(getTransSettings(meta.S1), list(method = "log2"))
+  expect_identical(getTransSettings(prot.S1), 
+                   list(method = "none", suppInfo = "unknown"))
+  expect_identical(getTransSettings(meta.S1), 
+                   list(method = "log2", suppInfo = NULL))
   ### Is it transformed ?
   expect_identical(RFLOMICS:::.isTransformed(rna.S1), FALSE)
   expect_identical(RFLOMICS:::.isTransformed(prot.S1), FALSE)
   expect_identical(RFLOMICS:::.isTransformed(meta.S1), FALSE)
   
   ### normalization settings
-  expect_identical(getNormSettings(rna.S1), list(method = "TMM"))
-  expect_identical(getNormSettings(prot.S1), list(method = "none"))
-  expect_identical(getNormSettings(meta.S1), list(method = "median"))
+  expect_identical(getNormSettings(rna.S1), 
+                   list(method = "TMM", suppInfo = NULL))
+  expect_identical(getNormSettings(prot.S1), 
+                   list(method = "none", suppInfo = "unknown"))
+  expect_identical(getNormSettings(meta.S1),
+                   list(method = "median", suppInfo = NULL))
   ### Is it normalized ?
-  expect_identical(RFLOMICS:::.isNorm(rna.S1), FALSE)
-  expect_identical(RFLOMICS:::.isNorm(prot.S1), FALSE)
-  expect_identical(RFLOMICS:::.isNorm(meta.S1), FALSE)
+  expect_identical(RFLOMICS:::.isNormalized(rna.S1), FALSE)
+  expect_identical(RFLOMICS:::.isNormalized(prot.S1), FALSE)
+  expect_identical(RFLOMICS:::.isNormalized(meta.S1), FALSE)
   
   ### add PCA for processed data (norm)
   expect(!is.null(getAnalysis(rna.S1,  "PCAlist", "norm")), 
@@ -196,18 +205,27 @@ test_that("default values of runDataProcessing arguments", {
   expect_identical(
     getFilterSettings(rna.S1),
     list(method = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 1))
-  expect_identical(getFilterSettings(prot.S1), NULL)
-  expect_identical(getFilterSettings(meta.S1), NULL)
+  expect_equal(
+    getFilterSettings(prot.S1), 
+    list(method = "MVI", minValue = 6.226499, suppInfo = "missing value imputation"))
+  expect_equal(
+    getFilterSettings(meta.S1), 
+    list(method = "MVI", minValue = 1.98e-05, suppInfo = "missing value imputation"))
   
   ### transformation settings
   expect_identical(getTransSettings(rna.S1), NULL)
-  expect_identical(getTransSettings(prot.S1), list(method = "log2"))
-  expect_identical(getTransSettings(meta.S1), list(method = "log2"))
+  expect_identical(getTransSettings(prot.S1), 
+                   list(method = "log2", suppInfo = NULL))
+  expect_identical(getTransSettings(meta.S1), 
+                   list(method = "log2", suppInfo = NULL))
   
   ### normalization settings
-  expect_identical(getNormSettings(rna.S1), list(method = "TMM"))
-  expect_identical(getNormSettings(prot.S1), list(method = "median"))
-  expect_identical(getNormSettings(meta.S1), list(method = "median"))
+  expect_identical(getNormSettings(rna.S1), 
+                   list(method = "TMM", suppInfo = NULL))
+  expect_identical(getNormSettings(prot.S1), 
+                   list(method = "median", suppInfo = NULL))
+  expect_identical(getNormSettings(meta.S1), 
+                   list(method = "median", suppInfo = NULL))
   
 })
 
@@ -301,26 +319,24 @@ test_that("runSampleFiltering returned value", {
   ## 
   rna.S1 <- runSampleFiltering(rna.S1)
   expect_identical(getSelectedSamples(rna.S1), colnames(rna.S1))
-  expect_identical(getAnalysis(rna.S1, name = "design", subName = "ExpDesign"), 
-                   as.data.frame(colData(rna.S1)))
   expect_error(runSampleFiltering(rna.S1, samples = colnames(rna.S1)[-1:-3]))
   
   ##
   
 })
 
-# ---- filterLowAbundance ----
-test_that("filterLowAbundance returned value", {
+# ---- runFeatureFiltering ----
+test_that("runFeatureFiltering returned value", {
   
   MAE1    <- MAE
   rna.S1  <- MAE[["RNAtest"]]
   
   ## method of RflomicsMAE class
-  MAE1   <- filterLowAbundance(MAE, SE.name = "RNAtest",
+  MAE1   <- runFeatureFiltering(MAE, SE.name = "RNAtest",
                                filterMethod = "CPM", 
                                filterStrategy = "NbReplicates", 
                                cpmCutoff = 1)
-  rna.S1 <- filterLowAbundance(rna.S1,
+  rna.S1 <- runFeatureFiltering(rna.S1,
                                filterMethod = "CPM", 
                                filterStrategy = "NbReplicates", 
                                cpmCutoff = 1)
@@ -345,14 +361,14 @@ test_that("filterLowAbundance returned value", {
   
 })
 
-test_that("default values of filterLowAbundance arguments", {
+test_that("default values of runFeatureFiltering arguments", {
   
   MAE1    <- MAE
   rna.S1  <- MAE[["RNAtest"]]
   
   ## method of RflomicsMAE class
-  MAE1   <- filterLowAbundance(MAE, SE.name = "RNAtest")
-  rna.S1 <- filterLowAbundance(rna.S1)
+  MAE1   <- runFeatureFiltering(MAE, SE.name = "RNAtest")
+  rna.S1 <- runFeatureFiltering(rna.S1)
   
   ## returns a value of class RflomicsMAE/RflomicsSE
   expect_true("RflomicsMAE" %in% is(MAE1))
@@ -368,7 +384,7 @@ test_that("default values of filterLowAbundance arguments", {
          failure_message = "")
   
   # NULL arg
-  rna.S1 <- filterLowAbundance(rna.S1, 
+  rna.S1 <- runFeatureFiltering(rna.S1, 
                                filterMethod = NULL, 
                                filterStrategy = "NbReplicates", 
                                cpmCutoff = 1)
@@ -376,7 +392,7 @@ test_that("default values of filterLowAbundance arguments", {
     getFilterSettings(rna.S1),
     list(method = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 1))
   
-  rna.S1 <- filterLowAbundance(rna.S1, 
+  rna.S1 <- runFeatureFiltering(rna.S1, 
                                filterMethod = "CPM", 
                                filterStrategy = NULL, 
                                cpmCutoff = 5)
@@ -385,7 +401,7 @@ test_that("default values of filterLowAbundance arguments", {
     list(method = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 5))
   
   
-  rna.S1 <- filterLowAbundance(rna.S1, 
+  rna.S1 <- runFeatureFiltering(rna.S1, 
                                filterMethod = "CPM", 
                                filterStrategy = "NbConditions", 
                                cpmCutoff = NULL)
@@ -403,23 +419,23 @@ test_that("Error/warning messages", {
 
   # run runDataProcessing with incorrect argument
   # RNAseq data
-  expect_error(filterLowAbundance(rna.S1,
+  expect_error(runFeatureFiltering(rna.S1,
                                   filterMethod = "toto", 
                                   filterStrategy = "NbReplicates", 
                                   cpmCutoff = 1))
-  expect_error(filterLowAbundance(rna.S1,
+  expect_error(runFeatureFiltering(rna.S1,
                                   filterMethod = "CPM", 
                                   filterStrategy = "toto", 
                                   cpmCutoff = 1))
-  expect_error(filterLowAbundance(rna.S1,
+  expect_error(runFeatureFiltering(rna.S1,
                                   filterMethod = "CPM", 
                                   filterStrategy = "NbConditions", 
                                   cpmCutoff = "toto"))
   
   # proteomics/metabolics data
   ## Can't apply this method to omics types other than RNAseq.
-  expect_error(filterLowAbundance(prot.S1))
-  expect_error(filterLowAbundance(prot.S1))
+  expect_no_error(runFeatureFiltering(prot.S1))
+  expect_warning(runFeatureFiltering(prot.S1, filterMethod = "CMP"))
 
 })
 
@@ -431,14 +447,21 @@ test_that("runTransformation returned value", {
   meta.S1 <- MAE[["metatest"]]
   
   ## method of RflomicsMAE class
-  MAE1    <- runTransformData(MAE, SE.name = "protetest", 
-                              transformMethod = "none")
-  MAE1    <- runTransformData(MAE1, SE.name = "metatest", 
-                              transformMethod = "log2")
-  prot.S1 <- runTransformData(prot.S1, 
-                              transformMethod = "none")
-  meta.S1 <- runTransformData(meta.S1, 
-                              transformMethod = "log2")
+  MAE1    <- 
+    runFeatureFiltering(MAE, SE.name = "protetest") |>
+    runTransformData(SE.name = "protetest", transformMethod = "none")
+  
+  MAE1    <- 
+    runFeatureFiltering(MAE1, SE.name = "metatest") |>
+    runTransformData(SE.name = "metatest", transformMethod = "log2")
+  
+  prot.S1 <- 
+    runFeatureFiltering(prot.S1) |>
+    runTransformData(transformMethod = "none")
+  
+  meta.S1 <-     
+    runFeatureFiltering(meta.S1) |>
+    runTransformData(transformMethod = "log2")
   
   ## returns a value of class RflomicsMAE/RflomicsSE
   expect_true("RflomicsMAE" %in% is(MAE1))
@@ -448,11 +471,13 @@ test_that("runTransformation returned value", {
   expect_identical(meta.S1, MAE1[["metatest"]])
   
   ## transformation settings
-  expect_identical(getTransSettings(prot.S1), list(method = "none"))
+  expect_identical(getTransSettings(prot.S1), 
+                   list(method = "none", suppInfo = "unknown"))
   expect_identical(RFLOMICS:::.isTransformed(prot.S1), FALSE)
   expect(length(getAnalysis(prot.S1, "DataProcessing", "Transformation")) != 0,
          failure_message = "")
-  expect_identical(getTransSettings(meta.S1), list(method = "log2"))
+  expect_identical(getTransSettings(meta.S1), 
+                   list(method = "log2", suppInfo = NULL))
   expect_identical(RFLOMICS:::.isTransformed(meta.S1), FALSE)
   expect(length(getAnalysis(meta.S1, "DataProcessing", "Transformation")) != 0,
          failure_message = "")
@@ -470,10 +495,21 @@ test_that("default values of runTransformation arguments", {
   meta.S1 <- MAE[["metatest"]]
   
   ## method of RflomicsMAE class
-  MAE1    <- runTransformData(MAE, SE.name = "protetest")
-  MAE1    <- runTransformData(MAE1, SE.name = "metatest")
-  prot.S1 <- runTransformData(prot.S1)
-  meta.S1 <- runTransformData(meta.S1)
+  MAE1    <- 
+    runFeatureFiltering(MAE, SE.name = "protetest") |>
+    runTransformData(SE.name = "protetest")
+  
+  MAE1    <- 
+    runFeatureFiltering(MAE1, SE.name = "metatest") |>
+    runTransformData(SE.name = "metatest")
+  
+  prot.S1 <- 
+    runFeatureFiltering(prot.S1) |>
+    runTransformData()
+  
+  meta.S1 <-     
+    runFeatureFiltering(meta.S1) |>
+    runTransformData()
   
   ## returns a value of class RflomicsMAE/RflomicsSE
   expect_true("RflomicsMAE" %in% is(MAE1))
@@ -483,11 +519,13 @@ test_that("default values of runTransformation arguments", {
   expect_identical(meta.S1, MAE1[["metatest"]])
   
   ## transformation settings
-  expect_identical(getTransSettings(prot.S1), list(method = "log2"))
+  expect_identical(getTransSettings(prot.S1), 
+                   list(method = "log2", suppInfo = NULL))
   expect_identical(RFLOMICS:::.isTransformed(prot.S1), FALSE)
   expect(length(getAnalysis(prot.S1, "DataProcessing", "Transformation")) != 0,
          failure_message = "")
-  expect_identical(getTransSettings(meta.S1), list(method = "log2"))
+  expect_identical(getTransSettings(meta.S1), 
+                   list(method = "log2", suppInfo = NULL))
   expect_identical(RFLOMICS:::.isTransformed(meta.S1), FALSE)
   expect(length(getAnalysis(meta.S1, "DataProcessing", "Transformation")) != 0,
          failure_message = "")
@@ -496,10 +534,16 @@ test_that("default values of runTransformation arguments", {
   prot.S1 <- MAE[["protetest"]]
   meta.S1 <- MAE[["metatest"]]
   
-  prot.S1 <- runTransformData(prot.S1, transformMethod = NULL)
-  meta.S1 <- runTransformData(meta.S1, transformMethod = NULL)
-  expect_identical(getTransSettings(prot.S1), list(method = "log2"))
-  expect_identical(getTransSettings(meta.S1), list(method = "log2"))
+  prot.S1 <- 
+    runFeatureFiltering(prot.S1) |>
+    runTransformData(transformMethod = NULL)
+  meta.S1 <- 
+    runFeatureFiltering(meta.S1) |>
+    runTransformData(transformMethod = NULL)
+  expect_identical(getTransSettings(prot.S1), 
+                   list(method = "log2", suppInfo = NULL))
+  expect_identical(getTransSettings(meta.S1), 
+                   list(method = "log2", suppInfo = NULL))
   
 })
 
@@ -512,7 +556,7 @@ test_that("Error/warning messages", {
   
   # run with incorrect argument
   # RNAseq data
-  expect_error(runTransformData(rna.S1))
+  expect_warning(runTransformData(rna.S1))
   
   # proteomics/metabolics data
   expect_error(runTransformData(prot.S1, transformMethod = "toto"))
@@ -530,28 +574,32 @@ test_that("runNormalization returned value", {
   
   ## method of RflomicsMAE class
   MAE1 <- 
-    filterLowAbundance(MAE, SE.name = "RNAtest") |>
+    runFeatureFiltering(MAE, SE.name = "RNAtest") |>
     runNormalization(SE.name = "RNAtest", normMethod = "TMM")
   
   MAE1 <- 
-    runTransformData(MAE1, SE.name = "protetest", transformMethod = "none") |>
+    runFeatureFiltering(MAE1, SE.name = "protetest") |>
+    runTransformData(SE.name = "protetest", transformMethod = "none") |>
     runNormalization(SE.name = "protetest", normMethod = "none")
   
   MAE1 <- 
-    runTransformData(MAE1, SE.name = "metatest", transformMethod = "log2") |>
+    runFeatureFiltering(MAE1, SE.name = "metatest") |>
+    runTransformData(SE.name = "metatest", transformMethod = "log2") |>
     runNormalization(SE.name = "metatest", normMethod = "median")
   
   ## method of RflomicsSE class  
   rna.S1  <- 
-    filterLowAbundance(rna.S1) |> 
+    runFeatureFiltering(rna.S1) |> 
     runNormalization(normMethod = "TMM")
   
   prot.S1 <- 
-    runTransformData(prot.S1, transformMethod = "none") |> 
+    runFeatureFiltering(prot.S1) |> 
+    runTransformData(transformMethod = "none") |> 
     runNormalization(normMethod = "none")
   
   meta.S1 <-
-    runTransformData(meta.S1, transformMethod = "log2") |> 
+    runFeatureFiltering(meta.S1) |> 
+    runTransformData(transformMethod = "log2") |> 
     runNormalization(normMethod = "median")
   
   ## returns a value of class RflomicsMAE/RflomicsSE
@@ -564,16 +612,19 @@ test_that("runNormalization returned value", {
   expect_identical(meta.S1, MAE1[["metatest"]])
   
   ## normalization settings
-  expect_identical(getNormSettings(rna.S1), list(method = "TMM"))
-  expect_identical(RFLOMICS:::.isNorm(rna.S1), FALSE)
+  expect_identical(getNormSettings(rna.S1), 
+                   list(method = "TMM", suppInfo = NULL))
+  expect_identical(RFLOMICS:::.isNormalized(rna.S1), FALSE)
   expect(length(getAnalysis(rna.S1, "DataProcessing", "Normalization")) != 0,
          failure_message = "")
-  expect_identical(getNormSettings(prot.S1), list(method = "none"))
-  expect_identical(RFLOMICS:::.isNorm(prot.S1), FALSE)
+  expect_identical(getNormSettings(prot.S1), 
+                   list(method = "none", suppInfo = "unknown"))
+  expect_identical(RFLOMICS:::.isNormalized(prot.S1), FALSE)
   expect(length(getAnalysis(prot.S1, "DataProcessing", "Normalization")) != 0,
          failure_message = "")
-  expect_identical(getNormSettings(meta.S1), list(method = "median"))
-  expect_identical(RFLOMICS:::.isNorm(meta.S1), FALSE)
+  expect_identical(getNormSettings(meta.S1), 
+                   list(method = "median", suppInfo = NULL))
+  expect_identical(RFLOMICS:::.isNormalized(meta.S1), FALSE)
   expect(length(getAnalysis(meta.S1, "DataProcessing", "Normalization")) != 0,
          failure_message = "")
 })
@@ -587,28 +638,32 @@ test_that("default values of runTransformation arguments", {
   
   ## method of RflomicsMAE class
   MAE1 <- 
-    filterLowAbundance(MAE, SE.name = "RNAtest") |>
+    runFeatureFiltering(MAE, SE.name = "RNAtest") |>
     runNormalization(SE.name = "RNAtest")
   
   MAE1 <- 
-    runTransformData(MAE1, SE.name = "protetest", transformMethod = "none") |>
+    runFeatureFiltering(MAE1, SE.name = "protetest") |>
+    runTransformData(SE.name = "protetest", transformMethod = "none") |>
     runNormalization(SE.name = "protetest")
   
   MAE1 <- 
-    runTransformData(MAE1, SE.name = "metatest", transformMethod = "log2") |>
+    runFeatureFiltering(MAE1, SE.name = "metatest") |>
+    runTransformData(SE.name = "metatest", transformMethod = "log2") |>
     runNormalization(SE.name = "metatest")
   
   ## method of RflomicsSE class  
   rna.S1  <- 
-    filterLowAbundance(rna.S1) |> 
+    runFeatureFiltering(rna.S1) |> 
     runNormalization()
   
   prot.S1 <- 
-    runTransformData(prot.S1, transformMethod = "none") |> 
+    runFeatureFiltering(prot.S1) |> 
+    runTransformData(transformMethod = "none") |> 
     runNormalization()
   
   meta.S1 <-
-    runTransformData(meta.S1, transformMethod = "log2") |> 
+    runFeatureFiltering(meta.S1) |> 
+    runTransformData(transformMethod = "log2") |> 
     runNormalization()
   
   ## returns a value of class RflomicsMAE/RflomicsSE
@@ -621,9 +676,12 @@ test_that("default values of runTransformation arguments", {
   expect_identical(meta.S1, MAE1[["metatest"]])
   
   ## normalization settings
-  expect_identical(getNormSettings(rna.S1),  list(method = "TMM"))
-  expect_identical(getNormSettings(prot.S1), list(method = "median"))
-  expect_identical(getNormSettings(meta.S1), list(method = "median"))
+  expect_identical(getNormSettings(rna.S1),  
+                   list(method = "TMM", suppInfo = NULL))
+  expect_identical(getNormSettings(prot.S1), 
+                   list(method = "median", suppInfo = NULL))
+  expect_identical(getNormSettings(meta.S1), 
+                   list(method = "median", suppInfo = NULL))
   
   # NULL arg
   rna.S1  <- MAE[["RNAtest"]]
@@ -631,19 +689,24 @@ test_that("default values of runTransformation arguments", {
   meta.S1 <- MAE[["metatest"]]
   
   rna.S1  <- 
-    filterLowAbundance(MAE[["RNAtest"]]) |> 
+    runFeatureFiltering(MAE[["RNAtest"]]) |> 
     runNormalization(normMethod = NULL)
-  expect_identical(getNormSettings(rna.S1),  list(method = "TMM"))
+  expect_identical(getNormSettings(rna.S1),  
+                   list(method = "TMM", suppInfo = NULL))
   
   prot.S1 <- 
-    runTransformData(MAE[["protetest"]], transformMethod = "none") |> 
+    runFeatureFiltering(MAE[["protetest"]]) |> 
+    runTransformData(transformMethod = "none") |> 
     runNormalization(normMethod = NULL)
-  expect_identical(getNormSettings(prot.S1), list(method = "median"))
+  expect_identical(getNormSettings(prot.S1), 
+                   list(method = "median", suppInfo = NULL))
   
   meta.S1 <- 
-    runTransformData(MAE[["metatest"]], transformMethod = "log2") |> 
+    runFeatureFiltering(MAE[["metatest"]]) |> 
+    runTransformData(transformMethod = "log2") |> 
     runNormalization(normMethod = NULL)
-  expect_identical(getNormSettings(meta.S1), list(method = "median"))
+  expect_identical(getNormSettings(meta.S1), 
+                   list(method = "median", suppInfo = NULL))
 })
 
 test_that("Error/warning messages", {
@@ -657,7 +720,7 @@ test_that("Error/warning messages", {
   ## RNAseq data should be filtered (low count).
   expect_error(runNormalization(rna.S1))
   expect_error(
-    filterLowAbundance(rna.S1) |> runNormalization(normMethod = "toto"))
+    runFeatureFiltering(rna.S1) |> runNormalization(normMethod = "toto"))
 
   # proteomics/metabolics data
   ## proteomics/metabolics data should be transformed before normalization.
@@ -674,3 +737,4 @@ test_that("Error/warning messages", {
       runNormalization(normMethod = "toto"))
   
 })
+

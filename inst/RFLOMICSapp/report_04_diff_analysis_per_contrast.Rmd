@@ -9,7 +9,7 @@
 contrastDir <- 
   paste0(diffDir[[data]],"/",  tag, "_", 
          RFLOMICS:::contrastName2contrastDir(contrast),"/")
-                      
+
 dir.create(path=contrastDir, recursive = TRUE, showWarnings = FALSE)
 
 opts_chunk$set(
@@ -58,51 +58,49 @@ resTable <- metadata(dataset.SE)$DiffExpAnal[["TopDEF"]][[contrast]]
 newDataset.SE <- dataset.SE[rownames(dataset.SE) %in% row.names(resTable)]
 newDataset.SE <- runOmicsPCA(newDataset.SE)  
 
-plotOmicsPCA(newDataset.SE,
-                  raw = "norm",
-                  axes=c(1, 2), groupColor="groups")
-plotOmicsPCA(newDataset.SE,
-                  raw = "norm",
-                  axes=c(1, 3), groupColor="groups")
+plotOmicsPCA(newDataset.SE, raw = "norm",
+             axes=c(1, 2), groupColor="groups")
+plotOmicsPCA(newDataset.SE, raw = "norm",
+             axes=c(1, 3), groupColor="groups")
 ```
 
 
 #### Table of DE
 
 * results of the differential expression/abundance statistical analysis:
-  + `r variableName` ID
-  + logFC: log2 fold change
-  + Abundance: mean expression/abundance for the factor's level
-  + t: t-statistic (limma-lmFit, prot/metabo)
-  + pvalue: p-values
-  + Adj.value: adjusted p-value (BH)
-  + LR: likelihood ratio test (edgeR-glmLRT, RNAseq)
-  + B: log-odds that the prot/metabo is differentially expressed (limma-topTable)
-  + Regulation: Up (green) or Down (red) regulated
++ `r variableName` ID
++ logFC: log2 fold change
++ Abundance: mean expression/abundance for the factor's level
++ t: t-statistic (limma-lmFit, prot/metabo)
++ pvalue: p-values
++ Adj.value: adjusted p-value (BH)
++ LR: likelihood ratio test (edgeR-glmLRT, RNAseq)
++ B: log-odds that the prot/metabo is differentially expressed (limma-topTable)
++ Regulation: Up (green) or Down (red) regulated
 
 ```{r table , eval = evalExport, fig.cap=paste0("<p style=\"color:grey\">","tab: table presenting the statisticals results of the differential analysis", "</p>")}
 df <- signif(dataset.SE@metadata[["DiffExpAnal"]][["TopDEF"]][[contrast]],3)
 
 datatable(df, rownames = TRUE , class = 'cell-border stripe',
-              options = list(pageLength = 6, scrollX = F, lengthChange = F)) |> 
+          options = list(pageLength = 6, scrollX = F, lengthChange = F)) |> 
   formatStyle(
-      'logFC',
-      color = styleInterval(c(0), c('red', 'green'))
-    )
+    'logFC',
+    color = styleInterval(c(0), c('red', 'green'))
+  )
 
 ```
 
 
 ```{r , eval = evalExport}
 write.table(dataset.SE@metadata[["DiffExpAnal"]][["TopDEF"]][[contrast]],
-             file=paste0(contrastDir,"Table_of_DE_", variableName,"_pvalmax_",
-                         dataset.SE@metadata[["DiffExpAnal"]][["p.adj.cutoff"]],"_FCmin_",
-                         dataset.SE@metadata[["DiffExpAnal"]][["abs.logFC.cutoff"]],".txt"),
-             sep="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)
- 
- write.table(dataset.SE@metadata[["DiffExpAnal"]][["DEF"]][[contrast]],
-             file=paste0(contrastDir,"Table_of_non_filtering_", variableName,".txt"),
-             sep="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)
+            file=paste0(contrastDir,"Table_of_DE_", variableName,"_pvalmax_",
+                        dataset.SE@metadata[["DiffExpAnal"]][["p.adj.cutoff"]],"_FCmin_",
+                        dataset.SE@metadata[["DiffExpAnal"]][["abs.logFC.cutoff"]],".txt"),
+            sep="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)
+
+write.table(dataset.SE@metadata[["DiffExpAnal"]][["DEF"]][[contrast]],
+            file=paste0(contrastDir,"Table_of_non_filtering_", variableName,".txt"),
+            sep="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)
 ```
 
 ### {-}

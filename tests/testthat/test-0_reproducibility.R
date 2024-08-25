@@ -67,8 +67,7 @@ MAE <- setSelectedContrasts(MAE, contrastList = selectedContrasts)
 MAE <- MAE |> 
     runDataProcessing(SE.name = "RNAtest", samples = sampleToKeep,
                       filterStrategy = "NbReplicates", 
-                      cpmCutoff = 1, 
-                      normMethod = "TMM") |>
+                      cpmCutoff = 1, normMethod = "TMM") |>
     runDataProcessing(SE.name = "protetest", samples = NULL,
                       normMethod = "none", transformMethod = "none") |>
     runDataProcessing(SE.name = "metatest", samples = NULL, 
@@ -305,7 +304,9 @@ test_that("contrast", {
     expect_equal(MAE[["protetest"]]@metadata$DiffExpAnal$contrastCoef, Contrasts.Coeff)
     expect_equal(MAE[["metatest"]]@metadata$DiffExpAnal$contrastCoef, Contrasts.Coeff)
     
-    expect_equal(checkExpDesignCompleteness(MAE[["RNAtest"]])$messages, 
+    expect_equal(
+      checkExpDesignCompleteness(MAE[["RNAtest"]], 
+                                 sampleList = getSelectedSamples(MAE[["RNAtest"]]))$messages, 
                  "The experimental design is complete but not balanced.")
     
     

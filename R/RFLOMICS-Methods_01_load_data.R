@@ -396,7 +396,10 @@ setMethod(f          = "subRflomicsMAE",
             
             if(!all(omicNames %in% dataset.names)) return(NULL)
             
-            return(object[,, omicNames])
+            object.sub <- .tryCatch_rflomics(object[,, omicNames])
+            if(!is.null(object.sub$error)) stop(object.sub$error)
+            
+            return(object.sub$result)
           })
 
 

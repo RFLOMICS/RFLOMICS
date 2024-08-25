@@ -10,18 +10,18 @@ opts_chunk$set(
 ```
 
 ```{r}
-dataset.raw.SE <- getRflomicsSE(rflomics.MAE, paste0(data,".raw")) 
 dataset.SE     <- getRflomicsSE(rflomics.MAE, data)
 variableName   <- RFLOMICS:::.omicsDic(dataset.SE)[["variableName"]]
+
 ```
 
 * **Completness:**
 
-`r if(length(colnames(dataset.raw.SE)) - length(colnames(dataset.SE)) == 0) {"\\begin{comment}"}`
+`r if(length(getSelectedSamples(dataset.SE)) - length(colnames(dataset.SE)) == 0) {"\\begin{comment}"}`
 
-The *outlier samples* are removed: `r setdiff(colnames(dataset.raw.SE), colnames(dataset.SE))`.
+The *outlier samples* are removed: `r setdiff(getSelectedSamples(dataset.SE), colnames(dataset.SE))`.
 
-`r if(length(colnames(dataset.raw.SE)) - length(colnames(dataset.SE)) == 0) {"\\end{comment}"}`
+`r if(length(getSelectedSamples(dataset.SE)) - length(colnames(dataset.SE)) == 0) {"\\end{comment}"}`
 
 ```{r check-design, out.width = "60%", fig.align='center', fig.cap=paste0("<p style=\"color:grey\">","*fig: Number of samples per combination of factor levels. The experimental design must be complete and ideally balanced*", "</p>")}
 
@@ -38,7 +38,7 @@ settings <- getFilterSettings(dataset.SE)
 
 filtering <- paste0(
   "By default unexpressed genes were removed (", 
-  length(metadata(dataset.raw.SE)$DataProcessing$rowSumsZero)," transcript).",
+  length(metadata(dataset.SE)$DataProcessing$rowSumsZero)," transcript).",
   " The low counts genes with a ", settings$method, 
   " lower to ", settings$cpmCutoff, " (CMP cutoff)",
   " in at least \"", settings$filterStrategy, "\" (filter strategy)",
@@ -52,26 +52,34 @@ Normalisation <- paste0(
 
 cat("\n", filtering, " ", Normalisation, "\n")
 ```
-
-
-```{r M_M_03_prot, results='asis',  eval=(getOmicsTypes(dataset.SE) != "RNAseq")}
+```{r M_M_03_prot_meta, results='asis',  eval=(getOmicsTypes(dataset.SE) != "RNAseq")}
 
 Transformation <- ""
-if(getTransSettings(dataset.SE)$method != "none"){
-  Transformation <- paste0(
-    "The data were transformed using **",
-    getTransSettings(dataset.SE)$method,"**.")
+if(is.null(getTransSettings(dataset.SE)$method)){
+   Transformation <- "The data are not transformed."
+   
+}else if(getTransSettings(dataset.SE)$method == "none"){
+  Transformation <- 
+    paste0("The data were already transformed before being input into rflomics using **",
+           getTransSettings(dataset.SE)$suppInfo, "**.")
 }else{
-  Transformation <- "The data are not transformed."
+  Transformation <- 
+    paste0("The data were transformed using **",
+           getTransSettings(dataset.SE)$method, "**.")
 }
-    
+
 Normalisation <- ""
-if(getNormSettings(dataset.SE)$method != "none"){
-  Normalisation <- paste0(
-    "The **", getNormSettings(dataset.SE)$method, 
-    "** method was applied to normalise data.")
-}else{
+if(is.null(getNormSettings(dataset.SE)$method)){
   Normalisation <- "The data are not normalised."
+  
+}else if(getNormSettings(dataset.SE)$method == "none"){
+  Normalisation <- 
+    paste0("The data were already normalized before being input into rflomics using **",
+           getNormSettings(dataset.SE)$suppInfo, "**.")
+}else{
+  Normalisation <- 
+    paste0("The data were normalized using The **", 
+           getNormSettings(dataset.SE)$method, "**.")
 }
 
 cat("\n", Transformation, " ", Normalisation, "\n")
@@ -79,7 +87,9 @@ cat("\n", Transformation, " ", Normalisation, "\n")
 
 ```{r write Processed_Data}
 
-processed.df <- getProcessedData(dataset.SE)
+processed.df <- 
+  SummarizedExperiment::assay(getProcessedData(dataset.SE, norm = TRUE)) |>
+  as.data.frame()
 processed.cn <- colnames(processed.df)
 processed.df[[variableName]] <- rownames(processed.df)
 processed.df <- processed.df[c(variableName, processed.cn)]
@@ -103,7 +113,7 @@ write.table(x = processed.df,
 
 ```{r boxplot, fig.show = "hold", out.width = "50%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Boxplots of distributions of count or abundance per samples before (left) and after (right) data processing*", "</p>")}
 
-plotDataDistribution(dataset.raw.SE, plot = "boxplot", raw = TRUE)
+plotDataDistribution(dataset.SE, plot = "boxplot", raw = TRUE)
 plotDataDistribution(dataset.SE, plot = "boxplot", raw = FALSE)
 
 ```
@@ -112,20 +122,20 @@ plotDataDistribution(dataset.SE, plot = "boxplot", raw = FALSE)
 
 ```{r density-plot, fig.show = "hold", out.width = "50%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Density distributions of count or abundance per sample before (left) and after (right) data processing*", "</p>")}
 
-plotDataDistribution(dataset.raw.SE, plot = "density", raw = TRUE)
+plotDataDistribution(dataset.SE, plot = "density", raw = TRUE)
 plotDataDistribution(dataset.SE, plot = "density", raw = FALSE)
 ```
 
 <!-- Histograms of the library size before/after pre-processing -->
 
-`r if(getOmicsTypes(dataset.raw.SE) != "RNAseq") {"\\begin{comment}"}`
+`r if(getOmicsTypes(dataset.SE) != "RNAseq") {"\\begin{comment}"}`
 
 #### Library sizes:
 
-```{r Library_size_barplot, fig.show = "hold", out.width = "50%", eval=(getOmicsTypes(dataset.raw.SE) == "RNAseq"), fig.cap=paste0("<p style=\"color:grey\">","*fig: Barplot of the library size for each sample before and after the normalization step*", "</p>")}
+```{r Library_size_barplot, fig.show = "hold", out.width = "50%", eval=(getOmicsTypes(dataset.SE) == "RNAseq"), fig.cap=paste0("<p style=\"color:grey\">","*fig: Barplot of the library size for each sample before and after the normalization step*", "</p>")}
 
-plotLibrarySize(dataset.raw.SE, raw = TRUE)
-plotLibrarySize(dataset.SE)
+plotLibrarySize(dataset.SE, raw = TRUE)
+plotLibrarySize(dataset.SE, raw = FALSE)
 
 ```
 
@@ -143,7 +153,7 @@ write.table(getFilteredFeatures(dataset.SE),
 
 ```
 
-`r if(getOmicsTypes(dataset.raw.SE) != "RNAseq") {"\\end{comment}"}`
+`r if(getOmicsTypes(dataset.SE) != "RNAseq") {"\\end{comment}"}`
 
 #### PCA
 
@@ -152,14 +162,14 @@ Outlier samples can be identified as they significantly influence the observed v
 
 ```{r PCA_1_2, echo=FALSE , fig.show="hold", out.width = "50%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Factorial maps formed by the axis 1 and 2: before (left) and after (right) data processing*", "</p>")}
 
-plotOmicsPCA(dataset.raw.SE, raw="raw", axes=c(1, 2), groupColor="groups")
+plotOmicsPCA(dataset.SE, raw="raw", axes=c(1, 2), groupColor="groups")
 plotOmicsPCA(dataset.SE, raw="norm", axes=c(1, 2), groupColor="groups")
 
 ```
 
 ```{r PCA_1_3, echo=FALSE , fig.show="hold", out.width = "50%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Factorial maps formed by the axis 1 and 3: before (left) and after (right) data processing*", "</p>")}
 
-plotOmicsPCA(dataset.raw.SE, raw="raw", axes=c(1, 3), groupColor="groups")
+plotOmicsPCA(dataset.SE, raw="raw", axes=c(1, 3), groupColor="groups")
 plotOmicsPCA(dataset.SE, raw="norm", axes=c(1, 3), groupColor="groups")
 ```
 

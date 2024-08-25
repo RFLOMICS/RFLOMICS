@@ -108,12 +108,21 @@ setMethod(
         getOmicsTypes(object),
         "RNAseq" = {
           object.p <- getProcessedData(object, filter = TRUE)
+          if(!.isFiltered(object.p)) 
+            stop("The RNAseq data must be filtered and normalized ",
+                 "before performing the differential analysis.")
           "edgeRglmfit"},
         "proteomics" = {
           object.p <- getProcessedData(object, norm = TRUE)
+          if(!.isNormalized(object.p)) 
+            stop("The proteomics data must be transformed and normalized ",
+                 "before performing the differential analysis.")
           "limmalmFit"},
         "metabolomics" = {
           object.p <- getProcessedData(object, norm = TRUE)
+          if(!.isNormalized(object.p)) 
+            stop("The proteomics data must be transformed and normalized ",
+                 "before performing the differential analysis.")
           "limmalmFit"}
       )
     
@@ -144,21 +153,9 @@ setMethod(
            It is recommended to use the value '",default.methods[1],
            "' for '",getOmicsTypes(object.p), "' data")
     
-    # if (is.null(method) || isFALSE(method %in% c("edgeRglmfit", "limmalmFit"))) {
-    #   switch(getOmicsTypes(object),
-    #          "RNAseq" = { method <- "edgeRglmfit"},
-    #          { method <- "limmalmFit" }
-    #   )
-    #   warning("DiffAnalyseMethod was missing. Detected omic type is ", 
-    #           getOmicsTypes(object)," using ", 
-    #           method, " for differential analysis.")
-    # }
-    
     ## check completness
-    Completeness <- checkExpDesignCompleteness(object.p, raw = TRUE)
-    if (isTRUE(Completeness[["error"]])) {
-      stop(Completeness[["messages"]])
-    }
+    Completeness <- checkExpDesignCompleteness(object.p)
+    if (isTRUE(Completeness[["error"]])) stop(Completeness[["messages"]])
     
     ## getcontrast
     object.p <- generateContrastMatrix(object.p, contrastList = contrastList)
@@ -171,18 +168,6 @@ setMethod(
     DiffExpAnal[["setting"]][["p.adj.cutoff"]] <- p.adj.cutoff
     DiffExpAnal[["setting"]][["abs.logFC.cutoff"]]  <- logFC.cutoff
     
-    # # transform and norm if needed
-    # if (method == "limmalmFit") {
-    #   object2 <- object
-    #   
-    #   if (!.isTransformed(object2)) {
-    #     object2 <- .applyTransformation(object2)
-    #   }
-    #   if (!.isNorm(object2)) { 
-    #     object2 <- .applyNorm(object2)
-    #   }
-    # }
-    # 
     # move in ExpDesign Constructor
     model_matrix <- 
       model.matrix(
@@ -243,6 +228,20 @@ setMethod(
                                   p.adj.cutoff = p.adj.cutoff, 
                                   logFC.cutoff = logFC.cutoff)
     
+    # initiate analysis results
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "DiffExpEnrichAnal",
+                           content =  list())    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "CoExpAnal",
+                           content =  list())
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "CoExpEnrichAnal",
+                           content =  list())
+    
     return(object)
   })
 
@@ -274,6 +273,12 @@ setMethod(
                       clustermq = clustermq,
                       cmd = cmd
       )
+    
+    object <- 
+      setElementToMetadata(object, 
+                           name    = "IntegrationAnalysis",
+                           content =  list())
+    
     return(object)
   })
 

@@ -1,6 +1,8 @@
 ### ============================================================================
-### [01_Load_Data] shiny modules
+### [01_Load_Data] load data modules
 ### ----------------------------------------------------------------------------
+# N. Bessoltane,
+# D. Charif, 
 
 #' @importFrom stringr str_subset
 #' @importFrom dplyr filter select
@@ -56,7 +58,7 @@
         })
         
         session$userData$FlomicsMultiAssay <- FlomicsMultiAssay.try
-        
+
         # update rea values
         rea.values$datasetList <-
             metadata(session$userData$FlomicsMultiAssay)$omicList

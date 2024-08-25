@@ -1,6 +1,8 @@
-##########################################
-# Part3 : Data Exploratory & Pre-processing
-##########################################
+### ============================================================================
+### [03_data_processing] shiny modules
+### ----------------------------------------------------------------------------
+# N. Bessoltane,
+# D. Charif, 
 
 ### UI
 QCNormalizationTabUI <- function(id) {
@@ -8,81 +10,17 @@ QCNormalizationTabUI <- function(id) {
   ns <- NS(id)
   tagList(fluidRow(
     box(
-      title = span(
-        tagList(
-          icon("filter"),
-          "Data exploration and pre-processing",
-          tags$small("(Scroll down for instructions)")
-        )
-      ),
+      title = span(tagList(
+        icon("filter"),
+        "Data exploration and pre-processing",
+        tags$small("(Scroll down for instructions)")
+      )),
       width = 12,
       status = "warning",
       solidHeader = TRUE,
       collapsible = TRUE,
       collapsed = TRUE,
-      p(
-        "Very important and non trivial steps, crucial for 
-                single-omics analysis and for the integration of different 
-                omics data. Default settings have been expertized."
-      ),
-      h4(tags$span("Explore:", style = "color:orange;font-weight:bold")),
-      p(
-        "Identify the noise and the source of technical and biological
-                variability thanks to the",
-        tags$b("PCA"),
-        "."
-      ),
-      h4(tags$span("Filter:", style = "color:orange;font-weight:bold")),
-      p(
-        "Remove outliers samples and low expressed entities 
-                which introduce noise in the data."
-      ),
-      h4(
-        tags$span("Transform and normalize:", 
-                  style = "color:orange;font-weight:bold")
-      ),
-      p(
-        "Transform data to linearize and make it more Gaussian-like 
-                and normalize to identify and correct technical biases and 
-                make the data comparable across samples. Depending on the 
-                omics type, the pre-processing steps will be different: "
-      ),
-      h5(tags$span("Transcriptomics (RNAseq counts data):", 
-                   style = "color:blue")),
-      p("", tags$b("Details on filtering step:"), ""),
-      p("By default, non expressed/non detected genes are removed"),
-      p(
-        "By default, low expressed genes are removed according to 
-                their CPM. By default, genes with a cpm >= 1 in at least 
-                min(NbReplicates) samples are kept. 
-        The cpm threshold can be changed."
-      ),
-      p(
-        "NB: you can choose the other strategy, which is to remove 
-                genes according to a cpm >= 1 in at least  
-                NbConditions samples. The cpm threshold can be changed."
-      ),
-      p("", tags$b("Details on normalization:"), ""),
-      p(
-        "TMM (from edgeR::calcnormfactors) is the default method.
-        It was found to be the best method (Dillies et al., 2013) for counts
-        RNA-seq data."
-      ),
-      h5(
-        tags$span("Proteomics and metabolomics data", style = "color:blue")
-      ),
-      p("", tags$b("Details on transformation:"), ""),
-      p(
-        "Log2 is the default method for proteomics and 
-                metabolomics data transformation (Efstathiou et al, 2017). 
-        A small quantity (10^-10) is added to the data before tranformation."
-      ),
-      p("", tags$b("Normalization:"), ""),
-      p(
-        "Median is the the default method for proteomics and
-                metabolomics data normalization. All samples will have the same
-        median."
-      )
+      data_explor_docs
     )
   ),
   fluidRow(
@@ -113,22 +51,17 @@ QCNormalizationTabUI <- function(id) {
 
 ### server
 QCNormalizationTab <-
-  function(input,
-           output,
-           session,
-           dataset,
-           rea.values) {
+  function(input, output, session, dataset, rea.values) {
     
     #---- sample list----
     output$selectSamplesUI <- renderUI({
       sampleList <-
         colnames(session$userData$FlomicsMultiAssay[[dataset]])
-      sampleList <<- sampleList
-      object <<- session$userData$FlomicsMultiAssay[[dataset]]
       pickerInput(
         inputId  = session$ns("selectSamples"),
-        label    = .addBSpopify(label = 'Samples list:', 
-                                content = "Select samples to include in further analyses"),
+        label    = 
+          .addBSpopify(label = 'Samples list:', 
+                       content = "Select samples to include in further analyses"),
         choices  = sampleList,
         options  = list(
           `actions-box` = TRUE,
@@ -140,7 +73,6 @@ QCNormalizationTab <-
       )
     })
     
-    
     #---- Completeness----
     output$completenessUI <- renderPlot({
       plotExpDesignCompleteness(
@@ -151,91 +83,154 @@ QCNormalizationTab <-
     
     #---- adapted parameters for each omics type ----
     output$paramUI <- renderUI({
-      # setting for RNAseq
-      paramRNAseq.list <- list(fluidRow(
-        column(12, h4(
-          .addBSpopify(label = 'Low count filtering (CPM)', 
-                       content = "Genes with low counts will be removed based on count per million (cpm), accounting for the library size")
-        )),
-        column(
-          12,
-          selectInput(
-            inputId  = session$ns("Filter_Strategy"),
-            label    = .addBSpopify(label = 'Strategy', 
-                                    content = "Choose the strategy to filter genes based on count per million (cpm). Keep genes if the NbOfsample_over_cpm >= Strategy."),
-            choices  = c(
-              "NbConditions" = "NbConditions",
-              "NbReplicates" = "NbReplicates"
-            ),
-            selected = "NbReplicates"
-          )
-        ),
-        column(
-          12,
-          numericInput(
-            inputId = session$ns("FilterSeuil"),
-            label = .addBSpopify(label = 'CPM cut-off', 
-                                 content = "Choose the cpm cut-off"),
-            value = 1,
-            min = 1,
-            max = 10,
-            step = 1
-          )
-        )
-      ),
-      fluidRow(column(
-        12,
-        h4("Gene counts normalization:"),
-        selectInput(
-          inputId  = session$ns("selectNormMethod"),
-          label    = .addBSpopify(label = 'Normalization method', 
-                                  content = "Normalization method, cannot be changed for counts data."),
-          choices  =  list("TMM (edgeR)" = "TMM"),
-          selected = "TMM"
-        )
-      )),
-      fluidRow(column(
-        12, actionButton(session$ns("run"), "Run", class = "butt")
-      )))
       
-      #---- setting for meta or RNAseq----
-      paramProtMeta.list <- list(
-        radioButtons(
-          inputId  = session$ns("dataTransform"),
-          label    = .addBSpopify(label = 'Data transformation', 
-                                  content = "Choose log2 transformation"),
-          choices  = c("log2" = "log2", "none" = "none"),
-          selected = "log2"
-        ),
-        hr(),
-        
-        radioButtons(
-          inputId = session$ns("selectProtMetNormMethod"),
-          label    = .addBSpopify(label = 'Normalization method', 
-                                  content = "Choose normalization method. In case of doubt, leave the default option (median)."),
-          choices  =   c(
-            "median" = "median",
-            "totalSum" = "totalSum",
-            "none" = "none"
-          ),
-          selected = "median"
-        ),
-        
-        
-        actionButton(session$ns("run"), "Run", class = "butt")
-      )
+      paramFeatureFilter <-
+        switch (
+          getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
+          "RNAseq" = {
+            list(
+              radioButtons(
+                inputId  = session$ns("selectFilterMethod"),
+                label    = 
+                  .addBSpopify(
+                    label = 'Low count filtering', 
+                    content = "Genes with low counts will be removed based on count per million (cpm), accounting for the library size"),
+                choices  =  list("CPM" = "CPM"),
+                selected = "CPM"
+              ),
+              conditionalPanel(
+                condition = 
+                  paste0("input[\'", 
+                         session$ns("selectFilterMethod"),
+                         "\'] == \'CPM\'"),
+                selectInput(
+                  inputId  = session$ns("Filter_Strategy"),
+                  label    = .addBSpopify(label = 'Strategy', 
+                                          content = "Choose the strategy to filter genes based on count per million (cpm). Keep genes if the NbOfsample_over_cpm >= Strategy."),
+                  choices  = c("NbConditions" = "NbConditions",
+                               "NbReplicates" = "NbReplicates"),
+                  selected = "NbReplicates"
+                ),
+                style="font-size:80%; font-family:Arial;"
+              ),
+              conditionalPanel(
+                condition = 
+                  paste0("input[\'", 
+                         session$ns("selectFilterMethod"),
+                         "\'] == \'CPM\'"),
+                numericInput(
+                  inputId = session$ns("FilterSeuil"),
+                  label = .addBSpopify(label = 'CPM cut-off', 
+                                       content = "Choose the cpm cut-off"),
+                  value = 1, min = 1, max = 10, step = 1
+                ),
+                style="font-size:80%; font-family:Arial;"
+              ),
+              hr()
+            )
+          },
+          {
+            list(
+              radioButtons(
+                inputId  = session$ns("selectImputMethod"),
+                label    = 
+                  .addBSpopify(
+                    label = 'Missing Value Imputation', 
+                    content = paste0("Imputation method, cannot be changed for ",
+                                     getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
+                                     " data.")),
+                choices  =  list("MVI" = "MVI"),
+                selected = "MVI"
+              ),
+              hr()
+            )
+          }
+        )
       
-      switch(
-        getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
-        "RNAseq"       = {
-          paramRNAseq.list
-        },
-        "proteomics"   = {
-          paramProtMeta.list
-        },
-        "metabolomics" = {
-          paramProtMeta.list
-        }
+      paramTransform <- 
+        switch (
+          getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
+          "RNAseq" = {},
+          {
+            list(
+              radioButtons(
+                inputId  = session$ns("dataTransform"),
+                label    = 
+                  .addBSpopify(label = 'Data Transformation', 
+                               content = paste0("Choose transformation method. ", 
+                                                "If the data is already transformed, ",
+                                                "please specify the method, tool, or ",
+                                                "platform used for the processing.")),
+                choices  = c("log2" = "log2", 
+                             "Already transformed" = "none"),
+                selected = "log2"
+              ),
+              conditionalPanel(
+                condition = 
+                  paste0("input[\'", 
+                         session$ns("dataTransform"),
+                         "\'] == \'none\'"),
+                textInput(inputId = session$ns("userTransMethod"), 
+                          label = "by:", value = "unkown"),
+                style="font-size:80%; font-family:Arial;"
+              ),
+              hr()
+            )
+          }
+        )
+      
+      paramNormalization <-
+        switch (
+          getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
+          "RNAseq" = {
+            list(
+              radioButtons(
+                inputId  = session$ns("selectNormMethod"),
+                label    = 
+                  .addBSpopify(label = 'Data Normalization', 
+                               content = "Normalization method, cannot be changed for counts data."),
+                choices  =  list("TMM (edgeR)" = "TMM"),
+                selected = "TMM"
+              ),
+              hr()
+            )
+          },
+          {
+            list(       
+              radioButtons(
+                inputId = session$ns("selectProtMetNormMethod"),
+                label   = 
+                  .addBSpopify(label = 'Data Normalization', 
+                               content = paste0("Choose normalization method. ",
+                                                "If the data is already normalized, ",
+                                                "please specify the method, tool, or ",
+                                                "platform used for the processing.")),
+                choices  = c("median" = "median",
+                             "totalSum" = "totalSum",
+                             "Already normalized" = "none"),
+                selected = "median"
+              ),
+              conditionalPanel(
+                condition = 
+                  paste0("input[\'", 
+                         session$ns("selectProtMetNormMethod"),
+                         "\'] == \'none\'"),
+                textInput(inputId = session$ns("userNormMethod"), 
+                          label = "by:", value = "unkown")
+              ),
+              hr()
+            )
+          }
+        )
+      
+      fluidRow(
+        column(
+          width = 12,
+          paramFeatureFilter,
+          paramTransform,
+          paramNormalization,
+          actionButton(session$ns("run"), "Run", class = "butt")
+        )
       )
     })
     
@@ -257,7 +252,7 @@ QCNormalizationTab <-
           title = length(names(SE.data)),
           width = 6,
           background = "maroon",
-          paste0("Initial number of ", omicsDic(SE.data)$variableName)
+          paste0("Initial number of ", .omicsDic(SE.data)$variableName)
         ),
         box(
           title = length(colnames(SE.data)),
@@ -282,7 +277,7 @@ QCNormalizationTab <-
           width = 6,
           background = "fuchsia",
           paste0("Number of filtered ", 
-                 omicsDic(SE.data)$variableName)
+                 .omicsDic(SE.data)$variableName)
         ),
         box(
           title = length(colnames(SE.data)),
@@ -349,6 +344,18 @@ QCNormalizationTab <-
           tags$br(),
           tags$hr(),
           uiOutput(session$ns("PCAcoordUI"))
+        ),
+        ### boxplot DE ###
+        tabPanel(
+          title = paste0("Feature profiles (boxplots)"),
+          tags$br(),
+          tags$i(paste0("Boxplot showing the expression profile of a selected ",
+                        .omicsDic(SE.data)$variableName),
+                 " colored by experimental factor's levels."),
+          
+          tags$br(), tags$hr(), tags$br(),
+          uiOutput(session$ns("FeatureBoxplot"))
+          
         )
       )
       
@@ -357,7 +364,7 @@ QCNormalizationTab <-
       switch(
         getOmicsTypes(SE.data),
         "RNAseq" = {
-          tabPanel.list <- c(tabPanel.default.list, list(
+          tabPanel.list <- c(list(
             tabPanel(
               "Library size",
               tags$br(),
@@ -369,7 +376,7 @@ QCNormalizationTab <-
               tags$hr(),
               uiOutput(session$ns("LibSizeUI"))
             )
-          ))
+          ), tabPanel.default.list)
           
         },
         "proteomics" = {
@@ -510,6 +517,61 @@ QCNormalizationTab <-
       
     })
     
+    # Boxplot
+    output$FeatureBoxplot <- renderUI({
+      
+      SE.data <- session$userData$FlomicsMultiAssay[[dataset]]
+      
+      ui <- list(
+        plotOutput(session$ns("FeatureBoxplot.raw"))
+      )
+      
+      if (rea.values[[dataset]]$process != FALSE) {
+        ui <- list(plotOutput(session$ns("FeatureBoxplot.norm")), ui)
+      }
+      
+      ui <- list(
+        fluidRow(
+          column(
+            width = 6,
+            selectizeInput(
+              inputId = session$ns("DE"),
+              label = paste0("Select ",.omicsDic(SE.data)$variableName,":"),
+              multiple = FALSE,
+              choices = names(SE.data),
+              options = list(maxOptions = 1000)
+            )
+          ),
+          column(
+            width = 6,
+            radioButtons(
+              inputId = session$ns("DEcondition"),
+              label = 'Levels:',
+              choices = c("groups",getBioFactors(SE.data)),
+              selected = getBioFactors(SE.data)[1]
+            )
+          )
+        ), ui)
+      return(ui)
+    })
+    
+    output$FeatureBoxplot.raw <- renderPlot({
+      
+      plotBoxplotDE(
+        object=session$userData$FlomicsMultiAssay[[dataset]], 
+        featureName=input$DE, 
+        groupColor=input$DEcondition, 
+        raw = TRUE) 
+    })
+    output$FeatureBoxplot.norm <- renderPlot({
+      
+      plotBoxplotDE(
+        object=session$userData$FlomicsMultiAssay[[dataset]], 
+        featureName=input$DE, 
+        groupColor=input$DEcondition, 
+        raw = FALSE) 
+    })
+    
     #---- run preprocessing - Normalization/transformation, filtering...----
     observeEvent(input$run, {
       # check if input$selectSamples is empty
@@ -522,35 +584,22 @@ QCNormalizationTab <-
              message = "Please select some samples to run the analysis.")
       })
       
-      # check completeness for curent dataset
-      completeCheckRes <-
-        checkExpDesignCompleteness(
-          session$userData$FlomicsMultiAssay[[dataset]],
-          sampleList = input$selectSamples)
-      
-      if (isTRUE(completeCheckRes[["error"]])) {
-        showModal(
-          modalDialog(title = "Error message", completeCheckRes[["messages"]]))
-      }
-      validate({
-        need(!isTRUE(completeCheckRes[["error"]]), 
-             message = completeCheckRes[["messages"]])
-      })
-      
       # get parameters
-      switch(
+      param.list <- switch(
         getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
         "RNAseq" = {
-          param.list <- list(
+          list(
             Filter_Strategy = input$Filter_Strategy,
             CPM_Cutoff = input$FilterSeuil,
             NormMethod = input$selectNormMethod
           )
         },
         {
-          param.list <- list(
+          list(
             transform_method = input$dataTransform,
-            NormMethod = input$selectProtMetNormMethod
+            NormMethod       = input$selectProtMetNormMethod,
+            userNormMethod   = input$userNormMethod,
+            userTransMethod  = input$userTransMethod
           )
         })
       param.list <-
@@ -572,28 +621,32 @@ QCNormalizationTab <-
       rea.values[[dataset]]$diffValid <- FALSE
       rea.values[[dataset]]$DiffValidContrast <- NULL
       
-      # re-initialize list of diff analized dataset
-      # rea.values$datasetProcess <- NULL
-      # rea.values$datasetDiff <- NULL
-
-      # remove integration analysis
-      session$userData$FlomicsMultiAssay <-
-        resetRflomicsMAE(session$userData$FlomicsMultiAssay,
-                         multiAnalyses = c("IntegrationAnalysis"))
-      
       message("[RFLOMICS] # 03- Data processing: ", dataset)
       
-      session$userData$FlomicsMultiAssay <-
-        runDataProcessing(
+      catch.res <-
+        .tryCatch_rflomics(runDataProcessing(
           object = session$userData$FlomicsMultiAssay,
           SE.name = dataset,
           samples = input$selectSamples,
           filterStrategy = param.list[["Filter_Strategy"]],
           cpmCutoff = param.list[["CPM_Cutoff"]],
           normMethod = param.list[["NormMethod"]],
-          transformMethod = param.list[["transform_method"]]
-        )
-
+          transformMethod = param.list[["transform_method"]],
+          userNormMethod = param.list[["userNormMethod"]],
+          userTransMethod = param.list[["userTransMethod"]]
+        ))
+      
+      if(!is.null(catch.res$error))
+        showModal(
+          modalDialog(title = "Error message", catch.res$error))
+      
+      validate({
+        need(is.null(catch.res$error), message = catch.res$error)
+      })
+      
+      session$userData$FlomicsMultiAssay <- catch.res$result
+      message(c(catch.res$messages, catch.res$warnings))
+      
       rea.values[[dataset]]$process <- TRUE
       
       # re-initialize list of diff analized dataset
@@ -612,7 +665,7 @@ QCNormalizationTab <-
       rea.values$datasetCoExAnnot <-
         getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
                                 analyses = "CoExpEnrichAnal")
-
+      
     }, ignoreInit = TRUE)
     
     return(input)
@@ -629,10 +682,7 @@ check_run_process_execution <-
     SE <- object.MAE[[dataset]]
     
     # check filtred samples
-    samples <- 
-      setdiff(SE$samples, getSelectedSamples(SE))
-    
-    if (!dplyr::setequal(samples, param.list$samples))
+    if (!dplyr::setequal(getSelectedSamples(SE), param.list$samples))
       return(TRUE)
     
     switch(
@@ -645,29 +695,25 @@ check_run_process_execution <-
         if (is.null(getFilterSettings(SE)$cpmCutoff) ||
             param.list$CPM_Cutoff != getFilterSettings(SE)$cpmCutoff)
           return(TRUE)
-        
-        # normalisation setting
-        if (is.null(getNormSettings(SE)$method) ||
-            param.list$NormMethod != getNormSettings(SE)$method)
-          return(TRUE)
       },
-      "proteomics" = {
+      {
         if (is.null(getTransSettings(SE)$method) ||
             param.list$transform_method != getTransSettings(SE)$method)
           return(TRUE)
-        if (is.null(getNormSettings(SE)$method) ||
-            param.list$NormMethod != getNormSettings(SE)$method)
-          return(TRUE)
-      },
-      "metabolomics" = {
-        if (is.null(getTransSettings(SE)$method) ||
-            param.list$transform_method != getTransSettings(SE)$method)
-          return(TRUE)
-        if (is.null(getNormSettings(SE)$method) ||
-            param.list$NormMethod != getNormSettings(SE)$method)
+        if (getTransSettings(SE)$method == "none" &&
+            (is.null(getTransSettings(SE)$suppInfo) ||
+             param.list$userTransMethod != getTransSettings(SE)$suppInfo))
           return(TRUE)
       }
     )
+    
+    if (is.null(getNormSettings(SE)$method) ||
+        param.list$NormMethod != getNormSettings(SE)$method)
+      return(TRUE)
+    if (getNormSettings(SE)$method == "none" &&
+        (!is.null(getNormSettings(SE)$suppInfo) &&
+         param.list$userNormMethod != getNormSettings(SE)$suppInfo))
+      return(TRUE)
     
     return(FALSE)
   }

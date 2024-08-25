@@ -1,6 +1,9 @@
-##########################################
-# module 06 - ANNOTATION & ENRICHMENT
-##########################################
+### ============================================================================
+### [06_annotation] shiny modules
+### ----------------------------------------------------------------------------
+# N. Bessoltane,
+# A. Hulot <- shiny functions
+
 #' @importFrom htmltools span tagList p div a h4 h5 hr tags br HTML
 #' @importFrom shinydashboard box tabBox updateTabItems menuItem menuItemOutput
 #' tabItem renderMenu tabItems sidebarMenu menuSubItem
@@ -844,7 +847,7 @@
                               dataset) {
   ns <- session$ns
   dataSE <- session$userData$FlomicsMultiAssay[[dataset]]
-  varLabel <- omicsDic(dataSE)$variableName
+  varLabel <- .omicsDic(dataSE)$variableName
   varLabel <- paste0(toupper(substr(varLabel, 1, 1)),
                      substr(varLabel, 2, nchar(varLabel)))
   
@@ -912,7 +915,7 @@
                                 dataset) {
   ns <- session$ns
   dataSE <- session$userData$FlomicsMultiAssay[[dataset]]
-  varLabel <- omicsDic(dataSE)$variableName
+  varLabel <- .omicsDic(dataSE)$variableName
   varLabel <- paste0(toupper(substr(varLabel, 1, 1)),
                      substr(varLabel, 2, nchar(varLabel)))
   
@@ -1120,7 +1123,7 @@
     
     dataSE <- session$userData$FlomicsMultiAssay[[dataset]]
     
-    varLabel0 <- omicsDic(dataSE)$variableName
+    varLabel0 <- .omicsDic(dataSE)$variableName
     
     # Explanation message for result table
     expMessage <-
@@ -1454,7 +1457,7 @@
                          from,
                          plotType,
                          database) {
-  varLabel0 <- omicsDic(dataSE)$variableName
+  varLabel0 <- .omicsDic(dataSE)$variableName
   
   renderUI({
     outplot <- tryCatch(
@@ -1548,7 +1551,7 @@
            from,
            plotType,
            database) {
-    varLabel0 <- omicsDic(dataSE)$variableName
+    varLabel0 <- .omicsDic(dataSE)$variableName
     
     renderUI({
       outdot <- tryCatch(
@@ -1656,7 +1659,7 @@
                          plotType,
                          database) {
   ns <- session$ns
-  varLabel0 <- omicsDic(dataSE)$variableName
+  varLabel0 <- .omicsDic(dataSE)$variableName
   varLabel <- paste0(toupper(substr(varLabel0, 1, 1)),
                      substr(varLabel0, 2, nchar(varLabel0)))
   
@@ -1794,7 +1797,7 @@
                          mapChoices) {
   ns <- session$ns
   
-  varLabel0 <- omicsDic(dataSE)$variableName
+  varLabel0 <- .omicsDic(dataSE)$variableName
   pathviewExplain <-
     paste0(
       "<p>The map showed in this panel is generated using the pathvew R-package, which is a GPLv3 software.",
@@ -1901,7 +1904,7 @@
     options(htmlwidgets.TOJSON_ARGS = list(na = 'string'))
     
     text.help <- c(paste0("0: no term was found significantly enriched for this ",
-                          omicsDic(dataset.SE)$variableName), " list")
+                          .omicsDic(dataset.SE)$variableName), " list")
     
     if(length(errorMessages) != 0){
       if(length(unique(unlist(errorMessages))) == 1){ 
@@ -2030,7 +2033,7 @@
                             database) {
   ns <- session$ns
   dataSE <- session$userData$FlomicsMultiAssay[[dataset]]
-  varLabel0 <- omicsDic(dataSE)$variableName
+  varLabel0 <- .omicsDic(dataSE)$variableName
   
   renderUI({
     if (rea.values[[dataset]][[fromAnnot]] == FALSE ||

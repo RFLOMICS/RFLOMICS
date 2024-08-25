@@ -35,14 +35,13 @@ contrastList <- generateExpressionContrast(object = MAE) |>
                                 "((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS))/3",
                                 "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))" ))
 MAE <- MAE |>
-  setSelectedContrasts(contrastList) |>
-  runTransformData(SE.name = "metatest", transformMethod = "log2") |>
-  runNormalization(SE.name = "metatest", normMethod = "median")  |>
-  runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")    |>
-  runTransformData(SE.name = "protetest", transformMethod = "none") |>
-  runNormalization(SE.name = "protetest", normMethod = "median")  |>
-  filterLowAbundance(SE.name = "RNAtest")                          |>
-  runNormalization(SE.name = "RNAtest", normMethod = "TMM")        |>
+  setSelectedContrasts(contrastList)       |>
+  runDataProcessing(SE.name = "metatest", transformMethod = "log2", 
+                    normMethod = "median") |>
+  runDiffAnalysis(SE.name = "metatest",  method = "limmalmFit")   |>
+  runDataProcessing(SE.name = "protetest", transformMethod = "none",
+                    normMethod = "median") |>
+  runDataProcessing(SE.name = "RNAtest", normMethod = "TMM")    |>
   runDiffAnalysis(SE.name = "RNAtest", method = "edgeRglmfit")
 
 MAE0 <- MAE
@@ -186,10 +185,10 @@ test_that("Equivalence", {
       training_options = train_opts
     )
     
-    MOFAObject.trained <-
+    MOFAObject.trained <- suppressWarnings(
       run_mofa(MOFAObject.untrained,
                use_basilisk = FALSE,
-               save_data = TRUE)
+               save_data = TRUE))
     
     resRFLOMICS <- get_factors(getMOFA(MAE3))$group1
     resEquivalence <- get_factors(MOFAObject.trained)$group1

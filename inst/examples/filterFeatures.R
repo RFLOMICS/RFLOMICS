@@ -20,14 +20,17 @@ MAE <- setModelFormula(MAE, formulae[[1]])
 contrastList <- Reduce(rbind, generateExpressionContrast(MAE)) 
 
 MAE <- MAE |>
-    setSelectedContrasts(contrastList[c(3,6,25)]) |>
-    runTransformData(SE.name = "metatest", transformMethod = "log2") |>
-    runNormalization(SE.name = "metatest", normMethod = "median")    |>
-    runNormalization(SE.name = "protetest", normMethod = "median")   |>
-    runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")     |>
-    runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")    |>
-    runCoExpression(SE.name = "protetest", K = 2:10, replicates = 5, 
-                    merge = "union")
+  setSelectedContrasts(contrastList[c(3,6,25)]) |>
+  runDataProcessing(SE.name = "metatest", 
+                    transformMethod = "log2",
+                    normMethod = "median") |>
+  runDataProcessing(SE.name = "protetest", 
+                    transformMethod = "none",
+                    normMethod = "median") |>
+  runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")     |>
+  runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")    |>
+  runCoExpression(SE.name = "protetest", K = 2:10, replicates = 5, 
+                  merge = "union")
 
 # Define the selections options
 selOpt = list("protetest" = c("cluster.1", "H3"), "metatest" = c("DE"))

@@ -94,6 +94,7 @@ createRflomicsMAE <- function(projectName = NULL,
       )
   }
   
+  
   ## => omicsTypes
   if(is.null(omicsTypes))
     stop("the list of omicsTypes is mandatory.")
@@ -106,6 +107,22 @@ createRflomicsMAE <- function(projectName = NULL,
   
   names(omicsTypes) <- omicsNames
   
+  ## any(!is.na(A[A < 0])) valuer negative
+  
+  ## => check NA
+  for(dataName in names(omicsData.df)){
+    
+    # replace NA by 0
+    omicsData.df[[dataName]][is.na(omicsData.df[[dataName]])] <- 0
+    rowNames <- row.names(omicsData.df[[dataName]])
+    omicsData.df[[dataName]] <-
+      as.data.frame(lapply(omicsData.df[[dataName]], as.numeric))
+    row.names(omicsData.df[[dataName]]) <- rowNames
+    
+    # check negative values
+    if(any(!is.na(omicsData.df[[dataName]][omicsData.df[[dataName]] < 0])))
+      stop("The ",dataName, " data contains negative values")
+  }
   
   ## => ExpDesign
   if (is.null(ExpDesign)){
@@ -361,8 +378,7 @@ createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
   Design <- list(
     factorType = design[intersect(names(design), names(colData))],
     Model.formula = vector(),
-    Contrasts.Sel = data.frame(),
-    ExpDesign = DataFrame(colData))
+    Contrasts.Sel = data.frame())
   
   rflomicsSE <- 
     RflomicsSE(assays         = matrix.filt, 
@@ -584,81 +600,16 @@ readOmicsData <- function(file){
   omicsType <- getOmicsTypes(object)
   
   valReturn <- switch(omicsType,
-                      "RNAseq"       =  list("variableName" = "transcripts",
+                      "RNAseq"       =  list("variableName" = "transcript",
                                              "valueType" = "counts"),
-                      "proteomics"   =  list("variableName" = "proteins",
+                      "proteomics"   =  list("variableName" = "protein",
                                              "valueType" = "XIC"),
-                      "metabolomics" =  list("variableName" = "metabolites",
+                      "metabolomics" =  list("variableName" = "metabolite",
                                              "valueType" = "XIC")
   )
   
   return(valReturn)
   
-}
-
-#' @title Omics Dictionary
-#'
-#' @param object a MAE object or a SE object (produced by Flomics). 
-#' Expect to find a omicsType somewhere.
-#' @param SE.name if object is a MAE, expect to find the experiment 
-#' name from which the omics info has to be retrieved.
-#' @return list of two elements: variableName and valueType.
-#' @noRd
-#' @keywords internal
-omicsDic <- function(object, SE.name = NULL){
-  
-  if (!is(object, "RflomicsSE") && !is(object, "RflomicsMAE")) {
-    stop("Object must be a RflomicsSE or a RflomicsMAE, not a ",
-         class(object))
-  }
-  
-  if (is(object, "RflomicsMAE")) {
-    if (missing(SE.name)) {
-      stop("Please provide an Experiment name (SE.name).")
-    }
-    
-    object <- object[[SE.name]]
-  }
-  
-  omicsType <- getOmicsTypes(object)
-  
-  valReturn <- switch(omicsType,
-                      "RNAseq"       =  list("variableName" = "transcripts",
-                                             "valueType" = "counts"),
-                      "proteomics"   =  list("variableName" = "proteins",
-                                             "valueType" = "XIC"),
-                      "metabolomics" =  list("variableName" = "metabolites",
-                                             "valueType" = "XIC")
-  )
-  
-  return(valReturn)
-  
-}
-
-## ---- checkNA: checks if there are NA/nan in the RflomicsSE assay ----
-#' @title checkNA
-#'
-#' @param object An object of class \link{RflomicsSE}
-#' @importFrom MultiAssayExperiment assay
-#' @return boolean. if TRUE, NA/nan are detected in dataset matrix.
-#' @keywords internal
-#' @noRd
-#'
-.checkNA <- function(object) {
-  NA_detect <- ifelse(any(is.na(assay(object))), TRUE, FALSE)
-  return(NA_detect)
-}
-
-#' @title check_NA
-#'
-#' @param object An object of class \link{RflomicsSE}
-#' @return boolean. if TRUE, NA/nan are detected in the SE::assay.
-#' @keywords internal
-#' @noRd
-#'
-check_NA <- function(object) {
-  NA_detect <- ifelse(any(is.na(assay(object))), TRUE, FALSE)
-  return(NA_detect)
 }
 
 ## ---- countSamplesPerCondition: count nb of samples per condition to check completeness ----

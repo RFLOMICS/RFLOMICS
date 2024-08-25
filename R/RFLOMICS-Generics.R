@@ -228,22 +228,24 @@ setGeneric(
 #---- 03 data processing ----
 
 setGeneric(
-  name = "runNormalization",
-  def  = function(object,
-                  normMethod = NULL,
-                  modifyAssay = FALSE,
+  name = "runDataProcessing",
+  def  = function(object, 
+                  samples=NULL, 
+                  filterStrategy = NULL, 
+                  cpmCutoff = NULL, 
+                  transformMethod = NULL,
+                  normMethod= NULL,
                   ...) {
-    standardGeneric("runNormalization")
+    standardGeneric("runDataProcessing")
   }
 )
 
 setGeneric(
-  name = "runTransformData",
+  name = "dataImputation",
   def  = function(object,
-                  transformMethod = NULL,
-                  modifyAssay = FALSE,
+                  imputMethod = "MVI",
                   ...) {
-    standardGeneric("runTransformData")
+    standardGeneric("dataImputation")
   }
 )
 
@@ -258,25 +260,62 @@ setGeneric(
   }
 )
 
-
 setGeneric(
-  name = "runDataProcessing",
-  def  = function(object, 
-                  samples=NULL, 
-                  filterStrategy = "NbReplicates", 
-                  cpmCutoff = 1, 
-                  normMethod = NULL, 
-                  transformMethod = NULL, 
+  name = "runFeatureFiltering",
+  def  = function(object,
+                  filterMethod = "CPM",
+                  filterStrategy = "NbConditions",
+                  cpmCutoff = 5,
+                  imputMethod = "MVI",
                   ...) {
-    standardGeneric("runDataProcessing")
+    standardGeneric("runFeatureFiltering")
   }
 )
-
 
 setGeneric(
   name = "runSampleFiltering",
   def  = function(object, samples = NULL, ...) {
     standardGeneric("runSampleFiltering")
+  }
+)
+
+setGeneric(
+  name = "runNormalization",
+  def  = function(object,
+                  normMethod = NULL,
+                  ...) {
+    standardGeneric("runNormalization")
+  }
+)
+
+setGeneric(
+  name = "runTransformData",
+  def  = function(object,
+                  transformMethod = NULL,
+                  ...) {
+    standardGeneric("runTransformData")
+  }
+)
+
+setGeneric(
+  name = "getProcessedData",
+  def  = function(object,
+                  filter = FALSE,
+                  trans = FALSE,
+                  norm = FALSE,
+                  log = FALSE, ...) {
+    standardGeneric("getProcessedData")
+  }
+)
+
+setGeneric(
+  name = "isProcessedData",
+  def  = function(object,
+                  filter = TRUE,
+                  trans = TRUE,
+                  norm = TRUE,
+                  log = TRUE, ...) {
+    standardGeneric("isProcessedData")
   }
 )
 
@@ -365,17 +404,6 @@ setGeneric(
 )
 
 setGeneric(
-  name = "getProcessedData",
-  def  = function(object, SE.name,
-                  filter = FALSE,
-                  trans = FALSE,
-                  norm = FALSE,
-                  log = FALSE, ...) {
-    standardGeneric("getProcessedData")
-  }
-)
-
-setGeneric(
   name = "plotConditionsOverview",
   def  = function(object, omicNames = NULL, ...) {
     standardGeneric("plotConditionsOverview")
@@ -395,18 +423,6 @@ setGeneric(
     standardGeneric("plotExpDesignCompleteness")
   }
 )
-
-setGeneric(
-  name = "getOmicData",
-  def  = function(object, 
-                  processedData = FALSE,
-                  filtredData = FALSE, 
-                  log = c("log+1", "log+E", "none"),
-                  ...) {
-    standardGeneric("getOmicData")
-  }
-)
-
 
 setGeneric(
   name = "setSelectedSamples",

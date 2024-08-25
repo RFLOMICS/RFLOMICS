@@ -1,6 +1,10 @@
-##########################################
-# module 07 : integration analyses
-##########################################
+### ============================================================================
+### [07_integration] shiny modules
+### ----------------------------------------------------------------------------
+# A. Hulot 
+# N. Bessoltane <- Add a pre-processing panel common to both methods.
+
+
 #' @importFrom htmltools span tagList p div a h4 h5 hr tags br HTML
 #' @importFrom shinyBS popify
 #' @importFrom shinydashboard box tabBox updateTabItems menuItem menuItemOutput

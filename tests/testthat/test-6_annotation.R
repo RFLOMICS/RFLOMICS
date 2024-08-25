@@ -12,6 +12,7 @@ library(RFLOMICS)
 
 ## ---- Construction MAE RFLOMICS ready for annotation analysis : ----
 ## load ecoseed data
+
 data(ecoseed.mae)
 data(ecoseed.df)
 

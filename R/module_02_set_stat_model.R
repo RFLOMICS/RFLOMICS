@@ -1,6 +1,8 @@
 ### ============================================================================
 ### [02_set_stat_model] shiny modules
 ### ----------------------------------------------------------------------------
+# N. Bessoltane,
+# D. Charif, 
 
 #' @importFrom dplyr filter select
 #' @importFrom purrr reduce
@@ -64,11 +66,11 @@
     rea.values$datasetDiff    <- NULL
     rea.values$datasetProcess <- NULL
     
-    # reset design and SO analysis and MO analysis
-    session$userData$FlomicsMultiAssay <- 
-      resetRflomicsMAE(
-        object=session$userData$FlomicsMultiAssay,
-        datasetNames = getDatasetNames(session$userData$FlomicsMultiAssay))
+    # # reset design and SO analysis and MO analysis
+    # session$userData$FlomicsMultiAssay <- 
+    #   resetRflomicsMAE(
+    #     object=session$userData$FlomicsMultiAssay,
+    #     datasetNames = getDatasetNames(session$userData$FlomicsMultiAssay))
     
     message("[RFLOMICS] # 02- Statistical setting...")
     message("[RFLOMICS] #    => model formula: ", input$model.formulae)
@@ -147,11 +149,11 @@
       rea.values[[dataset]]$DiffValidContrast <- NULL
     })
     
-    session$userData$FlomicsMultiAssay <- 
-      resetRflomicsMAE(
-        object=session$userData$FlomicsMultiAssay,
-        datasetNames = getDatasetNames(session$userData$FlomicsMultiAssay),
-        multiAnalyses = c("IntegrationAnalysis"))
+    # session$userData$FlomicsMultiAssay <- 
+    #   resetRflomicsMAE(
+    #     object=session$userData$FlomicsMultiAssay,
+    #     datasetNames = getDatasetNames(session$userData$FlomicsMultiAssay),
+    #     multiAnalyses = c("IntegrationAnalysis"))
     
     #get list of selected contrast data frames with expression, name and type
     

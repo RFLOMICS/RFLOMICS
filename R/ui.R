@@ -1,3 +1,8 @@
+### ============================================================================
+### [shiny ui function]
+### ----------------------------------------------------------------------------
+# N. Bessoltane,
+
 #' @title rflomicsUI
 #' @keywords internal
 #' @importFrom shinydashboard dashboardSidebar dashboardBody dashboardHeader dashboardPage

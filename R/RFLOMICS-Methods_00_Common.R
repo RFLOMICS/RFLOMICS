@@ -73,18 +73,10 @@ setMethod(
                 
                 list(
                   rowSumsZero      = genes_flt0,
-                  sampleFiltering  = list(setting  = NULL, 
-                                          results  = list(filteredSamples=NULL),
-                                          filtered = FALSE), 
-                  featureFiltering = list(setting  = NULL, 
-                                          results  = list(filteredFeatures=NULL),
-                                          filtered = FALSE), 
-                  Normalization    = list(setting  = list(method = NULL), 
-                                          results  = NULL,  
-                                          normalized = FALSE), 
-                  Transformation   = list(setting  = list(method = NULL), 
-                                          results  = NULL,  
-                                          transformed = FALSE),
+                  selectedSamples  = colnames(object[[data]]), 
+                  featureFiltering = list(), 
+                  Normalization    = list(), 
+                  Transformation   = list(),
                   log = NULL)
               },
               {
@@ -128,13 +120,6 @@ setMethod(
 #' @param ... other arguments to pass into the render function.
 #' @return An html report or archive (tar.gz)
 #' @importFrom rmarkdown render
-#' @importFrom ggpubr as_ggplot 
-#' @importFrom ggplot2 rel
-#' @importFrom gridExtra grid.arrange
-#' @importFrom dplyr relocate
-#' @importFrom DT datatable formatStyle formatSignif
-#' @importFrom stats cor
-#' @importFrom knitr knit_child asis_output
 #' @exportMethod generateReport
 #' @rdname generateReport
 #' @name generateReport
@@ -207,8 +192,7 @@ setMethod(
       params            = param.list,
       knit_root_dir     = tmpDir,
       intermediates_dir = tmpDir,
-      envir = new.env(parent = globalenv()),
-      ...
+      envir = new.env(parent = globalenv())
     )
     
     #Export results
@@ -218,8 +202,6 @@ setMethod(
                                  paste0(format(Sys.time(),"%Y_%m_%d"),
                                         "_", projectName, 
                                         ".tar.gz"))
-      
-      
       
       # cp html in tmpDir
       file.copy(from = fileName, to = tmpDir)
@@ -249,7 +231,6 @@ setMethod(
 #'    \item getAnalysis: return list of results from a specific analysis.}
 #' @param object The RflomicsMAE or RflomicsSE object from which to extract
 #' the analysis.
-#' @param SE.name name of the experiment where the metadata should be added.
 #' @param name the name of element to add to metadata slot.
 #' @param subName the name of sub element to add to metadata slot.
 #' @exportMethod getAnalysis
@@ -427,16 +408,21 @@ setMethod(
                  paste0("filtred (", 
                         getFilterSettings(object)$method,")"))
     
-    if(.isTransformed(object))
+    if(.isTransformed(object)){
+      method <- ifelse(getTransSettings(object)$method == "none",
+                       getTransSettings(object)$suppInfo, 
+                       getTransSettings(object)$method)
       title <- c(title, 
-                 paste0("transformed (", 
-                        getTransSettings(object)$method, ")"))
+                 paste0("transformed (", method, ")"))
+    }
     
-    if(.isNorm(object))
+    if(.isNormalized(object)){
+      method <- ifelse(getNormSettings(object)$method == "none",
+                       getNormSettings(object)$suppInfo, 
+                       getNormSettings(object)$method)
       title <- c(title, 
-                 paste0("normalized (", 
-                        getNormSettings(object)$method, ")"))
-    
+                 paste0("normalized (", method, ")"))
+    }
     
     if(!is.null(title)){
       title <- paste0(names(omicsType), ": ", 
@@ -456,3 +442,65 @@ setMethod(
     
     return(labels)
   })
+
+
+## ---- rflomicsMAE2MAE ----
+
+#' @title convert rflomicsMAE to MAE
+#' @aliases rflomicsMAE2MAE,RflomicsMAE-method
+#' @name rflomicsMAE2MAE
+#' @rdname rflomicsMAE2MAE
+#' @description
+#' Convert rflomicsMAE object to MultiAssayExperiment object.
+#' @return object of MultiAssayExperiment class.
+#' @param object The RflomicsMAE object to convert.
+#' @param raw booleen. If TRUE raw omics data values.
+#' @importFrom MultiAssayExperiment MultiAssayExperiment
+#' @exportMethod rflomicsMAE2MAE
+setMethod(
+  f = "rflomicsMAE2MAE",
+  signature = "RflomicsMAE",
+  definition = function(object, raw = FALSE){
+    
+    methods <- paste0(
+      ""
+    )
+    
+    # apply processing on matrix
+    for(SE.name in names(object)){
+      object[[SE.name]] <- getProcessedData(object[[SE.name]], norm = TRUE)
+    }
+
+    # contruct MAE from rflomicsMAE
+    MAE <- MultiAssayExperiment(experiments = experiments(object), 
+                                colData     = colData(object), 
+                                sampleMap   = sampleMap(object), 
+                                metadata    = 
+                                  list(projectName = getProjectName(object),
+                                       methods     = methods
+                                       )
+                                )
+    
+    return(MAE)
+  })
+
+#' @rdname getAnalysis
+#' @aliases getAnalysis,RflomicsSE-method
+#' @name getAnalysis
+#' @exportMethod getAnalysis
+setMethod(
+  f = "getAnalysis",
+  signature = "RflomicsSE",
+  definition = function(object, 
+                        name = NULL,
+                        subName = NULL) {
+    
+    results <- 
+      .getAnalysis(object, name, subName)
+    
+    return(results)
+  }
+)
+
+
+
