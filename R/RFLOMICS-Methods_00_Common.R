@@ -484,23 +484,3 @@ setMethod(
     return(MAE)
   })
 
-#' @rdname getAnalysis
-#' @aliases getAnalysis,RflomicsSE-method
-#' @name getAnalysis
-#' @exportMethod getAnalysis
-setMethod(
-  f = "getAnalysis",
-  signature = "RflomicsSE",
-  definition = function(object, 
-                        name = NULL,
-                        subName = NULL) {
-    
-    results <- 
-      .getAnalysis(object, name, subName)
-    
-    return(results)
-  }
-)
-
-
-

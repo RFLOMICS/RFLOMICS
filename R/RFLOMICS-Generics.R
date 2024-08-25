@@ -61,6 +61,16 @@ setGeneric(
   }
 )
 
+setGeneric(
+  name = "rflomicsMAE2MAE",
+  def  = function(object, 
+                  raw = FALSE
+                  ) {
+    standardGeneric("rflomicsMAE2MAE")
+  }
+)
+
+
 #---- 01 load data ----
 
 setGeneric(

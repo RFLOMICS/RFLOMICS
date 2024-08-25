@@ -50,11 +50,15 @@ rflomicsServer <- function(input, output, session) {
     
     tagList(
       sidebarMenu(id="tabs",
-                  menuItem(text = "Welcome", tabName = "coverPage", icon = icon('dna'), selected = TRUE),
-                  # menuItem(text = "Glossary page", tabName = "GlossaryPage", icon = icon("address-book")),
-                  menuItem(text = "Load Data", tabName = "importData", icon = icon('download')),
+                  menuItem(text = "Welcome", tabName = "coverPage", 
+                           icon = icon('dna'), selected = TRUE),
+                  # menuItem(text = "Glossary page", tabName = "GlossaryPage", 
+                  #          icon = icon("address-book")),
+                  menuItem(text = "Load Data", tabName = "importData", 
+                           icon = icon('download')),
                   menuItemOutput(outputId = "SetUpModelMenu"),
                   menuItemOutput(outputId = "omics"),
+                  menuItemOutput(outputId = "omicsSumUI"),
                   menuItemOutput(outputId = "Integration")
       ),
       
@@ -77,7 +81,8 @@ rflomicsServer <- function(input, output, session) {
       need(rea.values$analysis == TRUE, message="")
     })
     
-    menuItem(text = "Omics Analysis", tabName = "OmicsAnalysis", icon = icon('chart-area'),
+    menuItem(text = "Omics Analysis", tabName = "OmicsAnalysis", 
+             icon = icon('chart-area'),
              list(
                lapply(names(rea.values$datasetList), function(omics){
                  
@@ -85,8 +90,7 @@ rflomicsServer <- function(input, output, session) {
                    menuSubItem(text = rea.values$datasetList[[omics]][[i]],
                                tabName = paste0(omics, "Analysis", i))
                  })
-               }),
-               menuItemOutput("omicsSumUI")
+               })
              )
     )
   })
@@ -94,10 +98,12 @@ rflomicsServer <- function(input, output, session) {
   output$omicsSumUI <- renderMenu({
     
     validate(
-      need(rea.values$analysis == TRUE && length(rea.values$datasetProcess) >= 2, message = "")
+      need(rea.values$analysis == TRUE && length(rea.values$datasetProcess) >= 2, 
+           message = "")
     )
     
-    menuSubItem(text = "Summary of Analyses", tabName = "omicsSum" )
+    menuItem(text = "Compare Analyses", tabName = "omicsSum", 
+             icon = icon('code-compare')) # circle-nodes
   })
   
   #### Item for each data integration tools #####
@@ -105,10 +111,12 @@ rflomicsServer <- function(input, output, session) {
   output$Integration <- renderMenu({
     
     validate({
-      need(rea.values$analysis == TRUE && length(rea.values$datasetProcess) >= 2, message = "")
+      need(rea.values$analysis == TRUE && length(rea.values$datasetProcess) >= 2, 
+           message = "")
     })
     
-    menuItem(text = "Data Integration", tabName = "OmicsIntegration", icon = icon('network-wired'), startExpanded = FALSE,selected = FALSE,
+    menuItem(text = "Data Integration", tabName = "OmicsIntegration", 
+             icon = icon('network-wired'), startExpanded = FALSE,selected = FALSE,
              menuSubItem(text = "with MOFA", tabName = "withMOFA" ),
              menuSubItem(text = "with MixOmics", tabName = "withMixOmics")
     )
@@ -136,7 +144,7 @@ rflomicsServer <- function(input, output, session) {
       width = 12, 
       downloadButton(outputId = "download", 
                      label = "Download results", class = "butt")
-      )
+    )
   })
   
   
@@ -222,112 +230,115 @@ rflomicsServer <- function(input, output, session) {
       lapply(names(rea.values$datasetList[[omics]]), function(i){
         
         switch (omics,
-                "RNAseq" = {output[[paste0("RNAseqAnalysisUI", i)]] <- renderUI({
-                  
-                  tabsetPanel(
+                "RNAseq" = {
+                  output[[paste0("RNAseqAnalysisUI", i)]] <- renderUI({
                     
-                    #### Data Exploratory & QC ####
-                    ###############################
-                    tabPanel("Pre-processing",
-                             tags$br(),
-                             tags$br(),
-                             
-                             QCNormalizationTabUI(paste0("RNAseq",i))
-                             
-                    ),
-                    
-                    #### Diff analysis  ####
-                    ######################################
-                    tabPanel("Differential analysis",
-                             tags$br(),
-                             tags$br(),
-                             DiffExpAnalysisUI(paste0("RNAseq",i))
-                    ),
-                    #### Co-expression analysis  ####
-                    ######################################
-                    tabPanel("Co-expression analysis",
-                             tags$br(),
-                             tags$br(),
-                             CoSeqAnalysisUI(paste0("RNAseq",i))
-                             #verbatimTextOutput("Asuivre")
-                    ),
-                    #### enrichment analysis  CPR ####
-                    ######################################
-                    tabPanel("Annotation Enrichment",
-                             tags$br(),
-                             tags$br(),
-                             .modEnrichmentUI(paste0("RNAseq",i))
+                    tabsetPanel(
+                      
+                      #### Data Exploratory & QC ####
+                      ###############################
+                      tabPanel("Pre-processing",
+                               tags$br(),
+                               tags$br(),
+                               
+                               QCNormalizationTabUI(paste0("RNAseq",i))
+                               
+                      ),
+                      
+                      #### Diff analysis  ####
+                      ######################################
+                      tabPanel("Differential analysis",
+                               tags$br(),
+                               tags$br(),
+                               DiffExpAnalysisUI(paste0("RNAseq",i))
+                      ),
+                      #### Co-expression analysis  ####
+                      ######################################
+                      tabPanel("Co-expression analysis",
+                               tags$br(),
+                               tags$br(),
+                               CoSeqAnalysisUI(paste0("RNAseq",i))
+                               #verbatimTextOutput("Asuivre")
+                      ),
+                      #### enrichment analysis  CPR ####
+                      ######################################
+                      tabPanel("Annotation Enrichment",
+                               tags$br(),
+                               tags$br(),
+                               .modEnrichmentUI(paste0("RNAseq",i))
+                      )
                     )
-                  )
-                })},
-                "proteomics" = {output[[paste0("proteomicsAnalysisUI", i)]] <- renderUI({
-                  tabsetPanel(
-                    
-                    #### Data Exploratory & QC ####
-                    ###############################
-                    tabPanel("Pre-processing",
-                             tags$br(),
-                             tags$br(),
-                             
-                             QCNormalizationTabUI(paste0("proteomics",i))
-                    ),
-                    #### Diff analysis  ####
-                    ######################################
-                    tabPanel("Differential analysis",
-                             tags$br(),
-                             tags$br(),
-                             DiffExpAnalysisUI(paste0("proteomics",i))
-                    ),
-                    #### Co-expression analysis  ####
-                    ######################################
-                    tabPanel("Co-expression analysis",
-                             tags$br(),
-                             tags$br(),
-                             CoSeqAnalysisUI(paste0("proteomics",i))
-                    ),
-                    ### enrichment analysis CPR ####
-                    #####################################
-                    tabPanel("Annotation Enrichment",
-                             tags$br(),
-                             tags$br(),
-                             .modEnrichmentUI(paste0("proteomics",i))
+                  })},
+                "proteomics" = {
+                  output[[paste0("proteomicsAnalysisUI", i)]] <- renderUI({
+                    tabsetPanel(
+                      
+                      #### Data Exploratory & QC ####
+                      ###############################
+                      tabPanel("Pre-processing",
+                               tags$br(),
+                               tags$br(),
+                               
+                               QCNormalizationTabUI(paste0("proteomics",i))
+                      ),
+                      #### Diff analysis  ####
+                      ######################################
+                      tabPanel("Differential analysis",
+                               tags$br(),
+                               tags$br(),
+                               DiffExpAnalysisUI(paste0("proteomics",i))
+                      ),
+                      #### Co-expression analysis  ####
+                      ######################################
+                      tabPanel("Co-expression analysis",
+                               tags$br(),
+                               tags$br(),
+                               CoSeqAnalysisUI(paste0("proteomics",i))
+                      ),
+                      ### enrichment analysis CPR ####
+                      #####################################
+                      tabPanel("Annotation Enrichment",
+                               tags$br(),
+                               tags$br(),
+                               .modEnrichmentUI(paste0("proteomics",i))
+                      )
                     )
-                  )
-                })},
-                "metabolomics" = {output[[paste0("metabolomicsAnalysisUI", i)]] <- renderUI({
-                  
-                  tabsetPanel(
+                  })},
+                "metabolomics" = {
+                  output[[paste0("metabolomicsAnalysisUI", i)]] <- renderUI({
                     
-                    #### Data Exploratory & QC ####
-                    ###############################
-                    tabPanel("Pre-processing",
-                             tags$br(),
-                             tags$br(),
-                             
-                             QCNormalizationTabUI(paste0("metabolomics",i))
-                    ),#### Diff analysis  ####
-                    ######################################
-                    tabPanel("Differential analysis",
-                             tags$br(),
-                             tags$br(),
-                             DiffExpAnalysisUI(paste0("metabolomics",i))
-                    ),
-                    #### Co-expression analysis  ####
-                    ######################################
-                    tabPanel("Co-expression analysis",
-                             tags$br(),
-                             tags$br(),
-                             CoSeqAnalysisUI(paste0("metabolomics",i))
-                    ),
-                    ### enrichment analysis CPR ####
-                    #####################################
-                    tabPanel("Annotation Enrichment",
-                             tags$br(),
-                             tags$br(),
-                             .modEnrichmentUI(paste0("metabolomics",i))
+                    tabsetPanel(
+                      
+                      #### Data Exploratory & QC ####
+                      ###############################
+                      tabPanel("Pre-processing",
+                               tags$br(),
+                               tags$br(),
+                               
+                               QCNormalizationTabUI(paste0("metabolomics",i))
+                      ),#### Diff analysis  ####
+                      ######################################
+                      tabPanel("Differential analysis",
+                               tags$br(),
+                               tags$br(),
+                               DiffExpAnalysisUI(paste0("metabolomics",i))
+                      ),
+                      #### Co-expression analysis  ####
+                      ######################################
+                      tabPanel("Co-expression analysis",
+                               tags$br(),
+                               tags$br(),
+                               CoSeqAnalysisUI(paste0("metabolomics",i))
+                      ),
+                      ### enrichment analysis CPR ####
+                      #####################################
+                      tabPanel("Annotation Enrichment",
+                               tags$br(),
+                               tags$br(),
+                               .modEnrichmentUI(paste0("metabolomics",i))
+                      )
                     )
-                  )
-                })},
+                  })},
         )
       })
     })
@@ -365,7 +376,8 @@ rflomicsServer <- function(input, output, session) {
   
   # # dir
   # shinyDirChoose(input = input, id = 'dir0', roots = c(home = '~'))
-  # output$filepaths <- renderPrint({parseDirPath(roots = c(home = '~'), selection = input$dir0)})
+  # output$filepaths <- renderPrint({parseDirPath(roots = c(home = '~'), 
+  # selection = input$dir0)})
   
   ##########################################
   # Part1 : load data
@@ -397,7 +409,8 @@ rflomicsServer <- function(input, output, session) {
       validate({
         need(rea.values$loadData == TRUE, message = FALSE)
       })
-      menuItem(text = "Experimental Design", tabName = "SetUpModel", icon = icon('vials'))
+      menuItem(text = "Experimental Design", tabName = "SetUpModel", 
+               icon = icon('vials'))
     })
     
   }, ignoreInit = TRUE)
@@ -480,9 +493,12 @@ rflomicsServer <- function(input, output, session) {
     
   })
   
-  callModule(module = .modSingleOmicAnalysesSummary, id = "omics", rea.values = rea.values)
-  callModule(module = .modIntegrationAnalysis, id = "mixomicsSetting", rea.values = rea.values, method = "mixOmics")
-  callModule(module = .modIntegrationAnalysis, id = "mofaSetting",     rea.values = rea.values, method = "MOFA")
+  callModule(module = .modSingleOmicAnalysesSummary, id = "omics", 
+             rea.values = rea.values)
+  callModule(module = .modIntegrationAnalysis, id = "mixomicsSetting", 
+             rea.values = rea.values, method = "mixOmics")
+  callModule(module = .modIntegrationAnalysis, id = "mofaSetting",     
+             rea.values = rea.values, method = "MOFA")
   
   
   ##########################################
@@ -498,25 +514,26 @@ rflomicsServer <- function(input, output, session) {
     },
     content = function(file) {
       
-      withProgress(message = 'Download in progress',
-                   detail = 'This may take a while...', value = 0, {
-                     
-                     incProgress(0.2)
-                     projectName  <- getProjectName(session$userData$FlomicsMultiAssay)
-                     outDir <- file.path(tempdir(), 
-                                         paste0(format(Sys.time(),"%Y_%m_%d"),"_", 
-                                                projectName))
-                     
-                     dir.create(path = outDir, showWarnings=FALSE)
-                     
-                     incProgress(0.3)
-                     generateReport(object = session$userData$FlomicsMultiAssay,
-                                    tmpDir = outDir, fileName = file)
-                     
-                     incProgress(0.9)
-                     owd <- setwd(tempdir())
-                     on.exit(setwd(owd))
-                   })
+      withProgress(
+        message = 'Download in progress',
+        detail = 'This may take a while...', value = 0, {
+          
+          incProgress(0.2)
+          projectName  <- getProjectName(session$userData$FlomicsMultiAssay)
+          outDir <- file.path(tempdir(), 
+                              paste0(format(Sys.time(),"%Y_%m_%d"),"_", 
+                                     projectName))
+          
+          dir.create(path = outDir, showWarnings=FALSE)
+          
+          incProgress(0.3)
+          generateReport(object = session$userData$FlomicsMultiAssay,
+                         tmpDir = outDir, fileName = file)
+          
+          incProgress(0.9)
+          owd <- setwd(tempdir())
+          on.exit(setwd(owd))
+        })
     }
   )
   
@@ -532,23 +549,27 @@ rflomicsServer <- function(input, output, session) {
       paste0(format(Sys.time(),"%Y_%m_%d"),"_", projectName, ".tar.gz")
     },
     content = function(file) {
-      withProgress(message = 'Download in progress',
-                   detail = 'This may take a while...', value = 0, {
-                     
-                     incProgress(0.2)
-                     projectName  <- getProjectName(session$userData$FlomicsMultiAssay)
-                     outDir <- file.path(tempdir(), paste0(format(Sys.time(),"%Y_%m_%d"),"_", projectName))
-                     dir.create(path = outDir, showWarnings=FALSE)
-                     
-                     incProgress(0.3)
-                     generateReport(object = session$userData$FlomicsMultiAssay,
-                                    tmpDir = outDir, archiveName = file, export = TRUE)
-                     
-                     incProgress(0.9)
-                     owd <- setwd(tempdir())
-                     on.exit(setwd(owd))
-                     
-                   })
+      withProgress(
+        message = 'Download in progress',
+        detail = 'This may take a while...', value = 0, {
+          
+          incProgress(0.2)
+          projectName  <- getProjectName(session$userData$FlomicsMultiAssay)
+          outDir <- 
+            file.path(tempdir(), 
+                      paste0(format(Sys.time(),"%Y_%m_%d"), "_", projectName))
+          
+          dir.create(path = outDir, showWarnings=FALSE)
+          
+          incProgress(0.3)
+          generateReport(object = session$userData$FlomicsMultiAssay,
+                         tmpDir = outDir, archiveName = file, export = TRUE)
+          
+          incProgress(0.9)
+          owd <- setwd(tempdir())
+          on.exit(setwd(owd))
+          
+        })
     })
   
   

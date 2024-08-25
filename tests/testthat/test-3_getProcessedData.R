@@ -8,7 +8,7 @@ library(RFLOMICS)
 
 # ---- Construction of objects for the tests ---- 
 # load ecoseed data
-data(ecoseed)
+data(ecoseed.mae)
 
 factorInfo <- data.frame(
   "factorName"   = c("Repeat", "temperature", "imbibition"),

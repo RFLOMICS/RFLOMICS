@@ -122,7 +122,7 @@ protMat4 <- limma::removeBatchEffect(protMat3, batch = colData[, colBatch],
 
 test_that("Equivalence", {
   
-  MAE2 <- suppressWarnings(
+  MOFA.obj <- suppressWarnings(
     prepareForIntegration(object           = MAE,
                           omicsNames       = selectedData,
                           variableLists    = variableList,
@@ -131,10 +131,10 @@ test_that("Equivalence", {
     ))
   
   # ---- Equivalence after preparation : ----
-  expect(is(MAE2, "MOFA"), failure_message = "Prepared MAE is not a MOFA object")
-  expect_equal(get_dimensions(MAE2)$D, lengths(variableList))
+  expect(is(MOFA.obj, "MOFA"), failure_message = "Prepared MAE is not a MOFA object")
+  expect_equal(get_dimensions(MOFA.obj)$D, lengths(variableList))
   
-  protRes <- MAE2@data$protetest$group1
+  protRes <- MOFA.obj@data$protetest$group1
   
   expect_equal(dim(protMat4), dim(protRes))
   expect(identical(rownames(protMat4), rownames(protRes),
@@ -145,7 +145,7 @@ test_that("Equivalence", {
          failure_message = "proteins colnames are not identical")
   expect_identical(as.data.frame(protMat4), as.data.frame(protRes))
   
-  metaRes <- MAE2@data$metatest$group1
+  metaRes <- MOFA.obj@data$metatest$group1
   
   expect_equal(dim(metMat4), dim(metaRes))
   expect(identical(rownames(metMat4), rownames(metaRes), 
@@ -159,7 +159,7 @@ test_that("Equivalence", {
   # ---- Equivalence on results: ----
   
   catchRes <- RFLOMICS:::.tryCatch_rflomics(
-    runOmicsIntegration(MAE, preparedObject = MAE2, 
+    runOmicsIntegration(MAE, preparedObject = MOFA.obj, 
                         method = "MOFA", scale_views = TRUE, 
                         maxiter = 1000, num_factors = 5))
   

@@ -436,7 +436,6 @@ setMethod(
         design      = metadata(object)$design
       )
     )
-    
   }
 )
 

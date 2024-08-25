@@ -13,7 +13,6 @@ MAE <- RFLOMICS::createRflomicsMAE(
   omicsData   = ecoseed.mae,
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
   factorInfo  = factorInfo)
-names(MAE) <- c("RNAtest", "protetest", "metatest")
 
 formulae <- generateModelFormulae( MAE) 
 MAE <- setModelFormula(MAE, formulae[[1]])

@@ -9,7 +9,8 @@ library(testthat)
 # ---- Tests RFLOMICS constructor ----
 
 # load data
-data(ecoseed)
+data(ecoseed.df)
+data(ecoseed.mae)
 
 # information about factors
 factorInfo <- data.frame(
@@ -122,11 +123,6 @@ test_that("test SE metadtata", {
   expect_equal(getAnalysis(MAE[[SE]], name = "DiffExpEnrichAnal"), list())
   expect_equal(getAnalysis(MAE[[SE]], name = "CoExpEnrichAnal"),   list())
 })
-
-
-
-expect_identical(getFilterSettings(MAE[["RNAtest"]]), NULL)
-
 
 
 ## ---- if input is mae object ----
@@ -309,3 +305,4 @@ test_that("Test check of NA in data", {
     ExpDesign   = ecoseed.df$design,
     factorInfo  = factorInfo))
 })
+

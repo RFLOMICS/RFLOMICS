@@ -181,12 +181,13 @@ In this example, the three omics data sets are processed in a single step.
 MAE <- runDataProcessing(object = MAE, 
                                SE.name = "RNAtest", 
                                samples = colnames(MAE[["RNAtest"]])[-1], 
-                               lowCountFiltering_strategy = "NbReplicates", 
-                               lowCountFiltering_CPM_Cutoff = 1, 
+                               filterStrategy = "NbReplicates", 
+                               cpmCutoff = 1, 
                                normMethod = "TMM") |>
     runDataProcessing(SE.name = "metatest", normMethod = "median",
                       transformMethod = "log2") |>
-    runDataProcessing(SE.name = "protetest", transformMethod = "log2") |> 
+    runDataProcessing(SE.name = "protetest", normMethod = "none", 
+                      transformMethod = "log2") |> 
     runOmicsPCA(SE.name = "metatest")
 
 # Access to the normalization settings for metabolomics data
@@ -251,7 +252,7 @@ plotDiffAnalysis(MAE,
 ```{r boxplot, fig.width=7, fig.align="center"}
 
 plotBoxplotDE(MAE[["RNAtest"]], 
-              features = "AT4G04810")
+              feature = "AT4G04810")
 ```
 
 #### Co-expression analysis: settings and results
@@ -307,8 +308,9 @@ The multi-omics step in RFLOMICS takes two steps: the preparation of the object,
 `prepareForIntegration` does not return a RflomicsMAE object, it returns the corresponding type to be an input for either MOFA2 or mixOmics functions.
 
 ```{r}
-listIntegration <- prepareForIntegration(MAE, 
-                                         omicsNames = c("metatest", "protetest"),
+listIntegration <- prepareForIntegration(MAE,
+                                         omicsNames = c( "protetest", "metatest"),
+                                         variableLists = rownames(MAE),
                                          method = "mixOmics")
 
 MAE <- runOmicsIntegration(object = MAE, 
