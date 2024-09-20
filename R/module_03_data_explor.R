@@ -10,11 +10,13 @@ QCNormalizationTabUI <- function(id) {
   ns <- NS(id)
   tagList(fluidRow(
     box(
-      title = span(tagList(
-        icon("filter"),
-        "Data exploration and pre-processing",
-        tags$small("(Scroll down for instructions)")
-      )),
+      title = span(
+        tagList(
+          icon("filter"),
+          "Data exploration and pre-processing",
+          tags$small("(Scroll down for instructions)")
+        )
+      ),
       width = 12,
       status = "warning",
       solidHeader = TRUE,
@@ -171,7 +173,7 @@ QCNormalizationTab <-
                          session$ns("dataTransform"),
                          "\'] == \'none\'"),
                 textInput(inputId = session$ns("userTransMethod"), 
-                          label = "by:", value = "unkown"),
+                          label = "by:", value = "unknown"),
                 style="font-size:80%; font-family:Arial;"
               ),
               hr()
@@ -216,7 +218,7 @@ QCNormalizationTab <-
                          session$ns("selectProtMetNormMethod"),
                          "\'] == \'none\'"),
                 textInput(inputId = session$ns("userNormMethod"), 
-                          label = "by:", value = "unkown")
+                          label = "by:", value = "unknown")
               ),
               hr()
             )

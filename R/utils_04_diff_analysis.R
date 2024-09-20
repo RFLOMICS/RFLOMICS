@@ -3,7 +3,9 @@
 ### ----------------------------------------------------------------------------
 # D. Charif
 
-######### Stat functions for differential analysis #########
+# ---- Stat functions for differential analysis ----
+## ---- edgeR ----
+
 
 #' @title .edgeRAnaDiff
 #'
@@ -20,129 +22,122 @@
 #' @importFrom edgeR DGEList estimateGLMCommonDisp estimateGLMTrendedDisp 
 #' estimateGLMTagwiseDisp glmFit glmLRT topTags
 #  @importFrom clustermq Q
-#' @importFrom dplyr filter rename
+#' @importFrom dplyr rename
 #' @noRd
 #'
-
-.edgeRAnaDiff <- function(count_matrix, model_matrix, group, 
-                          lib.size, norm.factors, Contrasts.Sel, 
-                          Contrasts.Coeff, FDR, clustermq = FALSE,
+.edgeRAnaDiff <- function(object, 
+                          Contrasts.Coeff, 
+                          FDR = 1, 
+                          clustermq = FALSE,
                           cmd = FALSE){
+  
+  modelFormula <- getModelFormula(object)
+  if(length(modelFormula) == 0)
+    stop("No model defined in the ", getDatasetNames(object), " object.")
+  
+  count_matrix <- assay(object)
+  model_matrix <- model.matrix(as.formula(paste(modelFormula, collapse = " ")), 
+                               data = getDesignMat(object))
+  model_matrix <- model_matrix[colnames(object),]
+  group        <- getCoeffNorm(object)$group
+  lib.size     <- getCoeffNorm(object)$lib.size
+  norm.factors <- getCoeffNorm(object)$norm.factors
+  
+  z <- y <- NULL
+  
+  ListRes <- list()
+  
+  # Construct the DGE obect
+  dge <- DGEList(counts       = count_matrix,
+                 group        = group,
+                 lib.size     = lib.size,
+                 norm.factors = norm.factors)
+  
+  # Run the model
+  if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMCommonDisp(dge, design=model_matrix)")
+  dge <- estimateGLMCommonDisp(dge, design=model_matrix)
+  if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMTrendedDisp(dge, design=model_matrix)")
+  dge <- estimateGLMTrendedDisp(dge, design=model_matrix)
+  if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMTagwiseDisp(dge, design=model_matrix)")
+  dge <- estimateGLMTagwiseDisp(dge, design=model_matrix)
+  if (cmd) message("[RFLOMICS] [cmd] fit.f <- edgeR::glmFit(dge,design=model_matrix)")
+  fit.f <- glmFit(dge,design=model_matrix)
+
+  # test clustermq
+  if (clustermq == TRUE){
     
-    z <- y <- NULL
+    # Fonction to run on contrast per job
+    # y is the model, Contrasts are stored in a matrix, by columns
     
-    ListRes <- list()
-    
-    # Construct the DGE obect
-    dge <- DGEList(counts       = count_matrix,
-                   group        = group,
-                   lib.size     = lib.size,
-                   norm.factors = norm.factors)
-    
-    # Run the model
-    if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMCommonDisp(dge, design=model_matrix)")
-    dge <- estimateGLMCommonDisp(dge, design=model_matrix)
-    if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMTrendedDisp(dge, design=model_matrix)")
-    dge <- estimateGLMTrendedDisp(dge, design=model_matrix)
-    if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMTagwiseDisp(dge, design=model_matrix)")
-    dge <- estimateGLMTagwiseDisp(dge, design=model_matrix)
-    if (cmd) message("[RFLOMICS] [cmd] fit.f <- edgeR::glmFit(dge,design=model_matrix)")
-    fit.f <- glmFit(dge,design=model_matrix)
-    
-    
-    # test clustermq
-    if (clustermq == TRUE){
-        
-        # Fonction to run on contrast per job
-        # y is the model, Contrasts are stored in a matrix, by columns
-        
-        fx <- function(x){
-            
-            .tryRflomics <- function(expr) {
-                warn <- err <- NULL
-                value <- withCallingHandlers(
-                    tryCatch(expr,
-                             error    =function(e){ err <- e
-                             NULL
-                             }),
-                    warning =function(w){ warn <- w
-                    invokeRestart("muffleWarning")}
-                )
-                list(value=value, warning=warn, error=err)
-            }
-            
-            .tryRflomics(glmLRT(y, contrast = unlist(z[x,])))
-        }
-        
-        ResGlm <- Q(fx, x= seq_len(length(Contrasts.Sel$contrast)),
-                    export=list(y=fit.f,z=Contrasts.Coeff),
-                    n_jobs=length(Contrasts.Sel$contrast),pkgs="edgeR")
-        
-    }
-    else{
-        if(cmd) message("[RFLOMICS] [cmd] apply model to each contrast")
-        ResGlm <-  lapply(Contrasts.Sel$contrast, function(x){
-            .tryRflomics(glmLRT(fit.f, contrast = unlist(Contrasts.Coeff[x,])))
-        })
-        
+    fx <- function(x){
+      
+      .tryRflomics <- function(expr) {
+        warn <- err <- NULL
+        value <- withCallingHandlers(
+          tryCatch(expr,
+                   error    =function(e){ err <- e
+                   NULL
+                   }),
+          warning =function(w){ warn <- w
+          invokeRestart("muffleWarning")}
+        )
+        list(value=value, warning=warn, error=err)
+      }
+      .tryRflomics(glmLRT(y, contrast = unlist(z[x,])))
     }
     
-    # Create a table of jobs summary
-    error.list <- unlist(lapply(ResGlm, function(x){
-        ifelse(is.null(x$error),"success",as.character(x$error))
-    }))
+    # à tester
+    ResGlm <- Q(fx, 
+                x      = seq_len(nrow(Contrasts.Coeff)),
+                export = list(y = fit.f, z = Contrasts.Coeff),
+                n_jobs = nrow(Contrasts.Coeff), pkgs = "edgeR"
+    )
+  }
+  else{
+    if(cmd) message("[RFLOMICS] [cmd] apply model to each contrast")
+    ResGlm <- lapply(rownames(Contrasts.Coeff), function(x){
+      .tryRflomics(
+        glmLRT(fit.f, contrast = unlist(Contrasts.Coeff[x,]))
+      )
+    })
+    names(ResGlm) = rownames(Contrasts.Coeff)
+  }
+  
+  ListRes    <- list()
+  error.list <- list()
+  for(x in names(ResGlm)){
     
-    jobs.tab <- data.frame(H=Contrasts.Sel$contrast, 
-                           error.message=as.factor(error.list))
+    if(!is.null(ResGlm[[x]]$error))
+      error.list[[x]] <- ResGlm[[x]]$error
     
-    jobs.tab.error <- jobs.tab %>% 
-        filter(., error.message != "success")
-    
-    # If no error
-    if(dim(jobs.tab.error)[1]==0){
+    if(!is.null(ResGlm[[x]]$value)){
+      ListRes[["RawDEFres"]][[x]] <- ResGlm[[x]]$value
+      res <- topTags(ResGlm[[x]]$value, n = dim(ResGlm[[x]]$value)[1])
+      topDEF <- res$table[res$table$FDR <= FDR,]
+      
+      if(nrow(topDEF) == 0){
         
-        ListRes[[1]] <- lapply(ResGlm,function(x){
-            x$value
-        })
+        error.list[[x]] <- "There are no results in table form."
         
-        # Name the table of raw results
-        names(ListRes[[1]]) <- Contrasts.Sel$contrastName
-        
-        # ListRes[[2]] => TOPDGE => TopDFE
-        
-        TopDGE <- lapply(ListRes[[1]], function(x){
-            
-            res <-  topTags(x, n = dim(x)[1])
-            
-            DEGs <- res$table[res$table$FDR <= FDR,]
-            #DEGs<-res$table
-            return(DEGs)
-        })
-        
-        ListRes[[2]] <- TopDGE
-        
-        names(ListRes[[2]]) <- names(ListRes[[1]])
-        
-        # Mutate column name to render the anadiff results generic
-        # Initial column Name:  
-        # gene_name  logFC      logCPM        LR        PValue           FDR
-        ListRes[[2]] <- lapply(ListRes[[2]], function(x){
-            rename(x,"Abundance"="logCPM",
-                   "pvalue"="PValue",
-                   "Adj.pvalue"="FDR")
-        })
-        
-        names(ListRes) <- c("RawDEFres","TopDEF")
+      }else{
+        ListRes[["DEF"]][[x]] <- topDEF
+        ListRes[["DEF"]][[x]] <- rename(topDEF,
+                                        "Abundance"  = "logCPM",
+                                        "pvalue"     = "PValue",
+                                        "Adj.pvalue" = "FDR")
+      }
     }
-    else{
-        ListRes[[1]] <- NULL
-        ListRes[[2]] <- jobs.tab.error
-        names(ListRes) <- c("RawDEFres","ErrorTab")
-    }
-    
-    return(ListRes)
+  }
+  
+  if(length(error.list) == 0)
+    return(list(RawDEFres = ListRes[["RawDEFres"]], DEF = ListRes[["DEF"]]))
+  else
+    return(list(RawDEFres = ListRes[["RawDEFres"]], ErrorList = error.list))
 }
 
+
+
+## ---- limma ----
 
 #' @title .limmaAnaDiff
 #'
@@ -152,120 +147,110 @@
 #' @return A list
 #' @keywords internal
 #' @importFrom stats model.matrix as.formula
-#' @importFrom dplyr filter rename
+#' @importFrom dplyr rename
 #' @importFrom limma lmFit contrasts.fit eBayes topTable
 #' @noRd
 #'
-
-
-.limmaAnaDiff <- function(count_matrix, model_matrix, 
-                          Contrasts.Sel, Contrasts.Coeff, 
-                          p.adj.cutoff, p.adj.method,clustermq,
+.limmaAnaDiff <- function(object, 
+                          Contrasts.Coeff, 
+                          p.adj.cutoff = 1, 
+                          p.adj.method = "BH",
+                          clustermq = FALSE,
                           cmd = FALSE){
+  
+  count_matrix <- assay(object)
+  modelFormula <- getModelFormula(object)
+  if(length(modelFormula) == 0)
+    stop("No model defined in the ", getDatasetNames(object), " object.")
+  model_matrix <- model.matrix(as.formula(paste(modelFormula, collapse = " ")), 
+                               data = getDesignMat(object))
+  model_matrix <- model_matrix[colnames(object),]
+  
+  # Run the model
+  if(cmd) message("[RFLOMICS] [cmd] fit linear model for each gene")
+  fit <- lmFit(count_matrix, model_matrix)
+  
+  # test clustermq
+  if(clustermq == TRUE){
     
-    ListRes <- list()
-    
-    # Run the model
-    fit <- lmFit(count_matrix, model_matrix)
-    
-    # test clustermq
-    if(clustermq == TRUE){
-        
-        fx <- function(x){
-            
-            try_rflomics <- function(expr) {
-                warn <- err <- NULL
-                value <- withCallingHandlers(
-                    tryCatch(expr,
-                             error    = function(e){ err <- e
-                             NULL
-                             }),
-                    warning =function(w){ warn <- w
-                    invokeRestart("muffleWarning")}
-                )
-                list(value=value, warning=warn, error=err)
-            }
-            
-            # Fonction to run on contrast per job
-            # y is the model, Contrasts are stored in a matrix, by columns
-            
-            .tryRflomics(contrasts.fit(y, contrasts  = unlist(z[x,])))
-        }
-        
-        ResGlm  <- Q(fx,
-                     x = seq_len(length(Contrasts.Sel$contrast)),
-                     export = list(y = fit, z = Contrasts.Coeff),
-                     n_jobs = length(Contrasts.Sel$contrast),
-                     pkgs = "edgeR")
-        
+    fx <- function(x){
+      
+      try_rflomics <- function(expr) {
+        warn <- err <- NULL
+        value <- withCallingHandlers(
+          tryCatch(expr,
+                   error    = function(e){ err <- e
+                   NULL
+                   }),
+          warning =function(w){ warn <- w
+          invokeRestart("muffleWarning")}
+        )
+        list(value=value, warning=warn, error=err)
+      }
+      
+      # Fonction to run on contrast per job
+      # y is the model, Contrasts are stored in a matrix, by columns
+      
+      .tryRflomics(contrasts.fit(y, contrasts  = unlist(z[x,])))
     }
-    else{
-        if(cmd) message("[RFLOMICS] [cmd] fit contrasts")
-        ResGlm <-  lapply(Contrasts.Sel$contrast, function(x){
-            .tryRflomics(contrasts.fit(fit, contrasts  = as.vector(unlist(Contrasts.Coeff[x,]))))
-        })
-    }
+    # à tester 
+    ResGlm  <- Q(fx,
+                 x      = seq_len(nrow(Contrasts.Coeff)),
+                 export = list(y = fit, z = Contrasts.Coeff),
+                 n_jobs = nrow(Contrasts.Coeff),
+                 pkgs   = "edgeR")
+  }
+  else{
+    if(cmd) message("[RFLOMICS] [cmd] contrasts.fit(fit, contrasts = contrasts")
     
+    ResGlm <-  lapply(rownames(Contrasts.Coeff), function(x){
+      .tryRflomics(
+        contrasts.fit(fit, contrasts = as.vector(unlist(Contrasts.Coeff[x,])))
+      )
+    })
+    names(ResGlm) = rownames(Contrasts.Coeff)
+  }
+  
+  ListRes    <- list()
+  error.list <- list()
+  for(x in names(ResGlm)){
     # Construct a table of jobs summary
-    error.list <- unlist(lapply(ResGlm, function(x){
-        ifelse(is.null(x$error),"success",as.character(x$error))
-    }))
     
-    jobs.tab <- data.frame(H=Contrasts.Sel$contrast , 
-                           error.message=as.factor(error.list))
+    if(!is.null(ResGlm[[x]]$error))
+      error.list[[x]] <- ResGlm[[x]]$error
     
-    jobs.tab.error <- jobs.tab %>% filter(., error.message != "success")
-    
-    # If no error
-    if(dim(jobs.tab.error)[1]==0){
+    if(!is.null(ResGlm[[x]]$value)){
+      ListRes[["RawDEFres"]][[x]] <- ResGlm[[x]]$value
+      
+      fit2 <- eBayes(ResGlm[[x]]$value, robust=TRUE)
+      res <- topTable(fit2, adjust.method = p.adj.method, 
+                      number=Inf, sort.by="AveExpr")
+      topDEF <- res[res$adj.P.Val <= p.adj.cutoff,]
+      
+      if(nrow(topDEF) == 0){
         
-        ListRes[[1]] <- lapply(ResGlm,function(x){
-            x$value
-        })
+        error.list[[x]] <- "There are no results in table form."
         
-        # Name the table of raw results
+      }else{
+        ListRes[["DEF"]][[x]] <- topDEF
         
-        names(ListRes[[1]]) <- Contrasts.Sel$contrastName
-        
-        # ListRes[[2]] TopDPE with column names common to all AnaDiff function
-        
-        ListRes[[2]] <- lapply(ListRes[[1]], function(x){
-            
-            fit2 <- eBayes(x, robust=TRUE)
-            res <- topTable(fit2, adjust.method = p.adj.method, 
-                            number=Inf, sort.by="AveExpr")
-            DEPs <- res[res$adj.P.Val <= p.adj.cutoff,]
-            return(DEPs)
-        })
-        
-        
-        # Mutate column name to render the anadiff results generic
-        # Initial column Name:  
-        # logFC  AveExpr         t      P.Value    adj.P.Val            B
-        ListRes[[2]] <- lapply(ListRes[[2]], function(x){
-            rename(x,"Abundance"="AveExpr",
-                   "pvalue"="P.Value",
-                   "Adj.pvalue"="adj.P.Val")
-        })
-        
-        names(ListRes[[2]]) <- names(ListRes[[1]])
-        
-        names(ListRes) <- c("RawDEFres","TopDEF")
-        
+        ListRes[["DEF"]][[x]] <- rename(topDEF,
+                                        "Abundance"="AveExpr",
+                                        "pvalue"="P.Value",
+                                        "Adj.pvalue"="adj.P.Val")
+      }
     }
-    else{
-        ListRes[[1]] <- NULL
-        ListRes[[2]] <- jobs.tab.error
-        names(ListRes) <- c("RawDEFres","ErrorTab")
-    }
-    
-    
-    return(ListRes)
+  }
+  
+  if(length(error.list) == 0)
+    return(list(RawDEFres = ListRes[["RawDEFres"]], DEF = ListRes[["DEF"]]))
+  else
+    return(list(RawDEFres = ListRes[["RawDEFres"]], ErrorList = error.list))
 }
 
 
 
-######### Plot functions for differential analysis #########
+# ---- Plot functions for differential analysis ----
 
 
 #'.plotPValue
@@ -277,16 +262,16 @@
 #' @importFrom ggplot2 geom_histogram theme_bw labs ggplot aes
 #' @noRd
 .plotPValue <- function(data, contrastName = contrastName) {
-    PValue <- NULL
-    
-    p <- ggplot(data = data) +
-        geom_histogram(aes(x = pvalue), bins = 100) +
-        labs(x = expression(p - value),
-             y = "count",
-             title = contrastName) +
-        theme_bw(base_size = 10)
-    
-    return(p)
+  PValue <- NULL
+  
+  p <- ggplot(data = data) +
+    geom_histogram(aes(x = pvalue), bins = 100) +
+    labs(x = expression(p - value),
+         y = "count",
+         title = contrastName) +
+    theme_bw(base_size = 10)
+  
+  return(p)
 }
 
 
@@ -308,47 +293,45 @@
                     p.adj.cutoff,
                     logFC.cutoff,
                     contrastName = contrastName) {
-    Abundance <- logFC <- Adj.pvalue <- NULL
-    
-    tmp <- select(data, "Abundance", "logFC", "Adj.pvalue") %>%
-        rename(.,
-               baseMeanLog2 = Abundance,
-               log2FoldChange = logFC,
-               padj = Adj.pvalue
-        )
-    
-    p <- ggmaplot(tmp,
-                  main = contrastName,
-                  fdr = p.adj.cutoff,
-                  fc = 2 ^ logFC.cutoff,
-                  size = 0.4,
-                  ylab = bquote( ~ Log[2] ~ "fold change"),
-                  xlab = bquote( ~ Log[2] ~ "mean expression"),
-                  palette = c("#B31B21", "#1465AC", "grey30"),
-                  select.top.method = c("padj", "fc"),
-                  legend = "bottom",
-                  top = 20,
-                  font.label = c("plain", 7),
-                  label.rectangle = TRUE,
-                  font.legend = c(11, "plain", "black"),
-                  font.main = c(11, "bold", "black"),
-                  caption = paste(
-                      "logFC cutoff=",
-                      logFC.cutoff,
-                      " and " ,
-                      "FDR cutoff=",
-                      p.adj.cutoff,
-                      sep = ""
-                  ),
-                  ggtheme = theme_linedraw()
+  Abundance <- logFC <- Adj.pvalue <- NULL
+  
+  tmp <- select(data, "Abundance", "logFC", "Adj.pvalue") %>%
+    rename(.,
+           baseMeanLog2 = Abundance,
+           log2FoldChange = logFC,
+           padj = Adj.pvalue
     )
-    
-    
-    return(p)
-    
+  
+  p <- ggmaplot(tmp,
+                main = contrastName,
+                fdr = p.adj.cutoff,
+                fc = 2 ^ logFC.cutoff,
+                size = 0.4,
+                ylab = bquote( ~ Log[2] ~ "fold change"),
+                xlab = bquote( ~ Log[2] ~ "mean expression"),
+                palette = c("#B31B21", "#1465AC", "grey30"),
+                select.top.method = c("padj", "fc"),
+                legend = "bottom",
+                top = 20,
+                font.label = c("plain", 7),
+                label.rectangle = TRUE,
+                font.legend = c(11, "plain", "black"),
+                font.main = c(11, "bold", "black"),
+                caption = paste(
+                  "logFC cutoff=",
+                  logFC.cutoff,
+                  " and " ,
+                  "FDR cutoff=",
+                  p.adj.cutoff,
+                  sep = ""
+                ),
+                ggtheme = theme_linedraw()
+  )
+  
+  
+  return(p)
+  
 }
-
-
 
 
 #' Title
@@ -367,62 +350,62 @@
                              p.adj.cutoff,
                              logFC.cutoff,
                              contrastName) {
-    # Find pvalue corresponding to the FDR cutoff for the plot
-    # (mean between the last that passes the cutoff
-    # and the first that is rejected to plot the line in the middle of
-    #  the two points)
-    # if pvalcutoff is 1 (no cutoff) no need to adjust
-    
-    if (p.adj.cutoff > 1) {
-        stop("p.adj.cutoff must be between 0 and 1")
-    }
-    
-    pval1 <- data$pvalue[data$Adj.pvalue < p.adj.cutoff] %>% last()
-    pval2 <- data$pvalue[data$Adj.pvalue > p.adj.cutoff] %>% first()
-    pvalCutoff <- (pval1 + pval2) / 2
-    
-    # If too low pvalues, unable to plot (error in if(d>0)...)
-    # If drawconnectors is FALSE, it "works", with ylim being infinity,
-    # it doesn't look like anything.
-    # Modifiying the 0 pvalues to make sure it's working
-    # default replacement in EnhancedVolcanoPlot
-    nz_pval <- data$pvalue[data$pvalue != 0][1] * 10 ^ -1
-    if (nz_pval == 0) {
-        data$pvalue[data$pvalue == 0] <- data$pvalue[data$pvalue != 0][1]
-    }
-    
-    Abundance <- logFC <- Adj.pvalue <- NULL
-    p <- EnhancedVolcano(toptable = data,
-                         lab = rownames(data),
-                         x = 'logFC',
-                         y = 'pvalue',
-                         # pCutoff = p.adj.cutoff,
-                         pCutoff = pvalCutoff,
-                         FCcutoff = logFC.cutoff,
-                         axisLabSize = 10,
-                         pointSize = 1.5,
-                         labSize = 2.5,
-                         title = contrastName,
-                         titleLabSize = 11,
-                         subtitle = "",
-                         subtitleLabSize = 10,
-                         caption = paste("logFC cutoff=",
-                                         logFC.cutoff,
-                                         " & " , "FDR cutoff=",
-                                         p.adj.cutoff,
-                                         sep = ""),
-                         legendPosition = "bottom",
-                         legendLabSize = 10,
-                         legendIconSize = 1.5,
-                         captionLabSize = 10,
-                         col = c('grey30', 'forestgreen', 'royalblue', 'red2'),
-                         colAlpha = 0.5,
-                         drawConnectors = FALSE,
-                         widthConnectors = 0.5,
-                         max.overlaps = 15
-    )
-    
-    return(p)
+  # Find pvalue corresponding to the FDR cutoff for the plot
+  # (mean between the last that passes the cutoff
+  # and the first that is rejected to plot the line in the middle of
+  #  the two points)
+  # if pvalcutoff is 1 (no cutoff) no need to adjust
+  
+  if (p.adj.cutoff > 1) {
+    stop("p.adj.cutoff must be between 0 and 1")
+  }
+  
+  pval1 <- data$pvalue[data$Adj.pvalue < p.adj.cutoff] %>% last()
+  pval2 <- data$pvalue[data$Adj.pvalue > p.adj.cutoff] %>% first()
+  pvalCutoff <- (pval1 + pval2) / 2
+  
+  # If too low pvalues, unable to plot (error in if(d>0)...)
+  # If drawconnectors is FALSE, it "works", with ylim being infinity,
+  # it doesn't look like anything.
+  # Modifiying the 0 pvalues to make sure it's working
+  # default replacement in EnhancedVolcanoPlot
+  nz_pval <- data$pvalue[data$pvalue != 0][1] * 10 ^ -1
+  if (nz_pval == 0) {
+    data$pvalue[data$pvalue == 0] <- data$pvalue[data$pvalue != 0][1]
+  }
+  
+  Abundance <- logFC <- Adj.pvalue <- NULL
+  p <- EnhancedVolcano(toptable = data,
+                       lab = rownames(data),
+                       x = 'logFC',
+                       y = 'pvalue',
+                       # pCutoff = p.adj.cutoff,
+                       pCutoff = pvalCutoff,
+                       FCcutoff = logFC.cutoff,
+                       axisLabSize = 10,
+                       pointSize = 1.5,
+                       labSize = 2.5,
+                       title = contrastName,
+                       titleLabSize = 11,
+                       subtitle = "",
+                       subtitleLabSize = 10,
+                       caption = paste("logFC cutoff=",
+                                       logFC.cutoff,
+                                       " & " , "FDR cutoff=",
+                                       p.adj.cutoff,
+                                       sep = ""),
+                       legendPosition = "bottom",
+                       legendLabSize = 10,
+                       legendIconSize = 1.5,
+                       captionLabSize = 10,
+                       col = c('grey30', 'forestgreen', 'royalblue', 'red2'),
+                       colAlpha = 0.5,
+                       drawConnectors = FALSE,
+                       widthConnectors = 0.5,
+                       max.overlaps = 15
+  )
+  
+  return(p)
 }
 
 

@@ -129,10 +129,13 @@ test_that("Differential analysis on RNAseq (counts) returns the same result with
     names(ListResRNA) <- names(ResGlm)
     
     ## RNAseq
+    DiffExpAnal <- getAnalysis(MAE[["RNAtest"]], 
+                               name = "DiffExpAnal", 
+                               subName = "results")
     
-    MAESimple <- MAE[["RNAtest"]]@metadata$DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionDS`
-    MAEMean   <- MAE[["RNAtest"]]@metadata$DiffExpAnal$DEF$`(imbibitionEI - imbibitionDS) in mean`
-    MAEInt    <- MAE[["RNAtest"]]@metadata$DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionEI - (temperatureElevated - temperatureLow) in imbibitionDS`
+    MAESimple <- DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionDS`
+    MAEMean   <- DiffExpAnal$DEF$`(imbibitionEI - imbibitionDS) in mean`
+    MAEInt    <- DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionEI - (temperatureElevated - temperatureLow) in imbibitionDS`
     
     resSimple <- ListResRNA$`(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)`
     resMean   <- ListResRNA$`((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS))/3`
@@ -176,10 +179,13 @@ test_that("Diff Analysis on metabolomics returns the same result within and outs
     })
     
     # Tests results
+    DiffExpAnal <- getAnalysis(MAE[["metatest"]], 
+                               name = "DiffExpAnal", 
+                               subName = "results")
     
-    MAESimple <- MAE[["metatest"]]@metadata$DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionDS`
-    MAEMean   <- MAE[["metatest"]]@metadata$DiffExpAnal$DEF$`(imbibitionEI - imbibitionDS) in mean`
-    MAEInt    <- MAE[["metatest"]]@metadata$DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionEI - (temperatureElevated - temperatureLow) in imbibitionDS`
+    MAESimple <- DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionDS`
+    MAEMean   <- DiffExpAnal$DEF$`(imbibitionEI - imbibitionDS) in mean`
+    MAEInt    <- DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionEI - (temperatureElevated - temperatureLow) in imbibitionDS`
     
     resSimple <- ListResMet$`(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)`
     resMean   <- ListResMet$`((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS))/3`
@@ -226,10 +232,13 @@ test_that("Diff Analysis on proteomics returns the same result within and outsid
     names(ListResProt) <- names(ResGlmProt)
     
     # Tests results
+    DiffExpAnal <- getAnalysis(MAE[["protetest"]], 
+                               name = "DiffExpAnal", 
+                               subName = "results")
     
-    MAESimple <- MAE[["protetest"]]@metadata$DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionDS`
-    MAEMean   <- MAE[["protetest"]]@metadata$DiffExpAnal$DEF$`(imbibitionEI - imbibitionDS) in mean`
-    MAEInt    <- MAE[["protetest"]]@metadata$DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionEI - (temperatureElevated - temperatureLow) in imbibitionDS`
+    MAESimple <- DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionDS`
+    MAEMean   <- DiffExpAnal$DEF$`(imbibitionEI - imbibitionDS) in mean`
+    MAEInt    <- DiffExpAnal$DEF$`(temperatureElevated - temperatureLow) in imbibitionEI - (temperatureElevated - temperatureLow) in imbibitionDS`
     
     resSimple <- ListResProt$`(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)`
     resMean   <- ListResProt$`((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS))/3`

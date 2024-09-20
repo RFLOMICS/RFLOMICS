@@ -32,16 +32,16 @@ formulae <- generateModelFormulae( MAE)
 MAE <- setModelFormula(MAE, formulae[[1]])
 
 contrastList <- generateExpressionContrast(object = MAE) |>
-    purrr::reduce(rbind) |>
-    dplyr::filter(contrast %in% c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)",
-                                  "((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS))/3",
-                                  "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))" ))
+  purrr::reduce(rbind) |>
+  dplyr::filter(contrast %in% c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)",
+                                "((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS))/3",
+                                "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))" ))
 MAE <- MAE |>
-    setSelectedContrasts(contrastList = contrastList) |>
-    runDataProcessing(SE.name = "protetest", 
-                      normMethod = "median",
-                      transformMethod = "none")  |>
-    runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")
+  setSelectedContrasts(contrastList = contrastList) |>
+  runDataProcessing(SE.name = "protetest", 
+                    normMethod = "median",
+                    transformMethod = "none")  |>
+  runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")
 
 
 # ---- Annotation test function - DiffExpEnrichment ----
@@ -49,42 +49,55 @@ MAE <- MAE |>
 
 #### Need org.At.tair.db to run
 test_that("it's running from diffExpAnal - GO - proteomics", {
-
+  
   # Selecting only one contrast
   expect_no_error({
-    MAE <- runAnnotationEnrichment(MAE,
-                                   nameList = "(temperatureElevated - temperatureLow) in imbibitionDS" , 
-                                   SE.name = "protetest", database = "GO",
-                                   list_args = list(OrgDb = "org.At.tair.db",
-                                                    keyType = "TAIR",
-                                                    pvalueCutoff = 0.05),
-                                   domain = c("BP", "MF", "CC"))
+    MAE <- runAnnotationEnrichment(
+      object = MAE,
+      nameList = "(temperatureElevated - temperatureLow) in imbibitionDS" , 
+      SE.name = "protetest", database = "GO",
+      list_args = list(OrgDb = "org.At.tair.db",
+                       keyType = "TAIR",
+                       pvalueCutoff = 0.05),
+      domain = c("BP", "MF", "CC")
+    )
   })
-
+  
   expect({
-    obj <- RFLOMICS:::getEnrichRes(MAE[["protetest"]], 
-                                   contrast = "(temperatureElevated - temperatureLow) in imbibitionDS",
-                                   database = "GO", domain = "BP")
+    obj <- RFLOMICS:::getEnrichRes(
+      MAE[["protetest"]], 
+      contrast = "(temperatureElevated - temperatureLow) in imbibitionDS",
+      database = "GO", domain = "BP")
     nrow(obj@result) > 0
-  }, failure_message = "(GO protetest from DiffExp) - There is no result in the enrichment metadata part.")
-
+    
+  }, failure_message = "(GO protetest from DiffExp) - ",
+  "There is no result in the enrichment metadata part.")
+  
   # All contrasts
   expect_no_error({
-    MAE <- runAnnotationEnrichment(MAE, SE.name = "protetest", database = "GO",
-                                   list_args = list(OrgDb = "org.At.tair.db",
-                                                    keyType = "TAIR",
-                                                    pvalueCutoff = 0.05),
-                                   domain = c("BP", "MF", "CC"))
-
+    MAE <- runAnnotationEnrichment(
+      MAE, SE.name = "protetest", database = "GO",
+      list_args = list(OrgDb   = "org.At.tair.db",
+                       keyType = "TAIR",
+                       pvalueCutoff = 0.05),
+      domain = c("BP", "MF", "CC"))
+    
   })
-
+  
   expect({
-    obj <- RFLOMICS:::getEnrichRes(MAE[["protetest"]], contrast = "(temperatureElevated - temperatureLow) in imbibitionDS", database = "GO", domain = "BP")
+    obj <- RFLOMICS:::getEnrichRes(
+      MAE[["protetest"]], 
+      contrast = "(temperatureElevated - temperatureLow) in imbibitionDS", 
+      database = "GO", 
+      domain   = "BP")
+    
     nrow(obj@result) > 0
-  }, failure_message = "(GO protetest from DiffExp) - There is no result in the enrichment metadata part.")
-
-
-
+    
+  }, failure_message = "(GO protetest from DiffExp) - ",
+  "There is no result in the enrichment metadata part.")
+  
+  
+  
 })
 
 # Need the custom file for this

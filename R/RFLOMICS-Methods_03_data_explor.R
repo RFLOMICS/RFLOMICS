@@ -248,7 +248,7 @@ setMethod(
       setElementToMetadata(object, 
                            name    = "DataProcessing", 
                            subName = "log", 
-                           content =  FALSE)
+                           content =  NULL)
     
     object <- 
       setElementToMetadata(object, 

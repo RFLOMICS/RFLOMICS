@@ -456,9 +456,9 @@ setGeneric(
 #---- 04 diff analysis ----
 
 setGeneric(
-  name = "sumDiffExp",
+  name = "getDiffStat",
   def  = function(object, SE.name) {
-    standardGeneric("sumDiffExp")
+    standardGeneric("getDiffStat")
   }
 )
 

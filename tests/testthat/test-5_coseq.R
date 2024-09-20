@@ -515,20 +515,22 @@ test_that("For a given K, a likelihood equal to 0 is counted as failed job", {
   
   co <- capture.output(suppressMessages(
     coseq.res.list <- lapply(1:replicates, function(x){
-      RFLOMICS:::.tryRflomics(coseq::coseq(countMat, K = K, parallel = TRUE,
-                                           model            = param.list[["model"]],
-                                           transformation   = param.list[["transformation"]],
-                                           meanFilterCutoff = param.list[["meanFilterCutoff"]],
-                                           normFactors      = param.list[["normFactors"]],
-                                           GaussianModel    = param.list[["GaussianModel"]],
-                                           seed = x))
+      RFLOMICS:::.tryRflomics(
+        coseq::coseq(countMat, K = K, parallel = TRUE,
+                     model            = param.list[["model"]],
+                     transformation   = param.list[["transformation"]],
+                     meanFilterCutoff = param.list[["meanFilterCutoff"]],
+                     normFactors      = param.list[["normFactors"]],
+                     GaussianModel    = param.list[["GaussianModel"]],
+                     seed = x))
     })))
   names(coseq.res.list) <- c(1:replicates)
   
-  coseq.error.management <- RFLOMICS:::.coseq.error.manage(coseq.res.list = coseq.res.list, 
-                                                           K = K, 
-                                                           replicates = replicates,
-                                                           cmd = TRUE)
+  coseq.error.management <- 
+    RFLOMICS:::.coseq.error.manage(coseq.res.list = coseq.res.list, 
+                                   K = K, 
+                                   replicates = replicates,
+                                   cmd = TRUE)
   
   nbFailed <- dplyr::filter(coseq.error.management$jobs.tab.sum, K == "K=6")$n
   

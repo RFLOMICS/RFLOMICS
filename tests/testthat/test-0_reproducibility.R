@@ -270,15 +270,15 @@ test_that("test subRflomicsMAE", {
 
 test_that("contrast", {
     
-    Contrasts.names <- c("(temperatureMedium_imbibitionDS - temperatureLow_imbibitionDS)",                                                                                                                                                     
-                         "(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)",                                                                                                                                                   
-                         "(temperatureElevated_imbibitionDS - temperatureMedium_imbibitionDS)",                                                                                                                                              
-                         "((temperatureMedium_imbibitionDS - temperatureLow_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureLow_imbibitionEI) + (temperatureMedium_imbibitionLI - temperatureLow_imbibitionLI))/3",          
-                         "((temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) + (temperatureElevated_imbibitionLI - temperatureLow_imbibitionLI))/3",
-                         "((temperatureElevated_imbibitionDS - temperatureMedium_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureMedium_imbibitionEI) + (temperatureElevated_imbibitionLI - temperatureMedium_imbibitionLI))/3",
-                         "((temperatureMedium_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureMedium_imbibitionDS - temperatureLow_imbibitionDS))",
-                         "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))",
-                         "((temperatureElevated_imbibitionEI - temperatureMedium_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureMedium_imbibitionDS))")
+    Contrasts.names <- c("(temperatureMedium - temperatureLow) in imbibitionDS",                                                                                                                                                     
+                         "(temperatureElevated - temperatureLow) in imbibitionDS",                                                                                                                                                   
+                         "(temperatureElevated - temperatureMedium) in imbibitionDS",                                                                                                                                              
+                         "(temperatureMedium - temperatureLow) in mean",          
+                         "(temperatureElevated - temperatureLow) in mean",
+                         "(temperatureElevated - temperatureMedium) in mean",
+                         "(temperatureMedium - temperatureLow) in imbibitionEI - (temperatureMedium - temperatureLow) in imbibitionDS",
+                         "(temperatureElevated - temperatureLow) in imbibitionEI - (temperatureElevated - temperatureLow) in imbibitionDS",
+                         "(temperatureElevated - temperatureMedium) in imbibitionEI - (temperatureElevated - temperatureMedium) in imbibitionDS")
     
     Contrasts.Coeff <- rbind(
         c(0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0),
@@ -300,9 +300,9 @@ test_that("contrast", {
     
     row.names(Contrasts.Coeff) <- Contrasts.names
     
-    expect_equal(MAE[["RNAtest"]]@metadata$DiffExpAnal$contrastCoef, Contrasts.Coeff)
-    expect_equal(MAE[["protetest"]]@metadata$DiffExpAnal$contrastCoef, Contrasts.Coeff)
-    expect_equal(MAE[["metatest"]]@metadata$DiffExpAnal$contrastCoef, Contrasts.Coeff)
+    expect_equal(getDiffSettings(MAE[["RNAtest"]])$contrastCoef, Contrasts.Coeff)
+    expect_equal(getDiffSettings(MAE[["protetest"]])$contrastCoef, Contrasts.Coeff)
+    expect_equal(getDiffSettings(MAE[["metatest"]])$contrastCoef, Contrasts.Coeff)
     
     expect_equal(
       checkExpDesignCompleteness(MAE[["RNAtest"]], 

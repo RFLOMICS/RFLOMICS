@@ -313,7 +313,7 @@ setMethod(
                     df.list[[analysis]] <- c(df.list[[analysis]], dataset)
                 },
                 "DiffExpAnal" = {
-                  if(!is.null(object[[dataset]]@metadata[[analysis]]$Validcontrasts))
+                  if(!is.null(getValidContrasts(object[[dataset]])))
                     df.list[[analysis]] <- c(df.list[[analysis]], dataset)
                 },
                 "CoExpAnal" = {
@@ -405,23 +405,16 @@ setMethod(
     
     if(.isFiltered(object))
       title <- c(title, 
-                 paste0("filtred (", 
-                        getFilterSettings(object)$method,")"))
+                 paste0("filtred (", getFilterSettings(object)$method, ")"))
     
-    if(.isTransformed(object)){
-      method <- ifelse(getTransSettings(object)$method == "none",
-                       getTransSettings(object)$suppInfo, 
-                       getTransSettings(object)$method)
-      title <- c(title, 
-                 paste0("transformed (", method, ")"))
+    if(.isTransformed(object) && getTransSettings(object)$method != "none"){
+      method <- getTransSettings(object)$method
+      title  <- c(title, paste0("transformed (", method, ")"))
     }
     
-    if(.isNormalized(object)){
-      method <- ifelse(getNormSettings(object)$method == "none",
-                       getNormSettings(object)$suppInfo, 
-                       getNormSettings(object)$method)
-      title <- c(title, 
-                 paste0("normalized (", method, ")"))
+    if(.isNormalized(object) && getNormSettings(object)$method != "none"){
+      method <- getNormSettings(object)$method
+      title  <- c(title, paste0("normalized (", method, ")"))
     }
     
     if(!is.null(title)){
