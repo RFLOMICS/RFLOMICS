@@ -1,6 +1,6 @@
 Package: RFLOMICS
 Title: Interactive web application for Omics-data analysis
-Version: 0.99.1
+Version: 0.99.2
 Authors@R: 
     c(
     person(given = "Nadia", family = "Bessoltane",email = "nadia.bessoltane@inrae.fr", role = c("aut", "cre"), comment = c(ORCID="0000-0001-6931-2529")),
