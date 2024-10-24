@@ -18,15 +18,16 @@
 #' @importFrom coseq ICL likelihood
 #' @importFrom stringr str_replace
 #' @importFrom tibble tibble
-#' @importFrom data.table rbindlist
 #' @noRd
 #'
 .coseq.error.manage <- function(coseq.res.list, K, replicates, cmd = FALSE){
     
     # Create a table of jobs summary
     error.list <- unlist(lapply(coseq.res.list, function(x){
-        ifelse(is.null(x$error), "success", as.character(x$error))
+        ifelse(!is.null(x$value), "success", as.character(x$error))
     }))
+    
+    error.list[is.na(error.list)] <- "failed"
     
     # status of jobs
     nK_success.job <- table(error.list)["success"]
@@ -63,11 +64,11 @@
         
         # if (cmd) print("#     => error management: level 2 ")
         like.vec <- unlist(lapply(seq_len(nK_success.job), function(x){ 
-            likelihood(coseq.res.list[["value"]][[x]])
+          likelihood(coseq.res.list[["value"]][[x]])
         })) %>%
-            lapply(., function(x){ 
-                ifelse(is.na(x) | (x==0), "failed", "success") }) %>% 
-            unlist()
+          lapply(., function(x){ 
+            ifelse(is.na(x) | (x==0), "failed", "success") }) %>% 
+          unlist()
         
         nK_success <- table(like.vec)["success"]
         
@@ -77,8 +78,8 @@
         K.list.ex <- rep(K, each = replicates)
         
         # observed list of cases
-        K.list.ob <- str_replace(string = names(like.vec), 
-                                 pattern = "K=", replacement = "") %>% 
+        K.list.ob <- 
+          str_replace(string = names(like.vec), pattern = "K=", replacement = "") %>% 
             as.numeric() %>% 
             sort()
         
@@ -102,9 +103,7 @@
             mutate(prop.failed = round((n/replicates)*100)) %>%
             filter(error.message != "success")
         
-        jobs.tab.sum <- rbindlist(list(jobs.tab.sum1, jobs.tab.sum2),
-                                  use.names = TRUE) %>% 
-            tibble()
+        jobs.tab.sum <- rbind(jobs.tab.sum1, jobs.tab.sum2)
         
     } else{
         nK_success <- 0

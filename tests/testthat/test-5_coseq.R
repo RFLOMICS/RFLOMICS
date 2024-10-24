@@ -534,8 +534,12 @@ test_that("For a given K, a likelihood equal to 0 is counted as failed job", {
   
   nbFailed <- dplyr::filter(coseq.error.management$jobs.tab.sum, K == "K=6")$n
   
-  K6 <- unlist(lapply(1:5,function(i){
-    coseq::likelihood(coseq.error.management$coseq.res.list.values[[i]])["K=6"]}))
+  K6 <- 
+    unlist(
+      lapply(coseq.error.management$coseq.res.list.values,function(i){
+        coseq::likelihood(i)["K=6"]
+        })
+      )
   
   nbK6eqNA <- sum(is.na(K6))
   nbK6eq0 <- sum(K6 == 0, na.rm = TRUE)

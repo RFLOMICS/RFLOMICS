@@ -85,6 +85,8 @@ setMethod(
     # make sure results slot is empty (or re-init)
     metadata(object)[[fromEnrich]][[database]] <- EnrichAnal <- list()
     
+    DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
+    
     switch(from,
            "DiffExp" = {
              contrasts <- NULL
@@ -105,7 +107,7 @@ setMethod(
              
              geneLists <-
                lapply(contrasts, function(contrastName) {
-                 row.names(metadata(object)$DiffExpAnal[["TopDEF"]][[contrastName]])
+                 row.names(DiffExpAnal[["results"]][["TopDEF"]][[contrastName]])
                })
              names(geneLists) <- contrasts
              
@@ -386,10 +388,12 @@ setMethod(
                         ...) {
     from <- .determineFromEnrich(from)
     
+    DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
+    
     log2FC_vect <- NULL
     switch(from,
            "DiffExpEnrichAnal" = {
-             obj <- metadata(object)$DiffExpAnal[["TopDEF"]][[contrastName]]
+             obj <- DiffExpAnal[["results"]][["TopDEF"]][[contrastName]]
              log2FC_vect <- obj[["logFC"]]
              names(log2FC_vect) <- rownames(obj)
              
@@ -477,6 +481,8 @@ setMethod(
     
     from <- .determineFromEnrich(from)
     
+    DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
+    
     log2FC_vect <- NULL
     switch(from,
            "DiffExpEnrichAnal" = {
@@ -487,7 +493,7 @@ setMethod(
                from = from
              )
              inter <-
-               metadata(object)$DiffExpAnal[["TopDEF"]][[contrastName]]
+               DiffExpAnal[["results"]][["TopDEF"]][[contrastName]]
              log2FC_vect <- inter[["logFC"]]
              names(log2FC_vect) <- rownames(inter)
              
@@ -522,7 +528,7 @@ setMethod(
                  from = from
                )
              inter <-
-               metadata(object)$DiffExpAnal[["TopDEF"]][[contrastName]]
+               DiffExpAnal[["results"]][["TopDEF"]][[contrastName]]
              log2FC_vect <- inter[["logFC"]]
              names(log2FC_vect) <- rownames(inter)
              

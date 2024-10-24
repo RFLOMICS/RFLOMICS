@@ -19,6 +19,7 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   echo = TRUE,
+  eval = FALSE,
   comment = "#>"
 )
 ```
@@ -237,7 +238,7 @@ getDiffSettings(MAE, SE.name = "RNAtest")
 
 # Summary of the differential analysis
 
-sumDiffExp(MAE[["RNAtest"]])
+getDiffStat(MAE[["RNAtest"]])
 ```
 
 ```{r volcano, fig.width=7, fig.height = 4.5, fig.align="center"}
