@@ -15,10 +15,10 @@ MAE <- RFLOMICS::createRflomicsMAE(
 names(MAE) <- c("RNAtest", "protetest", "metatest")
 
 # generate upset plot
-MultiAssayExperiment::upsetSamples(MAE)
+# MultiAssayExperiment::upsetSamples(MAE)
 
 # generate data overview plot
-#plotDataOverview(MAE)
+# plotDataOverview(MAE)
 
 # generate plot of coverage of condition by data
-#plotConditionsOverview(MAE)
+# plotConditionsOverview(MAE)

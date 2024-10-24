@@ -33,9 +33,7 @@ MAE <- setModelFormula(MAE, formulae[[1]])
 
 contrastList <- generateExpressionContrast(object = MAE) |> 
     purrr::reduce(rbind) |>
-    dplyr::filter(contrast %in% c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)",
-                                  "((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS))/3",
-                                  "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))" ))
+    dplyr::filter(contrast %in% c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)"))
 
 
 # ---- Construction of data tables differential analysis : ----
@@ -69,10 +67,10 @@ design <- model.matrix(~Repeat + temperature + imbibition + temperature:imbibiti
 # Not checking if the coefficients are ok in there.
 # taking the ones computed by RFLOMICS functions.
 
-contrastsCoeff <- RFLOMICS:::.getContrastMatrixF(ExpDesign = condMat, factorBio = c("temperature", "imbibition"), modelFormula = "~Repeat + temperature + imbibition + temperature:imbibition",
-                                                 contrastList = c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)", 
-                                                                  "((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS))/3",
-                                                                  "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))"))
+contrastsCoeff <- RFLOMICS:::.getContrastMatrixF(ExpDesign = condMat, 
+                                                 factorBio = c("temperature", "imbibition"), 
+                                                 modelFormula = "~Repeat + temperature + imbibition + temperature:imbibition",
+                                                 contrastList = c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)"))
 
 MAE <- setSelectedContrasts(MAE, contrastList)
 
