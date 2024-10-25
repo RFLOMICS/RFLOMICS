@@ -4,12 +4,12 @@
 \alias{runDataProcessing}
 \alias{runDataProcessing,RflomicsSE-method}
 \alias{runDataProcessing,RflomicsMAE-method}
-\alias{filterLowAbundance}
-\alias{filterLowAbundance,RflomicsSE-method}
-\alias{filterLowAbundance,RflomicsMAE-method}
 \alias{runSampleFiltering}
 \alias{runSampleFiltering,RflomicsSE-method}
 \alias{runSampleFiltering,RflomicsMAE-method}
+\alias{runFeatureFiltering}
+\alias{runFeatureFiltering,RflomicsSE-method}
+\alias{runFeatureFiltering,RflomicsMAE-method}
 \alias{runTransformData}
 \alias{runTransformData,RflomicsSE-method}
 \alias{runTransformData,RflomicsMAE-method}
@@ -34,12 +34,18 @@
 \alias{getFilteredFeatures}
 \alias{getFilteredFeatures,RflomicsSE-method}
 \alias{getFilteredFeatures,RflomicsMAE-method}
+\alias{getSelectedSamples}
+\alias{getSelectedSamples,RflomicsSE-method}
+\alias{getSelectedSamples,RflomicsMAE-method}
 \alias{getCoeffNorm}
 \alias{getCoeffNorm,RflomicsSE-method}
 \alias{getCoeffNorm,RflomicsMAE-method}
 \alias{getNormSettings}
 \alias{getNormSettings,RflomicsSE-method}
 \alias{getNormSettings,RflomicsMAE-method}
+\alias{setSelectedSamples}
+\alias{setSelectedSamples,RflomicsSE-method}
+\alias{setSelectedSamples,RflomicsMAE-method}
 \alias{plotLibrarySize}
 \alias{plotLibrarySize,RflomicsSE-method}
 \alias{plotLibrarySize,RflomicsMAE-method}
@@ -52,53 +58,82 @@
 \alias{plotExpDesignCompleteness}
 \alias{plotExpDesignCompleteness,RflomicsSE-method}
 \alias{plotExpDesignCompleteness,RflomicsMAE-method}
+\alias{isProcessedData}
+\alias{isProcessedData,RflomicsSE-method}
+\alias{isProcessedData,RflomicsMAE-method}
 \title{Data Exploratory and processing}
 \usage{
 \S4method{runDataProcessing}{RflomicsSE}(
   object,
   samples = NULL,
-  lowCountFiltering_strategy = "NbReplicates",
-  lowCountFiltering_CPM_Cutoff = 1,
-  normMethod = "none",
-  transformMethod = "none"
+  filterStrategy = NULL,
+  cpmCutoff = NULL,
+  transformMethod = NULL,
+  normMethod = NULL,
+  imputMethod = NULL,
+  userTransMethod = "unknown",
+  userNormMethod = "unknown",
+  ...
 )
 
 \S4method{runDataProcessing}{RflomicsMAE}(
   object,
-  samples = NULL,
-  lowCountFiltering_strategy = "NbReplicates",
-  lowCountFiltering_CPM_Cutoff = 1,
-  normMethod = "none",
-  transformMethod = "none",
-  SE.name
-)
-
-\S4method{filterLowAbundance}{RflomicsSE}(
-  object,
-  filterMethod = "CPM",
-  filterStrategy = "NbConditions",
-  cpmCutoff = 5
-)
-
-\S4method{filterLowAbundance}{RflomicsMAE}(
-  object,
   SE.name,
-  filterMethod = "CPM",
-  filterStrategy = "NbConditions",
-  cpmCutoff = 5
+  samples = NULL,
+  filterStrategy = NULL,
+  cpmCutoff = NULL,
+  transformMethod = NULL,
+  normMethod = NULL,
+  userTransMethod = "unknown",
+  userNormMethod = "unknown",
+  ...
 )
 
 \S4method{runSampleFiltering}{RflomicsSE}(object, samples = NULL)
 
 \S4method{runSampleFiltering}{RflomicsMAE}(object, SE.name, samples = NULL)
 
-\S4method{runTransformData}{RflomicsSE}(object, transformMethod = NULL, modifyAssay = FALSE)
+\S4method{runFeatureFiltering}{RflomicsSE}(
+  object,
+  filterMethod = NULL,
+  filterStrategy = NULL,
+  cpmCutoff = NULL,
+  imputMethod = NULL
+)
 
-\S4method{runTransformData}{RflomicsMAE}(object, SE.name, transformMethod = NULL, modifyAssay = FALSE)
+\S4method{runFeatureFiltering}{RflomicsMAE}(
+  object,
+  SE.name,
+  filterMethod = NULL,
+  filterStrategy = NULL,
+  cpmCutoff = NULL,
+  imputMethod = NULL
+)
 
-\S4method{runNormalization}{RflomicsSE}(object, normMethod = NULL, modifyAssay = FALSE)
+\S4method{runTransformData}{RflomicsSE}(
+  object,
+  transformMethod = "log2",
+  userTransMethod = "unknown",
+  ...
+)
 
-\S4method{runNormalization}{RflomicsMAE}(object, SE.name, normMethod = NULL, modifyAssay = FALSE)
+\S4method{runTransformData}{RflomicsMAE}(
+  object,
+  SE.name,
+  transformMethod = NULL,
+  userTransMethod = "unknown",
+  ...
+)
+
+\S4method{runNormalization}{RflomicsSE}(object, normMethod = NULL, userNormMethod = "unknown", ...)
+
+\S4method{runNormalization}{RflomicsMAE}(
+  object,
+  SE.name,
+  normMethod = NULL,
+  userNormMethod = "unknown",
+  ...
+)
 
 \S4method{runOmicsPCA}{RflomicsSE}(object, ncomp = 5, raw = FALSE)
 
@@ -108,9 +143,22 @@
 
 \S4method{checkExpDesignCompleteness}{RflomicsMAE}(object, omicName, sampleList = NULL)
 
-\S4method{getProcessedData}{RflomicsSE}(object, NormTrans = TRUE)
+\S4method{getProcessedData}{RflomicsSE}(
+  object,
+  filter = FALSE,
+  trans = FALSE,
+  norm = FALSE,
+  log = FALSE
+)
 
-\S4method{getProcessedData}{RflomicsMAE}(object, SE.name, NormTrans = TRUE)
+\S4method{getProcessedData}{RflomicsMAE}(
+  object,
+  SE.name,
+  filter = FALSE,
+  trans = FALSE,
+  norm = FALSE,
+  log = FALSE
+)
 
 \S4method{getTransSettings}{RflomicsSE}(object)
 
@@ -124,6 +172,10 @@
 
 \S4method{getFilteredFeatures}{RflomicsMAE}(object, SE.name)
 
+\S4method{getSelectedSamples}{RflomicsSE}(object)
+
+\S4method{getSelectedSamples}{RflomicsMAE}(object, SE.name)
+
 \S4method{getCoeffNorm}{RflomicsSE}(object)
 
 \S4method{getCoeffNorm}{RflomicsMAE}(object, SE.name)
@@ -131,6 +183,10 @@
 \S4method{getNormSettings}{RflomicsSE}(object)
 
 \S4method{getNormSettings}{RflomicsMAE}(object, SE.name)
+
+\S4method{setSelectedSamples}{RflomicsSE}(object, samples = NULL)
+
+\S4method{setSelectedSamples}{RflomicsMAE}(object, SE.name, samples = NULL)
 
 \S4method{plotLibrarySize}{RflomicsSE}(object, raw = FALSE)
 
@@ -158,34 +214,53 @@
 \S4method{plotExpDesignCompleteness}{RflomicsSE}(object, sampleList = NULL)
 
 \S4method{plotExpDesignCompleteness}{RflomicsMAE}(object, omicName, sampleList = NULL)
+
+\S4method{isProcessedData}{RflomicsSE}(
+  object,
+  filter = FALSE,
+  trans = FALSE,
+  norm = FALSE,
+  log = FALSE
+)
+
+\S4method{isProcessedData}{RflomicsMAE}(
+  object,
+  SE.name,
+  filter = TRUE,
+  trans = TRUE,
+  norm = TRUE,
+  log = FALSE
+)
 }
 \arguments{
 \item{object}{An object of class \link{RflomicsSE-class}.}
 
-\item{samples}{samples to keep.}
+\item{samples}{sample names to keep}
 
-\item{lowCountFiltering_strategy}{strategy of RNAseq low count filtering. 
-Mandatory for RNAseq data. Default value: "NbReplicates".}
+\item{filterStrategy}{The filtering strategy
+("NbConditions" or "NbReplicates") for RNAseq data.}
 
-\item{lowCountFiltering_CPM_Cutoff}{CPM cutoff for RNAseq low count filtering.
-Mandatory for RNAseq data. Default value: 1.}
+\item{cpmCutoff}{The CPM cutoff for RNAseq data.}
 
-\item{normMethod}{Normalization method}
+\item{transformMethod}{The transformation to store in the metadata}
 
-\item{transformMethod}{The transformation to store in the metadata or to 
-store and apply if modifyAssay is TRUE.}
+\item{normMethod}{Normalization method. Accepted values: TMM for RNAseq, and
+median, totalSum, or none for proteomics and metabolomics data.
+Default values: TMM for RNAseq data and median for proteomics and metabolomics
+data}
+
+\item{imputMethod}{The imputation method ("MVI") for proteomics and 
+metabolomics data.}
+
+\item{userTransMethod}{method used by user to transforme data.}
+
+\item{userNormMethod}{method used by user to normalize data.}
+
+\item{...}{supplementary arguments.}
 
 \item{SE.name}{the name of the data the normalization have to be applied to.}
 
-\item{filterMethod}{The filtering model ("CPM")}
-
-\item{filterStrategy}{The filtering strategy 
-("NbConditions" or "NbReplicates")}
-
-\item{cpmCutoff}{The CPM cutoff.}
-
-\item{modifyAssay}{Does the normalization have to be applied or just 
-stored for later? Recommended it stays FALSE.}
+\item{filterMethod}{The filtering model ("CPM") for RNAseq data.}
 
 \item{ncomp}{Number of components to compute. Default is 5.}
 
@@ -196,8 +271,14 @@ performed on raw [\sQuote{raw}] or normalized [\sQuote{norm}] data.}
 
 \item{omicName}{a character string with the name of the dataset}
 
-\item{NormTrans}{boolean. If TRUE, returned Data are normalized 
-and transformed.}
+\item{filter}{boolean. If TRUE, check if data is filtred (low counts/RNAseq)}
+
+\item{trans}{boolean. If TRUE, check if data is transformed}
+
+\item{norm}{boolean. If TRUE, check if data is normalized}
+
+\item{log}{boolean. If TRUE, check if the data has been log-transformed 
+(RNAseq).}
 
 \item{plot}{plot type ("boxplot" or "density")}
 
@@ -226,14 +307,15 @@ and/or transformation, PCA) on RNAseq, proteomic, or metabolomic data.
 runDataProcessing() calls the following functions:
 
 \itemize{
-\item filterLowAbundance:  This function aims at removing transcript from 
-the count data matrix of an omic of type "RNAseq".
-by applying filtering criterion described in reference. 
+\item runSampleFiltering: 
+  This function applied sample filtering on an dataset. 
 }
 
 \itemize{
-\item runSampleFiltering: 
-  This function applied sample filtering on an dataset. 
+\item runFeatureFiltering: This function allows filtering variables in omics 
+data. In the case of RNA-seq data, it involves filtering out transcripts with 
+low counts, while in the case of proteomics and metabolomics data, it applies 
+the imputation procedure.
 }
 
 \itemize{
@@ -279,12 +361,10 @@ method.
    or abundance distribution.}
 }
 \details{
-filterLowAbundance(): By default, gene/transcript with 0 count 
-are removed from the data. The function then
-computes the count per million or read (CPM) for each gene 
-in each sample and gives by
-genes the number of sample(s) which are over the cpmCutoff 
-(NbOfsample_over_cpm).
+Low count filtering procedure: By default, transcript with 0 count 
+are removed from the data. The function then computes the count per million 
+or read (CPM) for each gene in each sample and gives by genes the number of 
+sample(s) which are over the cpmCutoff (NbOfsample_over_cpm).
 Then Two filtering strategies are proposed:
 \itemize{
 \item NbConditions:  keep gene if the NbOfsample_over_cpm >= NbConditions 
@@ -292,13 +372,18 @@ Then Two filtering strategies are proposed:
 \item filterByExpr: the default filtering method implemented 
 in the edgeR filterByExpr() function. 
 }
+
+Missing value imputation: This approach, applied to proteomics and 
+metabolomics data, replaces missing values (0 or NA) with the minimum value 
+among all non-zero values. Additionally, variables with at least one 
+condition group without any missing values are retained without further filtering.
 }
 \section{Accessors}{
 
 
  
 \itemize{
-   \item getProcessedData: return a processed data matrix  
+   \item getProcessedData: return Rflomics object with a processed data  
    (filtering, normalization and/or transformation)}
 
  
@@ -318,6 +403,11 @@ in the edgeR filterByExpr() function.
 
  
 \itemize{
+   \item getSelectedSamples: return a vector of selected samples of a given 
+   omic dataset}
+
+ 
+\itemize{
    \item getCoeffNorm: return a named vector with normalization coefficients 
    of a given omic dataset}
 
@@ -325,6 +415,14 @@ in the edgeR filterByExpr() function.
 \itemize{
    \item getNormSettings: return a list of normalization settings 
    of a given omic dataset}
+
+ 
+\itemize{
+   \item setSelectedSamples: }
+
+ 
+\itemize{
+   \item isProcessedData: return }
 }
 
 \section{Plots}{
@@ -425,12 +523,13 @@ MAE <- runDataProcessing(MAE, SE.name = "protetest",
 # plotOmicsPCA(MAE[["RNAtest"]], raw="raw", groupColor = "imbibition")
 # plotOmicsPCA(MAE[["RNAtest"]], raw="norm", groupColor = "imbibition")
 
-# See runDataProcessing for an example that includes getProcessedData
 # See runDataProcessing for an example that includes getTransSettings
 # See runDataProcessing for an example that includes getFilterSettings
 # See runDataProcessing for an example that includes getFilteredFeatures
+# See runDataProcessing for an example that includes getSelectedSamples
 # See runDataProcessing for an example that includes getCoeffNorm
 # See runDataProcessing for an example that includes getNormSettings
+# See runDataProcessing for an example that includes setSelectedSamples
 # See runDataProcessing for an example that includes plotLibrarySize
 # See runDataProcessing for an example that includes plotDataDistribution
 # See runDataProcessing for an example that includes plotOmicsPCA
@@ -455,6 +554,4 @@ Plant Methods 16, 68 (2020).
 \link{plotLibrarySize}
 \link{plotDataDistribution}
 \link{plotOmicsPCA}
-
-edgeR::filterByExpr
 }

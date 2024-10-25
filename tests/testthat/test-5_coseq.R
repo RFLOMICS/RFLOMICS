@@ -40,11 +40,11 @@ MAE <- MAE |>
   # runDataProcessing(SE.name = "metatest", transformMethod = "log2", 
   #                   normMethod = "totalSum") |>
   # runDiffAnalysis(SE.name = "metatest",  method = "limmalmFit")   |>
-  # runDataProcessing(SE.name = "protetest", transformMethod = "none",
-  #                   normMethod = "median") |>
-  # runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")   |>
-  runDataProcessing(SE.name = "RNAtest", normMethod = "TMM")    |>
-  runDiffAnalysis(SE.name = "RNAtest", method = "edgeRglmfit")
+  # runDataProcessing(SE.name = "RNAtest", normMethod = "TMM")    |>
+  # runDiffAnalysis(SE.name = "RNAtest", method = "edgeRglmfit")   |>
+  runDataProcessing(SE.name = "protetest", transformMethod = "none",
+                    normMethod = "median") |>
+  runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")
 
 ## ---- Construction of data tables differential analysis : ----
 

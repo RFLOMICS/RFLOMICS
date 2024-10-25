@@ -8,7 +8,7 @@
 \alias{getAnalyzedDatasetNames,RflomicsMAE-method}
 \title{Get results from RFLOMICS object}
 \usage{
-\S4method{getAnalysis}{RflomicsMAE}(object, SE.name = NULL, name = NULL, subName = NULL)
+\S4method{getAnalysis}{RflomicsMAE}(object, name = NULL, subName = NULL)
 
 \S4method{getAnalysis}{RflomicsSE}(object, name = NULL, subName = NULL)
 
@@ -17,8 +17,6 @@
 \arguments{
 \item{object}{The RflomicsMAE or RflomicsSE object from which to extract
 the analysis.}
-
-\item{SE.name}{name of the experiment where the metadata should be added.}
 
 \item{name}{the name of element to add to metadata slot.}
 

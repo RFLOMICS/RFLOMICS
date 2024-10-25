@@ -80,10 +80,13 @@ contrastList <- Reduce(rbind, generateExpressionContrast(MAE))
 
 MAE <- MAE |>
     setSelectedContrasts(contrastList[c(3,6,25)]) |>
-    runTransformData(SE.name = "metatest", transformMethod = "log2") |>
-    runNormalization(SE.name = "metatest", normMethod = "median")    |>
-    runNormalization(SE.name = "protetest", normMethod = "median")   |>
-    runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")     |>
+    runDataProcessing(SE.name = "metatest", 
+                      transformMethod = "log2",
+                      normMethod = "median") |>
+    runDataProcessing(SE.name = "protetest", 
+                      transformMethod = "none",
+                      normMethod = "median") |>
+    runDiffAnalysis(SE.name = "metatest", method = "limmalmFit") |>
     runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")    
 
 # Integration using MOFA

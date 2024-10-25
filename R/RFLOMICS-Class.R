@@ -79,38 +79,34 @@ setClass(
 #' @param IntegrationAnalysis usually empty at this point: list of results
 #' for the integration. 
 #' @noRd
-setMethod(
-  f          = "initialize",
-  signature  = "RflomicsMAE",
-  definition = function(.Object,
-                        ExperimentList = MultiAssayExperiment::ExperimentList(), 
-                        colData        = S4Vectors::DataFrame(), 
-                        sampleMap      = S4Vectors::DataFrame(assay = factor(), primary = character(), colname = character()), 
-                        omicList       = list(),
-                        design         = list(),
-                        IntegrationAnalysis = list(),
-                        projectName    = character()
-  ) {
-    
-    .Object <-  callNextMethod(.Object, ExperimentList = ExperimentList, 
-                               colData = colData, sampleMap = sampleMap)
-    
-    Sys.setlocale('LC_TIME', 'C') # change for english
-    date <- format(Sys.time(), '%d %B %Y - %H:%M')
-    Sys.setlocale('LC_TIME') # return to default system time
-    
-    # initialization of metadata
-    .Object@metadata <- 
-      list("omicList"            = omicList,
-           "projectName"         = projectName,
-           "design"              = design,
-           "IntegrationAnalysis" = IntegrationAnalysis,
-           "date"                = date,
-           "sessionInfo"         = list(),
-           "rflomicsVersion"     = packageVersion('RFLOMICS'))
-    
-    return(.Object)
-  })
+RflomicsMAE <- function(ExperimentList = MultiAssayExperiment::ExperimentList(),
+                              colData        = S4Vectors::DataFrame(),
+                              sampleMap      = S4Vectors::DataFrame(assay = factor(), primary = character(), colname = character()),
+                              omicList       = list(),
+                              design         = list(),
+                              IntegrationAnalysis = list(),
+                              projectName    = character()) {
+  
+  # Création de l'objet en utilisant new() au lieu de redéfinir initialize
+  obj <- new("RflomicsMAE", ExperimentList = ExperimentList, colData = colData, sampleMap = sampleMap)
+  
+  # Initialisation des métadonnées
+  Sys.setlocale('LC_TIME', 'C') # Pour utiliser le format de date en anglais
+  date <- format(Sys.time(), '%d %B %Y - %H:%M')
+  Sys.setlocale('LC_TIME') # Restaurer le format de date original
+  
+  obj@metadata <- list(
+    "omicList"            = omicList,
+    "projectName"         = projectName,
+    "design"              = design,
+    "IntegrationAnalysis" = IntegrationAnalysis,
+    "date"                = date,
+    "sessionInfo"         = list(),
+    "rflomicsVersion"     = packageVersion('RFLOMICS')
+  )
+  
+  return(obj)
+}
 
 ##==== RflomicsSE Class ====
 
@@ -154,31 +150,31 @@ setClass(
 #' @seealso SummarizedExperiment
 #' @importFrom S4Vectors DataFrame
 #' @noRd
-setMethod(
-  f          = "initialize",
-  signature  = "RflomicsSE",
-  definition = function(.Object, 
-                        assays   = NULL,
-                        colData  = S4Vectors::DataFrame(),
-                        omicType = NULL,
-                        design   = list() , 
-                        DataProcessing = list() , 
-                        PCAlist        = list() , 
-                        DiffExpAnal    = list() ,      
-                        CoExpAnal      = list() , 
-                        DiffExpEnrichAnal = list() ,  
-                        CoExpEnrichAnal   = list()) {
-    
-    .Object <-  callNextMethod(.Object, assays = assays, colData = colData)
-    .Object@metadata <- list("omicType" = omicType , 
-                             "design"   = design , 
-                             "DataProcessing" = DataProcessing , 
-                             "PCAlist"        = PCAlist , 
-                             "DiffExpAnal"    = DiffExpAnal ,      
-                             "CoExpAnal"      = CoExpAnal , 
-                             "DiffExpEnrichAnal" = DiffExpEnrichAnal ,  
-                             "CoExpEnrichAnal"   = CoExpEnrichAnal)
-    
-    return(.Object)
-  }
-)
+RflomicsSE <- function(assays = NULL,
+                       colData  = S4Vectors::DataFrame(),
+                       omicType = NULL,
+                       design   = list(),
+                       DataProcessing = list(),
+                       PCAlist        = list(),
+                       DiffExpAnal    = list(),
+                       CoExpAnal      = list(),
+                       DiffExpEnrichAnal = list(),
+                       CoExpEnrichAnal   = list()) {
+  
+  # Création de l'objet en utilisant new() au lieu de redéfinir initialize
+  obj <- new("RflomicsSE", assays = assays, colData = colData)
+  
+  # Initialisation des métadonnées
+  obj@metadata <- list(
+    "omicType"           = omicType,
+    "design"             = design,
+    "DataProcessing"     = DataProcessing,
+    "PCAlist"            = PCAlist,
+    "DiffExpAnal"        = DiffExpAnal,
+    "CoExpAnal"          = CoExpAnal,
+    "DiffExpEnrichAnal"  = DiffExpEnrichAnal,
+    "CoExpEnrichAnal"    = CoExpEnrichAnal
+  )
+  
+  return(obj)
+}

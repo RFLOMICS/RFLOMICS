@@ -34,9 +34,9 @@
 \alias{getValidContrasts}
 \alias{getValidContrasts,RflomicsSE-method}
 \alias{getValidContrasts,RflomicsMAE-method}
-\alias{sumDiffExp}
-\alias{sumDiffExp,RflomicsSE-method}
-\alias{sumDiffExp,RflomicsMAE-method}
+\alias{getDiffStat}
+\alias{getDiffStat,RflomicsSE-method}
+\alias{getDiffStat,RflomicsMAE-method}
 \alias{getDiffAnalysesSummary}
 \alias{getDiffAnalysesSummary,RflomicsMAE-method}
 \title{Run Differential Expression Analysis and process results}
@@ -72,7 +72,7 @@
 
 \S4method{filterDiffAnalysis}{RflomicsSE}(object, p.adj.cutoff = 0.05, logFC.cutoff = 0)
 
-\S4method{filterDiffAnalysis}{RflomicsMAE}(object, SE.name, p.adj.cutoff = NULL, logFC.cutoff = NULL)
+\S4method{filterDiffAnalysis}{RflomicsMAE}(object, SE.name, p.adj.cutoff = 0.05, logFC.cutoff = 0)
 
 \S4method{setValidContrasts}{RflomicsSE}(object, contrastList = NULL)
 
@@ -114,12 +114,12 @@
   heatmapArgs = list()
 )
 
-\S4method{plotBoxplotDE}{RflomicsSE}(object, features = NULL, groupColor = "groups", raw = FALSE)
+\S4method{plotBoxplotDE}{RflomicsSE}(object, featureName = NULL, groupColor = "groups", raw = FALSE)
 
 \S4method{plotBoxplotDE}{RflomicsMAE}(
   object,
   SE.name,
-  features = NULL,
+  featureName = NULL,
   groupColor = "groups",
   raw = FALSE
 )
@@ -140,9 +140,9 @@
 
 \S4method{getValidContrasts}{RflomicsMAE}(object, omicName)
 
-\S4method{sumDiffExp}{RflomicsSE}(object)
+\S4method{getDiffStat}{RflomicsSE}(object)
 
-\S4method{sumDiffExp}{RflomicsMAE}(object, SE.name = NULL)
+\S4method{getDiffStat}{RflomicsMAE}(object, SE.name = NULL)
 
 \S4method{getDiffAnalysesSummary}{RflomicsMAE}(
   object,
@@ -201,7 +201,7 @@ on the heatmap.}
 \item{drawArgs, heatmapArgs}{named lists. Any additional parameter passed 
 to ComplexHeatmap::Heatmap or ComplexHeatmap::draw}
 
-\item{features}{variable name (gene/protein/metabolite name)}
+\item{featureName}{variable name (gene/protein/metabolite name)}
 
 \item{groupColor}{default to groups, indicate a variable in the design to
 color the boxplots accordingly.}
@@ -249,6 +249,8 @@ Objects are:
  \item contrasts: a data.table of the contrasts used for the differential 
  analysis
 }
+
+contrast matrix
 
 a data.frame with differential analyses summary
 }
@@ -308,7 +310,7 @@ recommended in the (Efstathiou *et al.*, 2017)
 
 
 \itemize{
-   \item sumDiffExp: Get summary table from diffExpAnalysis analysis}
+   \item getDiffStat: Get summary table from diffExpAnalysis analysis}
 
 
 \itemize{
