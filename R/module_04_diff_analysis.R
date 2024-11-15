@@ -213,8 +213,8 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     rea.values[[dataset]]$diffAnal   <- FALSE
     rea.values[[dataset]]$diffValid  <- FALSE
     rea.values[[dataset]]$coExpAnal  <- FALSE
-    rea.values[[dataset]]$diffAnnot  <- FALSE
-    rea.values[[dataset]]$coExpAnnot <- FALSE
+    rea.values[[dataset]]$DiffExp  <- FALSE
+    rea.values[[dataset]]$CoExp <- FALSE
     rea.values[[dataset]]$DiffValidContrast <- NULL
     
     #---- progress bar ----#
@@ -324,8 +324,8 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     
     rea.values[[dataset]]$diffValid  <- FALSE
     rea.values[[dataset]]$coExpAnal  <- FALSE
-    rea.values[[dataset]]$diffAnnot  <- FALSE
-    rea.values[[dataset]]$coExpAnnot <- FALSE
+    rea.values[[dataset]]$DiffExp  <- FALSE
+    rea.values[[dataset]]$CoExp <- FALSE
     
     session$userData$FlomicsMultiAssay <-
       resetRflomicsMAE(session$userData$FlomicsMultiAssay,

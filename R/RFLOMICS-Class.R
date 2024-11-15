@@ -60,53 +60,48 @@
 setClass(
   Class    = "RflomicsMAE",
   contains = "MultiAssayExperiment",
+  validity = function(object) {
+    metadata <- metadata(object)
+    
+    # check if metadat is list()
+    if (!is.list(metadata)) {
+      return("The 'metadata' slot must be a list.")
+    }
+    
+    # Vérification des éléments requis dans `metadata`
+    required_elements <- 
+      c("omicList", "projectName", "design", "IntegrationAnalysis",
+        "date","sessionInfo","rflomicsVersion")
+    
+    missing_elements <- setdiff(required_elements, names(metadata))
+    if (length(missing_elements) > 0) {
+      return(paste("The 'metadata' slot must contain the following elements:", 
+                   paste(missing_elements, collapse = ", ")))
+    }
+    
+    # Vérification des types des éléments
+    if (!is.character(metadata$projectName)) {
+      return("The 'projectName' in 'metadata' must be a single string.")
+    }
+    if (!inherits(metadata$date, "Date")) {
+      return("The 'date' in 'metadata' must be of class 'Date'.")
+    }
+    if (!inherits(metadata$rflomicsVersion, "package_version")) {
+      return("The 'rflomicsVersion' in 'metadata' must be a package_version.")
+    }
+    if (!is.list(metadata$omicList)) {
+      return("The 'omicList' in 'metadata' must be a list.")
+    }
+    if (!is.list(metadata$IntegrationAnalysis)) {
+      return("The 'IntegrationAnalysis' in 'metadata' must be a list.")
+    }
+    if (!is.list(metadata$design)) {
+      return("The 'design' in 'metadata' must be a list.")
+    }
+    
+    TRUE  
+  }
 )
-
-
-#' @title initialize
-#' @description Constructor for the RflomicsMAE class.
-#' @return An object of class \link{RflomicsMAE-class}
-#' @seealso MultiAssayExperiment
-#' @importFrom S4Vectors DataFrame
-#' @param ExperimentList Similar to MultiAssayExperiment, and experiment list. 
-#' @param colData Similar to MultiAssayExperiment, a data.frame or a list 
-#' containing all information about the samples
-#' @param sampleMap Similar to MultiAssayExperiment
-#' @param omicList list of omics data, each given by a dataframe-like object
-#' Expect to find sample in rows and variables in columns.
-#' @param projectName The name of the project. Is useful for report generation.
-#' @param design The experimental design. 
-#' @param IntegrationAnalysis usually empty at this point: list of results
-#' for the integration. 
-#' @noRd
-RflomicsMAE <- function(ExperimentList = MultiAssayExperiment::ExperimentList(),
-                              colData        = S4Vectors::DataFrame(),
-                              sampleMap      = S4Vectors::DataFrame(assay = factor(), primary = character(), colname = character()),
-                              omicList       = list(),
-                              design         = list(),
-                              IntegrationAnalysis = list(),
-                              projectName    = character()) {
-  
-  # Création de l'objet en utilisant new() au lieu de redéfinir initialize
-  obj <- new("RflomicsMAE", ExperimentList = ExperimentList, colData = colData, sampleMap = sampleMap)
-  
-  # Initialisation des métadonnées
-  Sys.setlocale('LC_TIME', 'C') # Pour utiliser le format de date en anglais
-  date <- format(Sys.time(), '%d %B %Y - %H:%M')
-  Sys.setlocale('LC_TIME') # Restaurer le format de date original
-  
-  obj@metadata <- list(
-    "omicList"            = omicList,
-    "projectName"         = projectName,
-    "design"              = design,
-    "IntegrationAnalysis" = IntegrationAnalysis,
-    "date"                = date,
-    "sessionInfo"         = list(),
-    "rflomicsVersion"     = packageVersion('RFLOMICS')
-  )
-  
-  return(obj)
-}
 
 ##==== RflomicsSE Class ====
 
@@ -141,40 +136,26 @@ RflomicsMAE <- function(ExperimentList = MultiAssayExperiment::ExperimentList(),
 setClass(
   Class    = "RflomicsSE",
   contains = "SummarizedExperiment",
+  validity = function(object) {
+    metadata <- metadata(object)
+    
+    # check if metadat is list()
+    if (!is.list(metadata)) {
+      return("The 'metadata' slot must be a list.")
+    }
+    
+    # Vérification des éléments requis dans `metadata`
+    required_elements <- 
+      c("omicType","design","DataProcessing","PCAlist","DiffExpAnal",   
+        "CoExpAnal","DiffExpEnrichAnal", "CoExpEnrichAnal")
+    
+    missing_elements <- setdiff(required_elements, names(metadata))
+    if (length(missing_elements) > 0) {
+      return(paste("The 'metadata' slot must contain the following elements:", 
+                   paste(missing_elements, collapse = ", ")))
+    }
+    
+    TRUE  
+  }
 )
 
-#' @title initialize
-#' @description
-#' Constructor for the RflomicsSE class.
-#' @return An object of class \link{RflomicsSE-class}
-#' @seealso SummarizedExperiment
-#' @importFrom S4Vectors DataFrame
-#' @noRd
-RflomicsSE <- function(assays = NULL,
-                       colData  = S4Vectors::DataFrame(),
-                       omicType = NULL,
-                       design   = list(),
-                       DataProcessing = list(),
-                       PCAlist        = list(),
-                       DiffExpAnal    = list(),
-                       CoExpAnal      = list(),
-                       DiffExpEnrichAnal = list(),
-                       CoExpEnrichAnal   = list()) {
-  
-  # Création de l'objet en utilisant new() au lieu de redéfinir initialize
-  obj <- new("RflomicsSE", assays = assays, colData = colData)
-  
-  # Initialisation des métadonnées
-  obj@metadata <- list(
-    "omicType"           = omicType,
-    "design"             = design,
-    "DataProcessing"     = DataProcessing,
-    "PCAlist"            = PCAlist,
-    "DiffExpAnal"        = DiffExpAnal,
-    "CoExpAnal"          = CoExpAnal,
-    "DiffExpEnrichAnal"  = DiffExpEnrichAnal,
-    "CoExpEnrichAnal"    = CoExpEnrichAnal
-  )
-  
-  return(obj)
-}

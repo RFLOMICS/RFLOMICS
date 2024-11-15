@@ -19,7 +19,6 @@ knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
   echo = TRUE,
-  eval = FALSE,
   comment = "#>"
 )
 ```
@@ -286,14 +285,15 @@ The results can be viewed using the `getEnrichRes` method, a summary of the numb
 ```{r enrich}
 
 MAE <- runAnnotationEnrichment(MAE, SE.name = "protetest",
-                               list_args = list(OrgDb = "org.At.tair.db",
-                                                 keyType = "TAIR",
-                                                 pvalueCutoff = 0.05),
-                                from = "DiffExp", database = "GO",
-                                domain = "CC")
+                               OrgDb = "org.At.tair.db",
+                               keyType = "TAIR",
+                               pvalueCutoff = 0.05,
+                               from = "DiffExp", 
+                               database = "GO",
+                               domain = "CC")
 
 results <- getEnrichRes(MAE[["protetest"]],
-                         from = "diffexp", database = "GO")
+                         from = "DiffExp", database = "GO")
 
 sumORA(MAE[["protetest"]], from = "DiffExp", database = "GO")
 

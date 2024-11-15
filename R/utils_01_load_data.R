@@ -62,7 +62,7 @@ createRflomicsMAE <- function(projectName = NULL,
   omicsDataClass <- class(omicsData)
   if(!omicsDataClass %in% c("list", "MultiAssayExperiment"))
     stop("The omicsData argument must be of class list or MultiAssayExperiment.")
-
+  
   ## => omicsNames
   if(is.null(omicsNames)){
     if(is.null(names(omicsData))) 
@@ -203,11 +203,11 @@ createRflomicsMAE <- function(projectName = NULL,
   # Create the List.Factors list with the choosen level of 
   # reference for each factor
   names(typeList) <- names(ExpDesign)
-
+  
   Design <- list(Factors.Type  = typeList, 
                  Model.formula = vector(), 
                  Contrasts.Sel = data.frame())
-
+  
   ExpDesign   <- mutate(ExpDesign, samples=row.names(ExpDesign)) |>
     unite("groups", all_of(factorBio), sep = "_", remove = FALSE)
   
@@ -233,11 +233,11 @@ createRflomicsMAE <- function(projectName = NULL,
     
     #### run PCA for raw count
     SummarizedExperimentList[[data]] <- runOmicsPCA(RflomicsSE, raw = TRUE)
-
+    
     # metadata for sampleMap for RflomicsMAE
     listmap[[data]] <- data.frame(
-      primary = as.vector(SummarizedExperimentList[[data]]@colData$samples),
-      colname = as.vector(SummarizedExperimentList[[data]]@colData$samples),
+      primary = as.vector(colData(SummarizedExperimentList[[data]])$samples),
+      colname = as.vector(colData(SummarizedExperimentList[[data]])$samples),
       stringsAsFactors = FALSE)
     
     colnames <- c(names(omicList[[omicType]]), k)
@@ -290,7 +290,7 @@ RflomicsMAE <- function(experiments = ExperimentList(),
                           primary = character(), 
                           colname = character()),
                         omicList       = list(),
-                        projectName    = NULL,
+                        projectName    = character(),
                         design         = list(),
                         IntegrationAnalysis = list()){
   
@@ -304,19 +304,24 @@ RflomicsMAE <- function(experiments = ExperimentList(),
     MAE <- MultiAssayExperiment(experiments, colData, sampleMap)
   }
   
-  rflomicsMAE <- new("RflomicsMAE")
-  for(slot in c("ExperimentList", "colData", "sampleMap", "drops")) {
-    slot(rflomicsMAE, slot) <- slot(MAE, slot)
-  }
-  
   # Sys.setlocale('LC_TIME', 'C') # change for english
   # date <- format(Sys.time(), '%d %B %Y - %H:%M')
   # Sys.setlocale('LC_TIME') # return to default system time
   
-  rflomicsMAE@metadata$omicList <- omicList
-  rflomicsMAE@metadata$projectName <- projectName
-  rflomicsMAE@metadata$design <- design
-  rflomicsMAE@metadata$IntegrationAnalysis <- IntegrationAnalysis
+  metadata <- list(
+    "omicList"            = omicList,
+    "projectName"         = projectName,
+    "design"              = design,
+    "IntegrationAnalysis" = IntegrationAnalysis,
+    "date"                = Sys.Date(),
+    "sessionInfo"         = list(),
+    "rflomicsVersion"     = packageVersion('RFLOMICS')
+  )
+  
+  rflomicsMAE <- new("RflomicsMAE", metadata = metadata)
+  for(slot in c("ExperimentList", "colData", "sampleMap", "drops")) {
+    slot(rflomicsMAE, slot) <- slot(MAE, slot)
+  }
   
   return(rflomicsMAE)
 }
@@ -425,7 +430,7 @@ RflomicsSE <- function(assays = NULL, colData = NULL,
     slot(rflomicsSE, slot) <- slot(SE, slot)
   }
   
-  rflomicsSE@metadata <- 
+  metadata(rflomicsSE) <- 
     list("omicType" = omicType , 
          "design"   = design , 
          "DataProcessing" = DataProcessing , 

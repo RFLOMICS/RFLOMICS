@@ -312,7 +312,6 @@ setMethod(
                           factorBio = factorBio, 
                           contrastList = contrastList$contrast, 
                           modelFormula)
-    #object@metadata$design$Contrasts.Sel   <- contrastList
     rownames(Contrasts.Coeff) <- contrastList$contrastName
     
     return(Contrasts.Coeff)
@@ -423,19 +422,6 @@ setMethod(
     
     DiffExpAnal[["results"]][["stats"]] <- do.call("rbind", stat.vec)
     
-    # df_sim <- 
-    #   lapply(DiffExpAnal[["results"]][["TopDEF"]], function(tab) {
-    #     
-    #     tab <- tab[tab$Adj.pvalue < p.adj.cutoff,]
-    #     tab <- tab[abs(tab$logFC) > logFC.cutoff,]
-    #     
-    #     return(c("All" = nrow(tab),
-    #              "Up" = nrow(tab %>% filter(logFC > 0)),
-    #              "Down" = nrow(tab %>% filter(logFC < 0))
-    #     ))
-    #   })
-    # return(do.call("rbind", df_sim))
-    
     object <- 
       setElementToMetadata(object,
                            name = "DiffExpAnal", 
@@ -494,7 +480,8 @@ setMethod(
 setMethod(
   f          = "setValidContrasts",
   signature  = "RflomicsSE",
-  definition = function(object, contrastList=NULL){
+  definition = function(object, 
+                        contrastList=NULL){
     
     unselectedContrasts <- 
       contrastList$contrastName[!contrastList$contrastName %in% 
@@ -504,7 +491,7 @@ setMethod(
       stop("These contrasts ", paste0(unselectedContrasts, collapse = ", "), 
            " are not recognized.")
     
-    object@metadata$DiffExpAnal[["results"]][["Validcontrasts"]] <- 
+    metadata(object)[["DiffExpAnal"]][["results"]][["Validcontrasts"]] <- 
       contrastList
     
     return(object)
@@ -518,7 +505,9 @@ setMethod(
 setMethod(
   f          = "setValidContrasts",
   signature  = "RflomicsMAE",
-  definition <- function(object, omicName=NULL, contrastList=NULL){
+  definition <- function(object, 
+                         omicName=NULL, 
+                         contrastList=NULL){
     
     if(!omicName %in% names(object)) 
       stop("This data name, ", omicName, ", does not exist in the your object")
@@ -863,45 +852,7 @@ setMethod(
     Labels <- getLabs4plot(object)
     title <- paste0(Labels$title, "\n", "Feature: ", featureName)
     x_lab <- Labels$x_lab
-    
-    # if (raw) {
-    #   if (object.DE@metadata$omicType != "RNAseq") {
-    #     
-    #     pseudo <- assay(object.DE)
-    #     # x_lab  <- featureName
-    #     # title  <- featureName
-    #     
-    #   } else {
-    #     pseudo <- log2(assay(object.DE) + 1)
-    #     
-    #     # x_lab  <- paste0("log2(", featureName, " data)")
-    #     # title  <- featureName
-    #   }
-    # } else{ 
-    #   if (object.DE@metadata$omicType != "RNAseq") {
-    #     
-    #     title <- featureName
-    #     # pseudo <- assay(object.DE)
-    #     # x_lab  <- paste0(featureName, " data")
-    #     
-    #     # if (.isTransformed(object.DE) && getTransSettings(object.DE)$method != "none") {
-    #     #   title  <- paste0("Transformed (", 
-    #     #                    getTransSettings(object.DE)$method,
-    #     #                    ") ", title)
-    #     # }
-    #     # if (.isNorm(object.DE) && getNormSettings(object.DE)$method != "none") {
-    #     #   title <- paste0(title, " - normalization: ", 
-    #     #                   getNormSettings(object.DE)$method)
-    #     # }  
-    #   } else {
-    #     
-    #     pseudo <- assay(object.DE) 
-    #     # title  <- featureName
-    #     # x_lab  <- paste0("log2(", featureName, " data)") 
-    #     
-    #   }
-    # }
-    # 
+
     pseudo <- assay(object.DE) 
     
     pseudo.gg <- melt(pseudo)
@@ -1130,7 +1081,7 @@ setMethod(
   signature  = "RflomicsSE",
   definition = function(object){
     
-    object@metadata$DiffExpAnal[["results"]][["Validcontrasts"]]
+    metadata(object)[["DiffExpAnal"]][["results"]][["Validcontrasts"]]
   })
 
 #' @rdname runDiffAnalysis

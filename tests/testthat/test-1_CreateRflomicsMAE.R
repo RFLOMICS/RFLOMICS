@@ -115,7 +115,7 @@ test_that("test SE metadtata", {
   
   # PCAlist
   expect_no_error(getAnalysis(MAE[[SE]], name = "PCAlist", subName = "raw"))
-  expect_error(getAnalysis(MAE[[SE]], name = "PCAlist", subName = "norm"))
+  expect_null(getAnalysis(MAE[[SE]], name = "PCAlist", subName = "norm"))
   
   # Analyses
   expect_equal(getAnalysis(MAE[[SE]], name = "DiffExpAnal"),       list())

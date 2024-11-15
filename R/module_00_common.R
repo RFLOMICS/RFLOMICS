@@ -144,7 +144,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
           
           p.list <- getAnnotAnalysesSummary(
             session$userData$FlomicsMultiAssay,
-            from = "DiffExpEnrichAnal",
+            from = "DiffExp",
             matrixType = "presence"
           )
           
@@ -206,7 +206,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
           
           p.list <- getAnnotAnalysesSummary(
             session$userData$FlomicsMultiAssay,
-            from = "CoExpEnrichAnal",
+            from = "CoExp",
             matrixType = "presence"
           )
           

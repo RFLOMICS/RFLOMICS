@@ -25,7 +25,7 @@ NULL
 setMethod(f          = "getProjectName",
           signature  = "RflomicsMAE",
           definition <- function(object){
-            return(object@metadata$projectName)
+            return(metadata(object)$projectName)
           })
 
 
@@ -41,7 +41,7 @@ setMethod(f          = "getDesignMat",
           signature  = "RflomicsMAE",
           definition <- function(object){
             
-            return(as.data.frame(object@colData))
+            return(as.data.frame(colData(object)))
           })
 
 #' @name getDesignMat,RflomicsSE-method
@@ -55,7 +55,7 @@ setMethod(f          = "getDesignMat",
           signature  = "RflomicsSE",
           definition <- function(object){
             
-            return(as.data.frame(object@colData))
+            return(as.data.frame(colData(object)))
           })
 
 ## ---- getDatasetNames: get experiment names from RflomicsMAE object ----
@@ -71,7 +71,7 @@ setMethod(f          = "getDatasetNames",
           signature  = "RflomicsMAE",
           definition <- function(object){
             
-            ExperimentNames <- unlist(object@metadata$omicList)
+            ExperimentNames <- unlist(metadata(object)$omicList)
             names(ExperimentNames) <- NULL
             
             return(ExperimentNames)
@@ -89,7 +89,7 @@ setMethod(f          = "getDatasetNames",
           signature  = "RflomicsSE",
           definition <- function(object){
             
-            return(names(object@metadata$omicType))
+            return(names(metadata(object)$omicType))
           })
 
 ## ---- getOmicsTypes ----
@@ -103,22 +103,23 @@ setMethod(f          = "getDatasetNames",
 #' \itemize{
 #'    \item getOmicsTypes: return a named vector with omics type of each 
 #'    dataset ("RNAseq", "proteomics", "metabolomics")}
-setMethod(f          = "getOmicsTypes",
-          signature  = "RflomicsMAE",
-          definition <- function(object){
-            
-            OmicsTypes <- lapply(names(object@metadata$omicList), function(x){ 
-              
-              datasetNames <- object@metadata$omicList[[x]]
-              datasetType  <- rep(x, length(datasetNames))
-              names(datasetType) <- datasetNames
-              
-              return(datasetType)
-              
-            }) |> reduce(c)
-            
-            return(OmicsTypes)
-          })
+setMethod(
+  f          = "getOmicsTypes",
+  signature  = "RflomicsMAE",
+  definition <- function(object){
+    
+    OmicsTypes <- lapply(names(metadata(object)$omicList), function(x){ 
+      
+      datasetNames <- metadata(object)$omicList[[x]]
+      datasetType  <- rep(x, length(datasetNames))
+      names(datasetType) <- datasetNames
+      
+      return(datasetType)
+      
+    }) |> reduce(c)
+    
+    return(OmicsTypes)
+  })
 
 
 #' @name getOmicsTypes,RflomicsSE-method
@@ -129,12 +130,13 @@ setMethod(f          = "getOmicsTypes",
 #' \itemize{
 #'    \item getOmicsTypes: return a named vector with omics type of dataset 
 #'    ("RNAseq", "proteomics", "metabolomics")}
-setMethod(f          = "getOmicsTypes",
-          signature  = "RflomicsSE",
-          definition <- function(object){
-            
-            return(object@metadata$omicType)
-          })
+setMethod(
+  f          = "getOmicsTypes",
+  signature  = "RflomicsSE",
+  definition <- function(object){
+    
+    return(metadata(object)$omicType)
+  })
 
 
 ## ---- getFactorNames:  get Factor names ----
@@ -146,12 +148,13 @@ setMethod(f          = "getOmicsTypes",
 #' @section Accessors:
 #' \itemize{
 #'    \item getFactorNames: return a vector with the experimental factor names.}
-setMethod(f          = "getFactorNames",
-          signature  = "RflomicsMAE",
-          definition <- function(object){
-            
-            return(names(object@metadata$design$Factors.Type))
-          })
+setMethod(
+  f          = "getFactorNames",
+  signature  = "RflomicsMAE",
+  definition <- function(object){
+    
+    return(names(metadata(object)$design$Factors.Type))
+  })
 
 
 #' @name getFactorNames,RflomicsSE-method
@@ -161,12 +164,13 @@ setMethod(f          = "getFactorNames",
 #' @section Accessors:
 #' \itemize{
 #'    \item getFactorNames: return a vector with the experimental factor names.}
-setMethod(f          = "getFactorNames",
-          signature  = "RflomicsSE",
-          definition <- function(object){
-            
-            return(names(object@metadata$design$factorType))
-          })
+setMethod(
+  f          = "getFactorNames",
+  signature  = "RflomicsSE",
+  definition <- function(object){
+    
+    return(names(metadata(object)$design$factorType))
+  })
 
 ## ---- getFactorTypes:  get Factor types ----
 
@@ -178,12 +182,13 @@ setMethod(f          = "getFactorNames",
 #' \itemize{
 #'    \item getFactorTypes: return a named vector with experimental factor types 
 #'    ("bio", "batch" or "meta").}
-setMethod(f          = "getFactorTypes",
-          signature  = "RflomicsMAE",
-          definition <- function(object){
-            
-            return(object@metadata$design$Factors.Type)
-          })
+setMethod(
+  f          = "getFactorTypes",
+  signature  = "RflomicsMAE",
+  definition <- function(object){
+    
+    return(metadata(object)$design$Factors.Type)
+  })
 
 
 #' @name getFactorTypes,RflomicsSE-method
@@ -194,11 +199,12 @@ setMethod(f          = "getFactorTypes",
 #' \itemize{
 #'    \item getFactorTypes: return a named vector with experimental factor types 
 #'    ("bio", "batch" or "meta").}
-setMethod(f          = "getFactorTypes",
-          signature  = "RflomicsSE",
-          definition <- function(object){
-            return(object@metadata$design$factorType)
-          })
+setMethod(
+  f          = "getFactorTypes",
+  signature  = "RflomicsSE",
+  definition <- function(object){
+    return(metadata(object)$design$factorType)
+  })
 
 
 ## ---- getBioFactors:   get bio factor ----
@@ -210,16 +216,17 @@ setMethod(f          = "getFactorTypes",
 #' @section Accessors:
 #' \itemize{
 #'    \item getBioFactors: return a vector with the biological factor names.}
-setMethod(f          = "getBioFactors",
-          signature  = "RflomicsMAE",
-          definition <- function(object){
-            
-            factVect <- toupper(getFactorTypes(object))
-            res <- names(factVect)[factVect == "BIO"]
-            
-            if(length(res) == 0) return(NULL)
-            return(res)
-          })
+setMethod(
+  f          = "getBioFactors",
+  signature  = "RflomicsMAE",
+  definition <- function(object){
+    
+    factVect <- toupper(getFactorTypes(object))
+    res <- names(factVect)[factVect == "BIO"]
+    
+    if(length(res) == 0) return(NULL)
+    return(res)
+  })
 
 #' @name getBioFactors,RflomicsSE-method
 #' @exportMethod getBioFactors
@@ -228,16 +235,17 @@ setMethod(f          = "getBioFactors",
 #' @section Accessors:
 #' \itemize{
 #'    \item getBioFactors: return a vector with the biological factor names.}
-setMethod(f          = "getBioFactors",
-          signature  = "RflomicsSE",
-          definition <- function(object){
-            
-            factVect <- toupper(getFactorTypes(object))
-            res <- names(factVect)[factVect == "BIO"]
-            
-            if(length(res) == 0) return(NULL)
-            return(res)
-          })
+setMethod(
+  f          = "getBioFactors",
+  signature  = "RflomicsSE",
+  definition <- function(object){
+    
+    factVect <- toupper(getFactorTypes(object))
+    res <- names(factVect)[factVect == "BIO"]
+    
+    if(length(res) == 0) return(NULL)
+    return(res)
+  })
 
 ## ---- getBatchFactors: get batch factor names ----
 
@@ -248,16 +256,17 @@ setMethod(f          = "getBioFactors",
 #' @section Accessors:
 #' \itemize{
 #'    \item getBatchFactors: return a vector with the batch factor names.}
-setMethod(f          = "getBatchFactors",
-          signature  = "RflomicsMAE",
-          definition <- function(object){
-            
-            factVect <- toupper(getFactorTypes(object))
-            res <- names(factVect)[factVect == "BATCH"]
-            
-            if(length(res) == 0) return(NULL)
-            return(res)
-          })
+setMethod(
+  f          = "getBatchFactors",
+  signature  = "RflomicsMAE",
+  definition <- function(object){
+    
+    factVect <- toupper(getFactorTypes(object))
+    res <- names(factVect)[factVect == "BATCH"]
+    
+    if(length(res) == 0) return(NULL)
+    return(res)
+  })
 
 
 #' @name getBatchFactors,RflomicsSE-method
@@ -266,16 +275,17 @@ setMethod(f          = "getBatchFactors",
 #' @section Accessors:
 #' \itemize{
 #'    \item getBatchFactors: return a vector with the batch factor names.}
-setMethod(f          = "getBatchFactors",
-          signature  = "RflomicsSE",
-          definition <- function(object){
-            
-            factVect <- toupper(getFactorTypes(object))
-            res <- names(factVect)[factVect == "BATCH"]
-            
-            if(length(res) == 0) return(NULL)
-            return(res)
-          })
+setMethod(
+  f          = "getBatchFactors",
+  signature  = "RflomicsSE",
+  definition <- function(object){
+    
+    factVect <- toupper(getFactorTypes(object))
+    res <- names(factVect)[factVect == "BATCH"]
+    
+    if(length(res) == 0) return(NULL)
+    return(res)
+  })
 
 ## ---- getMetaFactors:  get meta Factor names ----
 
@@ -286,16 +296,17 @@ setMethod(f          = "getBatchFactors",
 #' @section Accessors:
 #' \itemize{
 #'    \item getMetaFactors: return a vector with the metadata factor names.}
-setMethod(f          = "getMetaFactors",
-          signature  = "RflomicsMAE",
-          definition <- function(object){
-            
-            factVect <- toupper(getFactorTypes(object))
-            res <- names(factVect)[factVect == "META"]
-            
-            if(length(res) == 0) return(NULL)
-            return(res)
-          })
+setMethod(
+  f          = "getMetaFactors",
+  signature  = "RflomicsMAE",
+  definition <- function(object){
+    
+    factVect <- toupper(getFactorTypes(object))
+    res <- names(factVect)[factVect == "META"]
+    
+    if(length(res) == 0) return(NULL)
+    return(res)
+  })
 
 
 #' @name getMetaFactors,RflomicsSE-method
@@ -305,16 +316,17 @@ setMethod(f          = "getMetaFactors",
 #' @section Accessors:
 #' \itemize{
 #'    \item getMetaFactors: return a vector with the metadata factor names.}
-setMethod(f          = "getMetaFactors",
-          signature  = "RflomicsSE",
-          definition <- function(object){
-            
-            factVect <- toupper(getFactorTypes(object))
-            res <- names(factVect)[factVect == "META"]
-            
-            if(length(res) == 0) return(NULL)
-            return(res)
-          })
+setMethod(
+  f          = "getMetaFactors",
+  signature  = "RflomicsSE",
+  definition <- function(object){
+    
+    factVect <- toupper(getFactorTypes(object))
+    res <- names(factVect)[factVect == "META"]
+    
+    if(length(res) == 0) return(NULL)
+    return(res)
+  })
 
 ## ---- getRflomicsSE:   get RflomicsSE object of one omic dataset ----
 
@@ -327,14 +339,16 @@ setMethod(f          = "getMetaFactors",
 #' \itemize{
 #'    \item getRflomicsSE: return a \link{RflomicsSE} object with selected 
 #'    dataset}
-setMethod(f          = "getRflomicsSE",
-          signature  = "RflomicsMAE",
-          definition <- function(object, datasetName = NULL){
-            
-            if(is.null(datasetName)) return(NULL)
-            
-            return(object[[datasetName]])
-          })
+setMethod(
+  f          = "getRflomicsSE",
+  signature  = "RflomicsMAE",
+  definition <- function(object, 
+                         datasetName = NULL){
+    
+    if(is.null(datasetName)) return(NULL)
+    
+    return(object[[datasetName]])
+  })
 
 ## ---- getFactorModalities: ----
 
@@ -347,15 +361,16 @@ setMethod(f          = "getRflomicsSE",
 #' \itemize{
 #'    \item getFactorModalities: return a vector with the modality names of 
 #'    selected factor.}
-setMethod(f          = "getFactorModalities",
-          signature  = "RflomicsMAE",
-          definition <- function(object, factorName){
-            
-            if(is.null(factorName)) return(NULL)
-            if(!factorName %in% getFactorNames(object)) return(NULL) 
-            
-            return(levels(getDesignMat(object)[[factorName]]))
-          })
+setMethod(
+  f          = "getFactorModalities",
+  signature  = "RflomicsMAE",
+  definition <- function(object, factorName){
+    
+    if(is.null(factorName)) return(NULL)
+    if(!factorName %in% getFactorNames(object)) return(NULL) 
+    
+    return(levels(getDesignMat(object)[[factorName]]))
+  })
 
 #' @name getFactorModalities,RflomicsSE-method
 #' @aliases getFactorModalities,RflomicsSE-method
@@ -366,15 +381,16 @@ setMethod(f          = "getFactorModalities",
 #' \itemize{
 #'    \item getFactorModalities: return a vector with the modality names of 
 #'    selected factor.}
-setMethod(f          = "getFactorModalities",
-          signature  = "RflomicsSE",
-          definition <- function(object, factorName){
-            
-            if(is.null(factorName)) return(NULL)
-            if(!factorName %in% getFactorNames(object)) return(NULL) 
-            
-            return(levels(getDesignMat(object)[[factorName]]))
-          })
+setMethod(
+  f          = "getFactorModalities",
+  signature  = "RflomicsSE",
+  definition <- function(object, factorName){
+    
+    if(is.null(factorName)) return(NULL)
+    if(!factorName %in% getFactorNames(object)) return(NULL) 
+    
+    return(levels(getDesignMat(object)[[factorName]]))
+  })
 
 ## ---- subRflomicsMAE:  subset a RflomicsMAE from ----
 
@@ -387,20 +403,21 @@ setMethod(f          = "getFactorModalities",
 #'    datasets.}
 #' @param omicNames dataset name.
 #' @exportMethod subRflomicsMAE
-setMethod(f          = "subRflomicsMAE",
-          signature  = "RflomicsMAE",
-          definition <- function(object, omicNames = NULL){
-            
-            if(is.null(omicNames)) return(object)
-            dataset.names <- names(object)
-            
-            if(!all(omicNames %in% dataset.names)) return(NULL)
-            
-            object.sub <- .tryCatch_rflomics(object[,, omicNames])
-            if(!is.null(object.sub$error)) stop(object.sub$error)
-            
-            return(object.sub$result)
-          })
+setMethod(
+  f          = "subRflomicsMAE",
+  signature  = "RflomicsMAE",
+  definition <- function(object, omicNames = NULL){
+    
+    if(is.null(omicNames)) return(object)
+    dataset.names <- names(object)
+    
+    if(!all(omicNames %in% dataset.names)) return(NULL)
+    
+    object.sub <- .tryCatch_rflomics(object[,, omicNames])
+    if(!is.null(object.sub$error)) stop(object.sub$error)
+    
+    return(object.sub$result)
+  })
 
 
 # ---- PLOTS ----
@@ -419,59 +436,71 @@ setMethod(f          = "subRflomicsMAE",
 #' @exportMethod plotDataOverview
 #' @examples
 #' # See createRflomicsMAE for an example that includes plotDataOverview
-setMethod(f         = "plotDataOverview",
-          signature = "RflomicsMAE",
-          definition <- function(object, omicNames=NULL, realSize=FALSE){
-            
-            if(length(object) == 0) stop("object is NULL")
-            
-            object <- subRflomicsMAE(object, omicNames)
-            
-            if(is.null(object)) return(NULL)
-            
-            Groups <- getDesignMat(object)
-            
-            nb_entities <- lapply(names(object), function(SE){ dim(object[[SE]])[1] }) %>% unlist()
-            names(nb_entities) <- names(object)
-            
-            data <- data.frame(nb_entities = nb_entities, assay = names(nb_entities)) %>%
-              full_join(data.frame(object@sampleMap), by="assay") %>%
-              mutate(y.axis = paste0(assay, "\n", "n=", nb_entities)) %>% arrange(primary)
-            
-            data$primary <- factor(data$primary, levels = levels(Groups$samples)) 
-            
-            nb_entities_ord <- select(data, y.axis, nb_entities) %>% unique() %>% arrange(desc(nb_entities))
-            nb_entities_ord$nb_entities <- log(nb_entities_ord$nb_entities)
-            tmp.vec <- c(0)
-            breaks  <- vector()
-            for(i in seq_len(length(nb_entities_ord$nb_entities))){ 
-              tmp.vec[i+1] <- tmp.vec[i] + nb_entities_ord$nb_entities[i]
-              breaks[i] <- tmp.vec[i] + nb_entities_ord$nb_entities[i]/2 
-            } 
-            
-            switch (as.character(realSize),
-                    "TRUE"  = {
-                      p <- ggplot(data, aes(x=primary, y=log(nb_entities))) +
-                        geom_col(aes(fill = y.axis)) + 
-                        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-                              panel.background = element_blank(), axis.ticks = element_blank(), 
-                              axis.text.x = element_text(angle = 90, hjust = 1), legend.position="none",
-                              axis.text.y = element_text(hjust = 0)) +  
-                        labs(x=paste0("Samples (k=", length(unique(object@sampleMap$primary)), ")"), y="") +
-                        scale_y_continuous(breaks = (breaks), labels = nb_entities_ord$y.axis)
-                      
-                    },
-                    "FALSE" = {
-                      p <- ggplot(data, aes(x=primary, y=y.axis)) +
-                        geom_tile(aes(fill = y.axis), colour = "grey50") +
-                        theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-                              panel.background = element_blank(), axis.ticks = element_blank(), legend.position="none",
-                              axis.text.x = element_text(angle = 90, hjust = 1)) +
-                        labs(x=paste0("Samples (k=", length(unique(object@sampleMap$primary)), ")"), y="")
-                    }
-            )
-            return(p)
-          }) 
+setMethod(
+  f         = "plotDataOverview",
+  signature = "RflomicsMAE",
+  definition <- function(object, 
+                         omicNames=NULL, 
+                         realSize=FALSE){
+    
+    if(length(object) == 0) stop("object is NULL")
+    
+    object <- subRflomicsMAE(object, omicNames)
+    
+    if(is.null(object)) return(NULL)
+    
+    Groups <- getDesignMat(object)
+    
+    nb_entities <- 
+      lapply(names(object), function(SE){ 
+        dim(object[[SE]])[1] }) %>% 
+      unlist()
+    names(nb_entities) <- names(object)
+    
+    data <- 
+      data.frame(nb_entities = nb_entities, 
+                 assay = names(nb_entities)) %>%
+      full_join(data.frame(sampleMap(object)), by="assay") %>%
+      mutate(y.axis = paste0(assay, "\n", "n=", nb_entities)) %>% arrange(primary)
+    
+    data$primary <- factor(data$primary, levels = levels(Groups$samples)) 
+    
+    nb_entities_ord <- 
+      select(data, y.axis, nb_entities) %>% 
+      unique() %>% 
+      arrange(desc(nb_entities))
+    nb_entities_ord$nb_entities <- log(nb_entities_ord$nb_entities)
+    tmp.vec <- c(0)
+    breaks  <- vector()
+    for(i in seq_len(length(nb_entities_ord$nb_entities))){ 
+      tmp.vec[i+1] <- tmp.vec[i] + nb_entities_ord$nb_entities[i]
+      breaks[i] <- tmp.vec[i] + nb_entities_ord$nb_entities[i]/2 
+    } 
+    
+    switch (
+      as.character(realSize),
+      "TRUE"  = {
+        p <- ggplot(data, aes(x=primary, y=log(nb_entities))) +
+          geom_col(aes(fill = y.axis)) + 
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
+                panel.background = element_blank(), axis.ticks = element_blank(), 
+                axis.text.x = element_text(angle = 90, hjust = 1), legend.position="none",
+                axis.text.y = element_text(hjust = 0)) +  
+          labs(x=paste0("Samples (k=", length(unique(sampleMap(object)$primary)), ")"), y="") +
+          scale_y_continuous(breaks = (breaks), labels = nb_entities_ord$y.axis)
+        
+      },
+      "FALSE" = {
+        p <- ggplot(data, aes(x=primary, y=y.axis)) +
+          geom_tile(aes(fill = y.axis), colour = "grey50") +
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                panel.background = element_blank(), axis.ticks = element_blank(), legend.position="none",
+                axis.text.x = element_text(angle = 90, hjust = 1)) +
+          labs(x=paste0("Samples (k=", length(unique(sampleMap(object)$primary)), ")"), y="")
+      }
+    )
+    return(p)
+  }) 
 
 ## ---- plotConditionsOverview ----
 
@@ -489,7 +518,8 @@ setMethod(f         = "plotDataOverview",
 #' # See createRflomicsMAE for an example that includes plotConditionsOverview
 setMethod(f         = "plotConditionsOverview",
           signature = "RflomicsMAE",
-          definition <- function(object, omicNames = NULL){
+          definition <- function(object, 
+                                 omicNames = NULL){
             
             # check presence of bio factors
             if (!length(getBioFactors(object)) %in% seq_len(3)){ 

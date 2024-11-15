@@ -51,7 +51,7 @@ MAEtest <- runOmicsIntegration(MAE, preparedObject = mixObj,
 
 
 # Access mixOmics results:
-getMixOmics(MAEtest, response = "temperature")
+#getMixOmics(MAEtest, response = "temperature")
 getMixOmicsSettings(MAEtest)
 # mixOmics::plotIndiv(getMixOmics(MAEtest, response = "imbibition"))
 

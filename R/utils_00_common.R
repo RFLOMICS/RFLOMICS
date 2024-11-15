@@ -5,71 +5,9 @@
 # A. Hulot,
 # D. Charif
 
-# ---- DO NOT PLOT function ----
-
-#' @title doNotPlot
-#' @description
-#' Used mainly for the interface to check some conditions before actually 
-#' plotting said graph.
-#'
-#' @param expr An expression, usually producing a plot but not necessarily.
-#' @keywords internal
-#' @noRd
-#' @importFrom utils capture.output
-#'
-.doNotPlot <- function(expr) {
-  pdf(file = NULL)
-  out <- tryCatch(
-    {
-      capture.output(
-        suppressMessages(
-          eval(expr)
-        )
-      )
-    },
-    error = function(e) e,
-    warning = function(w) w
-  )
-  dev.off()
-  return(out)
-}
-
-
-#' @title doNotSpeak
-#' @description
-#' Used mainly for the interface to silence some functions.
-#'
-#' @param expr An expression, usually producing a warning.
-#' @keywords internal
-#' @noRd
-#'
-.doNotSpeak <- function(expr) {
-  capture.output(out <- tryCatch({
-    eval(expr)},
-    error = function(e) e,
-    warning = function(w) w
-  ))
-  return(out)
-}
-
-
-.addBSpopify <- function(label="", content="", title="", 
-                         color="black", placement="right",
-                         trigger = "click"){
-  
-  id <- paste0("id" , paste0(sample(letters, 4, replace = TRUE), 
-                             collapse = ""))
-  span(label,
-       popify(actionLink(id, icon("question-circle")), 
-              title = title, content = content,
-              trigger = trigger, placement = placement),
-       style = paste0("color:", color))
-}
-
 # ---- INTERNAL FUNCTIONS ----
 # ---- isContrastName : ----
 #' @title Check if character vectors are contrasts Names
-#'
 #' @param object a MAE object or a SE object (produced by Flomics). 
 #' If it's a RflomicsSE, expect to find
 #'  a slot of differential analysis.
@@ -78,39 +16,16 @@
 #' @noRd
 #' @keywords internal
 .isContrastName <- function(object, contrastName) {
-  df_contrasts <- getSelectedContrasts(object)
   
-  search_match <- lapply(contrastName, FUN = function(cn) {
-    grep(cn, df_contrasts$contrastName, fixed = TRUE)
-  })
-  search_success <- unlist(lapply(search_match, identical, integer(0))) 
-  # if TRUE, not a success at all.
+  SelectedContrasts <- getSelectedContrasts(object)
   
-  if (!any(search_success)) {
-    # Congratulations, it's a contrast name!
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
-}
-
-# ---- .getOrigin - get origin of a particular name ----
-#
-#' @title get origin of a name given a rflomics MAE
-#'
-#' @param object a RflomicsSE, produced by rflomics
-#' @param name name of the parameter to identify. For clusters, please
-#' specify cluster.1, cluster.2, etc.
-#' @return The origin of the name, one of Contrast, Tag or CoexCluster.
-#' @noRd
-#' @keywords internal
-
-.getOrigin <- function(object, name) {
+  if(nrow(SelectedContrasts) == 0) return(NULL)
   
-  if (.isContrastName(object, name)) return("Contrast")
-  if (.isClusterName(object, name)) return("CoexCluster")
+  SelectedContrasts <- SelectedContrasts$contrastName
   
-  return("NoOriginFound")
+  if(is.null(SelectedContrasts)) return(NULL)
+  
+  return(!any(!contrastName %in% SelectedContrasts))
 }
 
 # ---- isClusterName - Check if character vectors are tags Names : -----
@@ -126,31 +41,30 @@
 #' @importFrom coseq clusters
 #' @keywords internal
 .isClusterName <- function(object, clusterName) {
-  resClus <- object@metadata$CoExpAnal$coseqResults
   
-  if (is.null(resClus)) {
-    warning("No coseq results in this object")
-    return(FALSE) 
-  }
+  Cluster.list <- getCoexpClusters(object)
+  if(is.null(Cluster.list)) return(NULL)
   
-  clusterPoss <- unique(clusters(resClus))
+  return(!any(!clusterName %in% names(Cluster.list)))
+}
+
+# ---- .getOrigin - get origin of a particular name ----
+#
+#' @title get origin of a name given a rflomics MAE
+#'
+#' @param object a RflomicsSE, produced by rflomics
+#' @param name name of the parameter to identify. For clusters, please
+#' specify cluster.1, cluster.2, etc.
+#' @return The origin of the name, one of Contrast, Tag or CoexCluster.
+#' @noRd
+#' @keywords internal
+
+.getOrigin <- function(object, name) {
+
+  if (.isContrastName(object, name)) return("DiffExp")
+  if (.isClusterName(object, name)) return("CoExp")
   
-  if (is.integer(clusterName)){ 
-    clusterName <- paste("cluster", clusterName, sep = ".")
-  }
-  namesClust <- paste("cluster", clusterPoss, sep = ".")
-  
-  search_match <- unlist(lapply(clusterName, FUN = function(cn) {
-    grep(cn, namesClust, fixed = TRUE)
-  }))
-  search_success <- unlist(lapply(search_match, identical, integer(0))) 
-  # if TRUE, not a success at all.
-  
-  if (!any(search_success)) {
-    return(TRUE)
-  } else {
-    return(FALSE)
-  }
+  return("NoOriginFound")
 }
 
 # ---- tryCatch_rflomics - catch error, warning et message : -----
@@ -162,6 +76,7 @@
 #' @noRd
 #' @keywords internal
 .tryCatch_rflomics <- function(f) {
+  
   message_capture <- character()
   warning_capture <- character()
   
@@ -192,6 +107,42 @@
   return(result)
 }
 
+
+#' @title .tryRflomics
+#' @details
+#' This function comes from 
+#' https://stackoverflow.com/questions/4948361/how-do-i-save-warnings-and-errors-as-output-from-a-function
+#  The author indicated that he merged Martins solution 
+#  (https://stackoverflow.com/a/4952908/2161065) and
+#  the one from the R-help mailing list you get with demo(error.catching).
+#' @param expr The expression that has been to be evaluated.
+#' @return a named list
+#' \itemize{
+#' \item{\code{value:} }{The results of the expr evaluation or 
+#' NULL if an error occured }
+#' \item{\code{warning:} }{warning message or NULL}
+#' \item{\code{error:} }{error message or NULL}
+#' }
+#' @keywords internal
+#' @noRd
+
+.tryRflomics <- function(expr) {
+  warn <- err <- NULL
+  value <- withCallingHandlers(
+    tryCatch(expr,
+             error    = function(e){ err <- e
+             NULL
+             }),
+    warning = function(w){ warn <- w
+    invokeRestart("muffleWarning")}
+  )
+  
+  return(list(value = value,
+              warning = warn,
+              error = err)
+  )
+  
+}
 
 # ---- get package version  -----
 
@@ -343,7 +294,7 @@
   
   if(!is.null(subName)){
     if(!subName %in% names(results))
-      stop("There are no analysis results with this name:", subName)
+      return(NULL)
     
     results <- results[[subName]]
   }

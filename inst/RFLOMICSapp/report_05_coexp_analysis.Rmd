@@ -14,24 +14,25 @@ opts_chunk$set(
   fig.path=coexpDir[[data]]
 )
 
-dataset.SE <- getRflomicsSE(rflomics.MAE, data)
-variableName   <- RFLOMICS:::.omicsDic(dataset.SE)[["variableName"]]
-isResults <- dataset.SE@metadata$CoExpAnal[["results"]]
+dataset.SE   <- getRflomicsSE(rflomics.MAE, data)
+variableName <- RFLOMICS:::.omicsDic(dataset.SE)[["variableName"]]
+CoExpAnal    <- getAnalysis(dataset.SE, name = "CoExpAnal", subName = "results")
+isResults    <- CoExpAnal[["results"]]
 ```
 
 * **Methods:**
 
 The co-expression analysis was carried out using 
 **coseq R package** (version `r RFLOMICS:::.getPackageInfo(rflomics.MAE, "coseq")`) [@coseq2018] on 
-**`r length(getDEList(dataset.SE, getCoexpSettings(dataset.SE)$gene.list.names, getCoexpSettings(dataset.SE)$merge.type))`
+**`r length(getDEList(dataset.SE, getCoexpSettings(dataset.SE)$gene.list.names, getCoexpSettings(dataset.SE)$merge))`
 `r variableName`** from
 the
-**`r getCoexpSettings(dataset.SE)$merge.type`** of the following 
+**`r getCoexpSettings(dataset.SE)$merge`** of the following 
 contrast lists:
 
 ```{r, class.output='scroll-200'}
 
-gene.list.name <- getCoexpSettings(dataset.SE)$gene.list.name
+gene.list.name <- getCoexpSettings(dataset.SE)$contrastNames
 
 coExptag <- 
   stat_summary[which(stat_summary$contrastName %in% gene.list.name),
@@ -78,7 +79,7 @@ cat("\n", MM, "\n")
 
 `r getCoexpSettings(dataset.SE)$replicates.nb` 
 technical replicates were performed for each K (number of clusters) in 
-`r getCoexpSettings(dataset.SE)$K.range`.
+`r getCoexpSettings(dataset.SE)$K`.
 
 <br>
 
@@ -88,7 +89,7 @@ technical replicates were performed for each K (number of clusters) in
 
 The best number of cluster (K) selected via the Integrated Completed
 Likelihood (ICL) criterion was
-`r metadata(dataset.SE)[["CoExpAnal"]]$cluster.nb`.
+`r CoExpAnal[["cluster.nb"]]`.
 
 #### Cluster profile
 
@@ -103,7 +104,7 @@ par(mar = c(4, 4, .5, .1))
 plot.coseq.res$boxplots + theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
-`r if(length(getCoexpSettings(dataset.SE)$gene.list.names) == 1 || getCoexpSettings(dataset.SE)$merge.type != "union") {"\\begin{comment}"}`
+`r if(length(getCoexpSettings(dataset.SE)$gene.list.names) == 1 || getCoexpSettings(dataset.SE)$merge != "union") {"\\begin{comment}"}`
 
 #### Cluster composition
 
@@ -116,7 +117,7 @@ par(mar = c(4, 4, .5, .1))
 plotCoseqContrasts(dataset.SE)
 ```
 
-`r if(length(getCoexpSettings(dataset.SE)$gene.list.names) == 1 || getCoexpSettings(dataset.SE)$merge.type != "union") {"\\end{comment}"}`
+`r if(length(getCoexpSettings(dataset.SE)$gene.list.names) == 1 || getCoexpSettings(dataset.SE)$merge != "union") {"\\end{comment}"}`
 
 #### ICL (QC)
 
@@ -143,9 +144,9 @@ plot.coseq.res$probapost_barplots
 
 ```{r, eval=isResults}
 
-cosRes <- metadata(dataset.SE)$CoExpAnal$coseqResults@allResults
+cosRes <- CoExpAnal$coseqResults@allResults
 tab.clusters <- 
-  as.data.frame(cosRes[[which(names(cosRes) == names(metadata(dataset.SE)$CoExpAnal$cluster.nb))]])
+  as.data.frame(cosRes[[paste0("K=", CoExpAnal$cluster.nb)]])
 colNames <- names(tab.clusters)
 tab.clusters[["DEF"]] <- rownames(tab.clusters)
 tab.clusters[c("DEF",colNames)]

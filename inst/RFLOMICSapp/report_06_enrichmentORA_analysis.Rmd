@@ -26,7 +26,7 @@ for (ontology in names(annot.list[[data]])){
   
   out <- c(out, knit_child(paste0(
     path.package("RFLOMICS"),"/RFLOMICSapp/",
-    "report_06_enrichmentORA_per_domain.Rmd"), quiet=TRUE))
+    "report_06_enrichmentORA_per_database.Rmd"), quiet=TRUE))
 }
 asis_output(out)
 

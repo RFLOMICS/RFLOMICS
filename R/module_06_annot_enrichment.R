@@ -306,7 +306,7 @@
     id         = "DiffExpEnrichAnal",
     dataset    = dataset,
     database   = database,
-    listSource = "DiffExpEnrichAnal",
+    listSource = "DiffExp",
     rea.values = rea.values,
     input2     = input,
     local.rea.values = local.rea.values
@@ -317,7 +317,7 @@
     id         = "CoExpEnrichAnal",
     dataset    = dataset,
     database   = database,
-    listSource = "CoExpEnrichAnal",
+    listSource = "CoExp",
     rea.values = rea.values,
     input2     = input,
     local.rea.values = local.rea.values
@@ -359,16 +359,12 @@
     ns <- session$ns
     
     switch(listSource,
-           "DiffExpEnrichAnal" = {
+           "DiffExp" = {
              title <- "Summary"
-             fromAnnot <- "diffAnnot"
-             from <- "DiffExpAnal"
              datasetList <- "datasetDiffAnnot"
            },
-           "CoExpEnrichAnal" = {
+           "CoExp" = {
              title <- "Summary"
-             fromAnnot <- "coExpAnnot"
-             from <- "CoExpAnal"
              datasetList <- "datasetCoExAnnot"
            })
     
@@ -381,20 +377,16 @@
     output$enrichSummary <- .outEnrichSummary(session,
                                               rea.values,
                                               input,
-                                              fromAnnot,
-                                              title,
-                                              from,
                                               listSource,
+                                              title,
                                               dataset,
                                               database)
     output$AnnotResults <- .outAnnotResults(session,
                                             input,
                                             input2,
                                             rea.values,
-                                            fromAnnot,
-                                            dataset,
-                                            from,
                                             listSource,
+                                            dataset,
                                             database)
     
     # SERVER
@@ -438,20 +430,16 @@
           need(condition, message = messCond)
         })
         
-        # set list args
-        database <- "GO"
-        list_args <- list()
-        list_args[["OrgDb"]]        <- input2$db.select
-        list_args[["keyType"]]      <- input2$keytype.go
-        list_args[["pvalueCutoff"]] <- input2$pValue_GO
-        
         domain <- input2$ont.select
         if (input2$ont.select == "ALL")
           domain <- c("MF", "BP", "CC")
         
+        # set list args
         paramList <- list(
+          OrgDb        = input2$db.select,
+          keyType      = input2$keytype.go,
+          pvalueCutoff = input2$pValue_GO,
           database     = database,
-          list_args    = list_args,
           domain       = domain
         )
       }
@@ -490,15 +478,10 @@
         })
         
         # set list args
-        database <- "KEGG"
-        list_args <- list()
-        list_args[["organism"]] <- input2$organism
-        list_args[["keyType"]]  <- input2$keyTypeKEGG
-        list_args[["pvalueCutoff"]] <- input2$pValueKEGG
-        
-        # prevent multiple execution
         paramList <- list(
-          list_args    = list_args,
+          organism     = input2$organism,
+          keyType      = input2$keyTypeKEGG,
+          pvalueCutoff = input2$pValueKEGG,
           database     = database,
           domain       = "no-domain"
         )
@@ -534,8 +517,6 @@
         domain <- NULL
         annotation2 <- NULL
         col_domain_arg <- NULL
-        list_args <- list()
-        list_args[["pvalueCutoff"]] <- input2$pValue_custom
         
         annotation <-
           fread(
@@ -543,40 +524,24 @@
             sep = "\t",
             header = TRUE
           )
-        listCharRm <- c(".", " ", "")
-        annotation2 <- list()
         
-        # if column with domain exist
-        if (input2$col_domain != "") {
-          # remove column with domain == c(".", " ", "")
-          domainRm <-
-            intersect(annotation[[input2$col_domain]], listCharRm)
-          if (length(domainRm) != 0) {
-            annotation <- filter(annotation,
-                                 !get(input2$col_domain) %in% listCharRm)
-          }
-          
-          annotation2[["domain"]] <-
-            annotation[[input2$col_domain]]
-          domain <- unique(annotation2$domain)
-          col_domain_arg <- "domain"
-        }
+        annotation <- rename(annotation, 
+                             gene = input2$col_geneName,
+                             term = input2$col_termID)
         
-        annotation2[["gene"]] <-
-          annotation[[input2$col_geneName]]
-        annotation2[["term"]] <- annotation[[input2$col_termID]]
-        if (input2$col_termName != "") {
-          annotation2[["name"]] <- annotation[[input2$col_termName]]
-        }
-        annotation2 <- data.frame(annotation2)
+        if (input2$col_domain != "")
+          annotation <- rename(annotation, 
+                               domain = input2$col_domain)
+        
+        if (input2$col_termName != "")
+          annotation <- rename(annotation, 
+                               name = input2$col_termName)
         
         ##
         paramList <- list(
-          list_args    = list_args,
-          database     = "custom",
-          domain       = domain,
-          annot        = annotation2,
-          col_domain   = col_domain_arg
+          pvalueCutoff = input2$pValue_custom,
+          database     = database,
+          annotation   = annotation
         )
       }
       
@@ -596,55 +561,30 @@
       # ---- Annotation on diff results: ----
       # run analysis
       messList <- switch(listSource,
-                         "DiffExpEnrichAnal" = "differential expression",
-                         "CoExpEnrichAnal" = "co-expression clusters")
-      message("[RFLOMICS] # 06- ",
-              database,
-              " Enrichment Analysis of ",
-              messList ,
-              " lists from ",
-              dataset)
+                         "DiffExp" = "differential expression",
+                         "CoExp" = "co-expression clusters")
+      
+      message("[RFLOMICS] # 06- ", database,
+              " Enrichment Analysis of ", messList ,
+              " lists from ", dataset)
       
       #---- progress bar ----#
       progress$inc(5 / 10, detail = paste("Run analyses ", 50, "%", sep = ""))
       #----------------------#
       
-      rea.values[[dataset]][[fromAnnot]] <- FALSE
+      rea.values[[dataset]][[listSource]] <- FALSE
       
       # run annotation diff analysis
-      #runRes <- tryCatch({
       paramList <- c(
         paramList,
         list(
           object = session$userData$FlomicsMultiAssay[[dataset]],
-          from = from #,
-          #nameList = input$listToAnnot
-        )
-      )
+          from = listSource))
       
       session$userData$FlomicsMultiAssay[[dataset]] <-
         do.call(runAnnotationEnrichment, paramList)
-      # },
-      # warning = function(war)
-      #   return(war),
-      # error   = function(err)
-      #   return(err))
       
-      # condition <- is(runRes, "RflomicsSE")
-      # if (!condition) {
-      #   showModal(modalDialog(title = paste(
-      #     "Something went wrong: ",
-      #     runRes$message
-      #   )))
-      # }
-      # validate({
-      #   need(condition,
-      #        message = paste0("Something went wrong: ",
-      #                         runRes$message))
-      # })
-      # 
-      # session$userData$FlomicsMultiAssay[[dataset]] <-  runRes
-      rea.values[[dataset]][[fromAnnot]] <- TRUE
+      rea.values[[dataset]][[listSource]] <- TRUE
       
       #---- progress bar ----#
       progress$inc(1, detail = paste("All done", 100, "%", sep = ""))
@@ -652,14 +592,9 @@
       
       rea.values[[datasetList]] <-
         getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
-                                analyses = listSource)
-      
-      # rea.values[[datasetList]][[database]] <-
-      #     unique(c(rea.values[[datasetList]][[database]], dataset))
+                                analyses = paste0(listSource, "EnrichAnal"))
       
     }, ignoreInit = TRUE)
-    
-    
   }
 
 # ---- check run enrichement analysis execution (à adapter) ----
@@ -673,13 +608,15 @@
            fromSource = NULL,
            paramList  = NULL) {
     
-    dbRes <- metadata(object.SE)[[fromSource]][[database]]
+    dbRes <- getAnalysis(object.SE, 
+                         name = paste0(fromSource, "EnrichAnal"), 
+                         subName = database)
     
     if (is.null(dbRes)) {
       return(TRUE)
     }
     
-    list_args <- dbRes$list_args
+    list_args <- dbRes$db_args
     
     # check param
     if (!(setequal(paramList$domain, list_args$domain)))
@@ -720,8 +657,7 @@
 # ---- UI param functions ----
 #' @noRd
 #' @keywords internal
-.annotSettings <- function(session, rea.values, dataset,
-                           listSource) {
+.annotSettings <- function(session, rea.values, dataset, listSource) {
   ns <- session$ns
   
   renderUI({
@@ -736,14 +672,14 @@
     ### lists
     ListNames <- switch(
       listSource,
-      "DiffExpEnrichAnal" = {
+      "DiffExp" = {
         ListNames.diff <- rea.values[[dataset]]$DiffValidContrast$contrastName
         names(ListNames.diff) <- 
           paste0("[",rea.values[[dataset]]$DiffValidContrast$tag,"] ", 
                  ListNames.diff)
         ListNames.diff
       },
-      "CoExpEnrichAnal"   = rea.values[[dataset]]$CoExpClusterNames
+      "CoExp"   = rea.values[[dataset]]$CoExpClusterNames
     )
     
     tagList(column(
@@ -1104,10 +1040,8 @@
                              input,
                              input2,
                              rea.values,
-                             fromAnnot,
-                             dataset,
-                             from,
                              listSource,
+                             dataset,
                              database) {
   ns <- session$ns
   
@@ -1115,7 +1049,7 @@
   renderUI({
     
     # Results:
-    if (rea.values[[dataset]][[fromAnnot]] == FALSE ||
+    if (rea.values[[dataset]][[listSource]] == FALSE ||
         is.null(sumORA(session$userData$FlomicsMultiAssay[[dataset]], 
                        from = listSource, database = database))) {
       return()
@@ -1162,14 +1096,13 @@
         dataSE,
         from = listSource,
         database = database,
-        contrastName = listname
+        featureListName = listname
       )
-      
-      
+
       boxtitle <- 
         switch (
           listSource,
-          "DiffExpEnrichAnal" = {
+          "DiffExp" = {
             tag <- 
               rea.values[[dataset]]$DiffValidContrast[which(contrastName == listname),]$tag
             paste0("[",tag, "] ", listname)
@@ -1178,7 +1111,7 @@
         )
       
       sORA <- sumORA(dataSE, from = listSource,
-                     database = database, contrastName = listname)
+                     database = database, featureListName = listname)
       
       cond <- as.numeric(unlist(sORA[-1], recursive = TRUE)) # warnings
       cond[is.na(cond)] <- 0
@@ -1200,7 +1133,7 @@
               input,
               dataSE,
               listname,
-              from,
+              listSource,
               "dotplot",
               database
             )
@@ -1212,7 +1145,7 @@
               input,
               dataSE,
               listname,
-              from,
+              listSource,
               "heatplot",
               database
             )
@@ -1225,7 +1158,7 @@
               input,
               dataSE,
               listname,
-              from,
+              listSource,
               "cnetplot",
               database
             )
@@ -1250,15 +1183,15 @@
                 dataPlot <- getEnrichRes(
                   object = dataSE,
                   from = listSource,
-                  contrastName = listname,
+                  featureListName = listname,
                   database = database,
                   domain = input[[paste0(listname, "-domain")]]
                 )
                 
                 pvalue <-
-                  getEnrichPvalue(dataSE,
+                  getEnrichSettings(dataSE,
                                   from = listSource,
-                                  database = database)
+                                  database = database)$pvalueCutoff
                 
                 datPlot <- dataPlot@result[dataPlot@result$p.adjust <  pvalue, ]
                 datPlot$pvalue <-
@@ -1295,14 +1228,14 @@
         if (database == "KEGG") {
           data <-   getEnrichRes(
             object = dataSE,
-            contrastName = listname,
+            featureListName = listname,
             from = listSource,
             database = "KEGG"
           )[["no-domain"]]@result
           
-          pvalue <- getEnrichPvalue(dataSE,
+          pvalue <- getEnrichSettings(dataSE,
                                     from = listSource,
-                                    database = database)
+                                    database = database)$pvalueCutoff
           mapChoices <-
             sort(data$ID[data$p.adjust < pvalue])
           
@@ -1349,14 +1282,14 @@
                        dataPlot <- getEnrichRes(
                          object = dataSE,
                          from = listSource,
-                         contrastName = listname,
+                         featureListName = listname,
                          database = database,
                          domain = input[[paste0(listname, "-domain")]]
                        )
                        pvalue <-
-                         getEnrichPvalue(dataSE,
+                         getEnrichSettings(dataSE,
                                          from = listSource,
-                                         database = database)
+                                         database = database)$pvalueCutoff
                        datPlot <-
                          dataPlot@result[dataPlot@result$p.adjust < pvalue, ]
                        max_terms <- nrow(datPlot)
@@ -1454,7 +1387,7 @@
 .outHeatPlot <- function(input,
                          dataSE,
                          listname,
-                         from,
+                         listSource,
                          plotType,
                          database) {
   varLabel0 <- .omicsDic(dataSE)$variableName
@@ -1463,8 +1396,7 @@
     outplot <- tryCatch(
       plotClusterProfiler(
         dataSE,
-        contrastName = listname,
-        from = from,
+        featureListName = listname,
         plotType = plotType,
         database = database,
         domain = input[[paste0(listname, "-domain")]],
@@ -1476,8 +1408,8 @@
     )
     
     plotExplain <- switch(
-      from,
-      "DiffExpAnal" =  {
+      listSource,
+      "DiffExp" =  {
         paste0(
           "This graph shows the top <b>",
           input[[paste0(listname, "-top.over")]],
@@ -1491,7 +1423,7 @@
           " is not present in the term."
         )
       },
-      "CoExpAnal" =
+      "CoExp" =
         paste0(
           "This graph shows the top <b>",
           input[[paste0(listname, "-top.over")]],
@@ -1548,7 +1480,7 @@
   function(input,
            dataSE,
            listname,
-           from,
+           listSource,
            plotType,
            database) {
     varLabel0 <- .omicsDic(dataSE)$variableName
@@ -1557,8 +1489,7 @@
       outdot <- tryCatch(
         plotClusterProfiler(
           dataSE,
-          contrastName = listname,
-          from = from,
+          featureListName = listname,
           plotType = plotType,
           database = database,
           domain = input[[paste0(listname, "-domain")]],
@@ -1571,8 +1502,8 @@
       
       
       plotExplain <- switch(
-        from,
-        "DiffExpAnal" =  {
+        listSource,
+        "DiffExp" =  {
           paste0(
             "This graph shows the top <b>",
             input[[paste0(listname, "-top.over")]],
@@ -1589,7 +1520,7 @@
             "</b> and present in the term (Count)."
           )
         },
-        "CoExpAnal" =
+        "CoExp" =
           paste0(
             "This graph shows the top <b>",
             input[[paste0(listname, "-top.over")]],
@@ -1655,7 +1586,7 @@
                          input,
                          dataSE,
                          listname,
-                         from,
+                         listSource,
                          plotType,
                          database) {
   ns <- session$ns
@@ -1679,8 +1610,8 @@
     outcnet <- tryCatch(
       plotClusterProfiler(
         dataSE,
-        contrastName = listname,
-        from = from,
+        featureListName = listname,
+        from = listSource,
         plotType = plotType,
         database = database,
         domain = input[[paste0(listname, "-domain")]],
@@ -1692,8 +1623,8 @@
     )
     
     plotExplain <- switch(
-      from,
-      "DiffExpAnal" =  {
+      listSource,
+      "DiffExp" =  {
         paste0(
           "This graph represents the top <b>",
           input[[paste0(listname, "-top.over")]],
@@ -1711,7 +1642,7 @@
           " to which they are linked."
         )
       },
-      "CoExpAnal" =
+      "CoExp" =
         paste0(
           "This graph represents the top <b>",
           input[[paste0(listname, "-top.over")]],
@@ -1844,34 +1775,35 @@
                div(class = "explain-p", HTML(pathviewExplain)),
              )
            ),
-           fluidRow(column(12,
-                           renderUI({
-                             link_to_map <- paste0("http://www.kegg.jp/kegg-bin/show_pathway?",
-                                                   input[[paste0(listname, "-MAP.sel")]],
-                                                   "/",
-                                                   data[input[[paste0(listname, "-MAP.sel")]], "geneID"])
-                             
-                             # test validity of URL
-                             if (.validUrl(link_to_map)) {
-                               renderPlot({
-                                 plotKEGG(
-                                   object = dataSE,
-                                   contrastName = listname,
-                                   from = listSource,
-                                   pathway_id = input[[paste0(listname, "-MAP.sel")]],
-                                   species = input2$organism,
-                                   gene_idtype = input2$keyTypeKEGG
-                                 )
-                               }, res = 300, width = 1000, height = 1000)
-                             } else {
-                               renderText(
-                                 "Please check your connection.
+           fluidRow(
+             column(
+               width = 12,
+               renderUI({
+                 link_to_map <- paste0("http://www.kegg.jp/kegg-bin/show_pathway?",
+                                       input[[paste0(listname, "-MAP.sel")]],
+                                       "/",
+                                       data[input[[paste0(listname, "-MAP.sel")]], "geneID"])
+                 
+                 # test validity of URL
+                 if (.validUrl(link_to_map)) {
+                   renderPlot({
+                     plotKEGG(
+                       object = dataSE,
+                       featureListName = listname,
+                       pathway_id = input[[paste0(listname, "-MAP.sel")]],
+                       species = input2$organism,
+                       gene_idtype = input2$keyTypeKEGG
+                     )
+                   }, res = 300, width = 1000, height = 1000)
+                 } else {
+                   renderText(
+                     "Please check your connection.
                                    It seems the URL does not exist,
                                    or you're not connected."
-                               )
-                             }
-                             
-                           }))))
+                   )
+                 }
+                 
+               }))))
 }
 
 # ---- Summary ----
@@ -1880,25 +1812,28 @@
 .outEnrichSummary <- function(session,
                               rea.values,
                               input,
-                              fromAnnot,
-                              title,
-                              from,
                               listSource,
+                              title,
                               dataset,
                               database) {
   ns <- session$ns
   
   renderUI({
     
-    if (rea.values[[dataset]][[fromAnnot]] == FALSE) 
-      return()
-    
     dataset.SE <- session$userData$FlomicsMultiAssay[[dataset]]
+    
+    if (rea.values[[dataset]][[listSource]] == FALSE ||
+        is.null(sumORA(dataset.SE, listSource, database))) {
+      return()
+    }
+    
     sORA <- sumORA(dataset.SE, from = listSource, database = database)
     errorMessages <- 
-      metadata(dataset.SE)[[listSource]][[database]]$error
+      getAnalysis(dataset.SE, 
+                  name = paste0(listSource, "EnrichAnal"), 
+                  subName = database)$errors
     
-    if (is.null(sORA) &&  length(errorMessages) == 0)
+    if (is.null(sORA) && is.null(errorMessages))
       return()
     
     options(htmlwidgets.TOJSON_ARGS = list(na = 'string'))
@@ -1950,10 +1885,8 @@
               session,
               rea.values,
               input,
-              fromAnnot,
-              dataset,
-              from,
               listSource,
+              dataset,
               database
             )
           )))
@@ -2026,24 +1959,24 @@
 .outCompResults <- function(session,
                             rea.values,
                             input,
-                            fromAnnot,
-                            dataset,
-                            from,
                             listSource,
+                            dataset,
                             database) {
   ns <- session$ns
   dataSE <- session$userData$FlomicsMultiAssay[[dataset]]
   varLabel0 <- .omicsDic(dataSE)$variableName
   
   renderUI({
-    if (rea.values[[dataset]][[fromAnnot]] == FALSE ||
+    if (rea.values[[dataset]][[listSource]] == FALSE ||
         is.null(sumORA(dataSE, listSource, database))) {
       return()
     }
     
     # Possible domains of ontology:
     possDomain <-  unique(unlist(lapply(
-      metadata(dataSE)[[listSource]][[database]][["enrichResult"]],
+      getAnalysis(dataSE, 
+                  name = paste0(listSource, "EnrichAnal"), 
+                  subName = database)$results$enrichResult,
       FUN = function(x)
         names(x)
     )))
@@ -2091,8 +2024,8 @@
                
                
                plotExplain <- switch(
-                 from,
-                 "DiffExpAnal" =  {
+                 listSource,
+                 "DiffExp" =  {
                    paste0(
                      "This graph shows all the enriched terms ",
                      "found with <b> ",
@@ -2109,7 +2042,7 @@
                      additionalMessage
                    )
                  },
-                 "CoExpAnal" =
+                 "CoExp" =
                    paste0(
                      "This graph shows all the enriched terms found with <b>",
                      database,

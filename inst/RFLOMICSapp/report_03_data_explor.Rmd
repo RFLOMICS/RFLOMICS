@@ -11,6 +11,7 @@ opts_chunk$set(
 
 ```{r}
 dataset.SE     <- getRflomicsSE(rflomics.MAE, data)
+DataProcessing <- getAnalysis(dataset.SE, name = "DataProcessing")
 variableName   <- RFLOMICS:::.omicsDic(dataset.SE)[["variableName"]]
 
 ```
@@ -38,7 +39,7 @@ settings <- getFilterSettings(dataset.SE)
 
 filtering <- paste0(
   "By default unexpressed genes were removed (", 
-  length(metadata(dataset.SE)$DataProcessing$rowSumsZero)," transcript).",
+  length(DataProcessing[["rowSumsZero"]])," transcript).",
   " The low counts genes with a ", settings$method, 
   " lower to ", settings$cpmCutoff, " (CMP cutoff)",
   " in at least \"", settings$filterStrategy, "\" (filter strategy)",
@@ -52,6 +53,7 @@ Normalisation <- paste0(
 
 cat("\n", filtering, " ", Normalisation, "\n")
 ```
+
 ```{r M_M_03_prot_meta, results='asis',  eval=(getOmicsTypes(dataset.SE) != "RNAseq")}
 
 Transformation <- ""
@@ -141,7 +143,7 @@ plotLibrarySize(dataset.SE, raw = FALSE)
 
 ```{r export,echo = FALSE}
 
-write.table(metadata(dataset.SE)$DataProcessing$rowSumsZero,
+write.table(DataProcessing[["rowSumsZero"]],
             file = paste0(explorDir[[data]],"Table_of_non_expressed_", 
                           variableName,".txt"),
             sep ="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)

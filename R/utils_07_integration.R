@@ -64,7 +64,7 @@
     if (length(colBatch) > 2)
         message("sorry, only 2 batches effect for now!")
     
-    SEobject@metadata[["correction_batch_method"]] <-
+    metadata(SEobject)[["correction_batch_method"]] <-
         "limma (removeBatchEffect)"
 
     assay(SEobject) <- rbeRes

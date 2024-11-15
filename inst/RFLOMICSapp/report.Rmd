@@ -34,8 +34,8 @@ library(htmltools)
 library(dplyr)
 ```
 
-```{r , include=FALSE}
-opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE, error = FALSE)
+```{r setting, include=FALSE}
+opts_chunk$set(message = FALSE, warning = FALSE, echo = FALSE, error = TRUE)
 options(knitr.duplicate.label = "allow")
 ```
 
@@ -89,7 +89,7 @@ $('.zoomDiv').css({opacity: '0', width: '0%'});
 
 <!-- Experimental design -->
 
-```{r design, eval=(nrow(getDesignMat(rflomics.MAE)) != 0)}
+```{r design, eval=(nrow(getDesignMat(rflomics.MAE)) != 0)} 
 
 out <- NULL
 child <- paste0(path.package("RFLOMICS"), "/RFLOMICSapp/","report_02_design.Rmd")
