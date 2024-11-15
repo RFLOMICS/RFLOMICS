@@ -287,6 +287,7 @@
   
   # ---- Load Data button observe ----
   observeEvent(input$loadData, {
+    
     rea.values$loadData        <- FALSE
     rea.values$model           <- FALSE
     rea.values$analysis        <- FALSE
@@ -386,17 +387,19 @@
   }, ignoreInit = TRUE)
   
   output$displayDesignUI <- renderUI({
+    
     if (is.null(local.rea.values$ExpDesignOrg))
       return()
     
-    fluidRow(column(width = 12,
-                    uiOutput(session$ns(
-                      "ExpDesignTable"
-                    ))),
-             column(width = 12,
-                    uiOutput(session$ns(
-                      "dipslayFactors"
-                    ))),
+    fluidRow(
+      column(
+        width = 12,
+        uiOutput(session$ns("ExpDesignTable"))
+      ),
+      column(
+        width = 12,
+        uiOutput(session$ns("dipslayFactors"))
+      )
     )
   })
   
@@ -424,16 +427,19 @@
       )
     )
   })
+  
   # order and select modality for each factor
   output$dipslayFactors <- 
     renderUI({
       ExpDesign <- local.rea.values$ExpDesignOrg
+      
       box(
         width = 12,
         background = "green",
         .addBSpopify(
           tags$b("Select and order the levels of each factor"),
-          "You can remove levels and their associated samples. Deleting all levels of a factor results in ignoring that factor.</p>"
+          "You can remove levels and their associated samples. 
+          Deleting all levels of a factor results in ignoring that factor.</p>"
         ),
         fluidRow(lapply(names(ExpDesign), function(i) {
           column(
@@ -450,9 +456,9 @@
             )
           )
         }),
-        uiOutput(session$ns(
-          "GetdFactorRef"
-        )))
+        uiOutput(
+          session$ns("GetdFactorRef"))
+        )
       )
       
     })
@@ -467,7 +473,7 @@
     for (factor in names(ExpDesign)) {
       # if select 1 modality or 0 for a Factor we exclude this factor
       if (length(input[[paste0("selectFactors.", factor)]]) > 0) {
-        ExpDesign    <-
+        ExpDesign <-
           filter(ExpDesign, get(factor) %in% input[[paste0("selectFactors.", factor)]])
         ExpDesign[[factor]] <-
           factor(ExpDesign[[factor]], levels = input[[paste0("selectFactors.", factor)]])
@@ -480,10 +486,11 @@
     local.rea.values$ExpDesign <- ExpDesign
     
     radioButtons.choices <- rep("Bio", ncol(ExpDesign))
-    names(radioButtons.choices) <- names(ExpDesign)
     
     if (isTRUE(rea.values$exampleData))
       radioButtons.choices <- local.rea.values$dF.Type.dFac
+    
+    names(radioButtons.choices) <- names(ExpDesign)
     
     # dispaly updated ui for selecting factors
     column(
