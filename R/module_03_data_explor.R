@@ -357,7 +357,6 @@ QCNormalizationTab <-
           
           tags$br(), tags$hr(), tags$br(),
           uiOutput(session$ns("FeatureBoxplot"))
-          
         )
       )
       

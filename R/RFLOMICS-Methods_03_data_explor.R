@@ -1569,12 +1569,12 @@ setMethod(
     # get pca score
     ExpDesign <- getDesignMat(object)
     rawnorm <- ifelse(isTRUE(raw), "raw", "norm")
-    score <- as.data.frame(metadata(object)$PCAlist[[raw]]$ind$coord[, axes])
+    score <- as.data.frame(metadata(object)$PCAlist[[rawnorm]]$ind$coord[, axes])
     score$samples <- row.names(score)
     score <- right_join(score, ExpDesign, by = "samples")
     
-    var1 <- round(metadata(object)$PCAlist[[raw]]$eig[axes, 2][1], digits = 3)
-    var2 <- round(metadata(object)$PCAlist[[raw]]$eig[axes, 2][2], digits = 3)
+    var1 <- round(metadata(object)$PCAlist[[rawnorm]]$eig[axes, 2][1], digits = 3)
+    var2 <- round(metadata(object)$PCAlist[[rawnorm]]$eig[axes, 2][2], digits = 3)
     
     # plot
     labels <- getLabs4plot(object)

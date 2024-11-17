@@ -334,6 +334,7 @@ RflomicsMAE <- function(experiments = ExperimentList(),
 #' @return An object of class \link{RflomicsSE}
 #' @name createRflomicsSE
 #' @seealso \link{RflomicsSE-class}
+#' @importFrom dplyr select
 #' @keywords internal
 #' @noRd
 createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
