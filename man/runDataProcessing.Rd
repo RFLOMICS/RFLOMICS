@@ -187,17 +187,12 @@
 
 \S4method{plotDataDistribution}{RflomicsMAE}(object, SE.name, plot = "boxplot", raw = FALSE)
 
-\S4method{plotOmicsPCA}{RflomicsSE}(
-  object,
-  raw = c("raw", "norm"),
-  axes = c(1, 2),
-  groupColor = "groups"
-)
+\S4method{plotOmicsPCA}{RflomicsSE}(object, raw = TRUE, axes = c(1, 2), groupColor = "groups")
 
 \S4method{plotOmicsPCA}{RflomicsMAE}(
   object,
   SE.name,
-  raw = c("raw", "norm"),
+  raw = FALSE,
   axes = c(1, 2),
   groupColor = "groups"
 )
@@ -253,8 +248,7 @@ metabolomics data.}
 
 \item{ncomp}{Number of components to compute. Default is 5.}
 
-\item{raw}{This argument indicates whether the scaled PCA has to be 
-performed on raw [\sQuote{raw}] or normalized [\sQuote{norm}] data.}
+\item{raw}{boolean. Does the pca have to be ran on raw data or transformed}
 
 \item{sampleList}{list of samples to check.}
 

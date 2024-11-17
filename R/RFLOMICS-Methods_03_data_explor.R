@@ -191,7 +191,6 @@ setMethod(
 #'   This function applied sample filtering on an dataset. 
 #' }
 #' @exportMethod runSampleFiltering
-#' @importFrom dplyr filter
 setMethod(
   f          = "runSampleFiltering",
   signature  = "RflomicsSE",
@@ -878,19 +877,11 @@ setMethod(
     
     log <- ifelse(getOmicsTypes(object) == "RNAseq", TRUE, FALSE)
     
-    if(isFALSE(raw)){
-      object2 <- getProcessedData(object, norm = TRUE, log = log)
-      tag = "norm"
-    }
-    else{
-      object2 <- getProcessedData(object, log = log)
-      tag = "raw"
-    }
-    
-    pseudo  <- assay(object2)
+    pseudo  <- assay(getProcessedData(object, norm = !raw, log = log))
     
     PCAlist <- getAnalysis(object, name = "PCAlist")
-    PCAlist[[tag]] <- PCA(t(pseudo), ncp = ncomp, graph = FALSE)
+    PCAlist[[ifelse(isTRUE(raw), "raw", "norm")]] <- 
+      PCA(t(pseudo), ncp = ncomp, graph = FALSE)
     object <- setElementToMetadata(object, name = "PCAlist", content = PCAlist)
     
     return(object)
@@ -912,9 +903,7 @@ setMethod(f          = "runOmicsPCA",
             object[[SE.name]] <-  runOmicsPCA(object[[SE.name]],
                                               ncomp = ncomp,
                                               raw  = raw)
-            
             return(object)
-            
           })
 
 ## ---- checkExpDesignCompleteness ----
@@ -1364,9 +1353,6 @@ setMethod(f          = "setSelectedSamples",
 #'    \item plotLibrarySize: return barplot of library size by sample.}
 #' @param raw a boolean 
 #' @exportMethod plotLibrarySize
-#' @importFrom ggplot2 ggplot aes ggtitle element_text 
-#' @importFrom ggplot2 theme labs ylab geom_bar
-#' @importFrom dplyr full_join arrange
 #' @examples
 #' # See runDataProcessing for an example that includes plotLibrarySize
 setMethod(f          = "plotLibrarySize",
@@ -1435,10 +1421,7 @@ setMethod(f          = "plotLibrarySize",
 #' @param plot plot type ("boxplot" or "density")
 #' @param raw boolean. Plot the raw data or the transformed ones (raw = FALSE)
 #' @exportMethod plotDataDistribution
-#' @importFrom ggplot2 ggplot geom_boxplot geom_density aes
-#' @importFrom ggplot2 xlab theme element_text ylab margin ggtitle
 #' @importFrom reshape2 melt
-#' @importFrom dplyr full_join arrange
 #' @examples
 #' # See runDataProcessing for an example that includes plotDataDistribution
 setMethod(
@@ -1553,15 +1536,11 @@ setMethod(
 #' This function plot the factorial map from a PCA object stored
 #' in a \link{RflomicsSE-class} object. By default, samples are
 #' colored by groups (all combinations of level's factor)}
-#' @param raw This argument indicates whether the scaled PCA has to be 
-#' performed on raw [\sQuote{raw}] or normalized [\sQuote{norm}] data.
+#' @param raw boolean. Does the pca have to be ran on raw data or transformed 
 #' @param axes A vector giving the two axis that have to be drawn for the 
 #' factorial map
 #' @param groupColor All combination of level's factor
-#' @importFrom dplyr mutate full_join select right_join
 #' @importFrom FactoMineR coord.ellipse
-#' @importFrom ggplot2 ggplot aes_string geom_point geom_text aes xlab ylab 
-#' geom_hline geom_vline geom_vline element_text ggtitle geom_polygon
 #' @exportMethod plotOmicsPCA
 #' @examples
 #' # See runDataProcessing for an example that includes plotOmicsPCA
@@ -1569,7 +1548,7 @@ setMethod(
   f          = "plotOmicsPCA",
   signature  = "RflomicsSE",
   definition = function(object,
-                        raw = c("raw", "norm"),
+                        raw = TRUE,
                         axes = c(1, 2),
                         groupColor = "groups") 
   {
@@ -1582,19 +1561,14 @@ setMethod(
     PC2 <- paste("Dim.", axes[2], sep = "")
     
     if (PC1 == PC2) PC2 <- PC1 + 1
-    
-    
+
     # get labels
     log <- ifelse(getOmicsTypes(object) == "RNAseq", TRUE, FALSE)
-    if(raw != "raw")
-      object <- getProcessedData(object, norm = TRUE, log = log)
-    else
-      object <- getProcessedData(object, log = log)
-    
-    labels <- getLabs4plot(object)
+    object <- getProcessedData(object, norm = !raw, log = log)
     
     # get pca score
     ExpDesign <- getDesignMat(object)
+    rawnorm <- ifelse(isTRUE(raw), "raw", "norm")
     score <- as.data.frame(metadata(object)$PCAlist[[raw]]$ind$coord[, axes])
     score$samples <- row.names(score)
     score <- right_join(score, ExpDesign, by = "samples")
@@ -1602,8 +1576,8 @@ setMethod(
     var1 <- round(metadata(object)$PCAlist[[raw]]$eig[axes, 2][1], digits = 3)
     var2 <- round(metadata(object)$PCAlist[[raw]]$eig[axes, 2][2], digits = 3)
     
-    
-    
+    # plot
+    labels <- getLabs4plot(object)
     p <- ggplot(score, aes_string(x = PC1, y = PC2, color = groupColor))  +
       geom_point(size = 2) +
       geom_text(aes(label = samples), 
@@ -1641,7 +1615,7 @@ setMethod(
   signature  = "RflomicsMAE",
   definition = function(object,
                         SE.name,
-                        raw = c("raw", "norm"),
+                        raw = FALSE,
                         axes = c(1, 2),
                         groupColor = "groups") {
     plotOmicsPCA(object[[SE.name]], 

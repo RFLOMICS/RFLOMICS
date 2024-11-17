@@ -5,7 +5,6 @@
 # D. Charif
 
 # ----  GLOBAL IMPORT & EXPORT ----
-#' @importFrom dplyr mutate across if_else filter select
 #' @importFrom stringr str_replace_all str_remove_all str_remove fixed str_split
 #' @importFrom vroom vroom
 #' @importFrom purrr reduce
@@ -653,8 +652,6 @@ readOmicsData <- function(file){
 #' the border seperating cells (0 specifies no border)
 #'
 #' @return A printable/modifiable ggplot2 object.
-#' @importFrom ggplot2 ggplot aes aes_string theme facet_grid labs ylab xlab
-#' facet_grid element_blank geom_text scale_fill_manual geom_tile ggtitle
 #' @keywords internal
 #' @noRd
 .plotExperimentalDesign <- function(counts, cell_border_size = 10, message=""){
@@ -720,8 +717,9 @@ readOmicsData <- function(file){
 #' @noRd
 .generateEcoseedExampleData <- function(){
   
-  load(paste0(system.file(package = "RFLOMICS"),"/data/ecoseed.df.rda"))
-  
+  #load(paste0(system.file(package = "RFLOMICS"),"/data/ecoseed.df.rda"))
+  data("ecoseed.df", package = "RFLOMICS", envir = environment())
+
   factorInfo <- data.frame(
     "factorName"   = c("Repeat", "temperature", "imbibition"),
     "factorRef"    = c("rep1", "Low", "DS"),

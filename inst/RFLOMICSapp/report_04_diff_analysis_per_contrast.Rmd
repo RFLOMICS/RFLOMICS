@@ -59,9 +59,9 @@ resTable      <- DiffExpAnal[["TopDEF"]][[contrast]]
 newDataset.SE <- dataset.SE[rownames(dataset.SE) %in% row.names(resTable)]
 newDataset.SE <- runOmicsPCA(newDataset.SE)  
 
-plotOmicsPCA(newDataset.SE, raw = "norm",
+plotOmicsPCA(newDataset.SE, raw = FALSE,
              axes=c(1, 2), groupColor="groups")
-plotOmicsPCA(newDataset.SE, raw = "norm",
+plotOmicsPCA(newDataset.SE, raw = FALSE,
              axes=c(1, 3), groupColor="groups")
 ```
 

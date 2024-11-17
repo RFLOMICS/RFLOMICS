@@ -164,15 +164,15 @@ Outlier samples can be identified as they significantly influence the observed v
 
 ```{r PCA_1_2, echo=FALSE , fig.show="hold", out.width = "50%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Factorial maps formed by the axis 1 and 2: before (left) and after (right) data processing*", "</p>")}
 
-plotOmicsPCA(dataset.SE, raw="raw", axes=c(1, 2), groupColor="groups")
-plotOmicsPCA(dataset.SE, raw="norm", axes=c(1, 2), groupColor="groups")
+plotOmicsPCA(dataset.SE, raw=TRUE, axes=c(1, 2), groupColor="groups")
+plotOmicsPCA(dataset.SE, raw=FALSE, axes=c(1, 2), groupColor="groups")
 
 ```
 
 ```{r PCA_1_3, echo=FALSE , fig.show="hold", out.width = "50%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Factorial maps formed by the axis 1 and 3: before (left) and after (right) data processing*", "</p>")}
 
-plotOmicsPCA(dataset.SE, raw="raw", axes=c(1, 3), groupColor="groups")
-plotOmicsPCA(dataset.SE, raw="norm", axes=c(1, 3), groupColor="groups")
+plotOmicsPCA(dataset.SE, raw=TRUE, axes=c(1, 3), groupColor="groups")
+plotOmicsPCA(dataset.SE, raw=FALSE, axes=c(1, 3), groupColor="groups")
 ```
 
 ### {-}

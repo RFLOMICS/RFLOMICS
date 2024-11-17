@@ -41,7 +41,6 @@
 #' @return A RflomicsMAE or a RflomicsS, depending on the class of object
 #' parameter. The enrichment results are added to the metadata slot, either
 #' in DiffExpEnrichAnal or CoExpEnrichAnal.
-#' @importFrom dplyr filter select mutate relocate
 #' @importFrom tidyselect all_of
 #' @importFrom clusterProfiler enrichKEGG enrichGO enricher
 #' @importFrom utils getFromNamespace
@@ -470,7 +469,6 @@ setMethod(
 #' @param ... additionnal parameters for cnetplot, heatplot or
 #' enrichplot functions.
 #' @importFrom enrichplot cnetplot heatplot dotplot set_enrichplot_color
-#' @importFrom ggplot2 scale_fill_gradient2 guide_colourbar
 #' @importFrom ggrepel geom_label_repel
 #' @exportMethod plotClusterProfiler
 #' @rdname runAnnotationEnrichment

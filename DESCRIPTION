@@ -27,6 +27,7 @@ Encoding: UTF-8
 RoxygenNote: 7.3.2
 Suggests: 
     testthat,
+    shinytest2,
     BiocStyle,
     org.Hs.eg.db
 VignetteBuilder: knitr

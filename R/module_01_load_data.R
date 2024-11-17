@@ -5,10 +5,8 @@
 # D. Charif, 
 
 #' @importFrom stringr str_subset
-#' @importFrom dplyr filter select
 #' @importFrom DT renderDataTable datatable
 #' @importFrom tidyselect all_of
-#' @importFrom stringr str_subset
 #' @importFrom shinyBS bsTooltip popify
 
 

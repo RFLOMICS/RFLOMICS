@@ -5,11 +5,6 @@
 # D. Charif
 # A. Hulot
 
-#' @importFrom dplyr full_join mutate arrange select group_by_at count
-#' @importFrom dplyr left_join right_join mutate_at if_else 
-#' @importFrom ggplot2 ggplot aes element_blank element_text geom_col 
-#' @importFrom ggplot2 theme labs scale_y_continuous geom_tile 
-#' @importFrom ggplot2 scale_fill_manual ylab xlab labs facet_grid 
 #' @importFrom purrr reduce
 NULL
 

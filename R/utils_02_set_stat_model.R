@@ -7,7 +7,6 @@
 
 
 #' @importFrom magrittr "%>%" 
-#' @importFrom dplyr filter select mutate mutate_at
 NULL
 
 # ---- .generateModelFormulae ----
@@ -138,14 +137,14 @@ contrastName2contrastDir <- function(contrastName){
   # if 1 factor or more than 1 + interaction
   if(length(treatmentFactorsList) == 1 || !isFALSE(interactionPresent)){
     
-    listOfContrastsDF[["simple"]] <- dplyr::select(allSimpleContrast_df, contrast, contrastName, groupComparison, type)
+    listOfContrastsDF[["simple"]] <- select(allSimpleContrast_df, contrast, contrastName, groupComparison, type)
   }
   
   # define all simples contrast means
   # exists("allSimpleContrast_df", inherits = FALSE)
   if(length(treatmentFactorsList) != 1){
     allAveragedContrasts_df <- .define_averaged_contrasts (allSimpleContrast_df)
-    listOfContrastsDF[["averaged"]] <-  dplyr::select(allAveragedContrasts_df, contrast, contrastName, groupComparison, type)
+    listOfContrastsDF[["averaged"]] <-  select(allAveragedContrasts_df, contrast, contrastName, groupComparison, type)
   }
   
   # define all interaction contrasts
@@ -157,7 +156,7 @@ contrastName2contrastDir <- function(contrastName){
       groupInteractionToKeep      <- gsub(":", " vs ", twoWayInteractionInDesign)
       allInteractionsContrasts_df <- .defineAllInteractionContrasts(treatmentFactorsList, groupInteractionToKeep)
       
-      listOfContrastsDF[["interaction"]] <- dplyr::select(allInteractionsContrasts_df, contrast, contrastName, groupComparison, type)
+      listOfContrastsDF[["interaction"]] <- select(allInteractionsContrasts_df, contrast, contrastName, groupComparison, type)
     }
     #allInteractionsContrasts_df <- .defineAllInteractionContrasts(treatmentFactorsList)
     #listOfContrastsDF[["interaction"]] <- allInteractionsContrasts_df
@@ -214,7 +213,6 @@ contrastName2contrastDir <- function(contrastName){
 #' @importFrom utils combn
 #' @importFrom data.table setDT setnames
 #' @importFrom tidyr unite
-#' @importFrom dplyr mutate
 #' @importFrom tidyselect all_of
 #' @noRd
 #' @author Christine Paysant-Le Roux
@@ -268,7 +266,6 @@ contrastName2contrastDir <- function(contrastName){
 #' @noRd
 #' @return a data frame with all simple contrasts
 #' @keywords internal
-#' @importFrom dplyr select mutate 
 #' @importFrom tidyselect all_of
 #' @author Christine Paysant-Le Roux 
 .simpleContrastForOneFactor <- function (treatmentFactorsList, i){
@@ -352,7 +349,6 @@ contrastName2contrastDir <- function(contrastName){
 #'  contrasts
 #' @keywords internal
 #' @noRd
-#' @importFrom dplyr add_tally group_by mutate select 
 #' @importFrom data.table data.table setcolorder
 #' @author Christine Paysant-Le Roux
 .define_averaged_contrasts <- function(allSimpleContrast_df){
@@ -392,7 +388,6 @@ contrastName2contrastDir <- function(contrastName){
 #' @keywords internal
 #' @importFrom data.table setDT setnames
 #' @importFrom tidyr unite 
-#' @importFrom dplyr mutate select 
 #' @importFrom tidyselect all_of
 #' @noRd
 #' @author Christine Paysant-Le Roux
@@ -466,7 +461,6 @@ contrastName2contrastDir <- function(contrastName){
 #' @param j j
 #'
 #' @return a dataframe
-#' @importFrom dplyr mutate select add_tally group_by 
 #' @importFrom tidyselect all_of
 #' @importFrom data.table setnames
 #' @keywords internal
@@ -726,7 +720,6 @@ contrastName2contrastDir <- function(contrastName){
 #' @param contrastList data.frame
 #' @noRd
 #' @return data.frame contrast
-#' @importFrom dplyr filter
 #' @keywords internal
 updateSelectedContrasts <- function(object, contrastList=NULL){
   

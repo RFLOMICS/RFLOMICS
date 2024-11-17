@@ -601,7 +601,6 @@
 #' @title .checkRunORAExecution
 #' @noRd
 #' @keywords internal
-#' @importFrom dplyr setequal
 .checkRunORAExecution <-
   function(object.SE,
            database   = NULL,

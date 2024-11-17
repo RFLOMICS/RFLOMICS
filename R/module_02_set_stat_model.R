@@ -4,10 +4,8 @@
 # N. Bessoltane,
 # D. Charif, 
 
-#' @importFrom dplyr filter select
 #' @importFrom purrr reduce
 #' @importFrom shinyBS popify bsButton addPopover bsTooltip
-
 
 .modGLMmodelUI <- function(id){
   

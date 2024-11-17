@@ -80,7 +80,6 @@
 #' an end-user online differential proteomics statistical analysis platform. 
 #' Nucleic Acids Res. 2017;45(W1):W300-W306.
 #' @exportMethod runDiffAnalysis
-#' @importFrom dplyr filter
 #' @rdname runDiffAnalysis
 #' @seealso \code{\link{getDiffSettings}}, \code{\link{getDEList}},
 #'  \code{\link{getDEMatrix}}
@@ -364,7 +363,6 @@ setMethod(
 #' @param logFC.cutoff cutoff for absolute value of log2FC. Default is the 
 #' parameter from the differential analysis. 
 #' @exportMethod filterDiffAnalysis
-#' @importFrom dplyr full_join filter if_else mutate_at
 #' @importFrom data.table data.table
 #' @importFrom purrr reduce
 setMethod(
@@ -609,7 +607,6 @@ setMethod(
 #' to ComplexHeatmap::Heatmap or ComplexHeatmap::draw
 #' @exportMethod plotHeatmapDesign
 #' @export
-#' @importFrom dplyr arrange select
 #' @importFrom tidyselect any_of
 #' @importFrom RColorBrewer brewer.pal brewer.pal.info
 #' @importFrom grDevices colorRampPalette pdf dev.off
@@ -809,9 +806,6 @@ setMethod(
 #' color the boxplots accordingly. 
 #' @param raw Boolean. Plot the raw data or the transformed ones (TRUE)
 #' @exportMethod plotBoxplotDE
-#' @importFrom ggplot2  ggplot aes geom_boxplot  element_text theme guides 
-#' guide_legend xlab ylab theme_void ggtitle
-#' @importFrom dplyr full_join  arrange
 #' @examples
 #' # See runDiffAnalysis for an example that includes plotBoxplotDE
 setMethod(
@@ -968,7 +962,6 @@ setMethod(
 #' Defines the operation to perform on the DE lists from the contrasts.
 #' @exportMethod getDEList
 #' @importFrom tidyselect starts_with any_of
-#' @importFrom dplyr select mutate filter
 #' @examples
 #' # See runDiffAnalysis for an example that includes getDEList
 setMethod(
@@ -1113,7 +1106,6 @@ setMethod(
 #' \itemize{
 #'    \item getDiffStat: Get summary table from diffExpAnalysis analysis}
 #' @exportMethod getDiffStat
-#' @importFrom dplyr filter
 setMethod(
   f          = "getDiffStat",
   signature  = "RflomicsSE",
@@ -1155,11 +1147,8 @@ setMethod(
 #' @param ylabelLength max length of the labels (characters)
 #' @param nbMaxLabel number of labels to print
 #' @param interface boolean. Is this plot for the interace or commandline?
-#' @importFrom dplyr mutate
 #' @importFrom purrr reduce
 #' @importFrom reshape2 melt
-#' @importFrom ggplot2 ggplot aes geom_col geom_text
-#' @importFrom ggplot2 facet_grid scale_x_continuous labs position_stack
 #' @exportMethod getDiffAnalysesSummary
 #' @return a data.frame with differential analyses summary
 #' @rdname runDiffAnalysis
@@ -1169,10 +1158,10 @@ setMethod(
   definition = function(object, plot = FALSE, 
                         ylabelLength = 30,
                         nbMaxLabel = 20,
-                        interface = FALSE) {
+                        interface = FALSE){
     
     # DataProcessing
-    omicNames   <- getAnalyzedDatasetNames(object, analyses = "DiffExpAnal")
+    omicNames <- getAnalyzedDatasetNames(object, analyses = "DiffExpAnal")
     
     df.list <- list()
     for (dataset in omicNames) {

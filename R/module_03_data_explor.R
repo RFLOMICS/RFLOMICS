@@ -496,7 +496,7 @@ QCNormalizationTab <-
       
       plotOmicsPCA(
         session$userData$FlomicsMultiAssay[[dataset]],
-        raw = "raw",
+        raw = TRUE,
         axes = c(PC1.value, PC2.value),
         groupColor = condGroup
       )
@@ -512,7 +512,7 @@ QCNormalizationTab <-
       
       plotOmicsPCA(
         session$userData$FlomicsMultiAssay[[dataset]],
-        raw = "norm",
+        raw = FALSE,
         axes = c(PC1.value, PC2.value),
         groupColor = condGroup
       )
