@@ -5,9 +5,6 @@
 # D. Charif
 # A. Hulot
 
-#' @importFrom purrr reduce
-NULL
-
 # ---- ACCESSORS ----
 ## ---- getProjectName ----
 #' @rdname RflomicsMAE-class
@@ -94,6 +91,7 @@ setMethod(f          = "getDatasetNames",
 #' @aliases getOmicsTypes,RflomicsMAE-method
 #' @exportMethod getOmicsTypes
 #' @rdname RflomicsMAE-class
+#' @importFrom purrr reduce
 #' @section Accessors:
 #' \itemize{
 #'    \item getOmicsTypes: return a named vector with omics type of each 
@@ -508,6 +506,7 @@ setMethod(
 #' A complete design and at least one biological and one batch factors are 
 #' required for using RFLOMICS workflow.}
 #' @param omicNames a vector with dataset names
+#' @importFrom purrr reduce
 #' @exportMethod plotConditionsOverview
 #' @examples
 #' # See createRflomicsMAE for an example that includes plotConditionsOverview

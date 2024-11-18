@@ -43,65 +43,7 @@
       width = 12,
       collapsible = TRUE,
       collapsed = TRUE,
-      div(
-        p(
-          "Analyses in this module are conducted using the clusterprofiler
-            R-package.
-              If you have more questions or interest in this package,
-              please check the associated paper or the online vignette at
-              https://yulab-smu.top/biomedical-knowledge-mining-book/index.html.
-            "
-        ),
-        p(""),
-        h4(tags$span("Parameters set up:", style = "color:orange")),
-        p(
-          "Choose the lists of omics features you want to run the
-            enrichment for.
-              Default option selects all the available lists
-              (contrasts or co-expression clusters)."
-        ),
-        p(
-          "Then choose the ontology you want to refer to for the analysis.
-              Multiple choices are not allowed.
-            If you select custom, you'll have to enter an annotation file
-            with at least two columns :
-              the names of the entity (same as the rownames of your dataset)
-            and an id for an ontology term (eg: GO:0030198).
-              It can also contains a column for a more explicit name
-            for the term (eg: extracellular matrix organization)
-              and a column for specifying the domain (eg: MF, BP or CC).
-              An enrichment analysis will be ran on each specified domain."
-        ),
-        p(
-          "You will have to specify the names of the columns after
-              validating the annotation file."
-        ),
-        p(
-          "If you choose GO, the three GO:BP, GO:MF and GO:CC will
-              be analyzed.
-              You can chose to only analyze one of them by selecting
-              the wanted ontology domain).
-              It requires to indicate an R-package for the database,
-              in the form of org.*db.
-              (eg: org.At.tair.db for Arabidopsis thaliana),
-              and to specify which type of identifier is used in the data
-              (eg: TAIR for arabidopsis)."
-        ),
-        p(
-          "For KEGG analysis, only four identifiers are possible.
-              Please check if the rownames correspond to one of them
-              (eg: TAIR is also kegg identifiers)."
-        ),
-        p(
-          "KEGG analysis uses an API to search for pathways online,
-              it requires to have access to an internet connection."
-        ),
-        p(
-          "Set the adjusted pvalue threshold.
-              Only results below this threshold will be displayed."
-        ),
-        
-      )
+      annot_analysis_docs
     )
   ),
   ## parameters + input data

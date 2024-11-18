@@ -20,40 +20,8 @@ CoSeqAnalysisUI <- function(id){
                 tags$small("(Scroll down for instructions)")  )),
         solidHeader = TRUE, status = "warning", width = 12, 
         collapsible = TRUE, collapsed = TRUE,
-        div(
-          p("Analyses in this module are conducted using the 
-                      coseq R-package. If you have more questions or
-                      interest in this package, 
-              please check the associated paper or the online vignette
-              at https://bioconductor.org/packages/release/bioc/vignettes/coseq/inst/doc/coseq.html"),
-          h4(tags$span("Parameters set up:", style = "color:orange")),
-          p("You have first to choose between the ",tags$b("union"),
-            " or ",tags$b("intersection")," of your contrasts lists 
-                according to your biological question."),
-          p("All the default parameters have been expertised according 
-                to each omics."),
-          p("It is then recommanded to do a ",tags$b("first run"),
-            " with a large number of K with few iterations.
-            If there is a K (Kbest different from Kmin and Kmax) for which 
-            the ICL is minimum (check the first graph obtained),
-            then a second run has to be done with a larger experiment: 
-            the window of K can be centered around the Kbest and the number
-            of technical replicates has to be increased to at least 20
-            iterations. For this larger experiment, it is recommanded to send
-              analysis to remote ressources (see cluster option)"),
-          h4(tags$span("Successful analysis:", style = "color:orange")),
-          p("For a given K, the result will be considered as successful
-              when at least the half of the iteration
-              have run. Co-expression analysis will be considered as 
-              successful if there is at least a result for more than the
-              half of K. In case of unsuccessful results, a detailed table 
-              of errors will appear."),
-          # h4(tags$span("Cluster option", style = "color:orange")),
-          # p("If you have a cluster account, you can configure a remote 
-          #   access to it
-          #   (", a("see config_file", href="install_clustermq.txt"),")",
-          #   "and speed up results obtention."),
-        ))),
+        coexp_analysis_docs
+        )),
     ### parametres for Co-Exp
     fluidRow(
       column(3, uiOutput(ns("CoExpParamUI"))),
