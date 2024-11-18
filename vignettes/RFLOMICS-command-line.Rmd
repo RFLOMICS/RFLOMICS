@@ -206,8 +206,8 @@ You can access to processing results and plot them.
 
 ```{r plotPCA, fig.width=10, fig.height=5, fig.show = "hold"}
 
-plotOmicsPCA(MAE[["metatest"]], raw = "raw")
-plotOmicsPCA(MAE[["metatest"]], raw = "norm")
+plotOmicsPCA(MAE[["metatest"]], raw = TRUE)
+plotOmicsPCA(MAE[["metatest"]], raw = FALSE)
 
 ```
 
