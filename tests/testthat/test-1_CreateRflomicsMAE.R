@@ -306,3 +306,24 @@ test_that("Test check of NA in data", {
     factorInfo  = factorInfo))
 })
 
+
+test_that("Test subRflomicsMAE", {
+  
+  miniMAE <- subRflomicsMAE(MAE, "protetest")
+  expect_true("MultiAssayExperiment" %in% is(miniMAE))
+
+  expect_equal(subRflomicsMAE(MAE), MAE)
+  
+  expect_null(subRflomicsMAE(MAE, "toto"))
+})
+
+
+test_that("Test plot", {
+  
+  p <- plotConditionsOverview(MAE)
+  expect_equal(is(p), "gg")
+  
+  p <- plotDataOverview(MAE)
+  expect_equal(is(p), "gg")
+})
+
