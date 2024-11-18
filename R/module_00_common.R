@@ -3,35 +3,37 @@
 ### ----------------------------------------------------------------------------
 # N. Bessoltane,
 
+
 # ---- update radio button ----
 #' @keywords internal
 #' @noRd
 UpdateRadioButtonsUI <- function(id) {
-  #name space for id
+  # Namespace for id
   ns <- NS(id)
   
   tagList(
-    radioButtons(inputId  = ns("Firstaxis"),
-                 label    = "Choice of PCs:",
-                 choices  = list(
-                   "PC1" = 1,
-                   "PC2" = 2,
-                   "PC3" = 3
-                 ),
-                 selected = 1,
-                 inline = TRUE
+    # Radio buttons for first axis
+    radioButtons(
+      inputId = ns("Firstaxis"),
+      label = "Choice of PCs:",
+      choices = list(
+        "PC1" = 1,
+        "PC2" = 2
+      ),
+      selected = 1,
+      inline = TRUE
     ),
     
-    # select PCA axis 2 for plot
-    radioButtons(inputId  = ns("Secondaxis"),
-                 label    = "",
-                 choices  = list(
-                   "PC1" = 1,
-                   "PC2" = 2,
-                   "PC3" = 3
-                 ),
-                 selected = 2,
-                 inline = TRUE
+    # Radio buttons for second axis
+    radioButtons(
+      inputId = ns("Secondaxis"),
+      label = "",
+      choices = list(
+        "PC2" = 2,
+        "PC3" = 3
+      ),
+      selected = 2,
+      inline = TRUE
     )
   )
 }
@@ -39,19 +41,37 @@ UpdateRadioButtonsUI <- function(id) {
 #' @keywords internal
 #' @noRd
 UpdateRadioButtons <- function(input, output, session) {
+  # Update Secondaxis when Firstaxis changes
   observeEvent(input$Firstaxis, {
-    x <- input$Firstaxis
-    # Can also set the label and select items
-    choices <- c("PC1" = 1,
-                 "PC2" = 2,
-                 "PC3" = 3)
+    selected_first <- input$Firstaxis
+    choices <- c("PC1" = 1, "PC2" = 2, "PC3" = 3)
     updateRadioButtons(session,
                        "Secondaxis",
-                       choices = choices[-as.numeric(x)],
-                       inline  = TRUE)
+                       choices = choices[-as.numeric(selected_first)],
+                       selected = if (input$Secondaxis == selected_first) {
+                         choices[-as.numeric(selected_first)][1]
+                       } else {
+                         input$Secondaxis
+                       },
+                       inline = TRUE)
   })
   
+  # Update Firstaxis when Secondaxis changes
+  observeEvent(input$Secondaxis, {
+    selected_second <- input$Secondaxis
+    choices <- c("PC1" = 1, "PC2" = 2, "PC3" = 3)
+    updateRadioButtons(session,
+                       "Firstaxis",
+                       choices = choices[-as.numeric(selected_second)],
+                       selected = if (input$Firstaxis == selected_second) {
+                         choices[-as.numeric(selected_second)][1]
+                       } else {
+                         input$Firstaxis
+                       },
+                       inline = TRUE)
+  })
 }
+
 
 #' @keywords internal
 #' @noRd
