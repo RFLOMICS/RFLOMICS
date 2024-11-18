@@ -38,9 +38,7 @@ coExp.set.list <- getCoexpSettings(MAE[["protetest"]])
 coExp.set.list$method
 
 # get results
-clusters <- getCoseqClusters(MAE[["protetest"]])
-proteins_c1 <- getClusterEntities(MAE[["protetest"]], 
-                                      clusterName = "cluster_1")
+clusters <- getCoexpClusters(MAE[["protetest"]], clusterName = "cluster_1")
 
 # plots
 #plotCoExpression(MAE[["protetest"]])

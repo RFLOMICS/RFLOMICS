@@ -87,7 +87,8 @@
 
 # ---- transformation - prot/meta data ----
 
-# .applyTransformation: apply the transformation method stored in object@metadata[["transform_method"]] and modify the assay.
+# .applyTransformation: apply the transformation method stored in 
+# metadata(object)[["transform_method"]] and modify the assay.
 #' @title apply_transformation
 #'
 #' @param object An object of class \link{RflomicsSE}
@@ -143,7 +144,7 @@
 
 #' @description
 #' .applyNormalization: apply the normalization method stored in 
-#' object@metadata[["Normalization"]] and modify the assay.
+#' metadata(object)[["Normalization"]] and modify the assay.
 #' @title .applyNorm
 #' @param object An object of class \link{RflomicsSE}
 #' @description apply the normalization to the assay. Usually, after the transformation,

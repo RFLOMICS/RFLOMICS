@@ -64,7 +64,7 @@
     if (length(colBatch) > 2)
         message("sorry, only 2 batches effect for now!")
     
-    SEobject@metadata[["correction_batch_method"]] <-
+    metadata(SEobject)[["correction_batch_method"]] <-
         "limma (removeBatchEffect)"
 
     assay(SEobject) <- rbeRes
@@ -86,7 +86,6 @@
 #' No other option for now.
 #' @return An object of class \link{RflomicsMAE}
 #' @importFrom stats model.matrix formula
-#' @importFrom dplyr filter
 #' @importFrom limma voom
 #' @importFrom edgeR DGEList
 #' @keywords internal
@@ -184,7 +183,6 @@
 #' @param selectedResponse a character string.
 #' @return A ggplot2 graph
 #' @keywords internal
-#' @importFrom dplyr group_by summarise filter
 #' @importFrom reshape2 melt
 #' @noRd
 
@@ -223,9 +221,6 @@
 
 #' @keywords internal
 #' @importFrom reshape2 melt
-#' @importFrom ggplot2 ggplot geom_tile aes theme_classic theme element_blank
-#' element_text scale_fill_gradientn ylab ggtitle
-#' @importFrom dplyr filter
 #' @noRd
 .plot_MO_2 <- function(Data_res) {
     dat_explained <- melt(do.call("rbind", Data_res$prop_expl_var))
@@ -367,7 +362,6 @@
 #'  The best outcome, as computed by tuning function, will be displayed.
 #' @return A mixOmics result.
 #' @importFrom tibble rownames_to_column column_to_rownames
-#' @importFrom dplyr arrange select select_if
 #' @importFrom tidyselect all_of
 #' @importFrom mixOmics plsda splsda block.plsda block.splsda tune.block.splsda
 #' tune.splsda unmap

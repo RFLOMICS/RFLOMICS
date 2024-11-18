@@ -30,7 +30,7 @@ MAE <- MAE |>
   runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")     |>
   runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")    |>
   runCoExpression(SE.name = "protetest", K = 2:10, replicates = 5, 
-                  merge = "union")
+                  merge = "union", min.data.size = 10)
 
 # Define the selections options
 selOpt = list("protetest" = c("cluster.1", "H3"), "metatest" = c("DE"))

@@ -4,10 +4,8 @@
 # N. Bessoltane,
 # D. Charif, 
 
-#' @importFrom dplyr filter select
 #' @importFrom purrr reduce
 #' @importFrom shinyBS popify bsButton addPopover bsTooltip
-
 
 .modGLMmodelUI <- function(id){
   
@@ -144,7 +142,7 @@
       rea.values[[dataset]]$process   <- FALSE
       rea.values[[dataset]]$diffAnal  <- FALSE
       rea.values[[dataset]]$coExpAnal <- FALSE
-      rea.values[[dataset]]$diffAnnot <- FALSE
+      rea.values[[dataset]]$DiffExp <- FALSE
       rea.values[[dataset]]$diffValid <- FALSE
       rea.values[[dataset]]$DiffValidContrast <- NULL
     })

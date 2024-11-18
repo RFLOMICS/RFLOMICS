@@ -29,7 +29,6 @@
 #' @param transformMethod method of transformation.
 #' @param userNormMethod method used by user to normalize data.
 #' @param userTransMethod method used by user to transforme data.
-#' @param ... supplementary arguments.
 #' @return An object of class \link{RflomicsSE} or class \link{RflomicsSE} 
 #' @exportMethod runDataProcessing
 #' @seealso 
@@ -65,8 +64,7 @@ setMethod(
                         normMethod= NULL, 
                         imputMethod = NULL,
                         userTransMethod = "unknown",
-                        userNormMethod = "unknown",
-                        ...){
+                        userNormMethod = "unknown"){
     
     # apply data processing
     if(getOmicsTypes(object) == "RNAseq"){
@@ -156,8 +154,7 @@ setMethod(
                         transformMethod = NULL,
                         normMethod= NULL, 
                         userTransMethod = "unknown",
-                        userNormMethod = "unknown",
-                        ...){
+                        userNormMethod = "unknown"){
     
     if (!SE.name %in% names(object))
       stop("SE name must be part of this list of names: ",
@@ -194,7 +191,6 @@ setMethod(
 #'   This function applied sample filtering on an dataset. 
 #' }
 #' @exportMethod runSampleFiltering
-#' @importFrom dplyr filter
 setMethod(
   f          = "runSampleFiltering",
   signature  = "RflomicsSE",
@@ -617,8 +613,8 @@ setMethod(
   signature  = "RflomicsSE",
   definition = function(object, 
                         transformMethod = "log2",
-                        userTransMethod = "unknown",
-                        ...){
+                        userTransMethod = "unknown"
+  ){
     
     if (getOmicsTypes(object) == "RNAseq"){
       warning("It is not recommended to transform RNAseq data.")
@@ -705,8 +701,8 @@ setMethod(
   definition = function(object, 
                         SE.name, 
                         transformMethod = NULL,
-                        userTransMethod = "unknown", 
-                        ...){
+                        userTransMethod = "unknown"
+  ){
     
     object[[SE.name]] <- 
       runTransformData(object[[SE.name]], 
@@ -748,8 +744,8 @@ setMethod(
   signature  = "RflomicsSE",
   definition = function(object, 
                         normMethod = NULL,
-                        userNormMethod = "unknown",
-                        ...){
+                        userNormMethod = "unknown"
+  ){
     
     # accepted value for normMethod
     # default value : 1rst element
@@ -771,9 +767,9 @@ setMethod(
     
     # check filtering status 
     if (is.null(getFilterSettings(object)$method))
-        stop("Before transforming the ", getOmicsTypes(object), " data, ", 
-             "you must first run the feature filtering. ",
-             "See ?runDataProcessing.")
+      stop("Before transforming the ", getOmicsTypes(object), " data, ", 
+           "you must first run the feature filtering. ",
+           "See ?runDataProcessing.")
     
     # check if proteomics or metabolomics data are transformed 
     if(getOmicsTypes(object) != "RNAseq" && is.null(getTransSettings(object)$method))
@@ -833,8 +829,8 @@ setMethod(
   signature  = "RflomicsMAE",
   definition = function(object, SE.name, 
                         normMethod = NULL,
-                        userNormMethod = "unknown",
-                        ...){
+                        userNormMethod = "unknown"
+  ){
     
     object[[SE.name]] <-  
       runNormalization(object         = object[[SE.name]],
@@ -881,22 +877,14 @@ setMethod(
     
     log <- ifelse(getOmicsTypes(object) == "RNAseq", TRUE, FALSE)
     
-    if(isFALSE(raw)){
-      object2 <- getProcessedData(object, norm = TRUE, log = log)
-      tag = "norm"
-    }
-    else{
-      object2 <- getProcessedData(object, log = log)
-      tag = "raw"
-    }
+    pseudo  <- assay(getProcessedData(object, norm = !raw, log = log))
     
-    pseudo  <- assay(object2)
-    
-    object@metadata[["PCAlist"]][[tag]] <-
+    PCAlist <- getAnalysis(object, name = "PCAlist")
+    PCAlist[[ifelse(isTRUE(raw), "raw", "norm")]] <- 
       PCA(t(pseudo), ncp = ncomp, graph = FALSE)
+    object <- setElementToMetadata(object, name = "PCAlist", content = PCAlist)
     
     return(object)
-    
   })
 
 #' @rdname runDataProcessing
@@ -915,9 +903,7 @@ setMethod(f          = "runOmicsPCA",
             object[[SE.name]] <-  runOmicsPCA(object[[SE.name]],
                                               ncomp = ncomp,
                                               raw  = raw)
-            
             return(object)
-            
           })
 
 ## ---- checkExpDesignCompleteness ----
@@ -1120,9 +1106,11 @@ setMethod(f          = "getProcessedData",
 #' # See runDataProcessing for an example that includes getTransSettings
 setMethod(f          = "getTransSettings",
           signature  = "RflomicsSE",
-          
           definition = function(object){
-            return(object@metadata$DataProcessing$Transformation$setting)   
+            
+            getAnalysis(object, 
+                        name = "DataProcessing",
+                        subName = "Transformation")$setting
           })
 
 #' @rdname runDataProcessing
@@ -1150,9 +1138,11 @@ setMethod(f          = "getTransSettings",
 #' # See runDataProcessing for an example that includes getFilterSettings
 setMethod(f          = "getFilterSettings",
           signature  = "RflomicsSE",
-          
           definition = function(object){
-            return(object@metadata$DataProcessing$featureFiltering$setting)   
+            
+            getAnalysis(object, 
+                        name = "DataProcessing",
+                        subName = "featureFiltering")$setting
           })
 
 #' @rdname runDataProcessing
@@ -1180,9 +1170,13 @@ setMethod(f          = "getFilterSettings",
 #' # See runDataProcessing for an example that includes getFilteredFeatures
 setMethod(f          = "getFilteredFeatures",
           signature  = "RflomicsSE",
-          
           definition = function(object){
-            return(object@metadata$DataProcessing$featureFiltering$results$filteredFeatures)   
+            
+            res <- getAnalysis(object, 
+                               name = "DataProcessing",
+                               subName = "featureFiltering")
+            
+            return(res[["results"]][["filteredFeatures"]])   
           })
 
 #' @rdname runDataProcessing
@@ -1245,12 +1239,13 @@ setMethod(f          = "getSelectedSamples",
 #' @exportMethod getCoeffNorm
 #' @examples
 #' # See runDataProcessing for an example that includes getCoeffNorm
-setMethod(f          = "getCoeffNorm",
-          signature  = "RflomicsSE",
-          
-          definition = function(object){
-            return(metadata(object)[["DataProcessing"]][["Normalization"]][["results"]][["coefNorm"]])
-          })
+setMethod(
+  f          = "getCoeffNorm",
+  signature  = "RflomicsSE",
+  definition = function(object){
+    
+    metadata(object)[["DataProcessing"]][["Normalization"]][["results"]][["coefNorm"]]
+  })
 
 #' @rdname runDataProcessing
 #' @name getCoeffNorm
@@ -1260,6 +1255,7 @@ setMethod(f          = "getCoeffNorm",
 setMethod(f          = "getCoeffNorm",
           signature  = "RflomicsMAE",
           definition = function(object, SE.name){
+            
             getCoeffNorm(object = object[[SE.name]])
           })
 
@@ -1279,7 +1275,10 @@ setMethod(f          = "getCoeffNorm",
 setMethod(f          = "getNormSettings",
           signature  = "RflomicsSE",
           definition = function(object){
-            return(object@metadata$DataProcessing$Normalization$setting)
+            
+            getAnalysis(object, 
+                        name = "DataProcessing",
+                        subName = "Normalization")$setting
           })
 
 #' @rdname runDataProcessing
@@ -1354,9 +1353,6 @@ setMethod(f          = "setSelectedSamples",
 #'    \item plotLibrarySize: return barplot of library size by sample.}
 #' @param raw a boolean 
 #' @exportMethod plotLibrarySize
-#' @importFrom ggplot2 ggplot aes ggtitle element_text 
-#' @importFrom ggplot2 theme labs ylab geom_bar
-#' @importFrom dplyr full_join arrange
 #' @examples
 #' # See runDataProcessing for an example that includes plotLibrarySize
 setMethod(f          = "plotLibrarySize",
@@ -1425,10 +1421,7 @@ setMethod(f          = "plotLibrarySize",
 #' @param plot plot type ("boxplot" or "density")
 #' @param raw boolean. Plot the raw data or the transformed ones (raw = FALSE)
 #' @exportMethod plotDataDistribution
-#' @importFrom ggplot2 ggplot geom_boxplot geom_density aes
-#' @importFrom ggplot2 xlab theme element_text ylab margin ggtitle
 #' @importFrom reshape2 melt
-#' @importFrom dplyr full_join arrange
 #' @examples
 #' # See runDataProcessing for an example that includes plotDataDistribution
 setMethod(
@@ -1543,15 +1536,11 @@ setMethod(
 #' This function plot the factorial map from a PCA object stored
 #' in a \link{RflomicsSE-class} object. By default, samples are
 #' colored by groups (all combinations of level's factor)}
-#' @param raw This argument indicates whether the scaled PCA has to be 
-#' performed on raw [\sQuote{raw}] or normalized [\sQuote{norm}] data.
+#' @param raw boolean. Does the pca have to be ran on raw data or transformed 
 #' @param axes A vector giving the two axis that have to be drawn for the 
 #' factorial map
 #' @param groupColor All combination of level's factor
-#' @importFrom dplyr mutate full_join select right_join
 #' @importFrom FactoMineR coord.ellipse
-#' @importFrom ggplot2 ggplot aes_string geom_point geom_text aes xlab ylab 
-#' geom_hline geom_vline geom_vline element_text ggtitle geom_polygon
 #' @exportMethod plotOmicsPCA
 #' @examples
 #' # See runDataProcessing for an example that includes plotOmicsPCA
@@ -1559,7 +1548,7 @@ setMethod(
   f          = "plotOmicsPCA",
   signature  = "RflomicsSE",
   definition = function(object,
-                        raw = c("raw", "norm"),
+                        raw = TRUE,
                         axes = c(1, 2),
                         groupColor = "groups") 
   {
@@ -1572,28 +1561,23 @@ setMethod(
     PC2 <- paste("Dim.", axes[2], sep = "")
     
     if (PC1 == PC2) PC2 <- PC1 + 1
-    
-    
+
     # get labels
     log <- ifelse(getOmicsTypes(object) == "RNAseq", TRUE, FALSE)
-    if(raw != "raw")
-      object <- getProcessedData(object, norm = TRUE, log = log)
-    else
-      object <- getProcessedData(object, log = log)
-    
-    labels <- getLabs4plot(object)
+    object <- getProcessedData(object, norm = !raw, log = log)
     
     # get pca score
     ExpDesign <- getDesignMat(object)
-    score <- as.data.frame(metadata(object)$PCAlist[[raw]]$ind$coord[, axes])
+    rawnorm <- ifelse(isTRUE(raw), "raw", "norm")
+    score <- as.data.frame(metadata(object)$PCAlist[[rawnorm]]$ind$coord[, axes])
     score$samples <- row.names(score)
     score <- right_join(score, ExpDesign, by = "samples")
     
-    var1 <- round(metadata(object)$PCAlist[[raw]]$eig[axes, 2][1], digits = 3)
-    var2 <- round(metadata(object)$PCAlist[[raw]]$eig[axes, 2][2], digits = 3)
+    var1 <- round(metadata(object)$PCAlist[[rawnorm]]$eig[axes, 2][1], digits = 3)
+    var2 <- round(metadata(object)$PCAlist[[rawnorm]]$eig[axes, 2][2], digits = 3)
     
-    
-    
+    # plot
+    labels <- getLabs4plot(object)
     p <- ggplot(score, aes_string(x = PC1, y = PC2, color = groupColor))  +
       geom_point(size = 2) +
       geom_text(aes(label = samples), 
@@ -1631,7 +1615,7 @@ setMethod(
   signature  = "RflomicsMAE",
   definition = function(object,
                         SE.name,
-                        raw = c("raw", "norm"),
+                        raw = FALSE,
                         axes = c(1, 2),
                         groupColor = "groups") {
     plotOmicsPCA(object[[SE.name]], 
@@ -1760,25 +1744,27 @@ setMethod(
 #' @name isProcessedData
 #' @aliases isProcessedData,RflomicsMAE-method
 #' @exportMethod isProcessedData
-setMethod(f          = "isProcessedData",
-          signature  = "RflomicsMAE",
-          definition = function(object, SE.name,
-                                filter = TRUE,
-                                trans = TRUE,
-                                norm = TRUE,
-                                log = FALSE){
-            
-            if (!SE.name %in% getDatasetNames(object)){
-              stop("SE name must be part of this list of names: ",
-                   getDatasetNames(object))
-            }
-            
-            results <- 
-              isProcessedData(object[[SE.name]],
-                              filter = filter,
-                              trans = trans,
-                              norm = norm,
-                              log = log)
-            
-            return(results)
-          })
+setMethod(
+  f          = "isProcessedData",
+  signature  = "RflomicsMAE",
+  definition = function(object, SE.name,
+                        filter = TRUE,
+                        trans = TRUE,
+                        norm = TRUE,
+                        log = FALSE
+  ){
+    
+    if (!SE.name %in% getDatasetNames(object)){
+      stop("SE name must be part of this list of names: ",
+           getDatasetNames(object))
+    }
+    
+    results <- 
+      isProcessedData(object[[SE.name]],
+                      filter = filter,
+                      trans = trans,
+                      norm = norm,
+                      log = log)
+    
+    return(results)
+  })

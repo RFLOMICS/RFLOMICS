@@ -91,7 +91,6 @@
 #' @title .modIntegrationAnalysis
 #' @importFrom DT renderDataTable datatable
 #' @importFrom purrr reduce
-#' @importFrom dplyr mutate across full_join
 #' @keywords internal
 #' @noRd
 .modIntegrationAnalysis <- function(input, output, session,
@@ -552,9 +551,7 @@
 #' @title .modMOFAResultView
 #' @importFrom MOFA2 plot_data_overview plot_factor_cor plot_variance_explained
 #' plot_weights views_names plot_factor get_dimensions plot_data_heatmap
-#' @importFrom ggplot2 ggtitle
 #' @importFrom DT renderDataTable datatable
-#' @importFrom dplyr select
 #' @importFrom grid grid.draw
 #' @importFrom ggpubr ggarrange
 #' @keywords internal

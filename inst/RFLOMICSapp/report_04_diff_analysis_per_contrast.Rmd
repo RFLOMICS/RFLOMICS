@@ -16,9 +16,10 @@ opts_chunk$set(
   fig.path=contrastDir
 )
 
-dataset.SE <- getRflomicsSE(rflomics.MAE, data)
-evalPCA <- dim(metadata(dataset.SE)[["DiffExpAnal"]][["TopDEF"]][[contrast]])[1] > 1
-evalExport <-  dim(metadata(dataset.SE)[["DiffExpAnal"]][["TopDEF"]][[contrast]])[1] > 0
+dataset.SE  <- getRflomicsSE(rflomics.MAE, data)
+DiffExpAnal <- getAnalysis(dataset.SE, name = "DiffExpAnal", subName = "results")
+evalPCA     <- dim(DiffExpAnal[["TopDEF"]][[contrast]])[1] > 1
+evalExport  <- dim(DiffExpAnal[["TopDEF"]][[contrast]])[1] > 0
 ```
 
 
@@ -54,13 +55,13 @@ plotHeatmapDesign(object = dataset.SE, contrastName = contrast)
 
 ```{r PCAonDE, out.width = "50%",fig.show = "hold", eval = evalPCA, fig.cap=paste0("<p style=\"color:grey\">","fig: Factorials maps formed by the axis 1,2 (left) and 1,3 (right) of the PCA performed on DE features.", "</p>")}
 
-resTable <- metadata(dataset.SE)$DiffExpAnal[["TopDEF"]][[contrast]]
+resTable      <- DiffExpAnal[["TopDEF"]][[contrast]]
 newDataset.SE <- dataset.SE[rownames(dataset.SE) %in% row.names(resTable)]
 newDataset.SE <- runOmicsPCA(newDataset.SE)  
 
-plotOmicsPCA(newDataset.SE, raw = "norm",
+plotOmicsPCA(newDataset.SE, raw = FALSE,
              axes=c(1, 2), groupColor="groups")
-plotOmicsPCA(newDataset.SE, raw = "norm",
+plotOmicsPCA(newDataset.SE, raw = FALSE,
              axes=c(1, 3), groupColor="groups")
 ```
 
@@ -79,7 +80,7 @@ plotOmicsPCA(newDataset.SE, raw = "norm",
 + Regulation: Up (green) or Down (red) regulated
 
 ```{r table , eval = evalExport, fig.cap=paste0("<p style=\"color:grey\">","tab: table presenting the statisticals results of the differential analysis", "</p>")}
-df <- signif(dataset.SE@metadata[["DiffExpAnal"]][["TopDEF"]][[contrast]],3)
+df <- signif(DiffExpAnal[["TopDEF"]][[contrast]],3)
 
 datatable(df, rownames = TRUE , class = 'cell-border stripe',
           options = list(pageLength = 6, scrollX = F, lengthChange = F)) |> 
@@ -92,13 +93,13 @@ datatable(df, rownames = TRUE , class = 'cell-border stripe',
 
 
 ```{r , eval = evalExport}
-write.table(dataset.SE@metadata[["DiffExpAnal"]][["TopDEF"]][[contrast]],
+write.table(DiffExpAnal[["TopDEF"]][[contrast]],
             file=paste0(contrastDir,"Table_of_DE_", variableName,"_pvalmax_",
-                        dataset.SE@metadata[["DiffExpAnal"]][["p.adj.cutoff"]],"_FCmin_",
-                        dataset.SE@metadata[["DiffExpAnal"]][["abs.logFC.cutoff"]],".txt"),
+                        getDiffSettings(dataset.SE)[["p.adj.cutoff"]],"_FCmin_",
+                        getDiffSettings(dataset.SE)[["abs.logFC.cutoff"]],".txt"),
             sep="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)
 
-write.table(dataset.SE@metadata[["DiffExpAnal"]][["DEF"]][[contrast]],
+write.table(DiffExpAnal[["DEF"]][[contrast]],
             file=paste0(contrastDir,"Table_of_non_filtering_", variableName,".txt"),
             sep="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)
 ```

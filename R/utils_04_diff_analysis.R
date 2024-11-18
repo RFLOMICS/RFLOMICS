@@ -22,7 +22,6 @@
 #' @importFrom edgeR DGEList estimateGLMCommonDisp estimateGLMTrendedDisp 
 #' estimateGLMTagwiseDisp glmFit glmLRT topTags
 #  @importFrom clustermq Q
-#' @importFrom dplyr rename
 #' @noRd
 #'
 .edgeRAnaDiff <- function(object, 
@@ -147,7 +146,6 @@
 #' @return A list
 #' @keywords internal
 #' @importFrom stats model.matrix as.formula
-#' @importFrom dplyr rename
 #' @importFrom limma lmFit contrasts.fit eBayes topTable
 #' @noRd
 #'
@@ -259,7 +257,6 @@
 #' @param contrastName the contrast, useful for plot title
 #' @return plot
 #' @keywords internal
-#' @importFrom ggplot2 geom_histogram theme_bw labs ggplot aes
 #' @noRd
 .plotPValue <- function(data, contrastName = contrastName) {
   PValue <- NULL
@@ -284,9 +281,7 @@
 #' @param contrastName the contrast, useful for plot title
 #' @return MA plot
 #' @keywords internal
-#' @importFrom ggplot2 aes geom_point scale_colour_manual ggsave theme_linedraw
 #' @importFrom ggpubr ggmaplot
-#' @importFrom dplyr select rename
 #' @noRd
 
 .plotMA <- function(data,
@@ -342,7 +337,6 @@
 #' @param contrastName the contrast, useful for plot title
 #' @return a volcano plot, made with the \link{EnhancedVolcano} package.
 #' @importFrom EnhancedVolcano EnhancedVolcano
-#' @importFrom dplyr first last 
 #' @keywords internal
 #' @noRd
 #'

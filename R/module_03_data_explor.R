@@ -357,7 +357,6 @@ QCNormalizationTab <-
           
           tags$br(), tags$hr(), tags$br(),
           uiOutput(session$ns("FeatureBoxplot"))
-          
         )
       )
       
@@ -461,62 +460,55 @@ QCNormalizationTab <-
     
     # PCA plot
     output$PCAcoordUI <- renderUI({
-      factors_type   <- getFactorTypes(session$userData$FlomicsMultiAssay)
+      
+      factors_type   <- 
+        getFactorTypes(session$userData$FlomicsMultiAssay[[dataset]])
       choices        <- names(factors_type)
       names(choices) <-
         paste(names(factors_type),  paste0("(", factors_type, ")"))
       
-      ui <- list(fluidRow(
-        tags$br(),
-        column(
-          width = 6,
-          radioButtons(
-            inputId = session$ns("PCA.factor.condition"),
-            label = 'Factors:',
-            choices = c("groups", choices),
-            selected = "groups"
-          )
+      ui <- list(
+        fluidRow(
+          tags$br(),
+          column(
+            width = 6,
+            radioButtons(
+              inputId = session$ns("PCA.factor.condition"),
+              label = 'Factors:',
+              choices = c("groups", choices),
+              selected = "groups"
+            )
+          ),
+          column(width = 6, UpdateRadioButtonsUI(session$ns("factors"))),
+          tags$br(),
         ),
-        column(width = 6, UpdateRadioButtonsUI(session$ns("factors"))),
-        tags$br(),
-      ),
-      plotOutput(session$ns("raw.PCAcoord")))
+        renderPlot({
+          
+          plotOmicsPCA(
+            session$userData$FlomicsMultiAssay[[dataset]],
+            raw = TRUE,
+            axes = c(as.numeric(input$`factors-Firstaxis`[1]), 
+                     as.numeric(input$`factors-Secondaxis`[1])),
+            groupColor = input$PCA.factor.condition
+          )
+          
+        })
+      )
       
       if (rea.values[[dataset]]$process != FALSE) {
-        ui <- list(plotOutput(session$ns("norm.PCAcoord")), ui)
+        ui <- 
+          list(
+            renderPlot({
+              plotOmicsPCA(
+                session$userData$FlomicsMultiAssay[[dataset]],
+                raw = FALSE,
+                axes = c(as.numeric(input$`factors-Firstaxis`[1]), 
+                         as.numeric(input$`factors-Secondaxis`[1])),
+                groupColor = input$PCA.factor.condition
+              )
+            }), ui)
       }
-      
       return(ui)
-    })
-    
-    output$raw.PCAcoord <- renderPlot({
-      PC1.value <- as.numeric(input$`factors-Firstaxis`[1])
-      PC2.value <- as.numeric(input$`factors-Secondaxis`[1])
-      condGroup <- input$PCA.factor.condition
-      
-      plotOmicsPCA(
-        session$userData$FlomicsMultiAssay[[dataset]],
-        raw = "raw",
-        axes = c(PC1.value, PC2.value),
-        groupColor = condGroup
-      )
-      
-    })
-    output$norm.PCAcoord <- renderPlot({
-      if (rea.values[[dataset]]$process == FALSE)
-        return()
-      
-      PC1.value <- as.numeric(input$`factors-Firstaxis`[1])
-      PC2.value <- as.numeric(input$`factors-Secondaxis`[1])
-      condGroup <- input$PCA.factor.condition
-      
-      plotOmicsPCA(
-        session$userData$FlomicsMultiAssay[[dataset]],
-        raw = "norm",
-        axes = c(PC1.value, PC2.value),
-        groupColor = condGroup
-      )
-      
     })
     
     # Boxplot
@@ -525,11 +517,24 @@ QCNormalizationTab <-
       SE.data <- session$userData$FlomicsMultiAssay[[dataset]]
       
       ui <- list(
-        plotOutput(session$ns("FeatureBoxplot.raw"))
+        renderPlot({
+          plotBoxplotDE(
+            object=session$userData$FlomicsMultiAssay[[dataset]], 
+            featureName=input$DE, 
+            groupColor=input$DEcondition, 
+            raw = TRUE) 
+        })
       )
       
       if (rea.values[[dataset]]$process != FALSE) {
-        ui <- list(plotOutput(session$ns("FeatureBoxplot.norm")), ui)
+        ui <- list(
+          renderPlot({
+            plotBoxplotDE(
+              object=session$userData$FlomicsMultiAssay[[dataset]], 
+              featureName=input$DE, 
+              groupColor=input$DEcondition, 
+              raw = FALSE) 
+          }), ui)
       }
       
       ui <- list(
@@ -555,23 +560,6 @@ QCNormalizationTab <-
           )
         ), ui)
       return(ui)
-    })
-    
-    output$FeatureBoxplot.raw <- renderPlot({
-      
-      plotBoxplotDE(
-        object=session$userData$FlomicsMultiAssay[[dataset]], 
-        featureName=input$DE, 
-        groupColor=input$DEcondition, 
-        raw = TRUE) 
-    })
-    output$FeatureBoxplot.norm <- renderPlot({
-      
-      plotBoxplotDE(
-        object=session$userData$FlomicsMultiAssay[[dataset]], 
-        featureName=input$DE, 
-        groupColor=input$DEcondition, 
-        raw = FALSE) 
     })
     
     #---- run preprocessing - Normalization/transformation, filtering...----
@@ -619,7 +607,7 @@ QCNormalizationTab <-
       rea.values[[dataset]]$process   <- FALSE
       rea.values[[dataset]]$diffAnal  <- FALSE
       rea.values[[dataset]]$coExpAnal <- FALSE
-      rea.values[[dataset]]$diffAnnot <- FALSE
+      rea.values[[dataset]]$DiffExp <- FALSE
       rea.values[[dataset]]$diffValid <- FALSE
       rea.values[[dataset]]$DiffValidContrast <- NULL
       

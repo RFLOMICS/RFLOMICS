@@ -16,28 +16,31 @@
 #' class \link{RflomicsMAE-class}
 #' @param SE.name SE.name the name of the dataset if the input object 
 #' is a \link{RflomicsMAE-class}
-#' @param nameList name of contrasts (tags or names) from which to extract DE
+#' @param featureList name of contrasts (tags or names) from which to extract DE
 #' genes if from is DiffExpAnal.
-#' @param list_args list of arguments to pass to the enrichment function.
-#' These arguments must match the ones from the clusterprofiler package.
-#' E.g: universe, keytype, pvalueCutoff, qvalueCutoff, etc.
 #' @param from indicates if ListNames are from differential analysis results
-#' (DiffExpAnal) or from the co-expression analysis results (CoExpAnal)
+#' (DiffExp) or from the co-expression analysis results (CoExp)
+#' @param universe description
 #' @param database is it a custom annotation, GO or KEGG annotations
 #' @param domain subcatgory for the database (eg BP for GO)
-#' @param col_term for custom annotation, column name of the file containing
-#' term names or id.
-#' @param col_gene for custom annotation, column name of the file containing
-#' entities names.
-#' @param col_name (optional) for custom annotation, column name of the 
-#' file containing term names if col_term is used for ids.
-#' @param col_domain for custom annotation, column name of the file containing
-#' the domains.
-#' @param annot for custom annotation, path of the annotation file.
+#' @param annotation for custom annotation, path of the annotation file.
+#' @param OrgDb OrgDb (with enrichGO)
+#' @param organism supported organism listed in 
+#' 'https://www.genome.jp/kegg/catalog/org_list.html' (with enrichKEGG)
+#' @param keyType keytype of input gene with enrichGO 
+#' (one of "kegg", 'ncbi-geneid', 'ncbi-proteinid' and 'uniprot' with enrichKEGG)
+#' @param pvalueCutoff adjusted pvalue cutoff on enrichment tests to report
+#' @param qvalueCutoff qvalue cutoff on enrichment tests to report as significant. 
+#' Tests must pass 
+#' i) pvalueCutoff on unadjusted pvalues, 
+#' ii) pvalueCutoff on adjusted pvalues and 
+#' iii) qvalueCutoff on qvalues to be reported.
+#' @param minGSSize minimal size of genes annotated by Ontology term for testing.
+#' @param maxGSSize maximal size of genes annotated for testing
+#' @param ... additionnal parameters for enrichKEGG, enrichGO, enricher.
 #' @return A RflomicsMAE or a RflomicsS, depending on the class of object
 #' parameter. The enrichment results are added to the metadata slot, either
 #' in DiffExpEnrichAnal or CoExpEnrichAnal.
-#' @importFrom dplyr filter select mutate relocate
 #' @importFrom tidyselect all_of
 #' @importFrom clusterProfiler enrichKEGG enrichGO enricher
 #' @importFrom utils getFromNamespace
@@ -56,126 +59,164 @@ setMethod(
   f = "runAnnotationEnrichment",
   signature = "RflomicsSE",
   definition = function(object,
-                        nameList = NULL,
-                        list_args = list(
-                          pvalueCutoff = 0.05,
-                          qvalueCutoff = 1,
-                          minGSSize = 10,
-                          maxGSSize = 500,
-                          universe = names(object)
-                        ),
+                        featureList = NULL,
                         from = "DiffExp",
+                        universe = NULL,
                         database = "custom",
                         domain = "no-domain",
-                        col_term = "term",
-                        col_gene = "gene",
-                        col_name = "name",
-                        col_domain = NULL,
-                        annot = NULL) {
+                        annotation = NULL,
+                        OrgDb     = NULL,
+                        organism  = NULL,
+                        keyType   = NULL,
+                        pvalueCutoff = 0.05,
+                        qvalueCutoff = 1,
+                        minGSSize = 10,
+                        maxGSSize = 500,
+                        ...) {
     
-    if (length(metadata(object)[["DiffExpAnal"]]) == 0)
-      stop("There is no differential analysis. Please run a differential
-                 analysis before running enrichment")
+    # define result output
+    EnrichAnal <- list(
+      settings = list(),
+      results  = list(),
+      errors   = NULL
+    )
+
+    param.list <- list()
+    if(is.null(pvalueCutoff)) pvalueCutoff <- 0.05
+    param.list[["pvalueCutoff"]] <- pvalueCutoff
     
+    if(is.null(qvalueCutoff)) qvalueCutoff <- 1
+    param.list[["qvalueCutoff"]] <- qvalueCutoff
     
-    # Where to store results or take results
-    from <- .determineFrom(from)
-    fromEnrich <- .determineFromEnrich(from)
+    if(is.null(minGSSize)) minGSSize <- 10
+    param.list[["minGSSize"]] <- minGSSize
     
-    # make sure results slot is empty (or re-init)
-    metadata(object)[[fromEnrich]][[database]] <- EnrichAnal <- list()
+    if(is.null(maxGSSize)) maxGSSize <- 500
+    param.list[["maxGSSize"]] <- maxGSSize
     
-    DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
+    if(is.null(universe))
+      param.list[["universe"]] <- names(getProcessedData(object, filter = TRUE))
     
-    switch(from,
-           "DiffExp" = {
-             contrasts <- NULL
-             
-             if (is.null(getValidContrasts(object))) {
-               contrasts <- getSelectedContrasts(object)$contrastName
-             } else {
-               contrasts <- getValidContrasts(object)$contrastName
-             }
-             
-             if (!is.null(nameList)) {
-               contrasts <- intersect(contrasts, nameList)
-               if(is.null(contrasts) || length(contrasts) == 0)
-                 stop("No selected contrasts.")
-             }else{
-               nameList <- contrasts
-             }
-             
-             geneLists <-
-               lapply(contrasts, function(contrastName) {
-                 row.names(DiffExpAnal[["results"]][["TopDEF"]][[contrastName]])
-               })
-             names(geneLists) <- contrasts
-             
-           },
-           "CoExp" = {
-             
-             if (length(metadata(object)[["CoExpAnal"]]) == 0)
-               stop("There is no co-expression analysis.")
-             
-             namesClust <- names(metadata(object)[["CoExpAnal"]][["clusters"]])
-             if (!is.null(nameList)){
-               namesClust <- intersect(namesClust, nameList)
-             }else{
-               nameList <- namesClust
-             }
-             
-             geneLists <- lapply(namesClust, function(namClust) {
-               metadata(object)[["CoExpAnal"]][["clusters"]][[namClust]]
-             })
-             names(geneLists) <- namesClust
-           },
-           {
-             message(
-               "Argument from is detected to be neither DiffExp nor CoExp,
-                     taking DiffExp results."
-             )
-             from <- "DiffExp"
-           })
+    # check args
+    ## database
+    if(is.null(database)) stop("The 'database' argument is required.")
     
-    
-    # Domain
-    if (is.null(domain))
-      domain <- "no-domain"
-    if (database == "GO" && "ALL" %in% toupper(domain)) {
-      domain <- c("MF", "BP", "CC")
-    }
-    
-    # If custom, make sure the annotation file matches the requirements
-    if (database == "custom") {
-      if (is.null(annot)) {
-        stop("You need an annotation file for a custom enrichment")
-      } else if (length(intersect(c(col_term, col_gene), colnames(annot))) != 2)
-      {
-        stop(
-          "The name of columns for gene and term names don't
-             match the ones of the annotation files"
-        )
-      }
-      if (!is.null(col_domain) &&
-          is.null(annot[[col_domain]])) {
-        stop(
-          "The column you indicated for the domain in your annotation
-             file doesn't seem to exist."
-        )
-      } else if (!is.null(col_domain)) {
-        domain <- unique(annot[[col_domain]])
-        domain <- domain[!is.na(domain)]
-      }
-      annotation <- annot
-    }
-    
+    ## domain / clusterProfileR fucntion
     switch(
       database,
-      "GO" = { func_to_use <- "enrichGO"},
-      "KEGG" = { func_to_use <- "enrichKEGG"},
-      "custom" = { func_to_use <- "enricher"}
+      "GO" = {
+        param.list[["OrgDb"]]   <- OrgDb
+        param.list[["keyType"]] <- keyType
+        
+        func_to_use <- "enrichGO"
+        if(is.null(domain) || "ALL" %in% domain) domain <- c("MF", "BP", "CC")
+        if(any(!domain %in% c("MF", "BP", "CC")))
+          stop("The domain parameter is required, ",
+               "and its value must be in the following list: ",
+               paste(c(domain, "ALL"), collapse = ", "))
+      },
+      "KEGG"   = {
+        param.list[["organism"]] <- organism
+        param.list[["keyType"]]  <- keyType
+
+        func_to_use <- "enrichKEGG"
+        domain      <- "no-domain"
+      },
+      "custom" = {
+        func_to_use <- "enricher"
+        
+        if (is.null(annotation) | nrow(annotation) == 0)
+          stop("You need an annotation file for a custom enrichment")
+        
+        if(any(!c("term", "gene") %in% colnames(annotation)))
+          stop("The data.frame 'annotation' must contain at least two columns:",
+               " 'gene' and 'term'.")
+        
+        if("domain" %in% colnames(annotation)){
+          domain <- unique(annotation[["domain"]])
+          domain <- domain[!domain %in% c("", " ", ".")]
+          domain <- domain[!is.na(domain)]
+          
+          if(length(domain) > 10) domain <- "no-domain"
+        }
+        else{ domain <- "no-domain" }
+        
+        TERM2GENE <- list()
+        TERM2NAME <- list()
+        if("no-domain" %in% domain){
+          TERM2GENE[["domain"]] <- list(
+            "term" = annotation[["term"]],
+            "gene" = annotation[["gene"]])
+          TERM2NAME[["domain"]] <- NA
+        }
+        else{
+          TERM2GENE <- lapply(domain, function(x){
+            annot1 <- unique(filter(annotation, domain == x)[,c("term", "gene")])
+            list(
+              "term" = annot1$term,
+              "gene" = annot1$gene)
+          })
+          names(TERM2GENE) <- domain
+          
+          TERM2NAME <- lapply(domain, function(x){
+            annot2 <- unique(filter(annotation, domain == x)[,c("term", "name")])
+            list(
+              "term" = annot2$term,
+              "name" = annot2$name)
+          })
+          names(TERM2NAME) <- domain
+        }
+      }
     )
+
+    ## lists of features
+    if(!is.null(featureList)) from <- .getOrigin(object, featureList)
+    if(is.null(from)) from <- "DiffExp"
     
+    if(!from %in% c("CoExp", "DiffExp"))
+      stop("None of the lists correspond to lists of differential",
+           " features or co-expression clusters.")
+    
+    ## reset EnrichAnal
+    object <- 
+      setElementToMetadata(object, 
+                           name = paste0(from, "EnrichAnal"), 
+                           subName = database, 
+                           content = NULL)
+
+    switch(
+      from,
+      "DiffExp" = {
+        
+        DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
+        
+        if(length(DiffExpAnal) == 0) 
+          stop("There is no diff-expression analysis.")
+        
+        if(is.null(featureList)){
+          
+          featureList <- getSelectedContrasts(object)$contrastName
+          if (!is.null(getValidContrasts(object)))
+            featureList <- getValidContrasts(object)$contrastName
+        }
+        
+        geneLists <-
+          lapply(featureList, function(contrastName) {
+            row.names(DiffExpAnal[["results"]][["TopDEF"]][[contrastName]])
+          })
+        names(geneLists) <- featureList
+        
+      },
+      "CoExp" = {
+        
+        geneLists <- getCoexpClusters(object)
+        
+        if (is.null(geneLists)) stop("There is no co-expression analysis.")
+        
+        if(!is.null(featureList))
+          geneLists <- geneLists[featureList]
+      }
+    )
     geneLists <- geneLists[lengths(geneLists) > 0]
     
     # for each list
@@ -183,63 +224,44 @@ setMethod(
     overview_list <- list()
     errorMessages <- list()
     for(listname in names(geneLists)){
-      
-      list_args$gene <- geneLists[[listname]]
+
+      param.list$gene <- geneLists[[listname]]
       
       for(dom in domain){
         
         switch(
           database,
-          "GO" = { list_args$ont <- dom },
+          "GO" = { 
+            param.list$ont <- dom 
+          },
           "custom" = {
-
-            list_args$TERM2NAME <- NA
-            annotation2 <- annotation
-            
-            if (dom != "no-domain") {
-              annotation2 <- filter(annotation, get(col_domain) == dom)
-            }
-            
-            list_args$TERM2GENE <-
-              list("term" = annotation2[[col_term]],
-                   "gene" = annotation2[[col_gene]])
-            
-            if (!is.null(annotation2[[col_name]])) {
-              tmp <- select(annotation2, all_of(c(col_term, col_name))) %>%
-                unique()
-              list_args$TERM2NAME <-
-                list("term" = tmp[[col_term]],
-                     "name" = tmp[[col_name]])
-            }
-            
+            param.list$TERM2GENE <- TERM2GENE[[dom]]
+            param.list$TERM2NAME <- TERM2NAME[[dom]]
           }
         )
         
         # run clusterProfileR
         catchRes <- .tryCatch_rflomics(
-          do.call(getFromNamespace(func_to_use, ns = "clusterProfiler"),
-                  list_args))
+          do.call(getFromNamespace(func_to_use, ns = "clusterProfiler"), 
+                  param.list))
+
         
         # delete heavy slots
-        if(!is.null(catchRes$result)) {
+        if(!is.null(catchRes$result)){
           
           res1 <- catchRes$result
-          slot(res1, name = "geneSets", 
-               check = FALSE) <- list("removed")
-          slot(res1, name = "universe", 
-               check = FALSE) <- c("removed")
+          slot(res1, name = "geneSets", check = FALSE) <- list("removed")
+          slot(res1, name = "universe", check = FALSE) <- c("removed")
           
           res   <- res1@result
-          res.n <- nrow(res[res$p.adjust < list_args$pvalueCutoff,])
+          res.n <- nrow(res[res$p.adjust < pvalueCutoff,])
           
           results_list[[listname]][[dom]]  <- res1
           overview_list[[listname]][[dom]] <- res.n
           
         }else{
           errorMessages[[listname]][[dom]] <- 
-                c(catchRes$message, 
-                  catchRes$warning, 
-                  catchRes$error)
+            c(catchRes$message, catchRes$warning, catchRes$error)
           overview_list[[listname]][[dom]] <- NA
           results_list[[listname]][[dom]]  <- NULL
         }
@@ -248,8 +270,7 @@ setMethod(
     
     # generate summay
     if (length(overview_list) == 0) {
-      
-      EnrichAnal[["summary"]] <- NULL
+      EnrichAnal[["results"]][["summary"]] <- NULL
     } else {
       
       dt_res <- as.data.frame(do.call("rbind", overview_list))
@@ -267,46 +288,41 @@ setMethod(
             dt_res %>% mutate(Cluster = rownames(.)) %>%
             relocate(Cluster)
         }
-        EnrichAnal[["summary"]] <- dt_res
+        EnrichAnal[["results"]][["summary"]] <- dt_res
       }
     }
     
-    EnrichAnal[["error"]] <- .CPR_message_processing(errorMessages)
+    EnrichAnal[["errors"]] <- .CPR_message_processing(errorMessages)
     
     results_list <- Filter(Negate(is.null), results_list)
     
     storedParam <- 
       c("universe", "keyType", "pvalueCutoff", 
-        "qvalueCutoff", "OrgDb", "organism")
+        "qvalueCutoff", "OrgDb", "organism", 
+        "minGSSize", "maxGSSize")
     
-    EnrichAnal[["list_args"]] <-
-      list_args[names(list_args) %in% storedParam]
+    EnrichAnal[["settings"]] <-
+      param.list[names(param.list) %in% storedParam]
     
     if(database == "KEGG")
-      EnrichAnal[["list_args"]][["keggRelease"]] <- .getKEGGRelease()
+      EnrichAnal[["settings"]][["keggRelease"]] <- .getKEGGRelease()
     
-    if(!is.null(annot))
-      EnrichAnal[["list_args"]][["annot"]] <- annot
+    if(!is.null(annotation))
+      EnrichAnal[["settings"]][["annotation"]] <- annotation
     
-    EnrichAnal[["list_args"]] <- 
-      c(EnrichAnal[["list_args"]], list("domain" = domain))
+    EnrichAnal[["settings"]] <- 
+      c(EnrichAnal[["settings"]], list("domain" = domain))
     
-    EnrichAnal[["enrichResult"]] <- results_list
-    
-    # Store last results
-    #metadata(object)[[fromEnrich]][[database]] <- EnrichAnal
+    EnrichAnal[["results"]][["enrichResult"]] <- results_list
     
     # if (database == "KEGG") rm(kegg_category, envir = .GlobalEnv)
-    
     object <- 
       setElementToMetadata(object, 
-                           name = fromEnrich, 
+                           name = paste0(from, "EnrichAnal"),
                            subName = database,
                            content = EnrichAnal)
-    
     return(object)
-  }
-)
+  })
 
 #' @rdname runAnnotationEnrichment
 #' @name runAnnotationEnrichment
@@ -317,38 +333,40 @@ setMethod(
   signature = "RflomicsMAE",
   definition = function(object,
                         SE.name,
-                        nameList = NULL,
-                        list_args = list(
-                          pvalueCutoff = 0.05,
-                          qvalueCutoff = 1,
-                          minGSSize = 10,
-                          maxGSSize = 500,
-                          universe = names(object)
-                        ),
+                        featureList = NULL,
                         from = "DiffExp",
+                        universe = NULL,
                         database = "custom",
                         domain = "no-domain",
-                        col_term = "term",
-                        col_gene = "gene",
-                        col_name = "name",
-                        col_domain = NULL,
-                        annot = NULL) {
+                        annotation = NULL,
+                        OrgDb = NULL,
+                        organism  = NULL,
+                        keyType = NULL,
+                        pvalueCutoff = 0.05,
+                        qvalueCutoff = 1,
+                        minGSSize = 10,
+                        maxGSSize = 500,
+                        ...){
+    
     object[[SE.name]] <-
       runAnnotationEnrichment(
-        object = object[[SE.name]],
-        nameList = nameList,
-        list_args = list_args,
-        from = from,
-        database = database,
-        domain = domain,
-        col_term = col_term,
-        col_gene = col_gene,
-        col_domain = col_domain,
-        annot = annot
-      )
+        object       = object[[SE.name]],
+        featureList  = featureList,
+        from         = from,
+        universe     = universe,
+        database     = database,
+        domain       = domain,
+        annotation   = annotation,
+        OrgDb        = OrgDb,
+        keyType      = keyType,
+        organism     = organism,
+        pvalueCutoff = pvalueCutoff,
+        qvalueCutoff = qvalueCutoff,
+        minGSSize    = minGSSize,
+        maxGSSize    = maxGSSize,
+        ...)
     
     return(object)
-    
   }
 )
 
@@ -362,14 +380,12 @@ setMethod(
 #'    It overlays the result of the differential analysis or the clusters 
 #'    entity on the image.
 #' }
-#' @param contrastName the name of the contrast to consider.
+#' @param featureListName the name of the contrast to consider.
 #' For Co expression analysis,
 #' it is expected to be one of "cluster.1", "cluster.2", etc.
 #' @param pathway_id the KEGG id pathway to plot.
 #' @param species Kegg code (eg hsa or ath)
 #' @param gene_idtype idtype (kegg, uniprot,...)
-#' @param from differential analysis (diffExp) or coexpression analysis (coexp)
-#' Used to link contrastName to the right metadata.
 #' @param ... Not in use at the moment
 #' @return Only displays the KEGG pathway, it does not return any object.
 #' @exportMethod plotKEGG
@@ -380,20 +396,17 @@ setMethod(
   f = "plotKEGG",
   signature = "RflomicsSE",
   definition = function(object,
-                        contrastName,
+                        featureListName = NULL,
                         pathway_id = NULL,
                         species = "ath",
                         gene_idtype = "kegg",
-                        from = "DiffExp",
                         ...) {
-    from <- .determineFromEnrich(from)
-    
-    DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
     
     log2FC_vect <- NULL
-    switch(from,
-           "DiffExpEnrichAnal" = {
-             obj <- DiffExpAnal[["results"]][["TopDEF"]][[contrastName]]
+    switch(.getOrigin(object, featureListName),
+           "DiffExp" = {
+             DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
+             obj <- DiffExpAnal[["results"]][["TopDEF"]][[featureListName]]
              log2FC_vect <- obj[["logFC"]]
              names(log2FC_vect) <- rownames(obj)
              
@@ -410,8 +423,8 @@ setMethod(
                na.col = "transparent"
              )
            },
-           "CoExpEnrichAnal" = {
-             entities <- getClusterEntities(object, contrastName)
+           "CoExp" = {
+             entities <- getCoexpClusters(object, featureListName)
              log2FC_vect <- rep(1, length(entities))
              names(log2FC_vect) <- entities
              
@@ -439,14 +452,12 @@ setMethod(
 #'    \item plotClusterProfiler: Plot a dotplot, a cnetplot or an heatplot, using enrichplot
 #' package. It is a wrapper method destined for the RflomicsSE class..
 #' }
-#' @param contrastName the name of the contrast to consider.
+#' @param featureListName the name of the contrast to consider.
 #' For Co expression analysis, it is expected to be one of
 #' "cluster.1", "cluster.2", etc.
 #' @param database the database (GO, KEGG or custom)
 #' @param domain if the database is GO, expect one of BP, MF or CC.
 #' Default is NULL.
-#' @param from what type of analysis to consider?
-#' One of 'DiffExp' or 'CoExp'
 #' @param plotType type of plot. Define the function used inside.
 #' One of dotplot, heatplot or cnetplot.
 #' @param showCategory max number of terms to show.
@@ -458,7 +469,6 @@ setMethod(
 #' @param ... additionnal parameters for cnetplot, heatplot or
 #' enrichplot functions.
 #' @importFrom enrichplot cnetplot heatplot dotplot set_enrichplot_color
-#' @importFrom ggplot2 scale_fill_gradient2 guide_colourbar
 #' @importFrom ggrepel geom_label_repel
 #' @exportMethod plotClusterProfiler
 #' @rdname runAnnotationEnrichment
@@ -468,10 +478,9 @@ setMethod(
   f = "plotClusterProfiler",
   signature = "RflomicsSE",
   definition = function(object,
-                        contrastName,
-                        database,
+                        featureListName = NULL,
+                        database = NULL,
                         domain = "no-domain",
-                        from = "DiffExp",
                         plotType = "dotplot",
                         showCategory = 15,
                         searchExpr = "",
@@ -479,65 +488,35 @@ setMethod(
                         p.adj.cutoff = NULL,
                         ...) {
     
-    from <- .determineFromEnrich(from)
     
-    DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
+    dataPlot <- getEnrichRes(
+      object,
+      featureListName = featureListName,
+      database = database
+    )
     
     log2FC_vect <- NULL
-    switch(from,
-           "DiffExpEnrichAnal" = {
-             dataPlot <- getEnrichRes(
-               object,
-               contrastName = contrastName,
-               database = database,
-               from = from
-             )
+    switch(.getOrigin(object, featureListName),
+           "DiffExp" = {
+             
+             DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
              inter <-
-               DiffExpAnal[["results"]][["TopDEF"]][[contrastName]]
+               DiffExpAnal[["results"]][["TopDEF"]][[featureListName]]
              log2FC_vect <- inter[["logFC"]]
              names(log2FC_vect) <- rownames(inter)
-             
-             if (is.null(p.adj.cutoff)) {
-               p.adj.cutoff <- getEnrichPvalue(object, from = from,
-                                               database = database)
-             }
            },
-           "CoExpEnrichAnal" = {
-             dataPlot <- getEnrichRes(
-               object,
-               contrastName = contrastName,
-               database = database,
-               from = from
-             )
-             if (is.null(p.adj.cutoff)) {
-               p.adj.cutoff <- getEnrichPvalue(object, from = from,
-                                               database = database)
-             }
-           },
-           {
-             message(
-               "Argument from is detected to be neither DiffExp
-                     nor CoExp, taking DiffExp results."
-             )
-             from <- "DiffExpEnrichAnal"
-             dataPlot <-
-               getEnrichRes(
-                 object,
-                 contrastName = contrastName,
-                 database = database,
-                 from = from
-               )
-             inter <-
-               DiffExpAnal[["results"]][["TopDEF"]][[contrastName]]
-             log2FC_vect <- inter[["logFC"]]
-             names(log2FC_vect) <- rownames(inter)
-             
-             if (is.null(p.adj.cutoff)) {
-               p.adj.cutoff <- getEnrichPvalue(object, from = from,
-                                               database = database)
-             }
-             
-           })
+           "CoExp" = {},
+           stop(
+             "Argument from is detected to be neither DiffExp nor CoExp.")
+           
+    )
+    
+    if (is.null(p.adj.cutoff)) {
+      p.adj.cutoff <- 
+        getEnrichSettings(object, 
+                          from = .getOrigin(object, featureListName), 
+                          database = database)$pvalueCutoff
+    }
     
     if (database == "GO") {
       if (is.null(domain)) {
@@ -627,8 +606,8 @@ setMethod(
 #' Allow for the comparison of several enrichment results.
 #' }
 #' @param from indicates if the enrichment results are taken from differential
-#' analysis results (DiffExpAnal) or from the co-expression analysis results
-#'  (CoExpAnal)
+#' analysis results (DiffExp) or from the co-expression analysis results
+#'  (CoExp)
 #' @param database is it a custom annotation, GO or KEGG annotations
 #' @param domain domain from the database (eg GO has three domains,
 #' BP, CC and MF)
@@ -657,28 +636,13 @@ setMethod(
                         nClust = NULL,
                         ...) {
     
-    from <- .determineFromEnrich(from)
-      
-    allData <- switch(
-      toupper(from),
-      "DIFFEXPENRICHANAL" = {
-        getEnrichRes(object, from = "DiffExpEnrichAnal", 
-                     database = database)
-      },
-      "COEXPENRICHANAL"   = {
-        
-        getEnrichRes(object, from = "CoExpEnrichAnal", 
-                     database = database)
-      },
-      {
-        message(
-          "Argument from is detected to be neither DiffExp nor CoExp,
-                     taking DiffExp results."
-        )
-        allData <- getEnrichRes(object, from = "DiffExpEnrichAnal", 
-                                database = database)
-      }
-    )
+    if(is.null(from) || !from %in% c("CoExp", "DiffExp")) 
+      stop("The 'from' parameter is required.")
+    
+    if(is.null(database)) 
+      stop("The 'database' parameter is required.")
+    
+    allData <- getEnrichRes(object, from = from, database = database)
     
     if (length(allData) == 0) {
       stop("The selected database ",
@@ -724,37 +688,39 @@ setMethod(
     extract <- extract[extract$ID %in% toKeep, ]
     
     # handling description and ID
-    extract$Description <- switch(database,
-                                  "KEGG" = {
-                                    gsub(" - .*", "", extract$Description)
-                                  },
-                                  {
-                                    # if there is duplication in description
-                                    # not necessarily duplicated in the ID
-                                    # should not be grouped in the heatmap
-                                    if (sum(duplicated(extract$Description)) > 0) {
-                                      if (!identical(extract$Description,
-                                                     extract$ID)) {
-                                        posDup <-
-                                          unique(which(
-                                            duplicated(extract$Description),
-                                            duplicated(extract$Description, fromLast = TRUE)
-                                          ))
-                                        extract$Description[posDup] <-
-                                          paste0("(",
-                                                 extract$ID[posDup],
-                                                 ")",
-                                                 "\n",
-                                                 extract$Description[posDup])
-                                        extract$Description
-                                      } else{
-                                        extract$Description
-                                      }
-                                      
-                                    } else {
-                                      extract$Description
-                                    }
-                                  })
+    extract$Description <- 
+      switch(
+        database,
+        "KEGG" = {
+          gsub(" - .*", "", extract$Description)
+        },
+        {
+          # if there is duplication in description
+          # not necessarily duplicated in the ID
+          # should not be grouped in the heatmap
+          if (sum(duplicated(extract$Description)) > 0) {
+            if (!identical(extract$Description,
+                           extract$ID)) {
+              posDup <-
+                unique(which(
+                  duplicated(extract$Description),
+                  duplicated(extract$Description, fromLast = TRUE)
+                ))
+              extract$Description[posDup] <-
+                paste0("(",
+                       extract$ID[posDup],
+                       ")",
+                       "\n",
+                       extract$Description[posDup])
+              extract$Description
+            } else{
+              extract$Description
+            }
+            
+          } else {
+            extract$Description
+          }
+        })
     
     extract$Description <-
       str_wrap(extract$Description, width = 20)
@@ -905,7 +871,7 @@ setMethod(
 #'    return enrichment results given in the form of lists of clusterprofiler
 #'    results.
 #' }
-#' @param contrastName the contrast or cluster name on which the enrichment
+#' @param featureListName the contrast or cluster name on which the enrichment
 #' was perform.
 #' @param experiment if the object is a RflomicsMAE, then experiment is the
 #' name of the RflomicsSE to look for.
@@ -920,29 +886,37 @@ setMethod(
 #' @name getEnrichRes
 #' @aliases getEnrichRes,RflomicsSE-method
 setMethod(
-  f = "getEnrichRes",
-  signature = "RflomicsSE",
+  f          = "getEnrichRes",
+  signature  = "RflomicsSE",
   definition = function(object,
-                        contrastName = NULL,
-                        from = "DiffExpEnrichAnal",
+                        featureListName = NULL,
+                        from = "DiffExp",
                         database = "GO",
-                        domain = NULL, ...) {
-    from <- .determineFromEnrich(from)
+                        domain = NULL) {
     
-    res_return <- .getEnrichResIntSE(
-      object,
-      contrastName = contrastName,
-      from = from,
-      database = database
-    )
+    if(is.null(database)) stop("The 'database' parameter is required.")
     
-    if (!is.null(domain) && !is.null(contrastName)) {
-      return(res_return[[domain]])
-    } else {
-      return(res_return)
+    if(!is.null(featureListName)){
+      from <- .getOrigin(object, featureListName)
     }
-  }
-)
+    
+    if(is.null(from) || !from %in% c("CoExp", "DiffExp")) 
+      stop("The 'from' parameter is required.")
+    
+    res <- 
+      getAnalysis(object, name = paste0(from, "EnrichAnal"), subName = database)
+    
+    res <- res[["results"]][["enrichResult"]]
+    
+    if(!is.null(featureListName)){
+      res <- res[[featureListName]]
+      
+      if(!is.null(domain))
+        res <- res[[domain]]
+    }
+      
+    return(res)
+  })
 
 #' @rdname runAnnotationEnrichment
 #' @name getEnrichRes
@@ -953,32 +927,24 @@ setMethod(
   signature = "RflomicsMAE",
   definition = function(object,
                         experiment,
-                        contrastName = NULL,
-                        from = "DiffExpEnrichAnal",
+                        featureListName = NULL,
+                        from = "DiffExp",
                         database = "GO",
-                        domain = NULL, 
-                        ...) {
+                        domain = NULL) {
+    
     if (missing(experiment)) {
       stop("Please indicate from which data you want to extract
            the enrichment results.")
     }
     
-    from <- .determineFromEnrich(from)
-    
-    res_return <- .getEnrichResIntSE(
+    res_return <- getEnrichRes(
       object[[experiment]],
-      contrastName = contrastName,
+      featureListName = featureListName,
       from = from,
-      database = database
+      database = database,
+      domain = domain
     )
-    
-    if (!is.null(domain) && !is.null(contrastName)) {
-      return(res_return[[domain]])
-    } else {
-      return(res_return)
-    }
-  }
-)
+  })
 
 ### ---- Get summary from ORA : ----
 
@@ -989,8 +955,8 @@ setMethod(
 #' }
 #' @param database either NULL, GO, KEGG or custom.
 #' if NULL, all tables are returned in a list.
-#' @param from either DiffExpEnrichAnal or CoExpAnal.
-#' @param contrastName the contrastName or clusterName to retrieve 
+#' @param from either DiffExp or CoExp.
+#' @param featureListName the contrastName or clusterName to retrieve 
 #' the results from. If NULL, all results are returned.
 #' @return a list of tables or a table
 #' @exportMethod sumORA
@@ -1001,80 +967,35 @@ setMethod(
   f = "sumORA",
   signature = "RflomicsSE",
   definition = function(object,
-                        from = "DiffExpEnrichAnal",
+                        from = "DiffExp",
                         database = NULL,
-                        contrastName = NULL) {
+                        featureListName = NULL) {
     
-    from <- .determineFromEnrich(from)
+    if(!from %in% c("CoExp", "DiffExp"))
+      stop("None of the lists correspond to lists of differential",
+           " features or co-expression clusters.")
+    
     listnames <- 
       switch (from,
-              "DiffExpEnrichAnal" = "Contrast",
-              "CoExpEnrichAnal" = "Cluster")
+              "DiffExp" = "Contrast",
+              "CoExp" = "Cluster")
     
-    # cat("|From: ", from, "\n")
+    EnrichAnal <- getAnalysis(object,  name = paste0(from, "EnrichAnal"))
+    if (is.null(database)) database <- names(EnrichAnal)
     
-    if (!is.null(database)) {
-      toReturn <- metadata(object)[[from]][[database]]$summary
-      if (!is.null(contrastName)) {
-        toReturn <- toReturn[which(toReturn[[listnames]] == contrastName),]
-      }
-      return(toReturn)
-    } else {
-      list_res <- lapply(
-        names(metadata(object)[[from]]),
-        FUN = function(ontres) {
-          interRes <- metadata(object)[[from]][[ontres]]$summary
-          if (!is.null(contrastName)) {
-            interRes <- interRes[which(interRes[[listnames]] == contrastName),]
-          }
-          interRes
+    list_res <- 
+      lapply(database, function(ontres) {
+        interRes <- EnrichAnal[[ontres]]$results$summary
+        if (!is.null(featureListName)) {
+          interRes <- interRes[which(interRes[[listnames]] == featureListName),]
         }
-      )
-      names(list_res) <- names(metadata(object)[[from]])
-      return(list_res)
-    }
-  }
-)
-
-
-
-### ---- Get a pvalue threshold used in enrichment analysis ----
-
-#' @section Accessors: 
-#' \itemize{
-#'    \item getEnrichPvalue:
-#'    Get the pvalue threshold used in enrichment analysis.
-#' }
-#' @param from where to search for the results (either coexp or diffExp)
-#' @param database which database (GO, KEGG, custom...)
-#' @return the pvalue cutoff used for the analysis.
-#' @exportMethod getEnrichPvalue
-#' @rdname runAnnotationEnrichment
-#' @name getEnrichPvalue
-#' @aliases getEnrichPvalue,RflomicsSE-method
-setMethod(
-  f = "getEnrichPvalue",
-  signature = "RflomicsSE",
-  definition = function(object,
-                        from = "DiffExpEnrichAnal",
-                        database = "GO") {
-    from <- .determineFromEnrich(from)
+        interRes
+      })
+    names(list_res) <- database
     
-    if (!database  %in% c("GO", "KEGG", "custom")) {
-      stop(database,
-           " is not a valid value.
-           Choose one of GO, KEGG or custom.")
-    }
-    pvalCutoff <-
-      metadata(object)[[from]][[database]]$list_args$pvalueCutoff
-    if (is.null(pvalCutoff)) {
-      stop("P-value not found (returns NULL)")
-    }
-    
-    return(pvalCutoff)
-    
-  }
-)
+    if(length(list_res) == 1) return(list_res[[1]])
+    return(list_res)
+  })
 
 ### ---- Get a enrichment arguments ----
 
@@ -1083,7 +1004,7 @@ setMethod(
 #'    \item getEnrichSettings:
 #'    get the settings of an enrichment analysis.
 #' }
-#' @param from where to search for the results (either coexp or diffExp)
+#' @param from where to search for the results (either CoExp or DiffExp)
 #' @param database which database (GO, KEGG, custom...)
 #' @return a list with all settings
 #' @exportMethod getEnrichSettings
@@ -1091,20 +1012,20 @@ setMethod(
 #' @name getEnrichSettings
 #' @aliases getEnrichSettings,RflomicsSE-method
 setMethod(
-    f = "getEnrichSettings",
-    signature = "RflomicsSE",
-    definition = function(object,
-                          from = "DiffExpEnrichAnal",
-                          database = "GO") {
-        from <- .determineFromEnrich(from)
-        
-        if (!database  %in% c("GO", "KEGG", "custom")) {
-            stop(database,
-                 " is not a valid value.
+  f = "getEnrichSettings",
+  signature = "RflomicsSE",
+  definition = function(object,
+                        from = "DiffExp",
+                        database = "GO") {
+    
+    if (!database  %in% c("GO", "KEGG", "custom")) {
+      stop(database,
+           " is not a valid value.
            Choose one of GO, KEGG or custom.")
-        }
-        return(metadata(object)[[from]][[database]]$list_args)
     }
+    
+    return(metadata(object)[[paste0(from, "EnrichAnal")]][[database]]$settings)
+  }
 )
 
 ### ---- getAnnotAnalysesSummary ----
@@ -1115,8 +1036,8 @@ setMethod(
 #'    return A list of heatmaps, one for each ontology/domain.
 #' }
 #' @param from indicates if the enrichment results are taken from differential 
-#' analysis results (DiffExpEnrichAnal) or from the co-expression analysis 
-#' results (CoExpEnrichAnal)
+#' analysis results (DiffExp) or from the co-expression analysis 
+#' results (CoExp)
 #' @param matrixType Heatmap matrix to plot, one of GeneRatio, p.adjust 
 #' or presence.
 #' @param ... more arguments for ComplexHeatmap::Heatmap.
@@ -1132,33 +1053,40 @@ setMethod(
   f = "getAnnotAnalysesSummary",
   signature = "RflomicsMAE",
   definition = function(object,
-                        from = "DiffExpEnrichAnal",
+                        from = "DiffExp",
                         matrixType = "presence",
                         ...) {
     extract.list <- list()
+    
+    if(!from %in% c("CoExp", "DiffExp"))
+      stop("None of the lists correspond to lists of differential",
+           " features or co-expression clusters.")
+    
+    from <- paste0(from, "EnrichAnal")
     
     omicNames <- unique(unlist(getAnalyzedDatasetNames(object, from)))
     
     for (data in omicNames) {
       
       # for each database
-      databases <- names(object[[data]]@metadata[[from]])
+      EnrichAnal <- getAnalysis(object[[data]], name = from)
+      databases <- names(EnrichAnal)
       for (database in databases) {
-        if (is.null(object[[data]]@metadata[[from]][[database]]$enrichResult))
+        if (is.null(EnrichAnal[[database]]$results$enrichResult))
           next
         
         clusterNames <-
-          names(object[[data]]@metadata[[from]][[database]]$enrichResult)
+          names(EnrichAnal[[database]]$results$enrichResult)
         pvalThresh   <-
-          object[[data]]@metadata[[from]][[database]]$list_args$pvalueCutoff
+          EnrichAnal[[database]]$settings$pvalueCutoff
         
         for (name in clusterNames) {
           domains <-
-            names(object[[data]]@metadata[[from]][[database]]$enrichResult[[name]])
+            names(EnrichAnal[[database]]$results$enrichResult[[name]])
           
           for (dom in domains) {
             cprRes <-
-              object[[data]]@metadata[[from]][[database]]$enrichResult[[name]][[dom]]
+              EnrichAnal[[database]]$results$enrichResult[[name]][[dom]]
             
             if(is.null(cprRes)) next
             

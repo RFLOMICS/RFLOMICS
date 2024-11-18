@@ -18,12 +18,9 @@
 \alias{getCoexpSettings}
 \alias{getCoexpSettings,RflomicsSE-method}
 \alias{getCoexpSettings,RflomicsMAE-method}
-\alias{getClusterEntities}
-\alias{getClusterEntities,RflomicsSE-method}
-\alias{getClusterEntities,RflomicsMAE-method}
-\alias{getCoseqClusters}
-\alias{getCoseqClusters,RflomicsSE-method}
-\alias{getCoseqClusters,RflomicsMAE-method}
+\alias{getCoexpClusters}
+\alias{getCoexpClusters,RflomicsSE-method}
+\alias{getCoexpClusters,RflomicsMAE-method}
 \title{Run CoExpression Analysis and process results}
 \usage{
 \S4method{runCoExpression}{RflomicsSE}(
@@ -36,11 +33,11 @@
   GaussianModel = NULL,
   transformation = NULL,
   normFactors = NULL,
-  clustermq = FALSE,
   meanFilterCutoff = NULL,
   scale = NULL,
-  silent = TRUE,
-  cmd = FALSE
+  min.data.size = 100,
+  clustermq = FALSE,
+  ...
 )
 
 \S4method{runCoExpression}{RflomicsMAE}(
@@ -48,20 +45,20 @@
   SE.name,
   K = 2:20,
   replicates = 5,
-  contrastNames,
+  contrastNames = NULL,
   merge = "union",
   model = "Normal",
   GaussianModel = NULL,
   transformation = NULL,
   normFactors = NULL,
-  clustermq = FALSE,
   meanFilterCutoff = NULL,
   scale = NULL,
-  silent = TRUE,
-  cmd = FALSE
+  min.data.size = 100,
+  clustermq = FALSE,
+  ...
 )
 
-\S4method{getCoExpAnalysesSummary}{RflomicsMAE}(object, omicNames = NULL, ...)
+\S4method{getCoExpAnalysesSummary}{RflomicsMAE}(object, omicNames = NULL)
 
 \S4method{plotCoExpression}{RflomicsSE}(object)
 
@@ -90,13 +87,9 @@
 
 \S4method{getCoexpSettings}{RflomicsMAE}(object, SE.name)
 
-\S4method{getClusterEntities}{RflomicsSE}(object, clusterName)
+\S4method{getCoexpClusters}{RflomicsSE}(object, clusterName = NULL)
 
-\S4method{getClusterEntities}{RflomicsMAE}(object, SE.name, clusterName)
-
-\S4method{getCoseqClusters}{RflomicsSE}(object)
-
-\S4method{getCoseqClusters}{RflomicsMAE}(object, SE.name)
+\S4method{getCoexpClusters}{RflomicsMAE}(object, SE.name, clusterName = NULL)
 }
 \arguments{
 \item{object}{An object of class \link{RflomicsSE} or 
@@ -128,27 +121,23 @@ it is the "arcsin" one.}
 differences in library size.
 By default, it is the "TMM" one.}
 
-\item{clustermq}{boolean. Does the computation need to be executed 
-on a distant server. A configuration file and a network connection are 
-needed to use this option.}
-
 \item{meanFilterCutoff}{a cutoff to filter a gene with a mean expression lower than this value.
 (only for RNAseq data, set to NULL for others).}
 
 \item{scale}{Boolean. If TRUE scale all variables tounit variance.}
 
-\item{silent}{if TRUE, coseq run silently (without any console print or 
-message)}
+\item{min.data.size}{The minimum allowed number of variables (default: 100)}
 
-\item{cmd}{if TRUE, print steps of the analysis. Used inside the coseq 
-module in the shiny interface.}
+\item{clustermq}{boolean. Does the computation need to be executed 
+on a distant server. A configuration file and a network connection are 
+needed to use this option.}
+
+\item{...}{Additional arguments.}
 
 \item{SE.name}{SE.name the name of the dataset if the input object 
 is a \link{RflomicsMAE-class}}
 
 \item{omicNames}{the name of the experiment to summarize.}
-
-\item{...}{Not in use at the moment}
 
 \item{cluster}{cluster number}
 
@@ -165,13 +154,16 @@ All the results are stored as a named list \code{CoExpAnal}
 The runCoExpression method return several results, for \link{coseq} 
 method, objects are:
 \itemize{
-\item \code{setting:}  co-expression analysis settings. See \code{getCoexpSetting} 
+\item \code{settings:}  co-expression analysis settings. See \code{getCoexpSetting} 
 \item \code{results:}  boolean indicating if the co-expression analysis succeed 
+\itemize{
 \item \code{coseqResults:} the raw results of \code{coseq} 
 \item \code{clusters:}  a List of clusters 
 \item \code{cluster.nb:}  The number of cluster 
 \item \code{plots:}  The plots of \code{coseq} results 
 \item \code{stats:}  A tibble summarising failed jobs: reason, propoif any 
+}
+\item \code{errors:} error list.
 }
 }
 \description{
@@ -206,13 +198,8 @@ a \link{RflomicsMAE-class} object.
 
  
 \itemize{
-   \item getClusterEntities: get members of a cluster. 
+   \item getCoexpClusters: get members of a cluster. 
  return The list of entities inside this cluster.
-}
-
- 
-\itemize{
-   \item getCoseqClusters: get cluster. Return all clusters
 }
 }
 
@@ -285,9 +272,7 @@ coExp.set.list <- getCoexpSettings(MAE[["protetest"]])
 coExp.set.list$method
 
 # get results
-clusters <- getCoseqClusters(MAE[["protetest"]])
-proteins_c1 <- getClusterEntities(MAE[["protetest"]], 
-                                      clusterName = "cluster_1")
+clusters <- getCoexpClusters(MAE[["protetest"]], clusterName = "cluster_1")
 
 # plots
 #plotCoExpression(MAE[["protetest"]])

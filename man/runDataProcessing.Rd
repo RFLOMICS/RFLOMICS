@@ -72,8 +72,7 @@
   normMethod = NULL,
   imputMethod = NULL,
   userTransMethod = "unknown",
-  userNormMethod = "unknown",
-  ...
+  userNormMethod = "unknown"
 )
 
 \S4method{runDataProcessing}{RflomicsMAE}(
@@ -85,8 +84,7 @@
   transformMethod = NULL,
   normMethod = NULL,
   userTransMethod = "unknown",
-  userNormMethod = "unknown",
-  ...
+  userNormMethod = "unknown"
 )
 
 \S4method{runSampleFiltering}{RflomicsSE}(object, samples = NULL)
@@ -110,29 +108,22 @@
   imputMethod = NULL
 )
 
-\S4method{runTransformData}{RflomicsSE}(
-  object,
-  transformMethod = "log2",
-  userTransMethod = "unknown",
-  ...
-)
+\S4method{runTransformData}{RflomicsSE}(object, transformMethod = "log2", userTransMethod = "unknown")
 
 \S4method{runTransformData}{RflomicsMAE}(
   object,
   SE.name,
   transformMethod = NULL,
-  userTransMethod = "unknown",
-  ...
+  userTransMethod = "unknown"
 )
 
-\S4method{runNormalization}{RflomicsSE}(object, normMethod = NULL, userNormMethod = "unknown", ...)
+\S4method{runNormalization}{RflomicsSE}(object, normMethod = NULL, userNormMethod = "unknown")
 
 \S4method{runNormalization}{RflomicsMAE}(
   object,
   SE.name,
   normMethod = NULL,
-  userNormMethod = "unknown",
-  ...
+  userNormMethod = "unknown"
 )
 
 \S4method{runOmicsPCA}{RflomicsSE}(object, ncomp = 5, raw = FALSE)
@@ -196,17 +187,12 @@
 
 \S4method{plotDataDistribution}{RflomicsMAE}(object, SE.name, plot = "boxplot", raw = FALSE)
 
-\S4method{plotOmicsPCA}{RflomicsSE}(
-  object,
-  raw = c("raw", "norm"),
-  axes = c(1, 2),
-  groupColor = "groups"
-)
+\S4method{plotOmicsPCA}{RflomicsSE}(object, raw = TRUE, axes = c(1, 2), groupColor = "groups")
 
 \S4method{plotOmicsPCA}{RflomicsMAE}(
   object,
   SE.name,
-  raw = c("raw", "norm"),
+  raw = FALSE,
   axes = c(1, 2),
   groupColor = "groups"
 )
@@ -256,16 +242,13 @@ metabolomics data.}
 
 \item{userNormMethod}{method used by user to normalize data.}
 
-\item{...}{supplementary arguments.}
-
 \item{SE.name}{the name of the data the normalization have to be applied to.}
 
 \item{filterMethod}{The filtering model ("CPM") for RNAseq data.}
 
 \item{ncomp}{Number of components to compute. Default is 5.}
 
-\item{raw}{This argument indicates whether the scaled PCA has to be 
-performed on raw [\sQuote{raw}] or normalized [\sQuote{norm}] data.}
+\item{raw}{boolean. Does the pca have to be ran on raw data or transformed}
 
 \item{sampleList}{list of samples to check.}
 
@@ -489,10 +472,10 @@ MAE <- setSelectedContrasts(MAE, contrastList = contrastList[c(1, 2, 3),])
 #                         normMethod = "TMM")
 
 ## use runDataProcessing function that combines the previous three functions
-MAE <- runDataProcessing(MAE, SE.name = "RNAtest", 
+MAE <- runDataProcessing(MAE, SE.name = "RNAtest",
                          samples = colnames(MAE[["RNAtest"]])[-1], 
-                         lowCountFiltering_strategy = "NbReplicates", 
-                         lowCountFiltering_CPM_Cutoff = 1, 
+                         filterStrategy = "NbReplicates", 
+                         cpmCutoff = 1, 
                          normMethod = "TMM") 
 
 ## check completness of RNAtest data

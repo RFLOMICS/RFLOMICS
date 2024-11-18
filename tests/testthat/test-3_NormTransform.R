@@ -138,7 +138,7 @@ test_that("RunNormalization and apply_norm yield expected results", {
     runTransformData(SE.name = "protetest", transformMethod = "none")
   MAE2 <-
     runFeatureFiltering(MAE2, SE.name = "protetest") |>
-    runTransformData(SE.name = "protetest", normMethod = "none") |>
+    runTransformData(SE.name = "protetest", transformMethod = "none") |>
     runNormalization(SE.name = "protetest" )
   expect_equal( assay(MAE2[["protetest"]]), as.matrix(protMat))
   expect( !isNorm(MAE2,"protetest"), failure_message = "It was normalized, it shouldn't be.")
@@ -156,7 +156,7 @@ test_that("RunNormalization and apply_norm yield expected results", {
     runTransformData(SE.name = "protetest", transformMethod = "none")
   MAE2 <- 
     runFeatureFiltering(MAE2, SE.name = "protetest") |>
-    runTransformData(SE.name = "protetest", normMethod = "none") |>
+    runTransformData(SE.name = "protetest", transformMethod = "none") |>
     runNormalization(SE.name = "protetest",normMethod = "none")
   expect_equal( assay(MAE2[["protetest"]]), as.matrix(protMat))
   expect(!isNorm(MAE2,"protetest"), failure_message = "It was normalized, it shouldn't be.")

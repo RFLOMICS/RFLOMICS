@@ -15,8 +15,6 @@
 \alias{getEnrichRes,RflomicsMAE-method}
 \alias{sumORA}
 \alias{sumORA,RflomicsSE-method}
-\alias{getEnrichPvalue}
-\alias{getEnrichPvalue,RflomicsSE-method}
 \alias{getEnrichSettings}
 \alias{getEnrichSettings,RflomicsSE-method}
 \alias{getAnnotAnalysesSummary}
@@ -25,51 +23,55 @@
 \usage{
 \S4method{runAnnotationEnrichment}{RflomicsSE}(
   object,
-  nameList = NULL,
-  list_args = list(pvalueCutoff = 0.05, qvalueCutoff = 1, minGSSize = 10, maxGSSize =
-    500, universe = names(object)),
+  featureList = NULL,
   from = "DiffExp",
+  universe = NULL,
   database = "custom",
   domain = "no-domain",
-  col_term = "term",
-  col_gene = "gene",
-  col_name = "name",
-  col_domain = NULL,
-  annot = NULL
+  annotation = NULL,
+  OrgDb = NULL,
+  organism = NULL,
+  keyType = NULL,
+  pvalueCutoff = 0.05,
+  qvalueCutoff = 1,
+  minGSSize = 10,
+  maxGSSize = 500,
+  ...
 )
 
 \S4method{runAnnotationEnrichment}{RflomicsMAE}(
   object,
   SE.name,
-  nameList = NULL,
-  list_args = list(pvalueCutoff = 0.05, qvalueCutoff = 1, minGSSize = 10, maxGSSize =
-    500, universe = names(object)),
+  featureList = NULL,
   from = "DiffExp",
+  universe = NULL,
   database = "custom",
   domain = "no-domain",
-  col_term = "term",
-  col_gene = "gene",
-  col_name = "name",
-  col_domain = NULL,
-  annot = NULL
+  annotation = NULL,
+  OrgDb = NULL,
+  organism = NULL,
+  keyType = NULL,
+  pvalueCutoff = 0.05,
+  qvalueCutoff = 1,
+  minGSSize = 10,
+  maxGSSize = 500,
+  ...
 )
 
 \S4method{plotKEGG}{RflomicsSE}(
   object,
-  contrastName,
+  featureListName = NULL,
   pathway_id = NULL,
   species = "ath",
   gene_idtype = "kegg",
-  from = "DiffExp",
   ...
 )
 
 \S4method{plotClusterProfiler}{RflomicsSE}(
   object,
-  contrastName,
-  database,
+  featureListName = NULL,
+  database = NULL,
   domain = "no-domain",
-  from = "DiffExp",
   plotType = "dotplot",
   showCategory = 15,
   searchExpr = "",
@@ -90,79 +92,73 @@
 
 \S4method{getEnrichRes}{RflomicsSE}(
   object,
-  contrastName = NULL,
-  from = "DiffExpEnrichAnal",
+  featureListName = NULL,
+  from = "DiffExp",
   database = "GO",
-  domain = NULL,
-  ...
+  domain = NULL
 )
 
 \S4method{getEnrichRes}{RflomicsMAE}(
   object,
   experiment,
-  contrastName = NULL,
-  from = "DiffExpEnrichAnal",
+  featureListName = NULL,
+  from = "DiffExp",
   database = "GO",
-  domain = NULL,
-  ...
+  domain = NULL
 )
 
-\S4method{sumORA}{RflomicsSE}(
-  object,
-  from = "DiffExpEnrichAnal",
-  database = NULL,
-  contrastName = NULL
-)
+\S4method{sumORA}{RflomicsSE}(object, from = "DiffExp", database = NULL, featureListName = NULL)
 
-\S4method{getEnrichPvalue}{RflomicsSE}(object, from = "DiffExpEnrichAnal", database = "GO")
+\S4method{getEnrichSettings}{RflomicsSE}(object, from = "DiffExp", database = "GO")
 
-\S4method{getEnrichSettings}{RflomicsSE}(object, from = "DiffExpEnrichAnal", database = "GO")
-
-\S4method{getAnnotAnalysesSummary}{RflomicsMAE}(
-  object,
-  from = "DiffExpEnrichAnal",
-  matrixType = "presence",
-  ...
-)
+\S4method{getAnnotAnalysesSummary}{RflomicsMAE}(object, from = "DiffExp", matrixType = "presence", ...)
 }
 \arguments{
 \item{object}{An object of class \link{RflomicsSE} or 
 class \link{RflomicsMAE-class}}
 
-\item{nameList}{name of contrasts (tags or names) from which to extract DE
+\item{featureList}{name of contrasts (tags or names) from which to extract DE
 genes if from is DiffExpAnal.}
 
-\item{list_args}{list of arguments to pass to the enrichment function.
-These arguments must match the ones from the clusterprofiler package.
-E.g: universe, keytype, pvalueCutoff, qvalueCutoff, etc.}
-
 \item{from}{indicates if the enrichment results are taken from differential 
-analysis results (DiffExpEnrichAnal) or from the co-expression analysis 
-results (CoExpEnrichAnal)}
+analysis results (DiffExp) or from the co-expression analysis 
+results (CoExp)}
+
+\item{universe}{description}
 
 \item{database}{which database (GO, KEGG, custom...)}
 
 \item{domain}{the subonology or subdomain for the database (eg CC, MF or
 BP for GO.)}
 
-\item{col_term}{for custom annotation, column name of the file containing
-term names or id.}
+\item{annotation}{for custom annotation, path of the annotation file.}
 
-\item{col_gene}{for custom annotation, column name of the file containing
-entities names.}
+\item{OrgDb}{OrgDb (with enrichGO)}
 
-\item{col_name}{(optional) for custom annotation, column name of the 
-file containing term names if col_term is used for ids.}
+\item{organism}{supported organism listed in 
+'https://www.genome.jp/kegg/catalog/org_list.html' (with enrichKEGG)}
 
-\item{col_domain}{for custom annotation, column name of the file containing
-the domains.}
+\item{keyType}{keytype of input gene with enrichGO 
+(one of "kegg", 'ncbi-geneid', 'ncbi-proteinid' and 'uniprot' with enrichKEGG)}
 
-\item{annot}{for custom annotation, path of the annotation file.}
+\item{pvalueCutoff}{adjusted pvalue cutoff on enrichment tests to report}
+
+\item{qvalueCutoff}{qvalue cutoff on enrichment tests to report as significant. 
+Tests must pass 
+i) pvalueCutoff on unadjusted pvalues, 
+ii) pvalueCutoff on adjusted pvalues and 
+iii) qvalueCutoff on qvalues to be reported.}
+
+\item{minGSSize}{minimal size of genes annotated by Ontology term for testing.}
+
+\item{maxGSSize}{maximal size of genes annotated for testing}
+
+\item{...}{more arguments for ComplexHeatmap::Heatmap.}
 
 \item{SE.name}{SE.name the name of the dataset if the input object 
 is a \link{RflomicsMAE-class}}
 
-\item{contrastName}{the contrastName or clusterName to retrieve 
+\item{featureListName}{the contrastName or clusterName to retrieve 
 the results from. If NULL, all results are returned.}
 
 \item{pathway_id}{the KEGG id pathway to plot.}
@@ -170,8 +166,6 @@ the results from. If NULL, all results are returned.}
 \item{species}{Kegg code (eg hsa or ath)}
 
 \item{gene_idtype}{idtype (kegg, uniprot,...)}
-
-\item{...}{more arguments for ComplexHeatmap::Heatmap.}
 
 \item{plotType}{type of plot. Define the function used inside.
 One of dotplot, heatplot or cnetplot.}
@@ -202,8 +196,6 @@ Only displays the KEGG pathway, it does not return any object.
 
 a list of tables or a table
 
-the pvalue cutoff used for the analysis.
-
 a list with all settings
 }
 \description{
@@ -228,12 +220,6 @@ a \link{RflomicsMAE-class} object.
 \itemize{
    \item sumORA: Get summary tables from ORA analyses -
    once an enrichment has been conducted.
-}
-
- 
-\itemize{
-   \item getEnrichPvalue:
-   Get the pvalue threshold used in enrichment analysis.
 }
 
  

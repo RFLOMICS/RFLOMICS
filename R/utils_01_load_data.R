@@ -5,7 +5,6 @@
 # D. Charif
 
 # ----  GLOBAL IMPORT & EXPORT ----
-#' @importFrom dplyr mutate across if_else filter select
 #' @importFrom stringr str_replace_all str_remove_all str_remove fixed str_split
 #' @importFrom vroom vroom
 #' @importFrom purrr reduce
@@ -62,7 +61,7 @@ createRflomicsMAE <- function(projectName = NULL,
   omicsDataClass <- class(omicsData)
   if(!omicsDataClass %in% c("list", "MultiAssayExperiment"))
     stop("The omicsData argument must be of class list or MultiAssayExperiment.")
-
+  
   ## => omicsNames
   if(is.null(omicsNames)){
     if(is.null(names(omicsData))) 
@@ -203,11 +202,11 @@ createRflomicsMAE <- function(projectName = NULL,
   # Create the List.Factors list with the choosen level of 
   # reference for each factor
   names(typeList) <- names(ExpDesign)
-
+  
   Design <- list(Factors.Type  = typeList, 
                  Model.formula = vector(), 
                  Contrasts.Sel = data.frame())
-
+  
   ExpDesign   <- mutate(ExpDesign, samples=row.names(ExpDesign)) |>
     unite("groups", all_of(factorBio), sep = "_", remove = FALSE)
   
@@ -233,11 +232,11 @@ createRflomicsMAE <- function(projectName = NULL,
     
     #### run PCA for raw count
     SummarizedExperimentList[[data]] <- runOmicsPCA(RflomicsSE, raw = TRUE)
-
+    
     # metadata for sampleMap for RflomicsMAE
     listmap[[data]] <- data.frame(
-      primary = as.vector(SummarizedExperimentList[[data]]@colData$samples),
-      colname = as.vector(SummarizedExperimentList[[data]]@colData$samples),
+      primary = as.vector(colData(SummarizedExperimentList[[data]])$samples),
+      colname = as.vector(colData(SummarizedExperimentList[[data]])$samples),
       stringsAsFactors = FALSE)
     
     colnames <- c(names(omicList[[omicType]]), k)
@@ -290,7 +289,7 @@ RflomicsMAE <- function(experiments = ExperimentList(),
                           primary = character(), 
                           colname = character()),
                         omicList       = list(),
-                        projectName    = NULL,
+                        projectName    = character(),
                         design         = list(),
                         IntegrationAnalysis = list()){
   
@@ -304,19 +303,24 @@ RflomicsMAE <- function(experiments = ExperimentList(),
     MAE <- MultiAssayExperiment(experiments, colData, sampleMap)
   }
   
-  rflomicsMAE <- new("RflomicsMAE")
-  for(slot in c("ExperimentList", "colData", "sampleMap", "drops")) {
-    slot(rflomicsMAE, slot) <- slot(MAE, slot)
-  }
-  
   # Sys.setlocale('LC_TIME', 'C') # change for english
   # date <- format(Sys.time(), '%d %B %Y - %H:%M')
   # Sys.setlocale('LC_TIME') # return to default system time
   
-  rflomicsMAE@metadata$omicList <- omicList
-  rflomicsMAE@metadata$projectName <- projectName
-  rflomicsMAE@metadata$design <- design
-  rflomicsMAE@metadata$IntegrationAnalysis <- IntegrationAnalysis
+  metadata <- list(
+    "omicList"            = omicList,
+    "projectName"         = projectName,
+    "design"              = design,
+    "IntegrationAnalysis" = IntegrationAnalysis,
+    "date"                = Sys.Date(),
+    "sessionInfo"         = list(),
+    "rflomicsVersion"     = packageVersion('RFLOMICS')
+  )
+  
+  rflomicsMAE <- new("RflomicsMAE", metadata = metadata)
+  for(slot in c("ExperimentList", "colData", "sampleMap", "drops")) {
+    slot(rflomicsMAE, slot) <- slot(MAE, slot)
+  }
   
   return(rflomicsMAE)
 }
@@ -330,6 +334,7 @@ RflomicsMAE <- function(experiments = ExperimentList(),
 #' @return An object of class \link{RflomicsSE}
 #' @name createRflomicsSE
 #' @seealso \link{RflomicsSE-class}
+#' @importFrom dplyr select
 #' @keywords internal
 #' @noRd
 createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
@@ -425,7 +430,7 @@ RflomicsSE <- function(assays = NULL, colData = NULL,
     slot(rflomicsSE, slot) <- slot(SE, slot)
   }
   
-  rflomicsSE@metadata <- 
+  metadata(rflomicsSE) <- 
     list("omicType" = omicType , 
          "design"   = design , 
          "DataProcessing" = DataProcessing , 
@@ -648,8 +653,6 @@ readOmicsData <- function(file){
 #' the border seperating cells (0 specifies no border)
 #'
 #' @return A printable/modifiable ggplot2 object.
-#' @importFrom ggplot2 ggplot aes aes_string theme facet_grid labs ylab xlab
-#' facet_grid element_blank geom_text scale_fill_manual geom_tile ggtitle
 #' @keywords internal
 #' @noRd
 .plotExperimentalDesign <- function(counts, cell_border_size = 10, message=""){
@@ -715,8 +718,9 @@ readOmicsData <- function(file){
 #' @noRd
 .generateEcoseedExampleData <- function(){
   
-  load(paste0(system.file(package = "RFLOMICS"),"/data/ecoseed.df.rda"))
-  
+  #load(paste0(system.file(package = "RFLOMICS"),"/data/ecoseed.df.rda"))
+  data("ecoseed.df", package = "RFLOMICS", envir = environment())
+
   factorInfo <- data.frame(
     "factorName"   = c("Repeat", "temperature", "imbibition"),
     "factorRef"    = c("rep1", "Low", "DS"),

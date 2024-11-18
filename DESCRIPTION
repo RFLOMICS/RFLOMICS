@@ -17,13 +17,17 @@ Depends:
     SummarizedExperiment,
     MultiAssayExperiment,
     shinyBS,
-    knitr
+    knitr,
+    dplyr,
+    ggplot2,
+    coseq
 biocViews: ShinyApps, DifferentialExpression, Metabolomics, Proteomics, Transcriptomics
 License: Artistic-2.0 
 Encoding: UTF-8
 RoxygenNote: 7.3.2
 Suggests: 
     testthat,
+    shinytest2,
     BiocStyle,
     org.Hs.eg.db
 VignetteBuilder: knitr
@@ -34,15 +38,12 @@ Imports:
     circlize,
     clusterProfiler,
     ComplexHeatmap,
-    coseq,
     data.table,
-    dplyr,
     DT,
     edgeR,
     EnhancedVolcano,
     enrichplot,
     FactoMineR,
-    ggplot2,
     ggpubr,
     ggrepel,
     grDevices,

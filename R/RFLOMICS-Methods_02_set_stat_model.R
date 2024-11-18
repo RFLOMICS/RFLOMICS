@@ -55,7 +55,7 @@ setMethod(f          = "setModelFormula",
           signature  = "RflomicsMAE",
           definition = function(object, modelFormula=NULL){
             
-            object@metadata$design$Model.formula <- 
+            metadata(object)$design$Model.formula <- 
               paste(modelFormula, collapse = " ")
             
             for(name in names(object)){
@@ -73,7 +73,7 @@ setMethod(f          = "setModelFormula",
           signature  = "RflomicsSE",
           definition = function(object, modelFormula=NULL){
             
-            object@metadata$design$Model.formula <- 
+            metadata(object)$design$Model.formula <- 
               paste(modelFormula, collapse = " ")
             
             return(object)
@@ -217,7 +217,7 @@ setMethod(f          = "setSelectedContrasts",
           signature  = "RflomicsSE",
           definition = function(object, contrastList=NULL){
             
-            object@metadata$design$Contrasts.Sel <- 
+            metadata(object)$design$Contrasts.Sel <- 
               updateSelectedContrasts(object, contrastList)
             
             return(object)
@@ -236,7 +236,7 @@ setMethod(f          = "getModelFormula",
           signature  = "RflomicsMAE",
           definition = function(object){
             
-            return(object@metadata$design$Model.formula)
+            return(metadata(object)$design$Model.formula)
           })
 
 #' @exportMethod getModelFormula
@@ -247,7 +247,7 @@ setMethod(f          = "getModelFormula",
           signature  = "RflomicsSE",
           definition = function(object){
             
-            return(object@metadata$design$Model.formula)
+            return(metadata(object)$design$Model.formula)
           })
 
 
@@ -264,7 +264,7 @@ setMethod(f          = "getSelectedContrasts",
           signature  = "RflomicsMAE",
           definition = function(object){
             
-            return(object@metadata$design$Contrasts.Sel)
+            return(metadata(object)$design$Contrasts.Sel)
           })
 
 
@@ -276,7 +276,7 @@ setMethod(f          = "getSelectedContrasts",
           signature  = "RflomicsSE",
           definition = function(object){
             
-            return(object@metadata$design$Contrasts.Sel)
+            return(metadata(object)$design$Contrasts.Sel)
           })
 
 # ---- getContrastMatrix ----

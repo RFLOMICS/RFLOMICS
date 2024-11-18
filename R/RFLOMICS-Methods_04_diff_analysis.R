@@ -80,7 +80,6 @@
 #' an end-user online differential proteomics statistical analysis platform. 
 #' Nucleic Acids Res. 2017;45(W1):W300-W306.
 #' @exportMethod runDiffAnalysis
-#' @importFrom dplyr filter
 #' @rdname runDiffAnalysis
 #' @seealso \code{\link{getDiffSettings}}, \code{\link{getDEList}},
 #'  \code{\link{getDEMatrix}}
@@ -312,7 +311,6 @@ setMethod(
                           factorBio = factorBio, 
                           contrastList = contrastList$contrast, 
                           modelFormula)
-    #object@metadata$design$Contrasts.Sel   <- contrastList
     rownames(Contrasts.Coeff) <- contrastList$contrastName
     
     return(Contrasts.Coeff)
@@ -365,7 +363,6 @@ setMethod(
 #' @param logFC.cutoff cutoff for absolute value of log2FC. Default is the 
 #' parameter from the differential analysis. 
 #' @exportMethod filterDiffAnalysis
-#' @importFrom dplyr full_join filter if_else mutate_at
 #' @importFrom data.table data.table
 #' @importFrom purrr reduce
 setMethod(
@@ -422,19 +419,6 @@ setMethod(
     }
     
     DiffExpAnal[["results"]][["stats"]] <- do.call("rbind", stat.vec)
-    
-    # df_sim <- 
-    #   lapply(DiffExpAnal[["results"]][["TopDEF"]], function(tab) {
-    #     
-    #     tab <- tab[tab$Adj.pvalue < p.adj.cutoff,]
-    #     tab <- tab[abs(tab$logFC) > logFC.cutoff,]
-    #     
-    #     return(c("All" = nrow(tab),
-    #              "Up" = nrow(tab %>% filter(logFC > 0)),
-    #              "Down" = nrow(tab %>% filter(logFC < 0))
-    #     ))
-    #   })
-    # return(do.call("rbind", df_sim))
     
     object <- 
       setElementToMetadata(object,
@@ -494,7 +478,8 @@ setMethod(
 setMethod(
   f          = "setValidContrasts",
   signature  = "RflomicsSE",
-  definition = function(object, contrastList=NULL){
+  definition = function(object, 
+                        contrastList=NULL){
     
     unselectedContrasts <- 
       contrastList$contrastName[!contrastList$contrastName %in% 
@@ -504,7 +489,7 @@ setMethod(
       stop("These contrasts ", paste0(unselectedContrasts, collapse = ", "), 
            " are not recognized.")
     
-    object@metadata$DiffExpAnal[["results"]][["Validcontrasts"]] <- 
+    metadata(object)[["DiffExpAnal"]][["results"]][["Validcontrasts"]] <- 
       contrastList
     
     return(object)
@@ -518,7 +503,9 @@ setMethod(
 setMethod(
   f          = "setValidContrasts",
   signature  = "RflomicsMAE",
-  definition <- function(object, omicName=NULL, contrastList=NULL){
+  definition <- function(object, 
+                         omicName=NULL, 
+                         contrastList=NULL){
     
     if(!omicName %in% names(object)) 
       stop("This data name, ", omicName, ", does not exist in the your object")
@@ -620,7 +607,6 @@ setMethod(
 #' to ComplexHeatmap::Heatmap or ComplexHeatmap::draw
 #' @exportMethod plotHeatmapDesign
 #' @export
-#' @importFrom dplyr arrange select
 #' @importFrom tidyselect any_of
 #' @importFrom RColorBrewer brewer.pal brewer.pal.info
 #' @importFrom grDevices colorRampPalette pdf dev.off
@@ -820,9 +806,6 @@ setMethod(
 #' color the boxplots accordingly. 
 #' @param raw Boolean. Plot the raw data or the transformed ones (TRUE)
 #' @exportMethod plotBoxplotDE
-#' @importFrom ggplot2  ggplot aes geom_boxplot  element_text theme guides 
-#' guide_legend xlab ylab theme_void ggtitle
-#' @importFrom dplyr full_join  arrange
 #' @examples
 #' # See runDiffAnalysis for an example that includes plotBoxplotDE
 setMethod(
@@ -863,45 +846,7 @@ setMethod(
     Labels <- getLabs4plot(object)
     title <- paste0(Labels$title, "\n", "Feature: ", featureName)
     x_lab <- Labels$x_lab
-    
-    # if (raw) {
-    #   if (object.DE@metadata$omicType != "RNAseq") {
-    #     
-    #     pseudo <- assay(object.DE)
-    #     # x_lab  <- featureName
-    #     # title  <- featureName
-    #     
-    #   } else {
-    #     pseudo <- log2(assay(object.DE) + 1)
-    #     
-    #     # x_lab  <- paste0("log2(", featureName, " data)")
-    #     # title  <- featureName
-    #   }
-    # } else{ 
-    #   if (object.DE@metadata$omicType != "RNAseq") {
-    #     
-    #     title <- featureName
-    #     # pseudo <- assay(object.DE)
-    #     # x_lab  <- paste0(featureName, " data")
-    #     
-    #     # if (.isTransformed(object.DE) && getTransSettings(object.DE)$method != "none") {
-    #     #   title  <- paste0("Transformed (", 
-    #     #                    getTransSettings(object.DE)$method,
-    #     #                    ") ", title)
-    #     # }
-    #     # if (.isNorm(object.DE) && getNormSettings(object.DE)$method != "none") {
-    #     #   title <- paste0(title, " - normalization: ", 
-    #     #                   getNormSettings(object.DE)$method)
-    #     # }  
-    #   } else {
-    #     
-    #     pseudo <- assay(object.DE) 
-    #     # title  <- featureName
-    #     # x_lab  <- paste0("log2(", featureName, " data)") 
-    #     
-    #   }
-    # }
-    # 
+
     pseudo <- assay(object.DE) 
     
     pseudo.gg <- melt(pseudo)
@@ -1017,7 +962,6 @@ setMethod(
 #' Defines the operation to perform on the DE lists from the contrasts.
 #' @exportMethod getDEList
 #' @importFrom tidyselect starts_with any_of
-#' @importFrom dplyr select mutate filter
 #' @examples
 #' # See runDiffAnalysis for an example that includes getDEList
 setMethod(
@@ -1130,7 +1074,7 @@ setMethod(
   signature  = "RflomicsSE",
   definition = function(object){
     
-    object@metadata$DiffExpAnal[["results"]][["Validcontrasts"]]
+    metadata(object)[["DiffExpAnal"]][["results"]][["Validcontrasts"]]
   })
 
 #' @rdname runDiffAnalysis
@@ -1162,7 +1106,6 @@ setMethod(
 #' \itemize{
 #'    \item getDiffStat: Get summary table from diffExpAnalysis analysis}
 #' @exportMethod getDiffStat
-#' @importFrom dplyr filter
 setMethod(
   f          = "getDiffStat",
   signature  = "RflomicsSE",
@@ -1204,11 +1147,8 @@ setMethod(
 #' @param ylabelLength max length of the labels (characters)
 #' @param nbMaxLabel number of labels to print
 #' @param interface boolean. Is this plot for the interace or commandline?
-#' @importFrom dplyr mutate
 #' @importFrom purrr reduce
 #' @importFrom reshape2 melt
-#' @importFrom ggplot2 ggplot aes geom_col geom_text
-#' @importFrom ggplot2 facet_grid scale_x_continuous labs position_stack
 #' @exportMethod getDiffAnalysesSummary
 #' @return a data.frame with differential analyses summary
 #' @rdname runDiffAnalysis
@@ -1218,10 +1158,10 @@ setMethod(
   definition = function(object, plot = FALSE, 
                         ylabelLength = 30,
                         nbMaxLabel = 20,
-                        interface = FALSE) {
+                        interface = FALSE){
     
     # DataProcessing
-    omicNames   <- getAnalyzedDatasetNames(object, analyses = "DiffExpAnal")
+    omicNames <- getAnalyzedDatasetNames(object, analyses = "DiffExpAnal")
     
     df.list <- list()
     for (dataset in omicNames) {

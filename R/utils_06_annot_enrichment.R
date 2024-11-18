@@ -43,100 +43,6 @@
     return()
 }
 
-# ----- Enrichment results ----
-#
-#' @title Get a particular enrichment result
-#' @description
-#' Called inside the getEnrichRes method
-#'
-#' @param object a SE object or a MAE object (produced by Flomics).
-#' @return enrichment result.
-#' @noRd
-#' @keywords internal
-#'
-
-.getEnrichResIntSE <- function(object,
-                               contrastName,
-                               from,
-                               database) {
-  if (is.null(contrastName)) {
-    toret <- metadata(object)[[from]][[database]][["enrichResult"]]
-  } else {
-    toret <-
-      metadata(object)[[from]][[database]]$enrichResult[[contrastName]]
-  }
-  
-  return(toret)
-}
-
-#' @title Determine the origin of from argument
-#' @description
-#' Called inside several enrichment methods
-#'
-#' @param from a character string, usually containing either diffexp or coexp
-#' @return from of the right form
-#' @noRd
-#' @keywords internal
-#'
-.determineFrom <- function(from) {
-  searchFrom <-
-    as.character(c(1, 2)[c(grepl("DIFFEXP", toupper(from)),
-                           grepl("COEXP", toupper(from)))])
-  if (length(searchFrom) < 1)
-    stop(from, " doesn't exist")
-  
-  from <- switch(searchFrom,
-                 "1" = {
-                   "DiffExp"
-                 },
-                 "2" = {
-                   "CoExp"
-                 },
-                 {
-                   message(
-                     "Argument from is detected to be neither
-                          DiffExp nor CoExp, taking DiffExp results."
-                   )
-                   "DiffExp"
-                 })
-  
-  return(from)
-}
-
-#' @title Get a particular enrichment result
-#' @description
-#' Called inside several enrichment methods
-#'
-#' @param from a character string, usually containing either diffexp or coexp
-#' @return from of the right form
-#' @noRd
-#' @keywords internal
-#'
-.determineFromEnrich  <- function(from) {
-  searchFrom <-
-    as.character(c(1, 2)[c(grepl("DIFFEXP", toupper(from)),
-                           grepl("COEXP", toupper(from)))])
-  if (length(searchFrom) < 1)
-    stop(from, " doesn't exist")
-  
-  from <- switch(searchFrom,
-                 "1" = {
-                   "DiffExpEnrichAnal"
-                 },
-                 "2" = {
-                   "CoExpEnrichAnal"
-                 },
-                 {
-                   message(
-                     "Argument from is detected to be neither
-                          DiffExp nor CoExp, taking DiffExp results."
-                   )
-                   "DiffExpEnrichAnal"
-                 })
-  
-  return(from)
-}
-
 # ---- Valid URL ----
 # From https://stackoverflow.com/questions/52911812/check-if-url-exists-in-r
 
@@ -196,6 +102,8 @@
       messagelist[[list]][[dom]] <- HTML(paste(messagelist[[list]][[dom]], collapse = "\n"))
     }
   }
+  
+  if(length(messagelist) == 0) return(NULL)
   return(messagelist)
 }
 

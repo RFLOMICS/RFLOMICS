@@ -36,10 +36,10 @@ MAE <- setSelectedContrasts(MAE, contrastList = contrastList[c(1, 2, 3),])
 #                         normMethod = "TMM")
 
 ## use runDataProcessing function that combines the previous three functions
-MAE <- runDataProcessing(MAE, SE.name = "RNAtest", 
+MAE <- runDataProcessing(MAE, SE.name = "RNAtest",
                          samples = colnames(MAE[["RNAtest"]])[-1], 
-                         lowCountFiltering_strategy = "NbReplicates", 
-                         lowCountFiltering_CPM_Cutoff = 1, 
+                         filterStrategy = "NbReplicates", 
+                         cpmCutoff = 1, 
                          normMethod = "TMM") 
 
 ## check completness of RNAtest data

@@ -88,14 +88,18 @@ protMat2 <- apply(protMat, 2, FUN = function(vect) vect - median(vect))
 test_that("Everything works as expected", {
   
   # MAE2 don't have any differential analysis results. 
-  expect_error(runCoExpression(object = MAE2, SE.name = "RNAtest", K = 2:10, replicates = 5, merge = "union",
-                               model = "normal", GaussianModel = "Gaussian_pk_Lk_Ck", transformation = "arcsin",
-                               normFactors = "TMM"))
+  expect_error(
+    runCoExpression(
+      object = MAE2, SE.name = "RNAtest", K = 2:10, replicates = 5, merge = "union",
+      model = "Normal", GaussianModel = "Gaussian_pk_Lk_Ck", transformation = "arcsin",
+      normFactors = "TMM"))
   
   # Wrong SE.name
-  expect_error(runCoExpression(object = MAE, SE.name = "NA", K = 2:10, replicates = 5, merge = "union",
-                               model = "normal", GaussianModel = "Gaussian_pk_Lk_Ck", transformation = "arcsin",
-                               normFactors = "TMM"))
+  expect_error(
+    runCoExpression(
+      object = MAE, SE.name = "NA", K = 2:10, replicates = 5, merge = "union",
+      model = "Normal", GaussianModel = "Gaussian_pk_Lk_Ck", transformation = "arcsin",
+      normFactors = "TMM"))
 })
 
 # ---- Tests seed -----
@@ -109,61 +113,67 @@ test_that("Everything works as expected", {
 #   # getDEList(MAE[["RNAtest"]], contrasts = contrastNames, operation ="union") 
 #   res1 <- runCoExpression(object = MAE, SE.name = "RNAtest", 
 #                           K = 2:10, replicates = 5, merge = "union", 
-#                           model = "normal", GaussianModel = "Gaussian_pk_Lk_Ck", 
+#                           model = "Normal", GaussianModel = "Gaussian_pk_Lk_Ck", 
 #                           transformation = "arcsin", normFactors = "TMM", 
-#                           contrastNames = contrastNames,
-#                           silent = TRUE)
+#                           contrastNames = contrastNames
+#                           )
 #   
 #   res2 <- runCoExpression(object = MAE, SE.name = "RNAtest", K = 2:10, 
 #                           replicates = 5, merge = "union",
-#                           model = "normal", GaussianModel = "Gaussian_pk_Lk_Ck", 
+#                           model = "Normal", GaussianModel = "Gaussian_pk_Lk_Ck", 
 #                           transformation = "arcsin", normFactors = "TMM", 
-#                           contrastNames = contrastNames,
-#                           silent = TRUE)
+#                           contrastNames = contrastNames
+#                           )
 #   
 #   expect_identical(
-#     coseq::clusters(res1[["RNAtest"]]@metadata$CoExpAnal$coseqResults),
-#     coseq::clusters(res2[["RNAtest"]]@metadata$CoExpAnal$coseqResults))
+#     coseq::clusters(res1[["RNAtest"]]@metadata$CoExpAnal$results$coseqResults),
+#     coseq::clusters(res2[["RNAtest"]]@metadata$CoExpAnal$results$coseqResults))
 #   
 # })
 
 test_that("Two runs, same results - seed is working - proteomics", {
-  
-  res1 <- runCoExpression(object = MAE, SE.name = "protetest", K = 2:20, 
-                          replicates = 5, merge = "union", 
-                          model = "normal", silent = TRUE)
-  
-  res2 <- runCoExpression(object = MAE, SE.name = "protetest", K = 2:20, 
-                          replicates = 5, merge = "union",
-                          model = "normal", silent = TRUE)
+  co <- capture.output(
+    res1 <- runCoExpression(object = MAE, SE.name = "protetest", K = 2:20, 
+                            replicates = 5, merge = "union", 
+                            model = "Normal"))
+  co <- capture.output(
+    res2 <- runCoExpression(object = MAE, SE.name = "protetest", K = 2:20, 
+                            replicates = 5, merge = "union",
+                            model = "Normal"))
   
   expect_identical(
-    coseq::clusters(res1[["protetest"]]@metadata$CoExpAnal$coseqResults),
-    coseq::clusters(res2[["protetest"]]@metadata$CoExpAnal$coseqResults))
+    coseq::clusters(
+      getAnalysis(res1[["protetest"]], 
+                  name = "CoExpAnal", 
+                  subName = "results")$coseqResults),
+    coseq::clusters(
+      getAnalysis(res2[["protetest"]], 
+                  name = "CoExpAnal", 
+                  subName = "results")$coseqResults))
   
   # Check GaussianModel
   expect_equal(
-    res1[["protetest"]]@metadata$CoExpAnal$coseqResults@metadata$GaussianModel,
+    metadata(res1[["protetest"]])$CoExpAnal$results$coseqResults@metadata$GaussianModel,
     "Gaussian_pk_Lk_Bk")
   expect_equal(
-    res2[["protetest"]]@metadata$CoExpAnal$coseqResults@metadata$GaussianModel, 
+    metadata(res2[["protetest"]])$CoExpAnal$results$coseqResults@metadata$GaussianModel, 
     "Gaussian_pk_Lk_Bk")
   
   # Check transformation
   expect_equal(
-    res1[["protetest"]]@metadata$CoExpAnal$coseqResults@transformation, 
+    metadata(res1[["protetest"]])$CoExpAnal$results$coseqResults@transformation, 
     "none")
   expect_equal(
-    res2[["protetest"]]@metadata$CoExpAnal$coseqResults@transformation, 
+    metadata(res2[["protetest"]])$CoExpAnal$results$coseqResults@transformation, 
     "none")
   
   # Check normFactors
   expect_equal(
-    res1[["protetest"]]@metadata$CoExpAnal$coseqResults@normFactors, 
+    metadata(res1[["protetest"]])$CoExpAnal$results$coseqResults@normFactors, 
     rep(1, ncol(assay(res1[["protetest"]]))))
   
   expect_equal(
-    res2[["protetest"]]@metadata$CoExpAnal$coseqResults@normFactors, 
+    metadata(res2[["protetest"]])$CoExpAnal$results$coseqResults@normFactors, 
     rep(1, ncol(res2[["protetest"]])))
 })
 
@@ -185,7 +195,7 @@ test_that("Two runs, same results - seed is working - proteomics", {
 #   iter <-  rep(K, each = replicates)
 #   geneList <- getDEList(MAE[["RNAtest"]], operation = merge)
 #   
-#   param.list = list(model = "normal",
+#   param.list = list(model = "Normal",
 #                     GaussianModel = "Gaussian_pk_Lk_Ck",
 #                     transformation = "arcsin",
 #                     normFactors = "TMM",
@@ -198,11 +208,11 @@ test_that("Two runs, same results - seed is working - proteomics", {
 #                          GaussianModel = param.list$GaussianModel, 
 #                          transformation = param.list$transformation, 
 #                          normFactors = param.list$normFactors, 
-#                          meanFilterCutoff = param.list$meanFilterCutoff, 
-#                          silent = TRUE)
+#                          meanFilterCutoff = param.list$meanFilterCutoff
+#                          )
 #   
-#   clustersMAE <- coseq::clusters(MAE[["RNAtest"]]@metadata$CoExpAnal$coseqResults)
-#   resultsMAE  <- MAE[["RNAtest"]]@metadata$CoExpAnal$coseqResults
+#   clustersMAE <- coseq::clusters(MAE[["RNAtest"]]@metadata$CoExpAnal$results$coseqResults)
+#   resultsMAE  <- MAE[["RNAtest"]]@metadata$CoExpAnal$results$coseqResults
 #   tcountsMAE <- resultsMAE@tcounts
 #   yprofMAE <- resultsMAE@y_profiles
 #   
@@ -277,7 +287,7 @@ test_that("Two runs, same results - seed is working - proteomics", {
 # 
 #   rep(1:replicates, replicates)
 # 
-#   param.list = list(model = "normal",
+#   param.list = list(model = "Normal",
 #                     GaussianModel = "Gaussian_pk_Lk_Ck",
 #                     transformation = "arcsin",
 #                     normFactors = "TMM",
@@ -291,11 +301,10 @@ test_that("Two runs, same results - seed is working - proteomics", {
 #                          transformation = param.list$transformation,
 #                          normFactors = param.list$normFactors,
 #                          meanFilterCutoff = param.list$meanFilterCutoff,
-#                          clustermq = TRUE,
-#                          silent = FALSE, cmd = TRUE)
+#                          clustermq = TRUE)
 # 
-#   clustersMAE <- coseq::clusters(MAE[["RNAtest"]]@metadata$CoExpAnal$coseqResults)
-#   resultsMAE  <- MAE[["RNAtest"]]@metadata$CoExpAnal$coseqResults
+#   clustersMAE <- coseq::clusters(MAE[["RNAtest"]]@metadata$CoExpAnal$results$coseqResults)
+#   resultsMAE  <- MAE[["RNAtest"]]@metadata$CoExpAnal$results$coseqResults
 #   tcountsMAE <- resultsMAE@tcounts
 #   yprofMAE <- resultsMAE@y_profiles
 # 
@@ -347,27 +356,30 @@ test_that("Coseq on Proteomics equivalence", {
   replicates = 3
   iter <-  rep(K, each = replicates)
   
-  param.list = list(model = "normal",
+  param.list = list(model = "Normal",
                     GaussianModel = "Gaussian_pk_Lk_Bk",
                     transformation = "none",
                     normFactors = "none",
-                    meanFilterCutoff = NULL)
+                    meanFilterCutoff = NULL,
+                    K = K,
+                    replicates = replicates)
   
   # RFLOMICS function:
-  MAE <- runCoExpression(object = MAE, 
-                         SE.name = "protetest", 
-                         contrastNames = NULL,
-                         K = K, replicates = replicates, 
-                         merge = merge, 
-                         model = param.list$model, 
-                         GaussianModel = param.list$GaussianModel, 
-                         transformation = param.list$transformation, 
-                         normFactors = param.list$normFactors, 
-                         meanFilterCutoff = param.list$meanFilterCutoff,
-                         silent = TRUE)
+  co <- capture.output(
+    MAE <- runCoExpression(object = MAE, 
+                           SE.name = "protetest", 
+                           contrastNames = NULL,
+                           K = K, replicates = replicates, 
+                           merge = merge, 
+                           model = param.list$model, 
+                           GaussianModel = param.list$GaussianModel, 
+                           transformation = param.list$transformation, 
+                           normFactors = param.list$normFactors, 
+                           meanFilterCutoff = param.list$meanFilterCutoff
+    ))
   
-  clustersMAE <- coseq::clusters(MAE[["protetest"]]@metadata$CoExpAnal$coseqResults)
-  resultsMAE  <- MAE[["protetest"]]@metadata$CoExpAnal$coseqResults
+  clustersMAE <- coseq::clusters(metadata(MAE[["protetest"]])$CoExpAnal$results$coseqResults)
+  resultsMAE  <- metadata(MAE[["protetest"]])$CoExpAnal$results$coseqResults
   tcountsMAE <- resultsMAE@tcounts
   yprofMAE <- resultsMAE@y_profiles
   
@@ -379,13 +391,12 @@ test_that("Coseq on Proteomics equivalence", {
   countMat <- countMat[, match(rownames(getDesignMat(MAE)), colnames(countMat))]
   identical(rownames(getDesignMat(MAE)), colnames(countMat), attrib.as.set = FALSE)
   
-  countMat2 <- t(apply(countMat , 1, function(x){scale(x, center = TRUE, scale = TRUE) }))
+  countMat2 <- t(apply(countMat, 1, function(x){scale(x, center = TRUE, scale = TRUE) }))
   colnames(countMat2) <- colnames(countMat)
   
-  test_rcl <- RFLOMICS:::.runCoseqLocal(countMat2, 
-                                        conds = getDesignMat(MAE)$groups,
-                                        K = K, replicates = replicates, 
-                                        param.list = param.list)
+  co <- capture.output(suppressWarnings(
+    test_rcl <- RFLOMICS:::.runCoseqLocal(countMat2, 
+                                          param.list = param.list)))
   
   
   clustersRCL <- coseq::clusters(test_rcl$coseqResults)
@@ -411,7 +422,7 @@ test_that("Coseq on Proteomics equivalence", {
   # set.seed(12345)
   co <- capture.output(suppressMessages(
     coseq_res <-  lapply(1:replicates, function(x){
-      suppressWarnings(coseq::coseq(countMat2, K = K,
+      RFLOMICS:::.tryCatch_rflomics(coseq::coseq(countMat2, K = K,
                                     model = param.list$model, 
                                     transformation = param.list$transformation, 
                                     GaussianModel = param.list$GaussianModel, 
@@ -420,9 +431,10 @@ test_that("Coseq on Proteomics equivalence", {
                                     parallel = TRUE, seed = x))
     })
   ))
-  names(coseq_res) <- c(1:replicates)
+  names(coseq_res) <- paste0("K=", min(K), "-", max(K), "_", c(1:replicates))
   
-  coseq.res <- RFLOMICS:::.coseq.results.process(coseq_res)$coseqResults
+  
+  coseq.res <- RFLOMICS:::.coseq.results.process(coseq_res, K)$coseqResults
   
   clustersRES <- coseq::clusters(coseq.res)
   yprofRES <- coseq.res@y_profiles
@@ -433,12 +445,11 @@ test_that("Coseq on Proteomics equivalence", {
   expect_equal(data.frame(tcountsRES), data.frame(countMat2)) # no transformation, no filtering
   expect_equal(yprofRES, yprofMAE)
   expect_identical(clustersRES, clustersMAE)
-  
 })
 
 
 
-## .....Test: coseq.results.process 
+## ---- Test: coseq.results.process ----
 # 
 # test_that("When Median.min.rep doesn't correspond to a rep.ICL.min, an error message is returned",{
 #   
@@ -448,7 +459,7 @@ test_that("Coseq on Proteomics equivalence", {
 #   iter <-  rep(K, each = replicates)
 #   geneList <- getDEList(MAE[["RNAtest"]], operation = merge)
 #   
-#   param.list = list(model = "normal",
+#   param.list = list(model = "Normal",
 #                     GaussianModel = "Gaussian_pk_Lk_Ck",
 #                     transformation = "arcsin",
 #                     normFactors = "TMM",
@@ -472,8 +483,7 @@ test_that("Coseq on Proteomics equivalence", {
 #   
 #   coseq.error.management <- RFLOMICS:::.coseq.error.manage(coseq.res.list = coseq.res.list, 
 #                                                            K = K, 
-#                                                            replicates = replicates,
-#                                                            cmd = TRUE)
+#                                                            replicates = replicates)
 #   
 #   CoExpAnal <-  RFLOMICS:::.coseq.results.process(coseqObjectList = coseq.error.management$coseq.res.list.values, 
 #                                                   K = K,
@@ -507,7 +517,7 @@ test_that("Coseq on Proteomics equivalence", {
 #   geneList <- getDEList(MAE[["RNAtest"]], operation = merge)
 #   countMat <- assay(MAE[["RNAtest"]])[geneList,][1:100,]
 #   
-#   param.list = list(model = "normal",
+#   param.list = list(model = "Normal",
 #                     GaussianModel = "Gaussian_pk_Lk_Ck",
 #                     transformation = "arcsin",
 #                     normFactors = "TMM",
@@ -529,8 +539,7 @@ test_that("Coseq on Proteomics equivalence", {
 #   coseq.error.management <- 
 #     RFLOMICS:::.coseq.error.manage(coseq.res.list = coseq.res.list, 
 #                                    K = K, 
-#                                    replicates = replicates,
-#                                    cmd = TRUE)
+#                                    replicates = replicates)
 #   
 #   nbFailed <- dplyr::filter(coseq.error.management$jobs.tab.sum, K == "K=6")$n
 #   

@@ -383,15 +383,15 @@ setMethod(
               "DE"  = {
                 getDEMatrix(object = SE.object)$DEF
               },
-              "Contrast" = {
+              "DiffExp" = {
                 getDEList(object = SE.object, contrasts = listSel)
               },
               "Tag" = {
                 getDEList(object = SE.object, contrasts = listSel)
                 # TODO problem when only one selected
               },
-              "CoexCluster" = {
-                getClusterEntities(SE.object, clusterName = listSel)
+              "CoExp" = {
+                getCoexpClusters(SE.object, clusterName = listSel)
               },
               {
                 # Default: all
@@ -502,7 +502,7 @@ setMethod(
     )
     
     if (toupper(method) == "MOFA") {
-      # object@metadata[["MOFA"]] <- NULL
+      # metadata(object)[["MOFA"]] <- NULL
       object <- setMOFA(object, NULL)
       
       if (cmd)

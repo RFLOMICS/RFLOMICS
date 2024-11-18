@@ -64,7 +64,7 @@ setMethod(
         
         for (analysis in singleAnalyses) {
           
-          object[[data]]@metadata[[analysis]] <- 
+          metadata(object[[data]])[[analysis]] <- 
             switch (
               analysis,
               "DataProcessing" = {
@@ -97,7 +97,7 @@ setMethod(
       if(length(multiAnalyses) == 0) stop("")
       
       for (analysis in multiAnalyses) {
-        object@metadata[[analysis]] <- list()
+        metadata(object)[[analysis]] <- list()
       }
     }
     
@@ -134,6 +134,11 @@ setMethod(
                         export = FALSE,
                         tmpDir = getwd(),
                         ...) {
+    
+    #
+    if(is.null(getAnalyzedDatasetNames(object))) 
+      stop("An exploratory analysis must be performed on at least one of the datasets.")
+    
     # Copy the report file to a temporary directory before processing it, in
     # case we don't have write permissions to the current working dir (which
     # can happen when deployed).
@@ -178,8 +183,8 @@ setMethod(
       list(
         FEdata = file.path(tmpDir, RDataName),
         title  = paste0(projectName, " project"),
-        rflomicsVersion = object@metadata$rflomicsVersion,
-        date = object@metadata$date,
+        rflomicsVersion = metadata(object)$rflomicsVersion,
+        date = metadata(object)$date,
         outDir = tmpDir
       )
     
@@ -241,13 +246,6 @@ setMethod(
                         name    = NULL,
                         subName = NULL){
     
-    # if(!is.null(SE.name)){
-    #   if(!SE.name %in% getDatasetNames(object))
-    #     stop(SE.name, " ?")
-    #   
-    #   object <- object[[SE.name]]
-    # }
-    
     results <- 
       .getAnalysis(object, name, subName)
     
@@ -271,9 +269,6 @@ setMethod(
     return(results)
   }
 )
-
-
-
 
 # ---- getAnalyzedDatasetNames ----
 #' @rdname getAnalysis
@@ -304,27 +299,28 @@ setMethod(
       
       for(analysis in analyses){
         
-        if(length(object[[dataset]]@metadata[[analysis]]) == 0)
+        if(length(metadata(object[[dataset]])[[analysis]]) == 0)
           next
         
-        switch (analysis,
-                "DataProcessing" = {
-                  if(isTRUE(object[[dataset]]@metadata[[analysis]]$done))
-                    df.list[[analysis]] <- c(df.list[[analysis]], dataset)
-                },
-                "DiffExpAnal" = {
-                  if(!is.null(getValidContrasts(object[[dataset]])))
-                    df.list[[analysis]] <- c(df.list[[analysis]], dataset)
-                },
-                "CoExpAnal" = {
-                  if(isTRUE(object[[dataset]]@metadata[[analysis]]$results))
-                    df.list[[analysis]] <- c(df.list[[analysis]], dataset)
-                },
-                {
-                  for(db in names(object[[dataset]]@metadata[[analysis]])){
-                    df.list[[analysis]][[db]] <- c(df.list[[analysis]][[db]], dataset)
-                  }
-                }
+        switch (
+          analysis,
+          "DataProcessing" = {
+            if(isTRUE(metadata(object[[dataset]])[[analysis]]$done))
+              df.list[[analysis]] <- c(df.list[[analysis]], dataset)
+          },
+          "DiffExpAnal" = {
+            if(!is.null(getValidContrasts(object[[dataset]])))
+              df.list[[analysis]] <- c(df.list[[analysis]], dataset)
+          },
+          "CoExpAnal" = {
+            if(is.null(getAnalysis(object[[dataset]], name = analysis)$errors))
+              df.list[[analysis]] <- c(df.list[[analysis]], dataset)
+          },
+          {
+            for(db in names(metadata(object[[dataset]])[[analysis]])){
+              df.list[[analysis]][[db]] <- c(df.list[[analysis]][[db]], dataset)
+            }
+          }
         )
       }
     }
@@ -375,8 +371,7 @@ setMethod(
       .setElementToMetadata(object, name, subName, content)
     
     return(object)
-  }
-)
+  })
 
 
 ## ---- getLabs4plot ----
@@ -394,8 +389,7 @@ setMethod(
 setMethod(
   f = "getLabs4plot",
   signature = "RflomicsSE",
-  definition = function(object,
-                        ...) {
+  definition = function(object) {
     
     labels <- list()
     omicsType <- getOmicsTypes(object)
@@ -426,8 +420,8 @@ setMethod(
                       "raw ", omicsType, " data")
     }
     
-    if (!is.null(object@metadata$DataProcessing$log)) {
-      x_lab <- paste0(object@metadata$DataProcessing$log, "(", omicsType, " data)")
+    if (!is.null(metadata(object)$DataProcessing$log)) {
+      x_lab <- paste0(metadata(object)$DataProcessing$log, "(", omicsType, " data)")
     }
     
     labels$title <- title
@@ -463,7 +457,7 @@ setMethod(
     for(SE.name in names(object)){
       object[[SE.name]] <- getProcessedData(object[[SE.name]], norm = TRUE)
     }
-
+    
     # contruct MAE from rflomicsMAE
     MAE <- MultiAssayExperiment(experiments = experiments(object), 
                                 colData     = colData(object), 
@@ -471,8 +465,8 @@ setMethod(
                                 metadata    = 
                                   list(projectName = getProjectName(object),
                                        methods     = methods
-                                       )
-                                )
+                                  )
+    )
     
     return(MAE)
   })

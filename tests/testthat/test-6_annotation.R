@@ -32,8 +32,8 @@ formulae <- generateModelFormulae( MAE)
 MAE <- setModelFormula(MAE, formulae[[1]])
 
 contrastList <- generateExpressionContrast(object = MAE) |>
-    purrr::reduce(rbind) |>
-    dplyr::filter(contrast %in% c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)"))
+  purrr::reduce(rbind) |>
+  dplyr::filter(contrast %in% c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)"))
 
 MAE <- MAE |>
   setSelectedContrasts(contrastList = contrastList) |>
@@ -51,22 +51,21 @@ test_that("it's running from diffExpAnal - GO - proteomics", {
   
   # Selecting only one contrast
   expect_no_error({
-
     MAE <- 
       runAnnotationEnrichment(
-        MAE,
-        nameList = "(temperatureElevated - temperatureLow) in imbibitionDS" , 
-        SE.name = "protetest", database = "GO",
-        list_args = list(OrgDb = "org.At.tair.db",
-                         keyType = "TAIR",
-                         pvalueCutoff = 0.05),
+        MAE, SE.name = "protetest",
+        featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" , 
+        database = "GO",
+        pvalueCutoff = 0.05,
+        OrgDb = "org.At.tair.db",
+                       keyType = "TAIR",
         domain = c("BP"))
   })
   
   expect({
     obj <- RFLOMICS:::getEnrichRes(
       MAE[["protetest"]], 
-      contrast = "(temperatureElevated - temperatureLow) in imbibitionDS",
+      featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
       database = "GO", domain = "BP")
     nrow(obj@result) > 0
     
@@ -74,21 +73,21 @@ test_that("it's running from diffExpAnal - GO - proteomics", {
   "There is no result in the enrichment metadata part.")
   
   # All contrasts
-
+  
   # expect_no_error({
   #   MAE <- runAnnotationEnrichment(
   #     MAE, SE.name = "protetest", database = "GO",
-  #     list_args = list(OrgDb   = "org.At.tair.db",
+  #     OrgDb   = "org.At.tair.db",
   #                      keyType = "TAIR",
-  #                      pvalueCutoff = 0.05),
+  #                      pvalueCutoff = 0.05,
   #     domain = c("BP", "MF", "CC"))
   #   
   # })
-
+  
   expect({
     obj <- RFLOMICS:::getEnrichRes(
       MAE[["protetest"]], 
-      contrast = "(temperatureElevated - temperatureLow) in imbibitionDS", 
+      featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS", 
       database = "GO", 
       domain   = "BP")
     
@@ -107,7 +106,7 @@ test_that("it's running from diffExpAnal - GO - proteomics", {
 #                             show_col_types = FALSE)
 # 
 #   MAE <- runAnnotationEnrichment(MAE, SE.name = "protetest", database = "custom",
-#                                  list_args = list(pvalueCutoff = 0.05),
+#                                  pvalueCutoff = 0.05,
 #                                  col_term = "GO term accession",
 #                                  col_gene = "Gene stable ID",
 #                                  col_name = "GO term name",
@@ -119,7 +118,7 @@ test_that("it's running from diffExpAnal - GO - proteomics", {
 #   # Selecting only one contrast, custom file
 #   expect_no_error({
 #     MAE <- runAnnotationEnrichment(MAE, nameList = "(temperatureMedium - temperatureLow) in imbibitionDS" , SE.name = "protetest", database = "custom",
-#                                    list_args = list(pvalueCutoff = 0.05),
+#                                    pvalueCutoff = 0.05,
 #                                    col_term = "GO term accession",
 #                                    col_gene = "Gene stable ID",
 #                                    col_name = "GO term name",
@@ -136,9 +135,9 @@ test_that("it's running from diffExpAnal - GO - proteomics", {
 #   # All contrasts, GO database
 #   # expect_no_error({
 #   #   MAE <- runAnnotationEnrichment(MAE, SE.name = "protetest", database = "GO",
-#   #                                  list_args = list(OrgDb = "org.At.tair.db",
+#   #                                  OrgDb = "org.At.tair.db",
 #   #                                                   keyType = "TAIR",
-#   #                                                   pvalueCutoff = 0.05),
+#   #                                                   pvalueCutoff = 0.05,
 #   #                                  domain = c("BP", "MF", "CC"))
 #   #
 #   # })
@@ -152,9 +151,9 @@ test_that("it's running from diffExpAnal - GO - proteomics", {
 #   # All contrasts, KEGG database
 #   expect_no_error({
 #     MAE <- runAnnotationEnrichment(MAE, SE.name = "protetest", database = "KEGG",
-#                                    list_args = list(organism = "ath",
+#                                    organism = "ath",
 #                                                     keyType = "kegg",
-#                                                     pvalueCutoff = 0.5))
+#                                                     pvalueCutoff = 0.5)
 # 
 #   })
 # 
@@ -177,9 +176,9 @@ test_that("it's running from diffExpAnal - GO - proteomics", {
 #                                    SE.name = "protetest", 
 #                                    from = "CoExpAnal", 
 #                                    database = "GO",
-#                                    list_args = list(OrgDb = "org.At.tair.db",
+#                                    OrgDb = "org.At.tair.db",
 #                                                     keyType = "TAIR",
-#                                                     pvalueCutoff = 0.05),
+#                                                     pvalueCutoff = 0.05,
 #                                    domain = c("BP", "MF", "CC"))
 # 
 #   })
@@ -200,9 +199,9 @@ test_that("it's running from diffExpAnal - GO - proteomics", {
 #                                    nameList = c("cluster.1", "cluster.2") ,
 #                                    from = "CoExpAnal", 
 #                                    database = "GO",
-#                                    list_args = list(OrgDb = "org.At.tair.db",
+#                                    OrgDb = "org.At.tair.db",
 #                                                     keyType = "TAIR",
-#                                                     pvalueCutoff = 0.05),
+#                                                     pvalueCutoff = 0.05,
 #                                    domain = c("BP", "MF", "CC"))
 # 
 #   })

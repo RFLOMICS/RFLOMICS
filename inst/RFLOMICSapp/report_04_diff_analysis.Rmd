@@ -12,6 +12,7 @@ dataset.SE     <- getRflomicsSE(rflomics.MAE, data)
 validContrasts <- getValidContrasts(dataset.SE)
 omicsType      <- getOmicsTypes(dataset.SE)
 variableName   <- RFLOMICS:::.omicsDic(dataset.SE)[["variableName"]]
+DiffExpAnal    <- getAnalysis(dataset.SE, name = "DiffExpAnal", subName = "results")
 ```
 
 <!-- ## Summary table of differential expression analysis -->
@@ -47,7 +48,7 @@ to the **`r getDiffSettings(dataset.SE)$p.adj.method`** procedure with a **cutof
 
 ```{r Upset_plot, fig.show = "hold", out.width = "100%", fig.cap=paste0("<p style=\"color:grey\">","*fig: This **UpSetR** plot gives the number of common and specific differential expressed ",variableName," per contrasts.*", "</p>")}
 
-DEF_mat <- as.data.frame(dataset.SE@metadata$DiffExpAnal[["mergeDEF"]])
+DEF_mat <- as.data.frame(DiffExpAnal[["mergeDEF"]])
 DEF_mat <- DEF_mat[c("DEF", validContrasts$contrastName)]
 
 write.table(DEF_mat, file=paste0(diffDir[[data]],"/","Matrice_of_DE_", variableName,"_per_Constrast.txt"), sep="\t",quote=FALSE,col.names=TRUE,row.names=FALSE)
@@ -64,14 +65,13 @@ if(dim(DEF_mat)[2] > 2){
 #### Stat summary
 ```{r , echo=FALSE, results="asis", fig.cap=paste0("<p style=\"color:grey\">","*tab: Table summarising the number of DE features by contrast.*", "</p>")}
 
-tmpRes <- dataset.SE@metadata[["DiffExpAnal"]]
 DE <- vector()
 DEup <- vector()
 DEdown <- vector()
 
-for (i  in  1:nrow(tmpRes[["contrasts"]])){
-  contrastName <- tmpRes[["contrasts"]][i,]$contrastName
-  stats <- tmpRes[["stats"]][contrastName,]
+for (i  in  1:nrow(DiffExpAnal[["Validcontrasts"]])){
+  contrastName <- DiffExpAnal[["Validcontrasts"]][i,]$contrastName
+  stats <- DiffExpAnal[["stats"]][contrastName,]
   DE[i] <- stats[["All"]]
   DEup[i] <- 
     paste(stats[["Up"]]," (",round(stats[["Up"]]/stats[["All"]],2)*100," %)",sep="")
@@ -79,7 +79,7 @@ for (i  in  1:nrow(tmpRes[["contrasts"]])){
     paste(stats[["Down"]]," (",round(stats[["Down"]]/stats[["All"]],2)*100," %)",sep="")
 }
 
-stat_summary <- cbind(tmpRes[["contrasts"]][,c("tag","contrastName")],
+stat_summary <- cbind(DiffExpAnal[["Validcontrasts"]][,c("tag","contrastName")],
                        data.frame("DE.Tot"=DE,"DE.Up"=DEup,"DE.Down"=DEdown))
 
 write.table(stat_summary, file=paste0(diffDir[[data]],"summay_stat.txt"),

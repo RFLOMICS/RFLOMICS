@@ -13,7 +13,6 @@
 #' tabItem renderMenu tabItems sidebarMenu menuSubItem
 #' @rawNamespace import(shiny, except = renderDataTable)
 #' @importFrom shinyWidgets pickerInput materialSwitch
-#' @importFrom dplyr filter select arrange
 #' @importFrom purrr reduce
 #' @importFrom magrittr "%>%"
 
@@ -199,22 +198,12 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     if(check_run_diff_execution(session$userData$FlomicsMultiAssay[[dataset]], 
                                 param.list) == FALSE) return()
     
-    # Initialization of rflomics objects
-    # session$userData$FlomicsMultiAssay <-
-    #   resetRflomicsMAE(session$userData$FlomicsMultiAssay,
-    #                    datasetNames = dataset,
-    #                    singleAnalyses = c("DiffExpAnal",
-    #                                       "DiffExpEnrichAnal",
-    #                                       "CoExpAnal",
-    #                                       "CoExpEnrichAnal"),
-    #                    multiAnalyses = c("IntegrationAnalysis"))
-    
     # Initialization of reactive variables
     rea.values[[dataset]]$diffAnal   <- FALSE
     rea.values[[dataset]]$diffValid  <- FALSE
     rea.values[[dataset]]$coExpAnal  <- FALSE
-    rea.values[[dataset]]$diffAnnot  <- FALSE
-    rea.values[[dataset]]$coExpAnnot <- FALSE
+    rea.values[[dataset]]$DiffExp  <- FALSE
+    rea.values[[dataset]]$CoExp <- FALSE
     rea.values[[dataset]]$DiffValidContrast <- NULL
     
     #---- progress bar ----#
@@ -253,48 +242,6 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
           logFC.cutoff  = input$abs.logFC.cutoff)
     }
     
-    # DiffExpAnal <- getAnalysis(dataset.SE, name = "DiffExpAnal")
-    # 
-    # if(!is.null(DiffExpAnal[["errors"]]))
-    #   showModal(
-    #     modalDialog(title = "Error message", DiffExpAnal[["errors"]]))
-    # 
-    # validate({
-    #   need(is.null(DiffExpAnal[["errors"]]), message = DiffExpAnal[["errors"]])
-    # })
-    # 
-    # # error management
-    # if(!is.null(DiffExpAnal[["results"]][["errors"]])){
-    #   showModal(
-    #     modalDialog(
-    #       title = "Error message",
-    #       if(!is.null(DiffExpAnal[["results"]][["ErrorStats"]])){
-    #         DT::renderDataTable(
-    #           DiffExpAnal[["results"]][["ErrorStats"]],
-    #           rownames = FALSE)
-    #       }
-    #       else{
-    #         as.character(DiffExpAnal[["results"]][["Error"]])
-    #       }
-    #     ))
-    # }
-    # 
-    # if(is.null(DiffExpAnal[["results"]][["RawDEFres"]])){
-    #   
-    #   showModal(
-    #     modalDialog(
-    #       title = "Error message",
-    #       if(!is.null(DiffExpAnal[["results"]][["ErrorTab"]])){
-    #         DT::renderDataTable(
-    #           DiffExpAnal[["results"]][["ErrorTab"]],
-    #           rownames = FALSE)
-    #       }
-    #       else{
-    #         as.character(DiffExpAnal[["results"]][["error"]])
-    #       }
-    #     ))
-    # }
-    
     session$userData$FlomicsMultiAssay[[dataset]] <- dataset.SE
     
     rea.values[[dataset]]$diffAnal <- TRUE
@@ -324,8 +271,8 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     
     rea.values[[dataset]]$diffValid  <- FALSE
     rea.values[[dataset]]$coExpAnal  <- FALSE
-    rea.values[[dataset]]$diffAnnot  <- FALSE
-    rea.values[[dataset]]$coExpAnnot <- FALSE
+    rea.values[[dataset]]$DiffExp  <- FALSE
+    rea.values[[dataset]]$CoExp <- FALSE
     
     session$userData$FlomicsMultiAssay <-
       resetRflomicsMAE(session$userData$FlomicsMultiAssay,
@@ -907,7 +854,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
               input[[paste0(id2,"-pca.DE.condColorSelect")]][1]
             
             plotOmicsPCA(newDataset.SE,  
-                         raw = "norm", 
+                         raw = FALSE, 
                          axes = c(PC1.value, PC2.value), 
                          groupColor = condGroup)
           })

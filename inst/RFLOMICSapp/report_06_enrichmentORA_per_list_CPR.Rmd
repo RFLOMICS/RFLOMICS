@@ -1,6 +1,6 @@
 ```{r }
 
-listnameDir <- paste0(annotDir[[data]][[annot]][[ontology]],
+listnameDir <- paste0(annotDir[[data]][[paste0(annot, "EnrichAnal")]][[ontology]],
                       RFLOMICS:::contrastName2contrastDir(listname),"/")
 dir.create(path=listnameDir, recursive = TRUE, showWarnings = FALSE)
 
@@ -19,19 +19,24 @@ opts_chunk$set(
 
 ```{r}
 
-enrichRes <- NULL
-enrichRes <- getEnrichRes(dataset.SE,
-                                    from = annot, 
-                                    database = ontology, 
-                                    contrastName = listname)
+enrichRes <- 
+  getEnrichRes(dataset.SE,
+               featureListName = listname,
+               from = annot, 
+               database = ontology)
 ```
 
 ```{r}
 log2FC_vect <- NULL
-if (annot == 'DiffExpEnrichAnal') {
-  log2FC_vect <- metadata(dataset.SE)$DiffExpAnal$TopDEF[[listname]]$logFC
-  names(log2FC_vect) <- rownames(metadata(dataset.SE)$DiffExpAnal$TopDEF[[listname]])
+if (annot == 'DiffExp') {
+  TopDEF <- getAnalysis(dataset.SE, 
+                        name = paste0(annot, "Anal"), 
+                        subName = "results")[["TopDEF"]]
+  
+  log2FC_vect <- TopDEF[[listname]]$logFC
+  names(log2FC_vect) <- rownames(TopDEF[[listname]])
 }
+
 ```
 
 ###### Dotplot
@@ -46,7 +51,7 @@ for (domain in names(enrichRes)) {
   
   out <- c(out, paste0("\n* **", domain, ":**\n\n"))
   
-  cmd <- paste0("p <- dotplot(dataPlot, showCategory = 15) + ",
+  cmd <- paste0("p <- clusterProfiler::dotplot(dataPlot, showCategory = 15) + ",
                 "ggtitle(paste0(listname, '\nDomain: ', domain, '\n(First 15 enriched terms)')); ",
                 "print(p)")
   
@@ -147,15 +152,15 @@ opts_chunk$set(
 dataPlot <- list()
 
 for (domain in names(getEnrichRes(dataset.SE,
-                                            from = annot, 
-                                            database = ontology, 
-                                            contrastName = listname))) {
-  if (length(domain) != 0) {
-    tmp <- getEnrichRes(dataset.SE,
                                   from = annot, 
                                   database = ontology, 
-                                  contrastName = listname,
-                                  domain = domain)
+                                  featureListName = listname))) {
+  if (length(domain) != 0) {
+    tmp <- getEnrichRes(dataset.SE,
+                        from = annot, 
+                        database = ontology, 
+                        featureListName = listname,
+                        domain = domain)
     tmp@result$domain <- rep(domain, dim(tmp@result)[1])
     dataPlot[[domain]] <- tmp@result[tmp@result$p.adjust < tmp@pvalueCutoff, ] 
     dataPlot[[domain]][["geneID"]] <- NULL
@@ -172,7 +177,7 @@ if (length(dataPlot) != 0) {
   dataPlot.rbind[, colKeep] <- signif(dataPlot.rbind[, colKeep], 3)
   
   datatable(dataPlot.rbind, rownames = FALSE , class = 'cell-border stripe',
-                options = list( pageLength = 6, scrollX = F, lengthChange = F))
+            options = list( pageLength = 6, scrollX = F, lengthChange = F))
 }
 
 ```

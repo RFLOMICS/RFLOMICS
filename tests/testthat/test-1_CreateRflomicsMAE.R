@@ -115,7 +115,7 @@ test_that("test SE metadtata", {
   
   # PCAlist
   expect_no_error(getAnalysis(MAE[[SE]], name = "PCAlist", subName = "raw"))
-  expect_error(getAnalysis(MAE[[SE]], name = "PCAlist", subName = "norm"))
+  expect_null(getAnalysis(MAE[[SE]], name = "PCAlist", subName = "norm"))
   
   # Analyses
   expect_equal(getAnalysis(MAE[[SE]], name = "DiffExpAnal"),       list())
@@ -304,5 +304,26 @@ test_that("Test check of NA in data", {
     omicsTypes  = c("RNAseq","metabolomics","proteomics"),
     ExpDesign   = ecoseed.df$design,
     factorInfo  = factorInfo))
+})
+
+
+test_that("Test subRflomicsMAE", {
+  
+  miniMAE <- subRflomicsMAE(MAE, "protetest")
+  expect_true("MultiAssayExperiment" %in% is(miniMAE))
+
+  expect_equal(subRflomicsMAE(MAE), MAE)
+  
+  expect_null(subRflomicsMAE(MAE, "toto"))
+})
+
+
+test_that("Test plot", {
+  
+  p <- plotConditionsOverview(MAE)
+  expect_equal(is(p), "gg")
+  
+  p <- plotDataOverview(MAE)
+  expect_equal(is(p), "gg")
 })
 
