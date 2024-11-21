@@ -78,7 +78,7 @@ test_that("runDataProcessing returned value", {
                                normMethod = "none",
                                imputMethod = "MVI")
   
-  meta.S1 <- MAE[["metatest"]]
+  meta.S1 <- MAE[["metatest"]] 
   meta.S1 <- runDataProcessing(meta.S1,
                                transformMethod = "log2",
                                normMethod = "median",
@@ -182,6 +182,11 @@ test_that("runDataProcessing returned value", {
   
   ## reset integration analysis
   expect_identical(getAnalysis(MAE1, name = "IntegrationAnalysis"), list())
+  
+  expect_identical(getAnalysis(rna.S1,  "DiffExpAnal"),  list())
+  
+  
+  
 })
 
 test_that("default values of runDataProcessing arguments", {

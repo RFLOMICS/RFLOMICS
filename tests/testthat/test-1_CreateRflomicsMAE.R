@@ -318,12 +318,3 @@ test_that("Test subRflomicsMAE", {
 })
 
 
-test_that("Test plot", {
-  
-  p <- plotConditionsOverview(MAE)
-  expect_equal(is(p), "gg")
-  
-  p <- plotDataOverview(MAE)
-  expect_equal(is(p), "gg")
-})
-

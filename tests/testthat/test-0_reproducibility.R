@@ -85,9 +85,10 @@ MAE <- MAE |>
                   method = "limmalmFit",  p.adj.cutoff = 0.05, 
                   logFC.cutoff = 0)
 
-MAE[["RNAtest"]] <- 
-  setValidContrasts(MAE[["RNAtest"]],
+MAE <- 
+  setValidContrasts(MAE, omicName = "RNAtest",
                     contrastList = getSelectedContrasts(MAE[["RNAtest"]]))
+
 MAE[["protetest"]] <- 
   setValidContrasts(MAE[["protetest"]], 
                     contrastList = getSelectedContrasts(MAE[["protetest"]])[1:6,])
@@ -105,13 +106,12 @@ co <- capture.output(
     # normFactors = "TMM") |>
     runCoExpression(
       SE.name = "protetest",
-      contrastNames = "(temperatureMedium - temperatureLow) in imbibitionDS", 
       K = 2:10, 
       replicates = 5, 
       merge = "union", 
       model = "Normal", 
       min.data.size = 10)
-  ) #|>
+) #|>
 #runCoExpression(SE.name = "metatest", 
 #contrastNames = "(temperatureMedium - temperatureLow) in imbibitionDS" ,
 # K = 2:10, replicates = 5, merge = "union", model = "Normal")
@@ -119,18 +119,18 @@ co <- capture.output(
 # Enrichment
 # Comment this when not locally used (need the org at tair package.)
 MAE <- MAE |>
-    # runAnnotationEnrichment(SE.name = "RNAtest", database = "GO",
-    #                         domain = c("BP", "MF", "CC"),
-    #                         list_args = list(OrgDb = "org.At.tair.db",
-    #                                          keyType = "TAIR",
-    #                                          pvalueCutoff = 0.05)) |>
-    runAnnotationEnrichment(SE.name = "protetest", 
-                            from = "CoExp",
-                            database = "GO",
-                            domain = c("BP"), 
-                            pvalueCutoff = 0.05,
-                            OrgDb = "org.At.tair.db", 
-                            keyType = "TAIR")
+  # runAnnotationEnrichment(SE.name = "RNAtest", database = "GO",
+  #                         domain = c("BP", "MF", "CC"),
+  #                         list_args = list(OrgDb = "org.At.tair.db",
+  #                                          keyType = "TAIR",
+  #                                          pvalueCutoff = 0.05)) |>
+  runAnnotationEnrichment(SE.name = "protetest", 
+                          from = "CoExp",
+                          database = "GO",
+                          domain = c("BP"), 
+                          pvalueCutoff = 0.05,
+                          OrgDb = "org.At.tair.db", 
+                          keyType = "TAIR")
 
 
 # ---- test accessors ----
@@ -310,7 +310,7 @@ test_that("contrast", {
   row.names(Contrasts.Coeff) <- Contrasts.names
   
   expect_equal(getDiffSettings(MAE[["RNAtest"]])$contrastCoef, Contrasts.Coeff)
-  expect_equal(getDiffSettings(MAE[["protetest"]])$contrastCoef, Contrasts.Coeff)
+  expect_equal(getDiffSettings(MAE, "protetest")$contrastCoef, Contrasts.Coeff)
   expect_equal(getDiffSettings(MAE[["metatest"]])$contrastCoef, Contrasts.Coeff)
   
   expect_equal(
@@ -422,4 +422,194 @@ test_that("data processing", {
 # })
 
 
+
+# ---- resetRflomicsMAE ----
+test_that("resetRflomicsMAE", {
+  
+  ###use resetRflomicsMAE
+  MAE0 <- RFLOMICS:::resetRflomicsMAE(MAE)
+  
+  expect_identical(getAnalysis(MAE0[[1]], "DiffExpAnal"),  list())
+  expect_identical(getAnalysis(MAE0[[2]], "DiffExpAnal"),  list())
+  expect_identical(getAnalysis(MAE0[[3]], "DiffExpAnal"),  list())
+  
+  expect_identical(getAnalysis(MAE0[[1]], "DiffExpEnrichAnal"),  list())
+  expect_identical(getAnalysis(MAE0[[2]], "DiffExpEnrichAnal"),  list())
+  expect_identical(getAnalysis(MAE0[[3]], "DiffExpEnrichAnal"),  list())
+  
+  expect_identical(getAnalysis(MAE0[[1]], "CoExpAnal"),  list())
+  expect_identical(getAnalysis(MAE0[[2]], "CoExpAnal"),  list())
+  expect_identical(getAnalysis(MAE0[[3]], "CoExpAnal"),  list())
+  
+  expect_identical(getAnalysis(MAE0[[1]], "CoExpEnrichAnal"),  list())
+  expect_identical(getAnalysis(MAE0[[2]], "CoExpEnrichAnal"),  list())
+  expect_identical(getAnalysis(MAE0[[3]], "CoExpEnrichAnal"),  list())
+  
+})
+
+# ---- getAnalyzedDatasetNames ----
+test_that("getAnalyzedDatasetNames", {
+  
+  names.list <- getAnalyzedDatasetNames(MAE)
+  
+  expect_identical(
+    names(names.list),
+    c("DataProcessing", "DiffExpAnal", "CoExpAnal", "CoExpEnrichAnal"))
+  
+})
+
+# ---- getLabs4plot ----
+test_that("getLabs4plot", {
+  
+  Labs.list <- RFLOMICS:::getLabs4plot(MAE[[1]])
+  expect_identical(Labs.list$title, "RNAtest: raw RNAseq data")
+  expect_identical(Labs.list$x_lab, "RNAseq data")
+  
+  
+  Labs.list <-  RFLOMICS:::getLabs4plot(MAE[[2]])
+  expect_identical(Labs.list$title, "protetest: raw proteomics data")
+  expect_identical(Labs.list$x_lab, "proteomics data")
+})
+
+# ---- rflomicsMAE2MAE ----
+test_that("rflomicsMAE2MAE", {
+  
+  MAE_bis <- rflomicsMAE2MAE(MAE)
+  expect_true(is(MAE_bis, "MultiAssayExperiment"))
+  
+})
+
+
+test_that("Test explor plot", {
+  
+  p <- plotConditionsOverview(MAE)
+  expect_equal(is(p), "gg")
+  
+  p <- plotDataOverview(MAE)
+  expect_equal(is(p), "gg")
+  
+  p <- plotDataOverview(MAE, realSize = TRUE)
+  expect_equal(is(p), "gg")
+  
+  p <- plotLibrarySize(MAE, SE.name = "RNAtest", raw = TRUE)
+  expect_equal(is(p), "gg")
+  expect_error(plotLibrarySize(MAE, SE.name = "protetest"))
+  
+  p <- plotDataDistribution(MAE, SE.name = "RNAtest", plot = "boxplot")
+  expect_equal(is(p), "gg")
+  
+  p <- plotDataDistribution(MAE, SE.name = "protetest", plot = "density")
+  expect_equal(is(p), "gg")
+  
+  p <- plotOmicsPCA(MAE, SE.name = "RNAtest")
+  expect_equal(is(p), "gg")
+  
+  p <- plotExpDesignCompleteness(MAE, omicName = "RNAtest")
+  expect_equal(is(p), "gg")
+  
+})
+
+
+test_that("Test diff plot", {
+  
+  co <- capture.output(
+    p <- plotDiffAnalysis(
+      MAE, SE.name = "RNAtest", 
+      contrastName = "(temperatureMedium - temperatureLow) in mean"))
+  expect_equal(names(p), c("MA.plot","Volcano.plot","Pvalue.hist" ))
+  
+  co <- capture.output(
+    p <- plotHeatmapDesign(
+      MAE, SE.name = "RNAtest", 
+      contrastName = "(temperatureMedium - temperatureLow) in mean"))
+  expect_true("HeatmapList" %in% is(p))
+  
+  co <- capture.output(
+    p <- plotBoxplotDE(MAE, SE.name = "RNAtest", 
+                       featureName = "AT1G01010", 
+                       groupColor="groups",  raw = FALSE))
+  expect_equal(is(p), "gg")
+  
+  co <- capture.output(
+    p <- plotBoxplotDE(MAE, SE.name = "RNAtest", 
+                       featureName = "", 
+                       groupColor="groups",  raw = FALSE))
+  expect_equal(is(p), "gg")
+})
+
+
+test_that("Test coseq plot", {
+  
+  p <- plotCoExpressionProfile(MAE, SE.name = "protetest") 
+  expect_equal(is(p), "gg")
+  
+  p <- plotCoExpression(MAE, SE.name = "protetest") 
+  expect_equal(names(p), c("profiles","boxplots","probapost_boxplots",
+                           "probapost_barplots", "probapost_histogram",
+                           "ICL", "logLike"))
+  
+  p <- plotCoseqContrasts(MAE, SE.name = "protetest")
+  expect_equal(is(p), "gg")
+  
+  expect_equal(length(getCoexpClusters(MAE, SE.name = "protetest")), 6)
+
+})
+
+test_that("get summary analysis", {
+  
+  p <- getDiffAnalysesSummary(MAE, plot = TRUE)
+  expect_equal(is(p), "gg")
+  
+  p <- getCoExpAnalysesSummary(MAE)
+  expect_equal(is(p), "gg")
+  
+})
+
+test_that("getters", {
+    
+  expect_equal(getDEList(
+    MAE, SE.name = "protetest", 
+    contrasts = "(temperatureElevated - temperatureLow) in imbibitionDS",
+    operation = "intersection"),
+    getDEList(
+      MAE, SE.name = "protetest", 
+      contrasts = "(temperatureElevated - temperatureLow) in imbibitionDS",
+      operation = "union")
+    )
+  
+  expect_equal(
+    getValidContrasts(MAE, omicName="protetest"),
+    metadata(MAE[["protetest"]])[["DiffExpAnal"]][["results"]][["Validcontrasts"]])
+  
+})
+
+test_that(".generateEcoseedExampleData", {
+  
+  res <- RFLOMICS:::.generateEcoseedExampleData()
+  expect_equal(names(res),
+               c("projectName","ExpDesign","dF.List.ref","dF.Type.dFac",
+                 "omicsNames","omicsTypes","omicsData"))
+  
+})
+
+test_that(".getPackageInfo", {
+  
+  vers <- RFLOMICS:::.getPackageInfo(MAE, package = "coseq")
+  expect_true(!is.null(vers))
+})
+
+
+test_that(".getKEGGRelease", {
+  
+  vers <- RFLOMICS:::.getKEGGRelease()
+  
+  if(!is.null(vers)){
+    expect_true(!is.null(vers))
+  }
+  else{
+    expect_null(vers)
+  }
+})
+
+  
 

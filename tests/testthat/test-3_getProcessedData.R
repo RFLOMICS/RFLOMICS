@@ -278,4 +278,12 @@ test_that("getProcessedData / returned contrast", {
                                  cpmCutoff = 1,
                                  normMethod = "TMM"))
   
+  
+  rna.S2 <- getProcessedData(rna.S1, filter = TRUE)
+  
+  #is a 
+  expect_true(isProcessedData(getProcessedData(rna.S1, norm = TRUE)))
+  expect_false(isProcessedData(getProcessedData(rna.S1, filter = TRUE)))
+  expect_false(isProcessedData(getProcessedData(rna.S1, trans = TRUE)))
 })
+

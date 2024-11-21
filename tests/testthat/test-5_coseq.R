@@ -141,6 +141,11 @@ test_that("Two runs, same results - seed is working - proteomics", {
                             replicates = 5, merge = "union",
                             model = "Normal"))
   
+  coexp_set <- getCoexpSettings(res2, SE.name = "protetest") 
+  expect_equal(coexp_set$K, 2:20)
+  expect_equal(coexp_set$merge, "union")
+  expect_equal(coexp_set$model, "Normal")
+  
   expect_identical(
     coseq::clusters(
       getAnalysis(res1[["protetest"]], 

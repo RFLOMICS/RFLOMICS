@@ -4,9 +4,6 @@
 \alias{runDiffAnalysis}
 \alias{runDiffAnalysis,RflomicsSE-method}
 \alias{runDiffAnalysis,RflomicsMAE-method}
-\alias{generateContrastMatrix}
-\alias{generateContrastMatrix,RflomicsSE-method}
-\alias{generateContrastMatrix,RflomicsMAE-method}
 \alias{filterDiffAnalysis}
 \alias{filterDiffAnalysis,RflomicsSE-method}
 \alias{filterDiffAnalysis,RflomicsMAE-method}
@@ -65,10 +62,6 @@
   cmd = FALSE,
   ...
 )
-
-\S4method{generateContrastMatrix}{RflomicsSE}(object, contrastList = NULL)
-
-\S4method{generateContrastMatrix}{RflomicsMAE}(object, SE.name, contrastList = NULL)
 
 \S4method{filterDiffAnalysis}{RflomicsSE}(object, p.adj.cutoff = 0.05, logFC.cutoff = 0)
 
@@ -250,8 +243,6 @@ Objects are:
  analysis
 }
 
-contrast matrix
-
 a data.frame with differential analyses summary
 }
 \description{
@@ -267,11 +258,6 @@ Two methods are available according to the type of object:
 \item For proteomic and metabolomic data:  the \code{\link{lmFit}} 
 function/model of the \code{limma} package is applied.
 }
-
-\itemize{
-   \item generateContrastMatrix: 
- Defines contrast matrix or contrast list with contrast 
- name and contrast coefficients}
 
 \itemize{
    \item filterDiffAnalysis: The filterDiffAnalysis method allows 
@@ -437,7 +423,4 @@ Nucleic Acids Res. 2017;45(W1):W300-W306.
 
 \code{\link{plotDiffAnalysis}}, \code{\link{plotHeatmapDesign}},
 \code{\link{plotBoxplotDE}}
-}
-\author{
-Christine Paysant-Le Roux, adapted by Nadia Bessoltane
 }

@@ -245,6 +245,11 @@ test_that("Diff Analysis on proteomics returns the same result within and outsid
     expect_equal(as.matrix(MAESimple), as.matrix(resSimple[match(rownames(MAESimple), rownames(resSimple)),]))
     expect_equal(head(MAEMean), head(resMean))
     expect_equal(MAEInt, resInt)
+    
+    
+    #getDiffStat
+    expect_true("matrix" %in% is(getDiffStat(MAE[["protetest"]])))
+    
 })
 
 
