@@ -359,12 +359,6 @@ setGeneric(
 )
 
 setGeneric(
-  name = "setSelectedSamples",
-  def  = function(object, samples = NULL, ...) 
-    standardGeneric("setSelectedSamples")
-)
-
-setGeneric(
   name = "getSelectedSamples",
   def  = function(object, ...) 
     standardGeneric("getSelectedSamples")

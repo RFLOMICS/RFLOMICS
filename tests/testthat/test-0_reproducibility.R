@@ -35,8 +35,7 @@ sampleToKeep <- colnames(MAE[["protetest"]])[-7]
 
 test_that("test if RflomicsMAE / RflomicsSE", {
   
-  check <- checkExpDesignCompleteness(SE)
-  
+  check <- checkExpDesignCompleteness(MAE, omicName = "RNAtest")
   expect_false(check$error)
   expect_equal(check$message, "The experimental design is complete and balanced.")
 })
@@ -506,7 +505,6 @@ test_that("Test explor plot", {
   
   p <- plotExpDesignCompleteness(MAE, omicName = "RNAtest")
   expect_equal(is(p), "gg")
-  
 })
 
 

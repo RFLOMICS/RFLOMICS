@@ -237,14 +237,14 @@ test_that("getProcessedData / returned contrast", {
   expect_identical(contrast1, contrast2)
   
   # remove DS modality
-  rna.S1 <- runDataProcessing(MAE[["RNAtest"]],
+  MAE[["RNAtest"]] <- runDataProcessing(MAE[["RNAtest"]],
                               samples = colnames(MAE[["RNAtest"]])[-1:-9],
                               filterStrategy = "NbReplicates", 
                               cpmCutoff = 1,
                               normMethod = "TMM")
   
   # getProcessedData
-  rna.S2 <- getProcessedData(rna.S1, filter = TRUE)
+  rna.S2 <- getProcessedData(MAE[["RNAtest"]], filter = TRUE)
   
   contrast1 <- getSelectedContrasts(rna.S1)
   contrast2 <- getSelectedContrasts(rna.S2)
@@ -278,12 +278,11 @@ test_that("getProcessedData / returned contrast", {
                                  cpmCutoff = 1,
                                  normMethod = "TMM"))
   
-  
-  rna.S2 <- getProcessedData(rna.S1, filter = TRUE)
-  
   #is a 
   expect_true(isProcessedData(getProcessedData(rna.S1, norm = TRUE)))
   expect_false(isProcessedData(getProcessedData(rna.S1, filter = TRUE)))
   expect_false(isProcessedData(getProcessedData(rna.S1, trans = TRUE)))
+  
+  expect_no_error(getProcessedData(MAE, SE.name = "RNAtest", filter = TRUE))
 })
 

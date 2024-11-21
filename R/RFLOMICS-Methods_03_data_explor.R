@@ -1291,56 +1291,6 @@ setMethod(f          = "getNormSettings",
             getNormSettings(object = object[[SE.name]])
           })
 
-
-
-###==== set selected sample list ====
-
-#' @rdname runDataProcessing
-#' @name setSelectedSamples
-#' @param samples sample names to keep
-#' @aliases setSelectedSamples,RflomicsSE-method
-#' @section Accessors: 
-#' \itemize{
-#'    \item setSelectedSamples: }
-#' @exportMethod setSelectedSamples
-#' @examples
-#' # See runDataProcessing for an example that includes setSelectedSamples
-setMethod(f          = "setSelectedSamples",
-          signature  = "RflomicsSE",
-          definition = function(object, samples = NULL){
-            
-            if(is.null(samples))
-              return(object)
-            
-            # check if samples overlap with
-            if(any(!samples %in% colnames(object)))
-              stop("Some sample names are not part of the colnames of the object")
-            
-            object <- 
-              setElementToMetadata(object, 
-                                   name = "DataProcessing", 
-                                   subName = "selectedSamples",
-                                   content = samples)
-            
-            return(object)
-          })
-
-#' @rdname runDataProcessing
-#' @name setSelectedSamples
-#' @aliases setSelectedSamples,RflomicsMAE-method
-#' @exportMethod setSelectedSamples 
-
-setMethod(f          = "setSelectedSamples",
-          signature  = "RflomicsMAE",
-          definition = function(object, SE.name, samples = NULL){
-            
-            object[[SE.name]] <- 
-              setSelectedSamples(object[[SE.name]], samples = samples)
-            
-            return(object)
-          })
-
-
 ##==== GRAPHICAL METHOD ====
 
 ###==== plotLibrarySize ====
@@ -1578,7 +1528,7 @@ setMethod(
     
     # plot
     labels <- getLabs4plot(object)
-    p <- ggplot(score, aes_string(x = PC1, y = PC2, color = groupColor))  +
+    p <- ggplot(score, aes(x = PC1, y = PC2, color = groupColor))  +
       geom_point(size = 2) +
       geom_text(aes(label = samples), 
                 size = 2, vjust = "inward", hjust = "inward") +
@@ -1593,11 +1543,11 @@ setMethod(
       ggtitle(labels$title)
     
     # ellipse corr
-    aa <- select(score, all_of(groupColor), PC1, PC2)
+    aa <- select(score, all_of(groupColor), all_of(PC1), all_of(PC2))
     bb <- coord.ellipse(aa, bary = TRUE)
     p <- p + geom_polygon(
       data = bb$res,
-      aes_string(x = PC1, y = PC2, fill = groupColor),
+      aes(x = PC1, y = PC2, fill = groupColor),
       show.legend = FALSE,
       alpha = 0.1
     )

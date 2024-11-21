@@ -530,7 +530,7 @@ setMethod(
     
     p <- ggplot(data = y_profiles.gg, 
                 aes(x = groups, y = y_profiles)) +
-      geom_boxplot(aes_string(fill = condition), 
+      geom_boxplot(aes(fill = condition), 
                    outlier.size = 0.3) +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +  
       xlab("Conditions") + ylab("Expression profiles") +

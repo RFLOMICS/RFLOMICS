@@ -42,22 +42,28 @@ setMethod(
     
     if(is.null(datasetNames) && 
        is.null(singleAnalyses) && 
-       is.null(multiAnalyses)) stop("")
+       is.null(multiAnalyses)){
+      datasetNames <- all.datasets
+      singleAnalyses <- all.singleAnalyses
+      multiAnalyses <- all.multiAnalyses
+    }
     
-    if(is.null(datasetNames) && 
-       !is.null(singleAnalyses)) stop("")
+    if(is.null(datasetNames) && !is.null(singleAnalyses))
+      datasetNames <- all.datasets
+    
+    if(!is.null(datasetNames) && is.null(singleAnalyses))
+      singleAnalyses <- all.singleAnalyses
     
     # for specific datasets
     if(!is.null(datasetNames)){
       
       datasetNames <- intersect(datasetNames, all.datasets)
-      if(length(datasetNames) == 0) stop("")
-      
-      if(is.null(singleAnalyses))
-        singleAnalyses <- all.singleAnalyses
+      if(length(datasetNames) == 0) 
+        stop("The name of these data does not match the datasets available in the object.")
       
       singleAnalyses <- intersect(singleAnalyses, all.singleAnalyses)
-      if(length(singleAnalyses) == 0) stop("")
+      if(length(singleAnalyses) == 0) 
+        stop("The name of these analyses does not match the analyses available in the object.")
       
       # reset SO analysis
       for (data in datasetNames) {

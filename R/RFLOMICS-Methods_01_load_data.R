@@ -555,9 +555,9 @@ setMethod(f         = "plotConditionsOverview",
             col.panel.u <- col.panel[col.panel %in% unique(counts$status)]
             
             switch (length(factors),
-                    "1" = { p <- ggplot(counts, aes_string(x = factors[1], y = 1)) + 
+                    "1" = { p <- ggplot(counts, aes(x = factors[1], y = 1)) + 
                       theme(axis.text.y = element_blank()) + ylab("") },
-                    "2" = { p <- ggplot(counts, aes_string(x = factors[1], y = factors[2])) },
+                    "2" = { p <- ggplot(counts, aes(x = factors[1], y = factors[2])) },
                     "3" = {
                       #get factor with min conditions -> to select for "facet_grid"
                       factors.l <- lapply(factors, function(x){ length(unique(counts[[x]])) }) %>% unlist()
@@ -570,11 +570,11 @@ setMethod(f         = "plotConditionsOverview",
                       counts <- counts %>% 
                         mutate(grid = paste0(factor.min, "=",get(factor.min)))
                       
-                      p <- ggplot(counts ,aes_string(x = factors[1], y = factors[2])) +
+                      p <- ggplot(counts ,aes(x = factors[1], y = factors[2])) +
                         facet_grid(grid~.) })
             
             p <- p + geom_tile(aes(fill = status), 
-                               color = "white", size = 1,
+                               color = "white", linewidth = 1,
                                width = 1, height = 1)  + 
               geom_text(aes(label = Count)) +
               theme(panel.grid.major = element_blank(), 
