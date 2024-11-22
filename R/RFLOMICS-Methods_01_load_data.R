@@ -557,12 +557,16 @@ setMethod(
     
     switch (
       length(factors),
-      "1" = { p <- ggplot(counts, x = factors[1], y = 1) + 
-        theme(axis.text.y = element_blank()) + ylab("") },
-      "2" = { p <- ggplot(counts, x = factors[1], y = factors[2]) },
+      "1" = { p <- ggplot(counts, aes(x = !!sym(factors[1]), y = 1)) + 
+        theme(axis.text.y = element_blank()) + ylab("") 
+      },
+      "2" = { p <- ggplot(counts, aes(x = !!sym(factors[1]), y = !!sym(factors[2])))
+      },
       "3" = {
         #get factor with min conditions -> to select for "facet_grid"
-        factors.l <- lapply(factors, function(x){ length(unique(counts[[x]])) }) %>% unlist()
+        factors.l <- 
+          lapply(factors, function(x){ 
+            length(unique(counts[[x]])) }) %>% unlist()
         names(factors.l) <- factors
         factor.min <- names(factors.l[factors.l == min(factors.l)][1])
         
@@ -572,8 +576,10 @@ setMethod(
         counts <- counts %>% 
           mutate(grid = paste0(factor.min, "=",get(factor.min)))
         
-        p <- ggplot(counts ,x = factors[1], y = factors[2]) +
-          facet_grid(grid~.) })
+        p <- ggplot(counts , aes(x = !!sym(factors[1]), y = !!sym(factors[2]))) +
+          facet_grid(grid~.) 
+      }
+    )
     
     p <- p + geom_tile(aes(fill = status), 
                        color = "white", linewidth = 1,

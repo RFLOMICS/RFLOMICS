@@ -1392,36 +1392,6 @@ setMethod(
     pseudo <- assay(object)
     Groups <- getDesignMat(object)
     
-    # omicsType <- getOmicsTypes(object2)
-    # 
-    # x_lab <- paste0(omicsType, " data")
-    # if (omicsType == "RNAseq") {
-    #   x_lab <- paste0("log2(", omicsType, " data)")
-    # }
-    # 
-    # # Raw data
-    # if (raw) {
-    #   title <- paste0(omicsType, " raw data")
-    # } else {
-    #   # Already normalized or transformed Data
-    #   title <- paste0(omicsType, " data")
-    #   
-    #   if (.isTransformed(object2)) {
-    #     title <- paste0("Transformed (", 
-    #                     getTransSettings(object2)$method, ") ", 
-    #                     title)
-    #   }
-    #   
-    #   if (.isNormalizedalized(object2)) {
-    #     title <- paste0(title, " - normalization: ", 
-    #                     getNormSettings(object2)$method)
-    #   }
-    #   
-    #   if (omicsType == "RNAseq") {
-    #     x_lab <- paste0("log2(", omicsType, " data)")
-    #   }
-    # }
-    
     pseudo.gg <- pseudo %>% melt()
     colnames(pseudo.gg) <- c("features", "samples", "value")
     
@@ -1528,7 +1498,9 @@ setMethod(
     
     # plot
     labels <- getLabs4plot(object)
-    p <- ggplot(score, x = PC1, y = PC2, aes(color = groupColor))  +
+    p <- ggplot(score, aes(x = !!sym(PC1), 
+                           y = !!sym(PC2), 
+                           color = !!sym(groupColor)))  +
       geom_point(size = 2) +
       geom_text(aes(label = samples), 
                 size = 2, vjust = "inward", hjust = "inward") +
@@ -1547,7 +1519,7 @@ setMethod(
     bb <- coord.ellipse(aa, bary = TRUE)
     p <- p + geom_polygon(
       data = bb$res,
-      x = PC1, y = PC2, aes(fill = groupColor),
+      aes(x = !!sym(PC1), y = !!sym(PC2), fill = !!sym(groupColor)),
       show.legend = FALSE,
       alpha = 0.1
     )
