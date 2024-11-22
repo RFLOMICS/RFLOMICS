@@ -637,8 +637,7 @@ setGeneric(
   def  = function(object,
                   from = "DiffExp",
                   database = NULL,
-                  contrastName = NULL,
-                  ...) 
+                  featureListName = NULL) 
     standardGeneric("sumORA")
 )
 
