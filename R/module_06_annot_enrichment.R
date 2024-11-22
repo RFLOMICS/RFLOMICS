@@ -16,10 +16,10 @@
 #' @keywords internal
 .modEnrichmentUI <- function(id) {
   options(shiny.maxRequestSize = 3000 * 1024 ^ 2)
-  
+
   #name space for id
   ns <- NS(id)
-  
+
   tagList(fluidRow(
     box(
       title = span(tagList(
@@ -64,7 +64,7 @@
            rea.values) {
     ns <- session$ns
     local.rea.values <- reactiveValues()
-    
+
     # UI
     output$tabsetPanel_DB_UI <- renderUI({
       validate(
@@ -73,13 +73,13 @@
           "Please run a differential analysis and validate your choices."
         )
       )
-      
+
       omicsType <-
         getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]])
-      
+
       tabPanel.list <- list(tabPanel(title = "Custom annotation",
                                      .modEnrichmentDBUI(id = ns("custom"))))
-      
+
       if (omicsType %in% c("RNAseq", "proteomics")) {
         tabPanel.list <- c(list(
           tabPanel(title = "Gene Onlology database",
@@ -91,7 +91,7 @@
       }
       do.call(what = tabsetPanel, args = tabPanel.list)
     })
-    
+
     # SERVEUR
     callModule(
       module = .modEnrichmentDB,
@@ -114,7 +114,7 @@
       database = "custom",
       rea.values
     )
-    
+
   }
 
 # ---- Module enrichment : per database ----
@@ -125,7 +125,7 @@
 .modEnrichmentDBUI <- function(id) {
   #name space for id
   ns <- NS(id)
-  
+
   tagList(
     br(),
     box(
@@ -142,7 +142,7 @@
       uiOutput(ns("tabsetRes_UI"))
     )
   )
-  
+
 }
 
 
@@ -159,9 +159,9 @@
                              rea.values) {
   ns <- session$ns
   local.rea.values <- reactiveValues(dataPathAnnot = NULL)
-  
+
   # UI
-  
+
   ## setting
   output$ParamDB_UI <- renderUI({
     switch(
@@ -176,9 +176,9 @@
         uiOutput(ns("AnnotParamCustom_UI"))
       }
     )
-    
+
   })
-  
+
   ## display results of enrichment analysis for selected database
   output$tabsetRes_UI <- renderUI({
     ### for diff analysis results
@@ -189,7 +189,7 @@
         .modRunEnrichmentUI(ns("DiffExpEnrichAnal"))
       )
     )
-    
+
     ### for coexp analysis results if exist
     if (rea.values[[dataset]]$coExpAnal) {
       tabPanel.list <- c(tabPanel.list,
@@ -201,22 +201,22 @@
                            )
                          ))
     }
-    
+
     do.call(what = tabsetPanel, args = tabPanel.list)
   })
-  
+
   ## GO settings
   output$AnnotParamGO_UI <-
     .annotParamGO(session, rea.values, dataset)
-  
+
   ## KEGG settings
   output$AnnotParamKEGG_UI <-
     .annotParamKEGG(session, rea.values, dataset)
-  
+
   ## custom settings
   output$AnnotParamCustom_UI <-
     .annotParamCustom(session, rea.values, dataset)
-  
+
   ### select columns
   observeEvent(input$annotationFileCPR, {
     local.rea.values$dataPathAnnot <- NULL
@@ -225,23 +225,9 @@
     output$selectColumnsCustom <-
       .annotFileColumns(session, local.rea.values,
                         dataset)
-    
+
   })
-  
-  # ### use example
-  # observeEvent(input$useExampleFile, {
-  #   filePath <- "/ExamplesFiles/ecoseed/AT_GOterm_EnsemblPlants.txt"
-  #   
-  #   local.rea.values$dataPathAnnot <- NULL
-  #   local.rea.values$dataPathAnnot <-
-  #     paste0(system.file(package = "RFLOMICS"),
-  #            filePath)
-  #   output$selectColumnsCustom <- .annotExFileColumns(session,
-  #                                                     local.rea.values,
-  #                                                     dataset)
-  #   
-  # })
-  
+
   # SERVEUR
   callModule(
     module     = .modRunEnrichment,
@@ -253,7 +239,7 @@
     input2     = input,
     local.rea.values = local.rea.values
   )
-  
+
   callModule(
     module     = .modRunEnrichment,
     id         = "CoExpEnrichAnal",
@@ -264,7 +250,7 @@
     input2     = input,
     local.rea.values = local.rea.values
   )
-  
+
 }
 
 # ---- module enrichment : run per analysis type ----
@@ -275,7 +261,7 @@
 .modRunEnrichmentUI <- function(id) {
   #name space for id
   ns <- NS(id)
-  
+
   tagList(uiOutput(ns("settings")),
           uiOutput(ns("enrichSummary")),
           uiOutput(ns("AnnotResults")))
@@ -299,7 +285,7 @@
            input2,
            local.rea.values) {
     ns <- session$ns
-    
+
     switch(listSource,
            "DiffExp" = {
              title <- "Summary"
@@ -309,12 +295,12 @@
              title <- "Summary"
              datasetList <- "datasetCoExAnnot"
            })
-    
+
     # UI
     ## setting
     output$settings <-
       .annotSettings(session, rea.values, dataset, listSource)
-    
+
     ## display results
     output$enrichSummary <- .outEnrichSummary(session,
                                               rea.values,
@@ -330,13 +316,13 @@
                                             listSource,
                                             dataset,
                                             database)
-    
+
     # SERVER
-    
+
     ## run enrichment
     # ---- run Annotation  ----
     observeEvent(input$run, {
-      
+
       ### GO checks ###
       if (database == "GO") {
         condition <- input2$db.select != ""
@@ -351,7 +337,7 @@
         validate({
           need(condition, messCond)
         })
-        
+
         textToEval <-
           paste0("keytypes(",
                  input2$db.select,
@@ -359,7 +345,7 @@
                  input2$db.select,
                  ")")
         accepted_keytypes <- eval(parse(text = textToEval))
-        
+
         # Check keytypes for GO
         condition <- input2$keytype.go %in% accepted_keytypes
         messCond <- paste("Keytype must be one of: ",
@@ -371,11 +357,11 @@
         validate({
           need(condition, message = messCond)
         })
-        
+
         domain <- input2$ont.select
         if (input2$ont.select == "ALL")
           domain <- c("MF", "BP", "CC")
-        
+
         # set list args
         paramList <- list(
           OrgDb        = input2$db.select,
@@ -385,7 +371,7 @@
           domain       = domain
         )
       }
-      
+
       ### KEGG checks ###
       if (database == "KEGG") {
         # check param
@@ -398,14 +384,14 @@
         messCond  <- "Please chose an appropriate
       KEGG keytype. It must be one of kegg, ncbi-geneid,
           ncbi-proteinid or uniprot"
-        
+
         if (!condition) {
           showModal(modalDialog(title = "Error in keytype", messCond))
         }
         validate({
           need(condition, message = messCond)
         })
-        
+
         ## code organism KEGG
         condition <- input2$organism != ""
         messCond  <-
@@ -418,7 +404,7 @@
         validate({
           need(condition, message = messCond)
         })
-        
+
         # set list args
         paramList <- list(
           organism     = input2$organism,
@@ -428,7 +414,7 @@
           domain       = "no-domain"
         )
       }
-      
+
       ### Custom checks ###
       if (database == "custom") {
         # check param
@@ -441,44 +427,43 @@
         validate({
           need(condition,  message = messCond)
         })
-        
+
         # Check some custom elements and annotation file
         condition <-
           input2$col_geneName != "" && input2$col_termID != ""
         messCond <-
-          "Please choose the columns names for the omics features
-                               names/ID and the ontology terms ID."
+          "Please choose the columns names for the omics features names/ID and the ontology terms ID."
         if (!condition) {
           showModal(modalDialog(title = "Missing mandatory settings", messCond))
         }
         validate({
           need(condition, message = messCond)
         })
-        
+
         # set param
         domain <- NULL
         annotation2 <- NULL
         col_domain_arg <- NULL
-        
+
         annotation <-
           fread(
             file = local.rea.values$dataPathAnnot,
             sep = "\t",
             header = TRUE
           )
-        
-        annotation <- rename(annotation, 
+
+        annotation <- rename(annotation,
                              gene = input2$col_geneName,
                              term = input2$col_termID)
-        
+
         if (input2$col_domain != "")
-          annotation <- rename(annotation, 
+          annotation <- rename(annotation,
                                domain = input2$col_domain)
-        
+
         if (input2$col_termName != "")
-          annotation <- rename(annotation, 
+          annotation <- rename(annotation,
                                name = input2$col_termName)
-        
+
         ##
         paramList <- list(
           pvalueCutoff = input2$pValue_custom,
@@ -486,56 +471,56 @@
           annotation   = annotation
         )
       }
-      
+
       # prevent multiple execution
       if (.checkRunORAExecution(session$userData$FlomicsMultiAssay[[dataset]],
-                                database   = database, 
-                                fromSource = listSource, 
+                                database   = database,
+                                fromSource = listSource,
                                 paramList  = paramList) == FALSE) return()
-      
+
       #---- progress bar ----#
       progress <- Progress$new()
       progress$set(message = "Run annotation enrichment", value = 0)
       on.exit(progress$close())
       progress$inc(1 / 10, detail = "Checking everything")
       #-----------------------#
-      
+
       # ---- Annotation on diff results: ----
       # run analysis
       messList <- switch(listSource,
                          "DiffExp" = "differential expression",
                          "CoExp" = "co-expression clusters")
-      
+
       message("[RFLOMICS] # 06- ", database,
               " Enrichment Analysis of ", messList ,
               " lists from ", dataset)
-      
+
       #---- progress bar ----#
       progress$inc(5 / 10, detail = paste("Run analyses ", 50, "%", sep = ""))
       #----------------------#
-      
+
       rea.values[[dataset]][[listSource]] <- FALSE
-      
+
       # run annotation diff analysis
       paramList <- c(
         paramList,
         list(
           object = session$userData$FlomicsMultiAssay[[dataset]],
           from = listSource))
-      
+
       session$userData$FlomicsMultiAssay[[dataset]] <-
         do.call(runAnnotationEnrichment, paramList)
-      
+
       rea.values[[dataset]][[listSource]] <- TRUE
-      
+
       #---- progress bar ----#
       progress$inc(1, detail = paste("All done", 100, "%", sep = ""))
       #----------------------#
-      
+
       rea.values[[datasetList]] <-
         getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
                                 analyses = paste0(listSource, "EnrichAnal"))
-      
+
     }, ignoreInit = TRUE)
   }
 
@@ -548,25 +533,29 @@
            database   = NULL,
            fromSource = NULL,
            paramList  = NULL) {
-    
-    dbRes <- getAnalysis(object.SE, 
-                         name = paste0(fromSource, "EnrichAnal"), 
+
+    dbRes <- getAnalysis(object.SE,
+                         name = paste0(fromSource, "EnrichAnal"),
                          subName = database)
-    
+
     if (is.null(dbRes)) {
       return(TRUE)
     }
-    
-    list_args <- dbRes$db_args
-    
+
+    list_args <- dbRes$settings
+
     # check param
-    if (!(setequal(paramList$domain, list_args$domain)))
-      return(TRUE)
-    
-    list_args_new <- paramList$list_args
+    # Do not appear in paramlist for custom ?
+    if (!is.null(paramList$domain)) {
+        if (!(setequal(paramList$domain, list_args$domain)))
+            return(TRUE)
+    }
+
+    list_args_new <- paramList
+
     if (list_args_new$pvalueCutoff != list_args$pvalueCutoff)
       return(TRUE)
-    
+
     switch(database,
            "GO" = {
              if (list_args_new$OrgDb    != list_args$OrgDb)
@@ -581,11 +570,19 @@
                return(TRUE)
            },
            "custom" = {
-             if(!setequal(paramList$annot, list_args$annot))
+
+             # if one analysis was launched with domain and the other without
+             # need to be able to launch it once again
+             if (!setequal(colnames(paramList$annotation),
+                          colnames(list_args$annotation)))
+                 return(TRUE)
+
+             # Takes time
+             if (!setequal(paramList$annotation, list_args$annotation))
                return(TRUE)
            }
     )
-    
+
     return(FALSE)
   }
 
@@ -600,29 +597,28 @@
 #' @keywords internal
 .annotSettings <- function(session, rea.values, dataset, listSource) {
   ns <- session$ns
-  
+
   renderUI({
     validate(
       need(
         rea.values[[dataset]]$diffValid != FALSE,
-        "Please run a differential analysis and validate the results before
-           using this panel."
+        "Please run a differential analysis and validate the results before using this panel."
       )
     )
-    
+
     ### lists
     ListNames <- switch(
       listSource,
       "DiffExp" = {
         ListNames.diff <- rea.values[[dataset]]$DiffValidContrast$contrastName
-        names(ListNames.diff) <- 
-          paste0("[",rea.values[[dataset]]$DiffValidContrast$tag,"] ", 
+        names(ListNames.diff) <-
+          paste0("[",rea.values[[dataset]]$DiffValidContrast$tag,"] ",
                  ListNames.diff)
         ListNames.diff
       },
       "CoExp"   = rea.values[[dataset]]$CoExpClusterNames
     )
-    
+
     tagList(column(
       width = 4,
       pickerInput(
@@ -635,7 +631,7 @@
       br(),
       actionButton(
         inputId = ns("run"),
-        label = "Run over-representation analysis", 
+        label = "Run over-representation analysis",
         class = "butt"
       )
     ))
@@ -647,11 +643,11 @@
 #' @keywords internal
 .annotParamCustom <- function(session, rea.values, dataset) {
   ns <- session$ns
-  
+
   renderUI({
     if (rea.values[[dataset]]$diffValid == FALSE)
       return()
-    
+
     list(
       fileInput(
         inputId = ns("annotationFileCPR"),
@@ -661,10 +657,8 @@
           title = "Annotation File format",
           content = paste0(
             "<p>Required format:</p>",
-            "a tsv or csv file with at least ",
-            "two columns, ",
-            "one for omic features names and ",
-            "the other for",
+            "a tsv or csv file with at least two columns, ",
+            "one for omic features names and the other for",
             " their associated terms."
           ),
           trigger = "click",
@@ -676,34 +670,9 @@
           ".csv"
         )
       ),
-      
-      # if (rea.values$exampleData && 
-      #     getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]) != 
-      #     "metabolomics") {
-      #   popify(
-      #     bsButton(
-      #       inputId = ns("useExampleFile"),
-      #       label = HTML("Annotation for<br/>used example"),
-      #       style = "primary",
-      #       size = "default",
-      #       type = "action"
-      #     ),
-      #     title = "Use example file for ecoseed data",
-      #     content = paste0("<p> You are conducting an analysis using the ",
-      #                      "example dataset ecoseed. You can ",
-      #                      "run an annotation enrichment ",
-      #                      "using the example annotation file, ",
-      #                      "which is an ",
-      #                      "extract of GO terms for Arabidopsis thaliana",
-      #                      " genes from plant ensembl, using TAIR ids"
-      #     ),
-      #     placement = "top",
-      #     trigger = "hover"
-      #   )
-      # },
-      
+
       uiOutput(ns("selectColumnsCustom")),
-      
+
       br(),
       ## alpha threshold
       numericInput(
@@ -727,14 +696,14 @@
   varLabel <- .omicsDic(dataSE)$variableName
   varLabel <- paste0(toupper(substr(varLabel, 1, 1)),
                      substr(varLabel, 2, nchar(varLabel)))
-  
+
   renderUI({
     annotation <- fread(
       file = local.rea.values$dataPathAnnot,
       sep = "\t",
       header = TRUE
     )
-    
+
     column(
       width = 12,
       #br(),
@@ -755,7 +724,7 @@
         trigger = "click",
         placement = "top"
       ),
-      
+
       # Select the right columns for the analysis
       pickerInput(
         inputId = ns("col_geneName"),
@@ -795,13 +764,13 @@
   varLabel <- .omicsDic(dataSE)$variableName
   varLabel <- paste0(toupper(substr(varLabel, 1, 1)),
                      substr(varLabel, 2, nchar(varLabel)))
-  
+
   renderUI({
     column(
       width = 12,
       #br(),
       #hr(style = "border-top: 1px solid #000000;"),
-      
+
       # Select the right columns for the analysis
       pickerInput(
         inputId = ns("col_geneName"),
@@ -836,11 +805,11 @@
 #' @keywords internal
 .annotParamGO <- function(session, rea.values, dataset) {
   ns <- session$ns
-  
+
   renderUI({
     if (rea.values[[dataset]]$diffValid == FALSE)
       return()
-    
+
     list(
       # select ontology
       pickerInput(
@@ -854,7 +823,7 @@
           `selected-text-format` = "count > 3"
         )
       ),
-      
+
       # select database
       pickerInput(
         inputId = ns("db.select"),
@@ -879,7 +848,7 @@
           `selected-text-format` = "count > 3"
         )
       ),
-      
+
       # select keytype
       pickerInput(
         inputId = ns("keytype.go"),
@@ -902,7 +871,7 @@
         )
       ),
       #),
-      
+
       ## alpha threshold
       numericInput(
         inputId = ns("pValue_GO"),
@@ -913,7 +882,7 @@
         step = 0.01
       )
     )
-    
+
     #}
   })
 }
@@ -925,7 +894,7 @@
   renderUI({
     if (rea.values[[dataset]]$diffValid == FALSE)
       return()
-    
+
     list(
       pickerInput(
         inputId = ns("keyTypeKEGG"),
@@ -938,7 +907,7 @@
           `selected-text-format` = "count > 3"
         )
       ),
-      
+
       # type organism
       textInput(
         inputId = ns("organism"),
@@ -958,7 +927,7 @@
         width = NULL,
         placeholder = NULL
       ),
-      
+
       ## alpha threshold
       numericInput(
         inputId = ns("pValueKEGG"),
@@ -968,8 +937,8 @@
         max = 1,
         step = 0.01
       )
-      
-      
+
+
     )
   })
 }
@@ -985,21 +954,21 @@
                              dataset,
                              database) {
   ns <- session$ns
-  
+
   # UI for all results
   renderUI({
-    
+
     # Results:
     if (rea.values[[dataset]][[listSource]] == FALSE ||
-        is.null(sumORA(session$userData$FlomicsMultiAssay[[dataset]], 
+        is.null(sumORA(session$userData$FlomicsMultiAssay[[dataset]],
                        from = listSource, database = database))) {
       return()
     }
-    
+
     dataSE <- session$userData$FlomicsMultiAssay[[dataset]]
-    
+
     varLabel0 <- .omicsDic(dataSE)$variableName
-    
+
     # Explanation message for result table
     expMessage <-
       paste0(
@@ -1017,7 +986,7 @@
         ").",
         " Pvalues, qvalues and adjusted pvalues were rounded to 3 digits."
       )
-    
+
     # for KEGG database, 2 more columns:
     if (database == "KEGG") {
       expMessage <- paste0(
@@ -1027,11 +996,12 @@
         " to this ontology."
       )
     }
-    
+
     #foreach genes list selected (contrast)
     eres1 <-
       getEnrichRes(dataSE, from = listSource, database = database)
-    
+
+
     lapply(names(eres1), function(listname) {
       eres <- getEnrichRes(
         dataSE,
@@ -1040,31 +1010,32 @@
         featureListName = listname
       )
 
-      boxtitle <- 
+      boxtitle <-
         switch (
           listSource,
           "DiffExp" = {
-            tag <- 
+            tag <-
               rea.values[[dataset]]$DiffValidContrast[which(contrastName == listname),]$tag
             paste0("[",tag, "] ", listname)
           },
           listname
         )
-      
+
       sORA <- sumORA(dataSE, from = listSource,
                      database = database, featureListName = listname)
-      
+
       cond <- as.numeric(unlist(sORA[-1], recursive = TRUE)) # warnings
       cond[is.na(cond)] <- 0
       if (any(cond > 0)) {
-        
+
         eres <- Filter(Negate(is.null), eres)
+
         toKeep <- unlist(lapply(eres, FUN = function(enrichRes){
           selectterms <- enrichRes@result$p.adjust < enrichRes@pvalueCutoff
           return(sum(selectterms))
         }))
-        choices <- names(eres[toKeep > 0]) 
-        
+        choices <- names(eres[toKeep > 0])
+
         # ---- TabPanel plots ----
         tabPanel.list <- list(
           tabPanel(
@@ -1119,7 +1090,7 @@
               div(class = "explain-p",
                   HTML(expMessage)),
               hr(),
-              
+
               renderDataTable({
                 dataPlot <- getEnrichRes(
                   object = dataSE,
@@ -1128,12 +1099,12 @@
                   database = database,
                   domain = input[[paste0(listname, "-domain")]]
                 )
-                
+
                 pvalue <-
                   getEnrichSettings(dataSE,
                                   from = listSource,
                                   database = database)$pvalueCutoff
-                
+
                 datPlot <- dataPlot@result[dataPlot@result$p.adjust <  pvalue, ]
                 datPlot$pvalue <-
                   round(datPlot$pvalue, 3)
@@ -1147,7 +1118,7 @@
                     return(gsub("/", ", ", longString))
                   }
                 ))
-                
+
                 datatable(
                   datPlot,
                   rownames = FALSE,
@@ -1157,14 +1128,14 @@
                     scrollX = TRUE
                   )
                 )
-                
-                
+
+
               }) # renderdatatable
             )
           ) # vertical layout
-          
+
         )# TabsetPanel
-        
+
         # ---- Tab Panel : only for KEGG, pathview : ----
         if (database == "KEGG") {
           data <-   getEnrichRes(
@@ -1173,13 +1144,13 @@
             from = listSource,
             database = "KEGG"
           )[["no-domain"]]@result
-          
+
           pvalue <- getEnrichSettings(dataSE,
                                     from = listSource,
                                     database = database)$pvalueCutoff
           mapChoices <-
             sort(data$ID[data$p.adjust < pvalue])
-          
+
           tabPanel.list <- c(tabPanel.list,
                              list(
                                .outPathview(
@@ -1193,9 +1164,9 @@
                                  mapChoices
                                )
                              ))
-          
+
         } # if database KEGG
-        
+
         # display results
         fluidRow(
           box(
@@ -1205,7 +1176,7 @@
             collapsed = TRUE,
             status = "success",
             title = boxtitle,
-            
+
             fluidRow(
               column(
                 3,
@@ -1234,7 +1205,7 @@
                        datPlot <-
                          dataPlot@result[dataPlot@result$p.adjust < pvalue, ]
                        max_terms <- nrow(datPlot)
-                       
+
                        numericInput(
                          ns(paste0(
                            listname, "-top.over"
@@ -1247,7 +1218,7 @@
                          step = 1
                        )
                      })),
-              
+
               column(
                 3,
                 # search term or gene
@@ -1264,7 +1235,7 @@
                 width = 12,
                 do.call(what = tabsetPanel, args = tabPanel.list)
               ))
-            
+
           ) # box
         ) # fluidrow
       } # if any result
@@ -1319,7 +1290,7 @@
              )
            ))
   })
-  
+
 }
 
 # ---- plots ----
@@ -1332,7 +1303,6 @@
                          plotType,
                          database) {
   varLabel0 <- .omicsDic(dataSE)$variableName
-  
   renderUI({
     outplot <- tryCatch(
       plotClusterProfiler(
@@ -1347,7 +1317,7 @@
       error = function(e) e,
       warning = function(w) w
     )
-    
+
     plotExplain <- switch(
       listSource,
       "DiffExp" =  {
@@ -1374,7 +1344,7 @@
           " in the term."
         )
     )
-    
+
     if (input[[paste0(listname, "-domain")]] == "no-domain") {
       subTitlePlot <- paste0("Database: ",
                              database,
@@ -1390,8 +1360,8 @@
                              input[[paste0(listname, "-top.over")]],
                              " top enriched terms")
     }
-    
-    
+
+
     if (is(outplot, "gg")) {
       column(
         width = 12,
@@ -1425,7 +1395,7 @@
            plotType,
            database) {
     varLabel0 <- .omicsDic(dataSE)$variableName
-    
+
     renderUI({
       outdot <- tryCatch(
         plotClusterProfiler(
@@ -1440,8 +1410,8 @@
         error = function(e) e,
         warning = function(w) w
       )
-      
-      
+
+
       plotExplain <- switch(
         listSource,
         "DiffExp" =  {
@@ -1478,7 +1448,7 @@
             "</b> and present in the term (Count)."
           )
       )
-      
+
       if (input[[paste0(listname, "-domain")]] == "no-domain") {
         subTitlePlot <- paste0("Database: ",
                                database,
@@ -1494,7 +1464,7 @@
                                input[[paste0(listname, "-top.over")]],
                                " top enriched terms")
       }
-      
+
       if (is(outdot, "gg")) {
         column(
           width = 12,
@@ -1507,7 +1477,7 @@
           ),
           div(class = "explain-p", HTML(plotExplain)),
           hr(),
-          
+
           renderPlot({
             outdot +
               labs(title = listname,
@@ -1531,10 +1501,11 @@
                          plotType,
                          database) {
   ns <- session$ns
+
   varLabel0 <- .omicsDic(dataSE)$variableName
   varLabel <- paste0(toupper(substr(varLabel0, 1, 1)),
                      substr(varLabel0, 2, nchar(varLabel0)))
-  
+
   verticalLayout(renderUI({
     nodeLabelArg <- "none"
     if (input[[paste0(listname, "-genesLabels_cnet")]] &&
@@ -1547,7 +1518,7 @@
                !input[[paste0(listname, "-genesLabels_cnet")]]) {
       nodeLabelArg <- "category"
     }
-    
+
     outcnet <- tryCatch(
       plotClusterProfiler(
         dataSE,
@@ -1559,10 +1530,10 @@
         showCategory = input[[paste0(listname, "-top.over")]],
         searchExpr = input[[paste0(listname, "-grep")]],
         nodeLabel = nodeLabelArg
-      ), warning = function(w) w, 
+      ), warning = function(w) w,
       error = function(e) e
     )
-    
+
     plotExplain <- switch(
       listSource,
       "DiffExp" =  {
@@ -1595,7 +1566,7 @@
           " to which they are linked."
         )
     )
-    
+
     if (input[[paste0(listname, "-domain")]] == "no-domain") {
       subTitlePlot <- paste0("Database: ",
                              database,
@@ -1611,7 +1582,7 @@
                              input[[paste0(listname, "-top.over")]],
                              " top enriched terms")
     }
-    
+
     if (is(outcnet, "gg"))
       column(
         width = 12,
@@ -1624,19 +1595,19 @@
         ),
         div(class = "explain-p", HTML(plotExplain)),
         hr(),
-        
+
         renderPlot({
           outcnet +
             labs(title = listname,
                  subtitle = subTitlePlot)
-          
+
         })
       )
     else
       renderText({
         outcnet$message
       })
-    
+
   }),
   fluidRow(column(
     2, checkboxInput(
@@ -1668,7 +1639,7 @@
                          listname,
                          mapChoices) {
   ns <- session$ns
-  
+
   varLabel0 <- .omicsDic(dataSE)$variableName
   pathviewExplain <-
     paste0(
@@ -1679,7 +1650,7 @@
       " in the list on the map, using the log2FC values if the list is a result of a differential analysis",
       " or just an antiquewhite color for a co-expression cluster list."
     )
-  
+
   tabPanel("Pathview results",
            br(),
            fluidRow(
@@ -1705,7 +1676,7 @@
                                        data[input[[paste0(listname, "-MAP.sel")]], "geneID"])
                  paste0(link_to_map)
                }),
-               
+
                tags$style(
                  ".explain-p {
                     color: Gray;
@@ -1724,7 +1695,7 @@
                                        input[[paste0(listname, "-MAP.sel")]],
                                        "/",
                                        data[input[[paste0(listname, "-MAP.sel")]], "geneID"])
-                 
+
                  # test validity of URL
                  if (.validUrl(link_to_map)) {
                    renderPlot({
@@ -1739,11 +1710,10 @@
                  } else {
                    renderText(
                      "Please check your connection.
-                                   It seems the URL does not exist,
-                                   or you're not connected."
+                     It seems the URL does not exist, or you're not connected."
                    )
                  }
-                 
+
                }))))
 }
 
@@ -1758,41 +1728,41 @@
                               dataset,
                               database) {
   ns <- session$ns
-  
+
   renderUI({
-    
+
     dataset.SE <- session$userData$FlomicsMultiAssay[[dataset]]
-    
+
     if (rea.values[[dataset]][[listSource]] == FALSE ||
         is.null(sumORA(dataset.SE, listSource, database))) {
       return()
     }
-    
+
     sORA <- sumORA(dataset.SE, from = listSource, database = database)
-    errorMessages <- 
-      getAnalysis(dataset.SE, 
-                  name = paste0(listSource, "EnrichAnal"), 
+    errorMessages <-
+      getAnalysis(dataset.SE,
+                  name = paste0(listSource, "EnrichAnal"),
                   subName = database)$errors
-    
+
     if (is.null(sORA) && is.null(errorMessages))
       return()
-    
+
     options(htmlwidgets.TOJSON_ARGS = list(na = 'string'))
-    
+
     text.help <- c(paste0("0: no term was found significantly enriched for this ",
                           .omicsDic(dataset.SE)$variableName), " list")
-    
+
     if(length(errorMessages) != 0){
-      if(length(unique(unlist(errorMessages))) == 1){ 
-        text.help <- 
-          c(text.help, paste0("NA: ", unique(unlist(errorMessages)))) 
-        
+      if(length(unique(unlist(errorMessages))) == 1){
+        text.help <-
+          c(text.help, paste0("NA: ", unique(unlist(errorMessages))))
+
       }else{
-        text.help <- 
+        text.help <-
           c(text.help, "NA: see the 'error messages tab'")
       }
     }
-    
+
     # summary table of results
     tabPanel.list <- list(
       tabPanel(
@@ -1813,10 +1783,10 @@
           )
         })
       ))
-    
+
     # summary enrichment plot
     if(any(as.numeric(unlist(sORA[-1], recursive = TRUE)) > 0, na.rm = TRUE))
-      tabPanel.list <- 
+      tabPanel.list <-
       c(tabPanel.list,
         list(
           tabPanel(
@@ -1831,27 +1801,27 @@
               database
             )
           )))
-    
+
     # error message table
     if(!is.null(errorMessages) &&
        length(unique(unlist(errorMessages))) > 1)
-      tabPanel.list <- 
-      c(tabPanel.list, 
+      tabPanel.list <-
+      c(tabPanel.list,
         list(
           tabPanel(
             title = "Error message",
             br(),
-            
+
             renderDataTable({
-              
+
               errorMessages.df <- as.data.frame(unlist(errorMessages))
               names(errorMessages.df) <- "error message"
-              
+
               datatable(errorMessages.df, rownames = TRUE, escape = 1,
                         options = list( pageLength = 6, dom = 'tip'))
             })
           )))
-    
+
     if (is.null(sORA))  {
       fluidRow(
         box(
@@ -1861,9 +1831,9 @@
           collapsed = FALSE,
           status = "warning",
           title = "There is no result for this enrichment analysis!",
-          
+
           if(length(errorMessages) != 0){
-            
+
             renderUI({
               tagList(
                 HTML(paste(
@@ -1877,7 +1847,7 @@
         )
       )
     } else {
-      
+
       fluidRow(
         box(
           width = 12,
@@ -1886,7 +1856,7 @@
           collapsed = TRUE,
           status = "primary",
           title = title,
-          
+
           do.call(what = tabsetPanel, args = tabPanel.list)
         )
       )
@@ -1903,25 +1873,26 @@
                             listSource,
                             dataset,
                             database) {
+
   ns <- session$ns
   dataSE <- session$userData$FlomicsMultiAssay[[dataset]]
   varLabel0 <- .omicsDic(dataSE)$variableName
-  
+
   renderUI({
     if (rea.values[[dataset]][[listSource]] == FALSE ||
         is.null(sumORA(dataSE, listSource, database))) {
       return()
     }
-    
+
     # Possible domains of ontology:
     possDomain <-  unique(unlist(lapply(
-      getAnalysis(dataSE, 
-                  name = paste0(listSource, "EnrichAnal"), 
+      getAnalysis(dataSE,
+                  name = paste0(listSource, "EnrichAnal"),
                   subName = database)$results$enrichResult,
       FUN = function(x)
         names(x)
     )))
-    
+
     # display results
     verticalLayout(fluidRow(column(
       6,
@@ -1962,17 +1933,15 @@
                            fold change (FC) of the enrichment. White tiles
                            denote the non-significance for a term in a list."
                )
-               
-               
+
+
                plotExplain <- switch(
                  listSource,
                  "DiffExp" =  {
                    paste0(
-                     "This graph shows all the enriched terms ",
-                     "found with <b> ",
+                     "This graph shows all the enriched terms found with <b> ",
                      database,
-                     "</b> database",
-                     " with differentially expressed ",
+                     "</b> database with differentially expressed ",
                      varLabel0,
                      " lists.",
                      " Clustering of terms was computed using <b> ",
@@ -1998,7 +1967,7 @@
                      additionalMessage
                    )
                )
-               
+
                outHeatmap <- tryCatch({
                  outHeatmap <-  plotEnrichComp(
                    dataSE,
@@ -2012,7 +1981,7 @@
                  warn,
                error = function(err)
                  err)
-               
+
                if (is(outHeatmap, "Heatmap")) {
                  column(
                    width = 12,
