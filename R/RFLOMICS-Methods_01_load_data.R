@@ -510,78 +510,80 @@ setMethod(
 #' @exportMethod plotConditionsOverview
 #' @examples
 #' # See createRflomicsMAE for an example that includes plotConditionsOverview
-setMethod(f         = "plotConditionsOverview",
-          signature = "RflomicsMAE",
-          definition <- function(object, 
-                                 omicNames = NULL){
-            
-            # check presence of bio factors
-            if (!length(getBioFactors(object)) %in% seq_len(3)){ 
-              stop("No bio factor! or nbr of bio factors exceed 3!") }
-            if (!length(getBatchFactors(object)) %in% c(1,2)){ 
-              stop("No replicates found!") }
-            
-            BioFact <- getBioFactors(object)
-            coldata <- getDesignMat(object) %>%
-              mutate(samples=rownames(.))
-            #coldata <- tibble::as_tibble(coldata)
-            coldata <- sampleMap(object) %>% as.data.frame() %>% 
-              left_join(coldata, by = c("primary" = "samples"))
-            
-            all_combin_cond <- lapply(BioFact, function(x){ 
-              df <- unique(coldata[x])
-              rownames(df) <- seq_len(nrow(df))
-              return(df) 
-            }) %>% reduce(merge)
-            
-            counts <- coldata %>% select(assay, all_of(BioFact)) %>% 
-              unique() %>% 
-              group_by_at(BioFact) %>% count(name = "Count") %>% 
-              right_join(all_combin_cond, by = BioFact) %>% 
-              mutate_at(.vars = "Count", .funs = function(x) {
-                if_else(is.na(x), 0, x)})
-            
-            
-            counts <- counts %>% 
-              mutate(status = if_else(Count == length(object) , "all_data", 
-                                      if_else(Count == 0 , "no_data", "some_data")))
-            
-            #list of factor names
-            factors <- names(counts)[seq_len(dim(counts)[2]-2)]
-            
-            col.panel <- c("all_data", "some_data", "no_data")
-            names(col.panel) <- c("#00BA38", "orange", "red")
-            
-            col.panel.u <- col.panel[col.panel %in% unique(counts$status)]
-            
-            switch (length(factors),
-                    "1" = { p <- ggplot(counts, aes(x = factors[1], y = 1)) + 
-                      theme(axis.text.y = element_blank()) + ylab("") },
-                    "2" = { p <- ggplot(counts, aes(x = factors[1], y = factors[2])) },
-                    "3" = {
-                      #get factor with min conditions -> to select for "facet_grid"
-                      factors.l <- lapply(factors, function(x){ length(unique(counts[[x]])) }) %>% unlist()
-                      names(factors.l) <- factors
-                      factor.min <- names(factors.l[factors.l == min(factors.l)][1])
-                      
-                      factors <- factors[factors != factor.min]
-                      
-                      #add column to rename facet_grid
-                      counts <- counts %>% 
-                        mutate(grid = paste0(factor.min, "=",get(factor.min)))
-                      
-                      p <- ggplot(counts ,aes(x = factors[1], y = factors[2])) +
-                        facet_grid(grid~.) })
-            
-            p <- p + geom_tile(aes(fill = status), 
-                               color = "white", linewidth = 1,
-                               width = 1, height = 1)  + 
-              geom_text(aes(label = Count)) +
-              theme(panel.grid.major = element_blank(), 
-                    panel.grid.minor = element_blank(),
-                    axis.ticks = element_blank(), 
-                    axis.text.x=element_text(angle=90, hjust=1),
-                    legend.position = "none")
-            return(p)
-            
-          })
+setMethod(
+  f         = "plotConditionsOverview",
+  signature = "RflomicsMAE",
+  definition <- function(object, 
+                         omicNames = NULL){
+    
+    # check presence of bio factors
+    if (!length(getBioFactors(object)) %in% seq_len(3)){ 
+      stop("No bio factor! or nbr of bio factors exceed 3!") }
+    if (!length(getBatchFactors(object)) %in% c(1,2)){ 
+      stop("No replicates found!") }
+    
+    BioFact <- getBioFactors(object)
+    coldata <- getDesignMat(object) %>%
+      mutate(samples=rownames(.))
+    #coldata <- tibble::as_tibble(coldata)
+    coldata <- sampleMap(object) %>% as.data.frame() %>% 
+      left_join(coldata, by = c("primary" = "samples"))
+    
+    all_combin_cond <- lapply(BioFact, function(x){ 
+      df <- unique(coldata[x])
+      rownames(df) <- seq_len(nrow(df))
+      return(df) 
+    }) %>% reduce(merge)
+    
+    counts <- coldata %>% select(assay, all_of(BioFact)) %>% 
+      unique() %>% 
+      group_by_at(BioFact) %>% count(name = "Count") %>% 
+      right_join(all_combin_cond, by = BioFact) %>% 
+      mutate_at(.vars = "Count", .funs = function(x) {
+        if_else(is.na(x), 0, x)})
+    
+    
+    counts <- counts %>% 
+      mutate(status = if_else(Count == length(object) , "all_data", 
+                              if_else(Count == 0 , "no_data", "some_data")))
+    
+    #list of factor names
+    factors <- names(counts)[seq_len(dim(counts)[2]-2)]
+    
+    col.panel <- c("all_data", "some_data", "no_data")
+    names(col.panel) <- c("#00BA38", "orange", "red")
+    
+    col.panel.u <- col.panel[col.panel %in% unique(counts$status)]
+    
+    switch (
+      length(factors),
+      "1" = { p <- ggplot(counts, x = factors[1], y = 1) + 
+        theme(axis.text.y = element_blank()) + ylab("") },
+      "2" = { p <- ggplot(counts, x = factors[1], y = factors[2]) },
+      "3" = {
+        #get factor with min conditions -> to select for "facet_grid"
+        factors.l <- lapply(factors, function(x){ length(unique(counts[[x]])) }) %>% unlist()
+        names(factors.l) <- factors
+        factor.min <- names(factors.l[factors.l == min(factors.l)][1])
+        
+        factors <- factors[factors != factor.min]
+        
+        #add column to rename facet_grid
+        counts <- counts %>% 
+          mutate(grid = paste0(factor.min, "=",get(factor.min)))
+        
+        p <- ggplot(counts ,x = factors[1], y = factors[2]) +
+          facet_grid(grid~.) })
+    
+    p <- p + geom_tile(aes(fill = status), 
+                       color = "white", linewidth = 1,
+                       width = 1, height = 1)  + 
+      geom_text(aes(label = Count)) +
+      theme(panel.grid.major = element_blank(), 
+            panel.grid.minor = element_blank(),
+            axis.ticks = element_blank(), 
+            axis.text.x=element_text(angle=90, hjust=1),
+            legend.position = "none")
+    return(p)
+    
+  })

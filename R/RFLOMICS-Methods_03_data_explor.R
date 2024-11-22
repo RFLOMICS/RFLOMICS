@@ -1528,7 +1528,7 @@ setMethod(
     
     # plot
     labels <- getLabs4plot(object)
-    p <- ggplot(score, aes(x = PC1, y = PC2, color = groupColor))  +
+    p <- ggplot(score, x = PC1, y = PC2, aes(color = groupColor))  +
       geom_point(size = 2) +
       geom_text(aes(label = samples), 
                 size = 2, vjust = "inward", hjust = "inward") +
@@ -1547,7 +1547,7 @@ setMethod(
     bb <- coord.ellipse(aa, bary = TRUE)
     p <- p + geom_polygon(
       data = bb$res,
-      aes(x = PC1, y = PC2, fill = groupColor),
+      x = PC1, y = PC2, aes(fill = groupColor),
       show.legend = FALSE,
       alpha = 0.1
     )
