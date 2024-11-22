@@ -40,10 +40,8 @@ setGeneric(
 setGeneric(
   name = "generateReport",
   def  = function(object,
-                  fileName = NULL,
+                  reportName = NULL,
                   archiveName = NULL,
-                  export = FALSE,
-                  tmpDir = getwd(),
                   ...) 
     standardGeneric("generateReport")
   

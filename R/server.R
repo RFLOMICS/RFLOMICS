@@ -528,7 +528,7 @@ rflomicsServer <- function(input, output, session) {
           
           incProgress(0.3)
           generateReport(object = session$userData$FlomicsMultiAssay,
-                         tmpDir = outDir, fileName = file)
+                         reportName = file)
           
           incProgress(0.9)
           owd <- setwd(tempdir())
@@ -563,7 +563,7 @@ rflomicsServer <- function(input, output, session) {
           
           incProgress(0.3)
           generateReport(object = session$userData$FlomicsMultiAssay,
-                         tmpDir = outDir, archiveName = file, export = TRUE)
+                         archiveName = file)
           
           incProgress(0.9)
           owd <- setwd(tempdir())

@@ -118,7 +118,7 @@ setMethod(
 #' \link{RflomicsMAE-class} object or archive with results.
 #' @param object a object of \link{RflomicsSE} class or 
 #' \link{RflomicsMAE-class} class.
-#' @param fileName Name of the html report (default: date()_projectName.html).
+#' @param reportName Name of the html report (default: date()_projectName.html).
 #' @param archiveName name of archive with all analysis results 
 #' (default: date()_projectName.tar.gz).
 #' @param export boolean value to create archive (default: FALSE)
@@ -135,53 +135,40 @@ setMethod(
   f          = "generateReport",
   signature  = "RflomicsMAE",
   definition = function(object,
-                        fileName = NULL,
+                        reportName  = NULL,
                         archiveName = NULL,
-                        export = FALSE,
-                        tmpDir = getwd(),
+                        tmpDir      = NULL,
                         ...) {
     
-    #
+    # check analysis
     if(is.null(getAnalyzedDatasetNames(object))) 
       stop("An exploratory analysis must be performed on at least one of the datasets.")
     
-    # Copy the report file to a temporary directory before processing it, in
-    # case we don't have write permissions to the current working dir (which
-    # can happen when deployed).
-    tempReport <-
-      file.path(path.package("RFLOMICS"), "/RFLOMICSapp/report.Rmd")
+    if(is.null(reportName) && is.null(archiveName))
+      stop("You must provide either a reportName or an archiveName.")
     
-    # Check if the object is properly filled.
-    ## function
+    projectName  <- getProjectName(object)
     
-    # project name
-    projectName <- getProjectName(object)
-    RDataName   <- paste0(projectName, ".MAE.RData")
+    # we need at least reportName or archiveName
+    if(is.null(tmpDir)){
+      if(!is.null(reportName))
+        tmpDir <- dirname(reportName)
+      else
+        tmpDir <- dirname(archiveName)
+    }
     
     # tmp dir
     if (file.access(tmpDir, 2) != 0)
-      stop("No writing access in ", tmpDir)
+      stop("No writing access in ", tmpDir) 
     
     tmpDir <-
       file.path(tmpDir, 
                 paste0(format(Sys.time(),"%Y_%m_%d"),"_", projectName))
-    # file.path(tmpDir, 
-    #           paste0(projectName, "_report"))
-    
-    
     dir.create(tmpDir, showWarnings = FALSE)
     
-    # html name
-    if (is.null(fileName))
-      fileName <- file.path(tmpDir,
-                            paste0(format(Sys.time(), "%Y_%m_%d"), "_", 
-                                   projectName, ".html"))
-    
-    # save FE rflomics.MAE in .Rdata and load it during report execution
-    sessionInfo.light <- .writeSessionInfo()
-    rflomics.MAE <- setElementToMetadata(object, 
-                                         name = "sessionInfo", 
-                                         content = sessionInfo.light)
+    # save MAE object in Rdata
+    RDataName    <- paste0(projectName, ".MAE.RData")
+    rflomics.MAE <- object
     save(rflomics.MAE, file = file.path(tmpDir, RDataName))
     
     # Set up parameters to pass to Rmd document
@@ -194,12 +181,15 @@ setMethod(
         outDir = tmpDir
       )
     
-    # Knit the document, passing in the `params` list, and eval it in a
-    # child of the global environment (this isolates the code in the 
-    # document from the code in this app).
+    # html name
+    if(is.null(reportName))
+      reportName <- file.path(
+        tmpDir,
+        paste0(format(Sys.time(), "%Y_%m_%d"), "_", projectName, ".html"))
+    
     render(
-      input             = tempReport,
-      output_file       = fileName,
+      input             = file.path(path.package("RFLOMICS"), "/RFLOMICSapp/report.Rmd"),
+      output_file       = reportName,
       params            = param.list,
       knit_root_dir     = tmpDir,
       intermediates_dir = tmpDir,
@@ -207,25 +197,21 @@ setMethod(
     )
     
     #Export results
-    if (isTRUE(export)) {
-      if (is.null(archiveName))
-        archiveName <- file.path(dirname(tmpDir),
-                                 paste0(format(Sys.time(),"%Y_%m_%d"),
-                                        "_", projectName, 
-                                        ".tar.gz"))
+    if (!is.null(archiveName)){
       
       # cp html in tmpDir
-      file.copy(from = fileName, to = tmpDir)
-      cmd <- paste0("tar -C ", dirname(tmpDir),
-                    " -czf ", archiveName,  " ", basename(tmpDir))
+      file.copy(from = reportName, to = tmpDir)
+      cmd <- 
+        paste0("tar -C ", dirname(tmpDir), 
+               " -czf ", archiveName, " ", 
+               basename(tmpDir))
       system(cmd)
       #message(cmd)
       
     } else{
-      file.copy(from = fileName, to = dirname(tmpDir))
+      file.copy(from = reportName, to = dirname(tmpDir))
     }
     unlink(tmpDir, recursive = TRUE)
-    
   }
 )
 

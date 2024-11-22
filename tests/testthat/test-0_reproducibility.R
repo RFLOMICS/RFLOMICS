@@ -72,6 +72,22 @@ MAE <- MAE |>
   runDataProcessing(SE.name = "metatest", samples = NULL, 
                     normMethod = NULL, transformMethod = "log2")
 
+
+test_that("Test generateReport", {
+  expect_error(generateReport(MAE))
+  
+  co <- capture.output(
+    suppressWarnings(
+      expect_no_error(
+        generateReport(MAE, 
+                       reportName = file.path(tempdir(), "tmp_report.html"), 
+                       archiveName = file.path(tempdir(), "archiv_report.tar.gz")
+                       )
+      )
+    )
+  )
+})
+
 ## diff analysis
 MAE <- MAE |> 
   runDiffAnalysis(SE.name = "RNAtest", p.adj.method = "BH", 
@@ -550,7 +566,7 @@ test_that("Test coseq plot", {
   expect_equal(is(p), "gg")
   
   expect_equal(length(getCoexpClusters(MAE, SE.name = "protetest")), 6)
-
+  
 })
 
 test_that("get summary analysis", {
@@ -564,7 +580,7 @@ test_that("get summary analysis", {
 })
 
 test_that("getters", {
-    
+  
   expect_equal(getDEList(
     MAE, SE.name = "protetest", 
     contrasts = "(temperatureElevated - temperatureLow) in imbibitionDS",
@@ -573,7 +589,7 @@ test_that("getters", {
       MAE, SE.name = "protetest", 
       contrasts = "(temperatureElevated - temperatureLow) in imbibitionDS",
       operation = "union")
-    )
+  )
   
   expect_equal(
     getValidContrasts(MAE, omicName="protetest"),
@@ -609,5 +625,5 @@ test_that(".getKEGGRelease", {
   }
 })
 
-  
+
 
