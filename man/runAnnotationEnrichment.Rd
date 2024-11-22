@@ -114,14 +114,14 @@
 \S4method{getAnnotAnalysesSummary}{RflomicsMAE}(object, from = "DiffExp", matrixType = "presence", ...)
 }
 \arguments{
-\item{object}{An object of class \link{RflomicsSE} or 
+\item{object}{An object of class \link{RflomicsSE} or
 class \link{RflomicsMAE-class}}
 
 \item{featureList}{name of contrasts (tags or names) from which to extract DE
 genes if from is DiffExpAnal.}
 
-\item{from}{indicates if the enrichment results are taken from differential 
-analysis results (DiffExp) or from the co-expression analysis 
+\item{from}{indicates if the enrichment results are taken from differential
+analysis results (DiffExp) or from the co-expression analysis
 results (CoExp)}
 
 \item{universe}{description}
@@ -131,22 +131,28 @@ results (CoExp)}
 \item{domain}{the subonology or subdomain for the database (eg CC, MF or
 BP for GO.)}
 
-\item{annotation}{for custom annotation, path of the annotation file.}
+\item{annotation}{for custom annotation, a data frame of the annotation.
+The data frame must contains at least two columns: gene and term, with the
+omic name and the associated term id respectively. A column name
+can be added with the full name of the term (if  term is not the full name
+already). The column domain can be used to indicate either different databases
+(grouped analyses of kegg and go for example) or different domains for
+a single database (CC, MF and BP) for GO.}
 
 \item{OrgDb}{OrgDb (with enrichGO)}
 
-\item{organism}{supported organism listed in 
+\item{organism}{supported organism listed in
 'https://www.genome.jp/kegg/catalog/org_list.html' (with enrichKEGG)}
 
-\item{keyType}{keytype of input gene with enrichGO 
+\item{keyType}{keytype of input gene with enrichGO
 (one of "kegg", 'ncbi-geneid', 'ncbi-proteinid' and 'uniprot' with enrichKEGG)}
 
 \item{pvalueCutoff}{adjusted pvalue cutoff on enrichment tests to report}
 
-\item{qvalueCutoff}{qvalue cutoff on enrichment tests to report as significant. 
-Tests must pass 
-i) pvalueCutoff on unadjusted pvalues, 
-ii) pvalueCutoff on adjusted pvalues and 
+\item{qvalueCutoff}{qvalue cutoff on enrichment tests to report as significant.
+Tests must pass
+i) pvalueCutoff on unadjusted pvalues,
+ii) pvalueCutoff on adjusted pvalues and
 iii) qvalueCutoff on qvalues to be reported.}
 
 \item{minGSSize}{minimal size of genes annotated by Ontology term for testing.}
@@ -155,10 +161,10 @@ iii) qvalueCutoff on qvalues to be reported.}
 
 \item{...}{more arguments for ComplexHeatmap::Heatmap.}
 
-\item{SE.name}{SE.name the name of the dataset if the input object 
+\item{SE.name}{SE.name the name of the dataset if the input object
 is a \link{RflomicsMAE-class}}
 
-\item{featureListName}{the contrastName or clusterName to retrieve 
+\item{featureListName}{the contrastName or clusterName to retrieve
 the results from. If NULL, all results are returned.}
 
 \item{pathway_id}{the KEGG id pathway to plot.}
@@ -178,7 +184,7 @@ One of dotplot, heatplot or cnetplot.}
 
 \item{p.adj.cutoff}{pvalueCutoff to define the enrichment threshold.}
 
-\item{matrixType}{Heatmap matrix to plot, one of GeneRatio, p.adjust 
+\item{matrixType}{Heatmap matrix to plot, one of GeneRatio, p.adjust
 or presence.}
 
 \item{nClust}{number of separate cluster to plot on the heatmap, based o
@@ -204,31 +210,31 @@ clusterprofiler functions. It can be used with custom annotation file
 (via enricher), GO (enrichGO) or KEGG (enrichKEGG) annotations.
 }
 \section{Accessors}{
- 
-A set of getters and setters generic functions to access and 
-modify objects of the slot metadata of a \link{RflomicsMAE-class} object or 
+
+A set of getters and setters generic functions to access and
+modify objects of the slot metadata of a \link{RflomicsMAE-class} object or
 a \link{RflomicsMAE-class} object.
 
- 
+
 \itemize{
    \item getEnrichRes: get a particular enrichment result.
    return enrichment results given in the form of lists of clusterprofiler
    results.
 }
 
- 
+
 \itemize{
    \item sumORA: Get summary tables from ORA analyses -
    once an enrichment has been conducted.
 }
 
- 
+
 \itemize{
    \item getEnrichSettings:
    get the settings of an enrichment analysis.
 }
 
- 
+
 \itemize{
    \item getAnnotAnalysesSummary:
    return A list of heatmaps, one for each ontology/domain.
@@ -236,23 +242,23 @@ a \link{RflomicsMAE-class} object.
 }
 
 \section{Plots}{
- 
+
 A collection of functions for plotting results from omic analysis steps.
 
- 
+
 \itemize{
-   \item plotKEGG: Plot the KEGG pathway using the pathview package. 
-   It overlays the result of the differential analysis or the clusters 
+   \item plotKEGG: Plot the KEGG pathway using the pathview package.
+   It overlays the result of the differential analysis or the clusters
    entity on the image.
 }
 
- 
+
 \itemize{
    \item plotClusterProfiler: Plot a dotplot, a cnetplot or an heatplot, using enrichplot
 package. It is a wrapper method destined for the RflomicsSE class..
 }
 
- 
+
 \itemize{
    \item plotEnrichComp: plot an heatmap of all the enriched term found for a given
 database and a given source (differential analysis or coexpression clusters).
@@ -271,7 +277,7 @@ factorInfo <- data.frame(
 )
 
 # create rflomicsMAE object with ecoseed data
-MAE <- RFLOMICS::createRflomicsMAE(
+MAE <- createRflomicsMAE(
   projectName = "Tests",
   omicsData   = ecoseed.mae,
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
