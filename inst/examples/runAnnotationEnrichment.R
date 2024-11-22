@@ -8,7 +8,7 @@ factorInfo <- data.frame(
 )
 
 # create rflomicsMAE object with ecoseed data
-MAE <- RFLOMICS::createRflomicsMAE(
+MAE <- createRflomicsMAE(
   projectName = "Tests",
   omicsData   = ecoseed.mae,
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
