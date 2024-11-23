@@ -75,14 +75,14 @@ MAE <- MAE |>
 
 test_that("Test generateReport", {
   expect_error(generateReport(MAE))
-  
+
   co <- capture.output(
     suppressWarnings(
       expect_no_error(
-        generateReport(MAE, 
-                       reportName = file.path(tempdir(), "tmp_report.html"), 
-                       archiveName = file.path(tempdir(), "archiv_report.tar.gz")
-                       )
+        generateReport(
+          MAE,
+          archiveName = file.path(tempdir(), "archiv_report.tar.gz")
+        )
       )
     )
   )
@@ -624,6 +624,4 @@ test_that(".getKEGGRelease", {
     expect_null(vers)
   }
 })
-
-
 

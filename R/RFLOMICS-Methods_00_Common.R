@@ -188,7 +188,7 @@ setMethod(
         paste0(format(Sys.time(), "%Y_%m_%d"), "_", projectName, ".html"))
     
     render(
-      input             = file.path(path.package("RFLOMICS"), "/RFLOMICSapp/report.Rmd"),
+      input             = system.file("RFLOMICSapp", "report.Rmd", package = "RFLOMICS"),
       output_file       = reportName,
       params            = param.list,
       knit_root_dir     = tmpDir,

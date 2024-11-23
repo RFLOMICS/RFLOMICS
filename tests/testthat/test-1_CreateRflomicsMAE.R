@@ -318,3 +318,40 @@ test_that("Test subRflomicsMAE", {
 })
 
 
+test_that("readExpDesign", {
+  
+  design <- 
+    data.frame(
+      samples = paste0("S", 1:9),
+      factor1 = rep(paste0("rep", 1:3),3),
+      factor2 = c(rep("A",3), rep("B",3), rep("C",3))
+    )
+  
+  fileName <- file.path(tempdir(), "design.txt")
+  
+  write.table(x = design, file = fileName, 
+              sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
+  
+  design_bis <- RFLOMICS:::readExpDesign(fileName)
+  expect_true("data.frame" %in% is(design_bis))
+  expect_equal(names(design_bis), c("factor1", "factor2"))
+})
+
+test_that("readOmicsData", {
+  
+  data <- as.data.frame(matrix(sample(10:300, 100 * 10, replace = TRUE), 
+                               nrow = 100, ncol = 10))
+  
+  data[[1]] <- paste0("gene", 1:100)
+  
+  names(data) <- c("genes", paste0("S", 1:9))
+  
+  fileName <- file.path(tempdir(), "design.txt")
+  
+  write.table(x = data, file = fileName, 
+              sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
+  
+  data_bis <- RFLOMICS:::readOmicsData(fileName)
+  expect_true("data.frame" %in% is(data_bis))
+  expect_equal(names(data_bis), paste0("S", 1:9))
+})
