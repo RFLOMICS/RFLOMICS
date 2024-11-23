@@ -364,81 +364,96 @@
 }
 
 
+## ---- countSamplesPerCondition: count nb of samples per condition to check completeness ----
+#' @title countSamplesPerCondition
+#' @param expDesign a data.frame with experimental design
+#' @param bioFactors a vector of design bio factors
+#' @return a data.frame with sample count per condition
+#' @noRd
+.countSamplesPerCondition <- function(expDesign, bioFactors) {
+  
+  #remplacer le code ci-dessus par celui en bas
+  group_count <- group_by_at(expDesign, bioFactors) %>% 
+    count(name = "Count")
+  
+  mod.fact <- lapply(names(group_count)[-ncol(group_count)], function(factor){
+    unique(group_count[[factor]])
+  }) 
+  names(mod.fact) <- names(group_count)[-ncol(group_count)]
+  
+  full_join(expand.grid(mod.fact), group_count, by=bioFactors) %>% 
+    mutate_at(.vars = "Count", .funs = function(x){ if_else(is.na(x), 0, x) }) %>%
+    return()
+}
 
-#' ######## INTERNAL - Check, transform and normalize the data ###########
-#' 
-#' # checkTransNorm: check the data, transform them and normalize them.
-#' #' @title .checkTransNorm
-#' #'
-#' #' @param object An object of class \link{RflomicsSE}
-#' #' @description apply the normalization and the transformation stored into the metadata of the SE object.
-#' #'  Applies TMM and log2 transformation for RNAseq data.
-#' #' @keywords internal
-#' #' @noRd
-#' #'
-#' 
-#' .checkTransNorm <- function(object, raw = FALSE) {
-#'   if (!is(object, "RflomicsSE")) stop("Object is not a RflomicsSE")
-#'   
-#'   # check things
-#'   if (.checkNA(object)) stop("NA detected in the assay.")
-#'   
-#'   # No transformation (except for RNAseq, which expect counts...)
-#'   if (raw) {
-#'     if (.isTransformed(object)) warning("Your data are not raw (transformed)")
-#'     if (.isNormalized(object)) warning("Your data are not raw (normalized)")
-#'     
-#'     if (getOmicsTypes(object) == "RNAseq") {
-#'       assay(object) <- log2(assay(object) + 1)
-#'     }
-#'   } else {
-#'     # if RNAseq
-#'     switch(getOmicsTypes(object),
-#'            "RNAseq" = {
-#'              # Really depends if TMM is the normalization or not.
-#'              # Make it easier: force TMM and log2.
-#'              if (.isTransformed(object)) 
-#'                stop("Expect untransformed RNAseq data at this point.")
-#'              
-#'              if (.isNormalized(object)) {
-#'                switch(getNormSettings(object)$method, 
-#'                       "TMM" = {assay(object) <- log2(assay(object))}, # +1 in the apply_norm function
-#'                       {message("RNAseq counts expects TMM normalization. Data were already normalized with another method.
-#'                 Skipping to the end without transforming or normalizing data.")}
-#'                )
-#'              } else {
-#'                # Force "none" transformation.
-#'                if (getTransSettings(object)$method != "none") {
-#'                  message("RNAseq counts expects TMM normalization. Transformation is done after the normalization,
-#'                   using 'none' as transform method. Data will be transformed using log2 after the normalization anyway")
-#'                  
-#'                  object <- setTrans(object, method = "none")
-#'                }
-#'                
-#'                # Force TMM normalization
-#'                if (getNormSettings(object)$method != "TMM") {
-#'                  message("For RNAseq data (counts), only TMM applies for now. Forcing TMM normalization.")
-#'                  object <- runNormalization(object, normMethod = "TMM")
-#'                }
-#'              }
-#'              
-#'              # Finally transforming the data.
-#'              object <- .applyTransformation(object) # none
-#'              object <- .applyNorm(object) # TMM
-#'              assay(object) <- log2(assay(object)) # +1 in the .applyNorm function
-#'              
-#'            }, # end switch rnaseq
-#'            { # default
-#'              # in case any other omics type (does not expect counts)
-#'              # transform and norm
-#'              if (!.isTransformed(object)) object <- .applyTransformation(object)
-#'              if (!.isNormalized(object)) object <- .applyNorm(object)
-#'            }
-#'     )
-#'   }
-#'   
-#'   # check things
-#'   if (.checkNA(object)) stop("NA detected in the assay.")
-#'   
-#'   return(object)
-#' }
+
+## ---- plotExperimentalDesign ----
+#' Plot the balance of data in an experimental design
+#'
+#' This function provides easy visualization of the balance of data in a data 
+#' set given a specified experimental design. This function is useful for
+#'  identifying missing data and other issues. 
+#'  The core of this function is from the function ezDesign in the package ez.
+#'
+#' @param counts : the number of data in each cell of the design
+#' @param cell_border_size : Numeric value specifying the size of 
+#' the border seperating cells (0 specifies no border)
+#'
+#' @return A printable/modifiable ggplot2 object.
+#' @keywords internal
+#' @noRd
+.plotExperimentalDesign <- function(counts, cell_border_size = 10, message=""){
+  if (names(counts)[ncol(counts)] != "Count"){
+    stop("the last column of the input data frame must be labelled Count")
+  }
+  if(ncol(counts) < 2){
+    stop("data frame with less than 2 columns")
+  }
+  
+  # #add color column
+  # # #00BA38
+  
+  counts <- counts %>% 
+    mutate(status = if_else(Count > 2 , "pass", 
+                            if_else(Count == 2 , "warning", "error")))
+  
+  #list of factor names
+  factors <- names(counts)[1:(dim(counts)[2]-2)]
+  
+  col.panel <- c("pass", "warning", "error")
+  names(col.panel) <- c("#00BA38", "orange", "red")
+  
+  col.panel.u <- col.panel[col.panel %in% unique(counts$status)]
+  
+  switch (
+    length(factors),
+    "1" = { p <- ggplot(counts ,aes(x = !!sym(factors[1]), y = 1)) + 
+      theme(axis.text.y = element_blank()) + ylab("") },
+    "2" = { p <- ggplot(counts ,aes(x = !!sym(factors[1]), y = !!sym(factors[2]))) },
+    "3" = {
+      #get factor with min conditions -> to select for "facet_grid"
+      factors.l <- lapply(factors, function(x){ length(unique(counts[[x]])) }) %>% unlist()
+      names(factors.l) <- factors
+      factor.min <- names(factors.l[factors.l == min(factors.l)][1])
+      
+      factors <- factors[factors != factor.min]
+      
+      #add column to rename facet_grid
+      counts <- counts %>% mutate(grid = paste0(factor.min, "=",get(factor.min)))
+      
+      p <- ggplot(counts ,aes(x = !!sym(factors[1]), y = !!sym(factors[2]))) +
+        facet_grid(grid~.) })
+  
+  p <- p + 
+    geom_tile(aes(fill = status), color = "white",
+              linewidth = 1, width = 1, height = 1) + 
+    geom_text(aes(label = Count)) + 
+    scale_fill_manual(values = names(col.panel.u), breaks = col.panel.u) +
+    theme(panel.grid.major = element_blank(), 
+          panel.grid.minor = element_blank(),
+          axis.ticks = element_blank(), 
+          axis.text.x=element_text(angle=90, hjust=1)) +
+    ggtitle(message)
+  
+  return(p)
+}
