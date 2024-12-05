@@ -146,52 +146,52 @@
 )
 }
 \arguments{
-\item{object}{An object of class \link{RflomicsSE} or 
+\item{object}{An object of class \link{RflomicsSE} or
 class \link{RflomicsMAE-class}}
 
 \item{contrastList}{A data.frame of contrast}
 
-\item{method}{A character vector giving the name of the differential 
+\item{method}{A character vector giving the name of the differential
 analysis method to run. Either "edgeRglmfit" or "limmalmFit".}
 
-\item{p.adj.method}{The method choosen to adjust pvalue. Takes the same 
+\item{p.adj.method}{The method choosen to adjust pvalue. Takes the same
 values as the ones of adj.p.adjust method.}
 
-\item{p.adj.cutoff}{adjusted pvalue cutoff. Default is the parameter from 
+\item{p.adj.cutoff}{adjusted pvalue cutoff. Default is the parameter from
 the differential analysis.}
 
-\item{logFC.cutoff}{cutoff for absolute value of log2FC. Default is the 
+\item{logFC.cutoff}{cutoff for absolute value of log2FC. Default is the
 parameter from the differential analysis.}
 
-\item{clustermq}{A boolean indicating whether the constrasts have to be 
+\item{clustermq}{A boolean indicating whether the constrasts have to be
 computed in local or in a distant machine}
 
 \item{cmd}{boolean. Used in the interface. If TRUE, print cmd for the user.}
 
 \item{...}{Additional arguments.}
 
-\item{SE.name}{SE.name the name of the dataset if the input object 
+\item{SE.name}{SE.name the name of the dataset if the input object
 is a \link{RflomicsMAE-class}}
 
 \item{omicName}{a dataset name}
 
 \item{contrastName}{The contrastName for which the MAplot has to be drawn}
 
-\item{typeofplots}{The plots you want to return. Default is all possible 
+\item{typeofplots}{The plots you want to return. Default is all possible
 plots: MA plot, Volcano plot and non adjusted pvalues histogram.}
 
-\item{splitFactor}{characters. Default to none. Name of a feature in the 
+\item{splitFactor}{characters. Default to none. Name of a feature in the
 design matrix, splits the samples on the heatmap according to its modalities.}
 
 \item{title}{characters. Title of the heatmap.}
 
-\item{annotNames}{vector. Names of the annotations to keep in the Heatmap. 
+\item{annotNames}{vector. Names of the annotations to keep in the Heatmap.
 Default takes all available information.}
 
-\item{modalities}{named list of vectors of modalities to subset and print 
+\item{modalities}{named list of vectors of modalities to subset and print
 on the heatmap.}
 
-\item{drawArgs, heatmapArgs}{named lists. Any additional parameter passed 
+\item{drawArgs, heatmapArgs}{named lists. Any additional parameter passed
 to ComplexHeatmap::Heatmap or ComplexHeatmap::draw}
 
 \item{featureName}{variable name (gene/protein/metabolite name)}
@@ -201,7 +201,7 @@ color the boxplots accordingly.}
 
 \item{raw}{Boolean. Plot the raw data or the transformed ones (TRUE)}
 
-\item{contrasts}{Vector of characters, expect to be contrast names. 
+\item{contrasts}{Vector of characters, expect to be contrast names.
 Default is null, the operation (union) is performed
 on every contrasts found.}
 
@@ -218,59 +218,59 @@ Defines the operation to perform on the DE lists from the contrasts.}
 }
 \value{
 A \link{RflomicsSE} or a \link{RflomicsMAE-class} object.
-All the results are stored as a named list \code{DiffExpAnal} 
+All the results are stored as a named list \code{DiffExpAnal}
 in the metadata slot of a given \link{RflomicsSE} object.
 Objects are:
 \itemize{
-  \item stats: data.frame giving a summary of the differential 
+  \item stats: data.frame giving a summary of the differential
  statistical analysis results by contrast:
- number of DE features, number of up and down regulated features 
-  \item setting: Parameters used for the differential analysis 
- \item method: The method used for the differential analysis 
- \item p.adj.method: The applied p-value correction method 
-  \item p.adj.cutoff: The cut-off applied for the adjusted p-value 
-  \item logFC.cutoff: The absolute log FC cut-off 
-  \item RawDEFres: a list giving for each contrast the raw results of 
+ number of DE features, number of up and down regulated features
+  \item setting: Parameters used for the differential analysis
+ \item method: The method used for the differential analysis
+ \item p.adj.method: The applied p-value correction method
+  \item p.adj.cutoff: The cut-off applied for the adjusted p-value
+  \item logFC.cutoff: The absolute log FC cut-off
+  \item RawDEFres: a list giving for each contrast the raw results of
  the differential analysis method
-  \item DEF: a list giving for each contrast a data.frame of non filtered 
- differential expressed features with their statistics  
-  \item TopDEF: a list giving for each contrast a data.frame of 
- differential expressed features ordered and filtered by p.adj.cutoff 
+  \item DEF: a list giving for each contrast a data.frame of non filtered
+ differential expressed features with their statistics
+  \item TopDEF: a list giving for each contrast a data.frame of
+ differential expressed features ordered and filtered by p.adj.cutoff
  with their statistics
- \item mergeDEF: a data frame of 0 and 1 indicating for each features in row, 
+ \item mergeDEF: a data frame of 0 and 1 indicating for each features in row,
  if it is DE in a given contrasts in column
- \item contrasts: a data.table of the contrasts used for the differential 
+ \item contrasts: a data.table of the contrasts used for the differential
  analysis
 }
 
 a data.frame with differential analyses summary
 }
 \description{
-This is an interface method which run a differential 
-analysis on omics datasets stored in an object of class 
-\link{RflomicsSE} or \link{RflomicsMAE-class}. According to the type 
-of omics and to a list of contrasts, a differential analysis  
+This is an interface method which run a differential
+analysis on omics datasets stored in an object of class
+\link{RflomicsSE} or \link{RflomicsMAE-class}. According to the type
+of omics and to a list of contrasts, a differential analysis
 is performef for each contrasts.
 Two methods are available according to the type of object:
 \itemize{
-\item For RNAseq data:  the \code{glmFit} function/model of the 
+\item For RNAseq data:  the \code{glmFit} function/model of the
 \code{edgeR} package is applied.
-\item For proteomic and metabolomic data:  the \code{\link{lmFit}} 
+\item For proteomic and metabolomic data:  the \code{\link{lmFit}}
 function/model of the \code{limma} package is applied.
 }
 
 \itemize{
-   \item filterDiffAnalysis: The filterDiffAnalysis method allows 
-   filtering the results of the differential analysis based on a 
+   \item filterDiffAnalysis: The filterDiffAnalysis method allows
+   filtering the results of the differential analysis based on a
    new cutoff for p-value and fold change.}
 
 \itemize{
    \item setValidContrasts: Set the valid contrasts stored in \code{metadata} slot.}
 }
 \details{
-Functions and parameters used for RNAseq are those recommended in DiCoExpress 
+Functions and parameters used for RNAseq are those recommended in DiCoExpress
 workflow (see the paper in reference).
-Functions and parameters used for proteomic and metabolomic data are those 
+Functions and parameters used for proteomic and metabolomic data are those
 recommended in the (Efstathiou *et al.*, 2017)
 }
 \section{Accessors}{
@@ -287,7 +287,7 @@ recommended in the (Efstathiou *et al.*, 2017)
 
 
 \itemize{
-   \item getDiffSettings: retrun a list of differential expression analysis 
+   \item getDiffSettings: retrun a list of differential expression analysis
    settings of a given omic dataset}
 
 
@@ -308,17 +308,17 @@ recommended in the (Efstathiou *et al.*, 2017)
 
 
 \itemize{
-   \item plotDiffAnalysis method draws a MAplot, a volcano plot and the 
+   \item plotDiffAnalysis method draws a MAplot, a volcano plot and the
 p-values distribution from the results of a differential analysis.}
 
 
 \itemize{
-   \item plotHeatmapDesign method draws a heatmap from the results of a 
+   \item plotHeatmapDesign method draws a heatmap from the results of a
 differential analysis.}
 
 
 \itemize{
-   \item plotBoxplotDE method draws a boxplot showing the expression of 
+   \item plotBoxplotDE method draws a boxplot showing the expression of
    given differentially expressed feature.}
 }
 
@@ -408,13 +408,13 @@ thiscontrast <- "(temperatureMedium - temperatureLow) in mean"
 # See runDiffAnalysis for an example that includes getDiffSettings
 }
 \references{
-Lambert, I., Paysant-Le Roux, C., Colella, S. et al. DiCoExpress: a tool 
-to process multifactorial RNAseq experiments from quality controls to 
-co-expression analysis through differential analysis based on contrasts 
+Lambert, I., Paysant-Le Roux, C., Colella, S. et al. DiCoExpress: a tool
+to process multifactorial RNAseq experiments from quality controls to
+co-expression analysis through differential analysis based on contrasts
 inside GLM models. Plant Methods 16, 68 (2020).
 
-Efstathiou G, Antonakis AN, Pavlopoulos GA, et al. ProteoSign: 
-an end-user online differential proteomics statistical analysis platform. 
+Efstathiou G, Antonakis AN, Pavlopoulos GA, et al. ProteoSign:
+an end-user online differential proteomics statistical analysis platform.
 Nucleic Acids Res. 2017;45(W1):W300-W306.
 }
 \seealso{
