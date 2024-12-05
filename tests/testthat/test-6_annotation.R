@@ -601,7 +601,7 @@ test_that("plotClusterPRofiler - GO only", {
                         featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
                         database = "GO"))
 
-    # trying to plot witha null a domain name for GO
+    # trying to plot with a null a domain name for GO
     expect_error(plotClusterProfiler(MAE[["protetest"]],
                                      featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
                                      database = "GO", domain = NULL))
@@ -631,4 +631,81 @@ test_that("plotClusterPRofiler - GO only", {
                                         featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
                                         database = "GO", domain = "CC",
                                         plotType = "cnetplot"))
+})
+
+
+#---- PlotEnrichComp ----
+
+test_that("plotEnrichComp - KEGG only", {
+
+    contrastList <- generateExpressionContrast(object = MAE) |>
+        purrr::reduce(rbind) |>
+        dplyr::filter(tag %in% c("H1", "H2","H3"))
+
+    MAE <- MAE |>
+        setSelectedContrasts(contrastList = contrastList) |>
+        runDataProcessing(SE.name = "protetest",
+                          normMethod = "median",
+                          transformMethod = "none")  |>
+        runDiffAnalysis(SE.name = "protetest", method = "limmalmFit",
+                        p.adj.cutoff = 0.05) |>
+        runAnnotationEnrichment(
+            SE.name = "protetest",
+            featureList = NULL,
+            database = "KEGG",
+            pvalueCutoff = 1,
+            organism = "ath",
+            keyType = "kegg")
+
+    expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG"))
+    expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", matrixType = "log2FC"))
+    expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", matrixType = "GeneRatio"))
+    expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", matrixType = "p.adjust"))
+    expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", matrixType = "presence"))
+    expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG"))
+    expect_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", domain = "domain"))
+    expect_error(plotEnrichComp(MAE[["protetest"]]))
+    expect_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", matrixType = "type"))
+    expect_error(plotEnrichComp(MAE[["protetest"]], database = "data", matrixType = "type"))
+
+})
+
+# ---- Get Annot Analyses Summary ----
+#
+
+test_that("getAnnotAnalysesSummary works", {
+
+    contrastList <- generateExpressionContrast(object = MAE) |>
+        purrr::reduce(rbind) |>
+        dplyr::filter(tag %in% c("H1", "H2","H3"))
+
+    MAE <- MAE |>
+        setSelectedContrasts(contrastList = contrastList) |>
+        runDataProcessing(SE.name = "protetest",
+                          normMethod = "median",
+                          transformMethod = "none")  |>
+        runDiffAnalysis(SE.name = "protetest", method = "limmalmFit",
+                        p.adj.cutoff = 0.05)
+
+    MAE <- runAnnotationEnrichment(
+        MAE, SE.name = "protetest",
+        database = "KEGG",
+        organism = "ath",
+        pvalueCutoff = 1)
+
+    MAE <- runAnnotationEnrichment(
+            MAE, SE.name = "protetest",
+            database = "GO",
+            pvalueCutoff = 1,
+            OrgDb = "org.At.tair.db",
+            keyType = "TAIR",
+            domain = c("BP", "MF"))
+
+    expect_no_error(getAnnotAnalysesSummary(MAE))
+    expect_no_error(getAnnotAnalysesSummary(MAE, matrixType = "log2FC"))
+    expect_no_error(getAnnotAnalysesSummary(MAE, matrixType = "GeneRatio"))
+    expect_no_error(getAnnotAnalysesSummary(MAE, matrixType = "p.adjust"))
+    expect_no_error(getAnnotAnalysesSummary(MAE, matrixType = "presence"))
+    expect_error(getAnnotAnalysesSummary(MAE, matrixType = "type"))
+    expect_error(getAnnotAnalysesSummary(MAE, from = "from"))
 })

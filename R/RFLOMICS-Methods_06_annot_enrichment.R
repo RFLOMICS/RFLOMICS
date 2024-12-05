@@ -197,8 +197,7 @@ setMethod(
         if (is.null(from)) from <- "DiffExp"
 
         if (!from %in% c("CoExp", "DiffExp"))
-            stop("None of the lists correspond to lists of differential",
-                 " features or co-expression clusters.")
+            stop("None of the lists correspond to lists of differential features or co-expression clusters.")
 
         ## reset EnrichAnal
         object <- setElementToMetadata(object,
@@ -213,9 +212,9 @@ setMethod(
                 DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
 
                 if (length(DiffExpAnal) == 0)
-                    stop("There is no diff-expression analysis.")
+                    stop("There is no differential expression analysis.")
 
-                if (is.null(featureList)){
+                if (is.null(featureList)) {
 
                     featureList <- getSelectedContrasts(object)$contrastName
                     if (!is.null(getValidContrasts(object)))
@@ -235,8 +234,7 @@ setMethod(
 
                 if (is.null(geneLists)) stop("There is no co-expression analysis.")
 
-                if(!is.null(featureList))
-                    geneLists <- geneLists[featureList]
+                if (!is.null(featureList))  geneLists <- geneLists[featureList]
             }
         )
         geneLists <- geneLists[lengths(geneLists) > 0]
@@ -676,17 +674,19 @@ setMethod(
                           nClust = NULL,
                           ...) {
 
-        if(is.null(from) || !from %in% c("CoExp", "DiffExp"))
+        if (is.null(from))
             stop("The 'from' parameter is required.")
 
-        if(is.null(database))
+        if (!from %in% c("CoExp", "DiffExp"))
+            stop("The 'from' parameter must be one of CoExp or DiffExp.")
+
+        if (is.null(database))
             stop("The 'database' parameter is required.")
 
         allData <- getEnrichRes(object, from = from, database = database)
 
         if (length(allData) == 0) {
-            stop("The selected database ",
-                 database,
+            stop("The selected database ", database,
                  " does not seem to exist in the object.")
         }
 
@@ -698,8 +698,8 @@ setMethod(
         pvalThresh <- allData[[1]][[1]]@pvalueCutoff
 
         domainPoss <- unique(unlist(lapply(allData, names)))
-        if (missing(domain) || is.null(domain))
-            domain <- domainPoss
+        if (missing(domain)) domain <- domainPoss
+        if (is.null(domain))   domain <- domainPoss
         if (any(!domain %in% domainPoss)) {
             stop("Trying to select a domain that does not exist in the object.")
         }
@@ -784,27 +784,31 @@ setMethod(
         dat <- switch(
             matrixType,
             "GeneRatio" = {
-                inter <- recast(extract[, c("Description", "contrastName", "GeneRatio")],
-                                Description ~ contrastName,
-                                measure.var = "GeneRatio")
+                inter <- recast(
+                    extract[, c("Description", "contrastName", "GeneRatio")],
+                    Description ~ contrastName,
+                    measure.var = "GeneRatio")
                 rownames(inter) <- inter$Description
-                inter <- inter[, colnames(inter) != "ID"]
+                # inter <- inter[, colnames(inter) != "ID"]
+                inter <- inter[, colnames(inter) != "Description"]
                 inter[is.na(inter)] <- 0
                 inter
             },
             "p.adjust" = {
-                inter <- recast(extract[, c("Description", "contrastName", "p.adjust")],
-                                Description ~ contrastName,
-                                measure.var = "p.adjust")
+                inter <- recast(
+                    extract[, c("Description", "contrastName", "p.adjust")],
+                    Description ~ contrastName,
+                    measure.var = "p.adjust")
                 rownames(inter) <- inter$Description
                 inter <- inter[, colnames(inter) != "Description"]
                 inter[is.na(inter)] <- 1
                 inter
             },
             "presence" = {
-                inter <- recast(extract[, c("Description", "contrastName", "p.adjust")],
-                                Description ~ contrastName,
-                                measure.var = "p.adjust")
+                inter <- recast(
+                    extract[, c("Description", "contrastName", "p.adjust")],
+                    Description ~ contrastName,
+                    measure.var = "p.adjust")
                 rownames(inter) <- inter$Description
                 inter <-
                     inter <- inter[, colnames(inter) != "Description"]
@@ -813,18 +817,20 @@ setMethod(
                 inter
             },
             "FC" = {
-                inter <- recast(extract[, c("Description", "contrastName", "FC")],
-                                Description ~ contrastName,
-                                measure.var = "FC")
+                inter <- recast(
+                    extract[, c("Description", "contrastName", "FC")],
+                    Description ~ contrastName,
+                    measure.var = "FC")
                 rownames(inter) <- inter$Description
                 inter <- inter[, colnames(inter) != "Description"]
                 inter[is.na(inter)] <- 0
                 inter
             },
             "log2FC" = {
-                inter <- recast(extract[, c("Description", "contrastName", "FC")],
-                                Description ~ contrastName,
-                                measure.var = "FC")
+                inter <- recast(
+                    extract[, c("Description", "contrastName", "FC")],
+                    Description ~ contrastName,
+                    measure.var = "FC")
                 rownames(inter) <- inter$Description
                 inter <- inter[, colnames(inter) != "Description"]
                 inter <- log2(inter)
@@ -833,7 +839,8 @@ setMethod(
                 inter[is.na(inter)] <- 0
                 # means it's not significant and not in the matrix.
                 inter
-            }
+            },
+            stop("This matrix type is not supported. Please chose one of log2FC, FC, presence, p.adjust, GeneRatio")
         )
 
         if (nrow(dat) > 1) {
@@ -846,10 +853,10 @@ setMethod(
                                   method = "complete")
                    },
                    {
-                       hcPlot <- hclust(dist(inter, method = "euclidean"),
+                       hcPlot <- hclust(dist(dat, method = "euclidean"),
                                         method = "complete")
                        hcCol <-
-                           hclust(dist(t(inter), method = "euclidean"),
+                           hclust(dist(t(dat), method = "euclidean"),
                                   method = "complete")
                    })
         } else {
@@ -934,26 +941,29 @@ setMethod(
                           database = "GO",
                           domain = NULL) {
 
-        if (is.null(database) || !database %in% c("GO", "KEGG", "custom"))
-            stop("The 'database' parameter is required.
-             It must be one of GO, KEGG or custom.")
+        if (is.null(database) )
+            stop("The 'database' parameter is required. It must be one of GO, KEGG or custom.")
 
-        if (!is.null(featureListName)) {
-            from <- .getOrigin(object, featureListName)
-        }
+        if (!database %in% c("GO", "KEGG", "custom"))
+            stop("The 'database' parameter must be one of GO, KEGG or custom.")
 
-        if (is.null(from) || !from %in% c("CoExp", "DiffExp"))
+        if (!is.null(featureListName)) from <- .getOrigin(object, featureListName)
+
+        if (is.null(from))
             stop("The 'from' parameter is required. It must be one of DiffExp or CoExp")
 
-        res <-
-            getAnalysis(object, name = paste0(from, "EnrichAnal"), subName = database)
+        if (!from %in% c("CoExp", "DiffExp"))
+            stop("The 'from' parameter must be one of DiffExp or CoExp")
+
+        res <- getAnalysis(object, name = paste0(from, "EnrichAnal"),
+                           subName = database)
 
         res <- res[["results"]][["enrichResult"]]
 
         if (!is.null(featureListName)){
             res <- res[[featureListName]]
 
-            if(!is.null(domain))
+            if (!is.null(domain))
                 res <- res[[domain]]
         }
 
@@ -975,8 +985,7 @@ setMethod(
                           domain = NULL) {
 
         if (missing(experiment)) {
-            stop("Please indicate from which data you want to extract
-           the enrichment results.")
+            stop("Please indicate from which data you want to extract the enrichment results.")
         }
 
         res_return <- getEnrichRes(
@@ -1014,14 +1023,11 @@ setMethod(
                           featureListName = NULL) {
 
         if (!from %in% c("CoExp", "DiffExp"))
-            # stop("None of the lists correspond to lists of differential",
-            #      " features or co-expression clusters.")
             stop("from argument must be one of DiffExp or CoExp.")
 
-        listnames <-
-            switch (from,
-                    "DiffExp" = "Contrast",
-                    "CoExp" = "Cluster")
+        listnames <- switch(from,
+                            "DiffExp" = "Contrast",
+                            "CoExp" = "Cluster")
 
         EnrichAnal <- getAnalysis(object,  name = paste0(from, "EnrichAnal"))
         if (is.null(database)) database <- names(EnrichAnal)
@@ -1104,7 +1110,7 @@ setMethod(
 
         if (!matrixType %in% c("presence", "FC", "log2FC", "p.adjust", "GeneRatio"))
             stop("matrixType ", matrixType, " is not recognize. Please chose one of:",
-                 "presence, FC, log2FC, p.adjust or GeneRatio")
+                 " presence, FC, log2FC, p.adjust or GeneRatio")
 
         if (!from %in% c("CoExp", "DiffExp"))
             stop("The from parameter must be one of DiffExp or CoExp, not ", from)
