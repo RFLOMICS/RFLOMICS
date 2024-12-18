@@ -20,11 +20,11 @@
 # how-to-get-pathview-plot-displayed-directly-rather-than-saving-as-a-file-in-r
 # It deletes every file created by pathview
 .see_pathview <- function(...) {
-    
+
     if (!exists("bods")) {
         data("bods", package = "pathview")
     }
-    
+
     msg <- capture.output(pathview(...), type = "message")
     msg <- grep("image file", msg, value = TRUE)
     filename <- sapply(strsplit(msg, " "), function(x)
@@ -37,16 +37,16 @@
         invisible(file.remove(paste0(nam[[1]][1], ".xml")))
         invisible(file.remove(paste0(nam[[1]][1], ".png")))
     }
-    
+
     # rm(bods, envir = .GlobalEnv)
-    
+
     return()
 }
 
 # ---- Valid URL ----
 # From https://stackoverflow.com/questions/52911812/check-if-url-exists-in-r
 
-#' @title Test an url 
+#' @title Test an url
 #' @description
 #' Called for pathview before trying to get the map.
 #'
@@ -59,12 +59,12 @@
 .validUrl <- function(url, timeout=2){
   con <- url(url)
   check <- suppressWarnings(try(
-    open.connection(con, 
+    open.connection(con,
                     open = "rt",
                     timeout = timeout),
     silent = TRUE)[1])
   suppressWarnings(try(close.connection(con), silent = TRUE))
-  
+
   return(ifelse(is.null(check), TRUE, FALSE))
 }
 
@@ -77,32 +77,31 @@
 #' @param messagelist list of message clusterProfileR output
 #' @return messagelist
 #' @importFrom stringr str_detect
-#' @importFrom htmltools HTML
 #' @noRd
 #' @keywords internal
 .CPR_message_processing <- function(messagelist){
-  
+
   Expected_input_gene_ID <- NULL
   for(list in names(messagelist)){
     for(dom in names(messagelist[[list]])){
-      
+
       if(str_detect(messagelist[[list]][[dom]][1], "Reading KEGG annotation online"))
         messagelist[[list]][[dom]] <- messagelist[[list]][[dom]][-1]
-      
+
       if(str_detect(messagelist[[list]][[dom]][1], "No gene can be mapped")){
-        
+
         if(is.null(Expected_input_gene_ID) &&
            str_detect(messagelist[[list]][[dom]][2], "Expected input gene ID")){
           Expected_input_gene_ID <- messagelist[[list]][[dom]][2]
         }
-        messagelist[[list]][[dom]] <- 
+        messagelist[[list]][[dom]] <-
           c(messagelist[[list]][[dom]][1], Expected_input_gene_ID)
       }
-      
+
       messagelist[[list]][[dom]] <- HTML(paste(messagelist[[list]][[dom]], collapse = "\n"))
     }
   }
-  
+
   if(length(messagelist) == 0) return(NULL)
   return(messagelist)
 }

@@ -1,11 +1,9 @@
 ### ============================================================================
 ### [07_integration] shiny modules
 ### ----------------------------------------------------------------------------
-# A. Hulot 
+# A. Hulot
 # N. Bessoltane <- Add a pre-processing panel common to both methods.
 
-
-#' @importFrom htmltools span tagList p div a h4 h5 hr tags br HTML
 #' @importFrom shinyBS popify
 #' @importFrom shinydashboard box tabBox updateTabItems menuItem menuItemOutput
 #' tabItem renderMenu tabItems sidebarMenu menuSubItem
@@ -22,30 +20,30 @@
     commontext1 <- "Select the datasets to integrate then select the features
         for each of them. In the feature selection panel, you can choose to run
          the analysis on all features: this type of option is fine if your data
-         is not very high dimensional (<500). Otherwise, it is advised to 
-        choose to run it only with a subset of features, selected either using 
+         is not very high dimensional (<500). Otherwise, it is advised to
+        choose to run it only with a subset of features, selected either using
     the coefficient of variation, or using the results of differential analysis.
-    You can refer to the overview plot below to see what you selected. Once 
-        all is set, click on the Run preparation button and go the the Data 
+    You can refer to the overview plot below to see what you selected. Once
+        all is set, click on the Run preparation button and go the the Data
         integration panel. "
-    
+
     textExp <- switch(
         method,
-        "mixOmics" = paste0(commontext1, 
-                            "<p><b> MixOmics only runs on complete cases 
-                            dataset, samples that are 
-                            not present in all tables will be removed 
+        "mixOmics" = paste0(commontext1,
+                            "<p><b> MixOmics only runs on complete cases
+                            dataset, samples that are
+                            not present in all tables will be removed
                             </b></p>"
         ),
-        "MOFA" = paste0(commontext1, 
-                        "<p><b> It is recommanded to run MOFA with at 
-                        least 15 samples and a balanced number of features 
-                        between tables. If you have less than 15, 
-                        be cautious with the results interpretation. 
+        "MOFA" = paste0(commontext1,
+                        "<p><b> It is recommanded to run MOFA with at
+                        least 15 samples and a balanced number of features
+                        between tables. If you have less than 15,
+                        be cautious with the results interpretation.
                         </b></p>"
         )
     )
-    
+
     tagList(
         tags$head(
             tags$link(rel = "stylesheet", type = "text/css", href = "classesStyles.css")
@@ -104,12 +102,12 @@
                    .mofaText()
                })
     })
-    
+
     local.rea.values <- reactiveValues(runintegration = FALSE,
                                        preparedObject = NULL,
                                        warnMess = NULL,
                                        messMess = NULL)
-    
+
     # if any preprocessing or validation of differential analysis is done
     observeEvent(rea.values$datasetProcess, {
         local.rea.values$runintegration    <- FALSE
@@ -119,18 +117,18 @@
             multiAnalyses = c("IntegrationAnalysis")
         )
     })
-    
+
     # select datasets to integrate
     output$selectDataUI <- .integrationSelectDataUI(session, rea.values,
                                                     input)
-    
+
     # select method of variable reduction
     output$selectVariablesUI <-
         .integrationPrepareParamUI(session, input, rea.values)
-    
+
     # over view of selected data after variable reduction
     output$prepareDataUI <- .integrationPrepareDataUI(session, input)
-    
+
     # before MOFA integration
     observeEvent(input$run_prep, {
         # check: number of selected dataset min = 2
@@ -142,11 +140,11 @@
         validate({
             need(condition, messCond)
         })
-        
+
         local.rea.values$runintegration <- FALSE
         MAE.red <-
             session$userData$FlomicsMultiAssay[, , input$selectData]
-        
+
         # check: sample covering
         samples.mat <- lapply(names(MAE.red), function(set) {
             tab <- data.frame("samples" = MAE.red[[set]]$samples,
@@ -158,13 +156,13 @@
             mutate(sum = rowSums(across(seq(2, (
                 length(MAE.red) + 1
             ))), na.rm = TRUE))
-        
+
         #---- progress bar ----#
         progress <- Progress$new()
         progress$set(message = "Prepare data for integration...", value = 0)
         on.exit(progress$close())
         #-----------------------#
-        
+
         # check: if no common samples or no 100% overlapping
         if (length(unique(samples.mat$sum)) != 1) {
             condition <- any(unique(samples.mat$sum) != length(MAE.red))
@@ -177,7 +175,7 @@
             validate({
                 need(condition, messCond)
             })
-            
+
             if (method == "mixOmics")
                 showModal(
                     modalDialog(
@@ -190,13 +188,13 @@
             messCond <-
                 "There is no common samples between tables. The integration
       step cannot be performed on completely unrelated tables in RFLOMICS"
-            
+
             showModal(modalDialog(title = "ERROR: ", messCond))
             validate({
                 need(unique(samples.mat$sum) == length(MAE.red), messCond)
             })
         }
-        
+
         # check: MOFA : nb sample should be higher than 15
         if (method == "MOFA" &&
             length(unique(samples.mat$samples)) < 15)
@@ -207,11 +205,11 @@
                     Be careful with the results interpretation."
                 )
             )
-        
+
         #---- progress bar ----#
         progress$inc(1 / 10, detail = "Checking everything")
         #-----------------------#
-        
+
         # create list with variations to keep per table
         variableLists <- lapply(input$selectData, function(set) {
             switch(
@@ -222,19 +220,19 @@
                     operation = input[[paste0("unionORintersect", set)]]
                 ),
                 "CV" = {
-                    # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]], 
+                    # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
                     #                                  raw = FALSE)
-                    transformedSE <- 
+                    transformedSE <-
                       switch (
                         getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
-                        "RNAseq" =  
-                          getProcessedData(session$userData$FlomicsMultiAssay[[set]], 
+                        "RNAseq" =
+                          getProcessedData(session$userData$FlomicsMultiAssay[[set]],
                                            filter = TRUE, log = TRUE ),
-                        getProcessedData(session$userData$FlomicsMultiAssay[[set]], 
+                        getProcessedData(session$userData$FlomicsMultiAssay[[set]],
                                          norm = TRUE)
                       )
                     transformedSE <- assay(transformedSE)
-                    
+
                     cv_vect <- unlist(
                         lapply(seq_len(nrow(transformedSE)),
                                FUN = function(row_i){
@@ -243,17 +241,17 @@
                                }))
                     names(cv_vect) <- rownames(transformedSE)
                     cv_vect <- cv_vect[order(cv_vect, decreasing = TRUE)]
-                    
+
                     names(cv_vect)[seq_len(input[[paste0("numberFeat", set)]])]
                 },
                 "none"  = names(MAE.red[[set]])
             )
         })
         names(variableLists) <- input$selectData
-        
+
         # check: table with nb of variables less then 5
         lowNbVarTab <- names(variableLists)[lengths(variableLists) < 5]
-        
+
         condition <- length(lowNbVarTab) == 0
         messCond <-  paste0("number of variables is lower than 5 in
                         this(these) table(s): ",
@@ -264,11 +262,11 @@
         validate({
             need(condition, messCond)
         })
-        
+
         #---- progress bar ----#
         progress$inc(5 / 10, detail = paste("Run analyses ", 50, "%", sep = ""))
         #-----------------------#
-        
+
         # MAE to mixOmics object (list)
         message("[RFLOMICS] # 8- prepare data for integration with ", method)
         local.rea.values$preparedObject <-  prepareForIntegration(
@@ -279,18 +277,18 @@
             method           = method,
             cmd              = TRUE
         )
-        
+
         message("[RFLOMICS] #   => Ready for integration")
-        
+
         #---- progress bar ----#
         progress$inc(1, detail = paste("All done", 100, "%", sep = ""))
         #-----------------------#
     })
-    
+
     ## list of parameters
     output$ParamUI <-
         .integrationMethodsParam(session, local.rea.values, method)
-    
+
     ## observe the button run mixOmics
     observeEvent(input$run_integration, {
         #---- progress bar ----#
@@ -299,9 +297,9 @@
         on.exit(progress$close())
         progress$inc(1 / 10, detail = "in progress...")
         #----------------------#
-        
+
         local.rea.values$runintegration <- FALSE
-        
+
         # check: settings
         if (method == "mixOmics") {
             # Check: selection of response variables (at least one)
@@ -315,11 +313,11 @@
                 need(condition, messCond)
             })
         }
-        
+
         #---- progress bar ----#
         progress$inc(1 / 10, detail = paste("Checks ", 10, "%", sep = ""))
         #----------------------#
-        
+
         # Prepare for integration run
         list_args <- list(
             object         = session$userData$FlomicsMultiAssay,
@@ -328,7 +326,7 @@
             scale_views    = input$scale_views,
             cmd = TRUE
         )
-        
+
         list_args <- switch(method,
                             "mixOmics" = {
                                 c(
@@ -353,7 +351,7 @@
                                     )
                                 )
                             })
-        
+
         # Run the analysis
         message("[RFLOMICS] # 8- integration Analysis with ", method)
         #---- progress bar ----#
@@ -363,36 +361,36 @@
         # tryRomics <-  tryCatch(
         #     expr    = do.call(
         #         getFromNamespace("runOmicsIntegration", ns = "RFLOMICS"),
-        #         list_args), 
+        #         list_args),
         #     error   = function(err) err
         # )
-        
+
         tryRomics <- .tryCatch_rflomics({
             do.call(
                 getFromNamespace("runOmicsIntegration", ns = "RFLOMICS"),
                 list_args)}
         )
-        
+
         # Errors
         condition <- is(tryRomics$result, "RflomicsMAE")
-        messCond <- "Something went wrong during the integration, 
+        messCond <- "Something went wrong during the integration,
         please try again with different parameters."
         if (!condition) {
-            showModal(modalDialog(title = "ERROR: ", 
+            showModal(modalDialog(title = "ERROR: ",
                                   paste0(messCond, tryRomics$error)))
         }
         validate(need(condition, paste0(messCond, tryRomics$error)))
-        
+
         # Messages and warnings
         local.rea.values$warnMess <- NULL
         local.rea.values$messMess <- NULL
         local.rea.values$warnMess <- tryRomics$warnings
         local.rea.values$messMess <- tryRomics$messages
-        
+
         # Results
         session$userData$FlomicsMultiAssay <- tryRomics$result
         rm(tryRomics)
-        
+
         listSelection <- list()
         listSelection <- lapply(input$selectData, FUN = function(set) {
             c("method"    = input[[paste0("selectmethode", set)]],
@@ -405,14 +403,14 @@
         names(listSelection) <- input$selectData
         metadata(session$userData$FlomicsMultiAssay)$IntegrationAnalysis[[method]]$settings$selectionMethod <-
             listSelection
-        
+
         #---- progress bar ----#
         progress$inc(1, detail = paste("Finished ", 100, "%", sep = ""))
         #----------------------#
-        
+
         local.rea.values$runintegration <- TRUE
     })
-    
+
     output$ResultViewUI <- renderUI({
         switch(method,
                "mixOmics" = {
@@ -422,7 +420,7 @@
                    .modMOFAResultViewUI(id = session$ns("MOFA_res"))
                })
     })
-    
+
     switch(method,
            "mixOmics" = {
                callModule(
@@ -451,7 +449,7 @@
 .modMixOmicsResultViewUI <- function(id) {
     #name space for id
     ns <- NS(id)
-    
+
     tagList(uiOutput(ns("resultsUI")))
 }
 
@@ -470,17 +468,17 @@
         output$resultsUI <- renderUI({
             if (isFALSE(local.rea.values$runintegration))
                 return()
-            
+
             settings <-
                 getMixOmicsSettings(session$userData$FlomicsMultiAssay)
-            
+
             lapply(settings$selectedResponse, function(Response) {
                 Data_res <- getMixOmics(session$userData$FlomicsMultiAssay,
                                         response = Response)
-                
+
                 listTab <- list(
                     tabPanel(
-                        "Overview", 
+                        "Overview",
                         .outMOOverview(Data_res, settings)),
                     tabPanel(
                         "Explained Variance",
@@ -512,29 +510,29 @@
                                       Response, Data_res)
                     )
                 )
-                
-                if (!is.null(local.rea.values$warnMess) && 
+
+                if (!is.null(local.rea.values$warnMess) &&
                     length(local.rea.values$warnMess) > 0) {
-                    listTab <- c(listTab, 
+                    listTab <- c(listTab,
                                  list(tabPanel(
                                      "Warnings",
                                      .outMOMessages(local.rea.values)
                                  )))
                 }
-                
+
                 box(width = 14,
                     solidHeader = TRUE,
                     collapsible = TRUE,
                     collapsed = TRUE,
                     status = "success",
                     title = Response,
-                    
+
                     do.call(what = tabsetPanel, args = listTab)
-                    
+
                 ) #box
             }) # lapply
         }) #renderui
-        
+
     }
 
 # ---------- MOFA results ----------
@@ -544,7 +542,7 @@
 .modMOFAResultViewUI <- function(id) {
     #name space for id
     ns <- NS(id)
-    
+
     tagList(uiOutput(ns("resultsUI")))
 }
 
@@ -564,9 +562,9 @@
     output$resultsUI <- renderUI({
         if (isFALSE(local.rea.values$runintegration))
             return()
-        
+
         resMOFA <- getMOFA(session$userData$FlomicsMultiAssay)
-        
+
         tabList <- list(
             tabPanel("Factors Correlation",
                      .outMOFAFactorsCor(resMOFA)),
@@ -589,25 +587,25 @@
             tabPanel("Heatmap",
                      .outMOFAHeatmap(session, resMOFA, input))
         )
-        
-        if (!is.null(local.rea.values$warnMess) && 
+
+        if (!is.null(local.rea.values$warnMess) &&
             length(local.rea.values$warnMess) > 0) {
-            tabList <- c(tabList, 
+            tabList <- c(tabList,
                          list(tabPanel("Warnings",
                                        .outMOFAmessages(local.rea.values))))
         }
-        
+
         box(
             width = 14,
             solidHeader = TRUE,
             status = "success",
             title = "MOFA results",
-            
+
             do.call(what = tabsetPanel, args = tabList)
-            
+
         )#box
     })
-    
+
 }
 
 
@@ -617,7 +615,7 @@
 #' @keywords internal
 .integrationSelectDataUI <- function(session, rea.values,
                                      input){
-    
+
     ns <- session$ns
     contentExp <- paste0("Only the pre-processed datasets will appear here.",
                          " If any is missing, go to the corresponding",
@@ -640,17 +638,17 @@
                                   trigger = "click", placement = "right"
                                   )),
                     choices  = rea.values$datasetProcess,
-                    selected = rea.values$datasetProcess, 
+                    selected = rea.values$datasetProcess,
                     inline = TRUE
                 ), hr()),
             column(
                 width = 4,
-                actionButton(ns("run_prep"), 
-                             label = "Run preparation", 
-                             class = "btn-lg", 
+                actionButton(ns("run_prep"),
+                             label = "Run preparation",
+                             class = "btn-lg",
                              styleclass = "primary")
             ),
-        ) 
+        )
     })
 }
 
@@ -658,30 +656,30 @@
 #' @keywords internal
 .integrationPrepareParamUI <- function(session, input, rea.values) {
     ns <- session$ns
-    
+
     renderUI({
         # for each dataset selected
         lapply(input$selectData, function(set) {
-            
+
             if (set %in% rea.values$datasetDiff) {
                 ValidContrasts <-
                     getValidContrasts(session$userData$FlomicsMultiAssay[[set]])
                 ListNames.diff <- ValidContrasts$contrastName
                 names(ListNames.diff) <- ValidContrasts$contrastName
-                
+
             }else{
                 ValidContrasts <- NULL
                 ListNames.diff <- NULL
             }
-            
+
             SelectTypeChoices        <- c('none', 'CV', 'diff')
             names(SelectTypeChoices) <- c('None',
-                                          'Coefficient of Variation', 
+                                          'Coefficient of Variation',
                                           'From differential analysis')
             if (is.null(ValidContrasts)) {
                 SelectTypeChoices <- SelectTypeChoices[c(1,2)]
             }
-            
+
             box(
                 title = set,
                 width = 3,
@@ -691,7 +689,7 @@
                     inputId = ns(paste0("selectmethode", set)),
                     label   = .addBSpopify(
                         label = "Select type of variable selection",
-                        title = "", 
+                        title = "",
                         content = paste0("Type of selection depends on",
                                          " the analyses performed before.",
                                          " Do not forget to validate your",
@@ -701,7 +699,7 @@
                     selected = 'none',
                     inline = FALSE
                 ),
-                
+
                 # if methode == diff -> dispay list of contrasts
                 conditionalPanel(
                     condition = paste0("input[\'",
@@ -709,7 +707,7 @@
                                            "selectmethode", set
                                        )),
                                        "\'] == \'diff\'"),
-                    
+
                     pickerInput(
                         inputId  = ns(paste0("selectContrast", set)),
                         label    = "Select contrasts",
@@ -722,7 +720,7 @@
                         multiple = TRUE,
                         selected = ListNames.diff
                     ),
-                    
+
                     radioButtons(
                         inputId = ns(paste0("unionORintersect", set)),
                         label = NULL,
@@ -739,12 +737,12 @@
                                            "selectmethode", set
                                        )),
                                        "\'] == \'CV\'"),
-                    
+
                     numericInput(
                         inputId  = ns(paste0("numberFeat", set)),
                         label    = "Number of features to keep",
                         value  = min(500, nrow(session$userData$FlomicsMultiAssay[[set]])),
-                        min = 1, 
+                        min = 1,
                         max = nrow(session$userData$FlomicsMultiAssay[[set]]))
                 ),
                 if (getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]) == "RNAseq") {
@@ -752,7 +750,7 @@
                         inputId  = ns("RNAseqTransfo"),
                         label    = .addBSpopify(
                             label = "RNAseq transformation",
-                            title = "", 
+                            title = "",
                             content = paste0("This parameter is fixed",
                                              " and cannot be changed.",
                                              " RNAseq data will automatically",
@@ -771,38 +769,38 @@
 #' @noRd
 #' @keywords internal
 .integrationPrepareDataUI <- function(session, input) {
-    
+
     renderUI({
         if (length(input$selectData) == 0) return()
         if (is.null(input$selectData)) return()
         if (is.null(input[[paste0("selectmethode", input$selectData[1])]])) return()
-        
-        MAE2Integrate <- subRflomicsMAE(session$userData$FlomicsMultiAssay, 
+
+        MAE2Integrate <- subRflomicsMAE(session$userData$FlomicsMultiAssay,
                                         input$selectData)
-        
+
         for(set in input$selectData){
-            
+
             if(input[[paste0("selectmethode", set)]] == "diff"){
-                
+
                 variable.to.keep <- getDEList(
                     object = session$userData$FlomicsMultiAssay[[set]],
                     contrasts = input[[paste0("selectContrast", set)]],
                     operation = input[[paste0("unionORintersect", set)]]
                 )
-                
-                MAE2Integrate[[set]] <- 
+
+                MAE2Integrate[[set]] <-
                     session$userData$FlomicsMultiAssay[[set]][variable.to.keep]
-                
+
             } else if (input[[paste0("selectmethode", set)]] == "CV") {
-                # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]], 
+                # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
                 #                                  raw = FALSE)
-                transformedSE <- 
+                transformedSE <-
                   switch (
                     getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
-                    "RNAseq" =  
-                      getProcessedData(session$userData$FlomicsMultiAssay[[set]], 
+                    "RNAseq" =
+                      getProcessedData(session$userData$FlomicsMultiAssay[[set]],
                                        filter = TRUE, log = TRUE ),
-                    getProcessedData(session$userData$FlomicsMultiAssay[[set]], 
+                    getProcessedData(session$userData$FlomicsMultiAssay[[set]],
                                      norm = TRUE)
                 )
                 transformedSE <- assay(transformedSE)
@@ -815,20 +813,20 @@
                 names(cv_vect) <- rownames(transformedSE)
                 cv_vect <- cv_vect[order(cv_vect, decreasing = TRUE)]
                 variable.to.keep <- names(cv_vect)[seq_len(input[[paste0("numberFeat", set)]])]
-                
-                MAE2Integrate[[set]] <- 
+
+                MAE2Integrate[[set]] <-
                     session$userData$FlomicsMultiAssay[[set]][variable.to.keep]
             }
             else{
-                MAE2Integrate[[set]] <- 
+                MAE2Integrate[[set]] <-
                     session$userData$FlomicsMultiAssay[[set]]
             }
         }
-        
-        textExp <- "This graph represents the dataset you will use in 
-        the integration (tables and samples). 
+
+        textExp <- "This graph represents the dataset you will use in
+        the integration (tables and samples).
         Gray areas represent missing samples. "
-        
+
         box(
             title = "Overview",
             width = 12,
@@ -841,35 +839,35 @@
                             font-style: italic;
                             }"
             ),
-            div(class = "explain-p", 
+            div(class = "explain-p",
                 HTML(textExp)),
             hr(),
             renderPlot(
                 plotDataOverview(MAE2Integrate,
                                  omicNames = input$selectData) +
                     theme(axis.text.y = element_text(size = 12),
-                          axis.text.x = element_text(size = 10, 
-                                                     angle = 45, 
-                                                     hjust = 1)) 
+                          axis.text.x = element_text(size = 10,
+                                                     angle = 45,
+                                                     hjust = 1))
             )
         )
     })
 }
 
 # ---- Settings methods ----
-# 
+#
 #' @noRd
 #' @keywords internal
 .integrationMethodsParam <-
     function(session, local.rea.values, method) {
         ns <- session$ns
-        
+
         renderUI({
             if (is.null(local.rea.values$preparedObject)) {
                 return(renderText({
                     "Select the data in the previous panel to access the settings for integration."}))
             }
-            
+
             bioFacts <- getBioFactors(session$userData$FlomicsMultiAssay)
             nSamples <- nrow(colData(session$userData$FlomicsMultiAssay))
             box(
@@ -878,7 +876,7 @@
                 status = "warning",
                 hr(),
                 span("Most of these settings are the defaults settings in the
-                     method. If you don't know what to set, 
+                     method. If you don't know what to set,
                      just run the analysis."),
                 hr(),
                 switch(
@@ -889,8 +887,8 @@
                                 inputId = ns("scale_views"),
                                 label = .addBSpopify(
                                     label = "Scale Datasets",
-                                    title = "", 
-                                    content = 
+                                    title = "",
+                                    content =
                                         paste0("If TRUE, each table will be transformed",
                                                " such that the global variance of the table is 1"),
                                     trigger = "click", placement = "right"),
@@ -899,11 +897,11 @@
                             ),
                             checkboxInput(
                                 inputId = ns("MO_sparsity"),
-                                label = 
+                                label =
                                     .addBSpopify(
                                         label = "Sparse analysis",
-                                        title = "", 
-                                        content = 
+                                        title = "",
+                                        content =
                                             paste0("If TRUE, sparse version of the mixOmics functions",
                                                    " will be used (block.splsda). The results of the",
                                                    " analyses will have a feature selection step",
@@ -914,11 +912,11 @@
                             ),
                             numericInput(
                                 inputId = ns("MO_ncomp"),
-                                label = 
+                                label =
                                     .addBSpopify(
                                         label = "Components",
-                                        title = "", 
-                                        content = 
+                                        title = "",
+                                        content =
                                             paste0("Number of components to search for.",
                                                    " Equivalent to the components in the PCA."),
                                         trigger = "click", placement = "right"),
@@ -928,13 +926,13 @@
                             ),
                             numericInput(
                                 inputId = ns("MO_cases_to_try"),
-                                label = 
+                                label =
                                     .addBSpopify(
                                         label = "Tuning cases",
-                                        title = "", 
+                                        title = "",
                                         content = paste0("The number of tuning cases will determine ",
                                                          "the number of features selection to try ",
-                                                         "when performing a sparse analysis."), 
+                                                         "when performing a sparse analysis."),
                                         # determine le nombre de cas à essayer pour le tuning.
                                         # Chaque cas ajoute un nombre de variables au précédent
                                         # Nombre de variable ajouté : nvar table/ncasestotry
@@ -945,13 +943,13 @@
                             ),
                             checkboxGroupInput(
                                 inputId  = ns("MO_selectedResponse"),
-                                label    = 
+                                label    =
                                     .addBSpopify(
                                         label = "Select response variables",
-                                        title = "", 
-                                        content = paste0("On which feature to perform the analysis?", 
+                                        title = "",
+                                        content = paste0("On which feature to perform the analysis?",
                                                          " You can select as many response variables as you want, the analysis is performed on each of them separately.",
-                                                         " The same parameters are applied for all of them."), 
+                                                         " The same parameters are applied for all of them."),
                                         trigger = "click", placement = "right"),
                                 choices  = bioFacts,
                                 selected = bioFacts
@@ -964,8 +962,8 @@
                                 ns("scale_views"),
                                 label = .addBSpopify(
                                     label = "Scale views",
-                                    title = "", 
-                                    content = 
+                                    title = "",
+                                    content =
                                         paste0("If TRUE, each table will be transformed",
                                                " such that the global variance of the table is 1"),
                                     trigger = "click", placement = "right"),
@@ -976,8 +974,8 @@
                                 inputId = ns("MOFA_numfactor"),
                                 label = .addBSpopify(
                                     label = "Factors:",
-                                    title = "", 
-                                    content = 
+                                    title = "",
+                                    content =
                                         paste0("Number of components to search for.",
                                                " Roughly equivalent to the components in the PCA."),
                                     trigger = "click", placement = "right"),
@@ -1030,7 +1028,7 @@
 .outMOOverview <- function(Data_res, settings) {
     tagList(
         br(),
-        div(class = "explain-p", 
+        div(class = "explain-p",
             HTML(paste0("This overview present the number of observations and the number of features per dataset.",
                         " If a sparse analysis was performed, for each component and dataset, the best number of features is also printed."))),
         hr(),
@@ -1039,13 +1037,13 @@
                 # block.plsda or block.splsda
                 df <- t(vapply(Data_res$X, dim, c(1, 1)))
                 colnames(df) <- c("Ind", "Features")
-                
+
                 if (settings$sparsity) {
                     df <- cbind(df, do.call("rbind", Data_res$keepX))
                     colnames(df)[!colnames(df) %in% c("Ind", "Features")] <-
                         paste("Comp", seq_len(length(Data_res$keepX[[1]])))
                 }
-                
+
             } else {
                 # plsda or splsda
                 df <-  data.frame("Ind" = nrow(Data_res$X),
@@ -1056,9 +1054,9 @@
                         paste("Comp", seq_len(length(Data_res$keepX)))
                 }
             }
-            
+
             datatable(t(df), options = list(dom = 't'))
-            
+
         }))
     )
 }
@@ -1066,9 +1064,9 @@
 #' @noRd
 #' @keywords internal
 .outMOexplainedVar <- function(session, Response) {
-    
+
     ns <- session$ns
-    
+
     textExplained <- paste0("These graph represent the explained variance for each datatable. ",
                             " The graph on the left is the total of all component explained variance,",
                             " the graph on the right is the decomposition and is read as: component x explains y% of data D and z% of dataset M.",
@@ -1095,16 +1093,16 @@
                               Response,
                               Data_res) {
     ns <- session$ns
-    
+
     textExplained <- paste0("These graphs represent the samples coordinates projected onto the components found by mixOmics.",
                             " If <b>Ellipses</b> is turned on, ellipses are added to the graphs according to the response variable.",
-                            " When toggled, ellipses force all windows to be on the same scale. <br>", 
+                            " When toggled, ellipses force all windows to be on the same scale. <br>",
                             "Samples are colored according to ",
-                            Response, 
+                            Response,
                             ". It is best when the samples are grouping into response modalities.",
                             " If it is not the case, the analysis was maybe not successful."
     )
-    
+
     renderUI({
         tagList(
             br(),
@@ -1147,7 +1145,7 @@
             )
         )
     })
-    
+
 }
 
 #' @noRd
@@ -1164,7 +1162,7 @@
                          " in a correlation circle.",
                          " The interpretation is the same as the ones from a PCA.",
                          " Important features (high loadings) are on the edge of the circle.")
-    
+
     tagList(
         br(),
         div(class = "explain-p", HTML(moFeatText)),
@@ -1214,11 +1212,11 @@
              settings,
              Response,
              Data_res) {
-        
+
         ns <- session$ns
-        
+
         explanMess <-  paste0("For each block (datatable), these graphs represent the ",
-                              # input[[paste0(Response, "Load_ndisplay")]],  
+                              # input[[paste0(Response, "Load_ndisplay")]],
                               " first features in terms of loadings score (coefficients) for the selected component, by ascending order",
                               # input[[paste0(Response, "Load_comp_choice")]],
                               ". The higher (absolute) the score, the more important the variable is in the component construction. ",
@@ -1256,7 +1254,7 @@
                                  comp = input[[paste0(Response, "Load_comp_choice")]],
                                  ndisplay = input[[paste0(Response, "Load_ndisplay")]])
                 )))
-            
+
         })
     }
 
@@ -1267,21 +1265,21 @@
              input,
              Response,
              Data_res) {
-        
+
         ns <- session$ns
-        
+
         explanMess <-  paste0("Loadings scores for all features and data analyzed, presented per data.",
                               " The higher the score (in absolute value), the more important the variable.",
                               " In the context of plsda, this means the variable can be used to discriminate between modalities of the response variable.")
         choicesPos <-  names(Data_res$loadings)
         choicesPos <- choicesPos[-which(choicesPos == "Y")]
-        
+
         renderUI({
             verticalLayout(
                 br(),
                 div(class = "explain-p", HTML(explanMess)),
                 hr(),
-                
+
                 column(
                     12,
                     radioButtons(
@@ -1296,7 +1294,7 @@
                 column(12 , renderDataTable(
                     datatable(Data_res[["loadings"]][[input[[paste0(Response, "MOTable_choice")]]]])
                 )))
-            
+
         })
     }
 
@@ -1311,7 +1309,7 @@
     moText <- paste0("This is a heatmap generated by the mixOmics::cimDiablo function.",
                      " All datatables are mixed together in this plot and the samples and features are clustered using euclidean distance and complete agregation method.",
                      " Features are centered but not scaled. ")
-    
+
     if (is(Data_res, "block.splsda")) {
         tagList(
             br(),
@@ -1345,7 +1343,7 @@
 }
 
 # ---- Plots MOFA -----
-# 
+#
 
 #' @noRd
 #' @keywords internal
@@ -1367,28 +1365,28 @@
 #' @keywords internal
 #' @importFrom MOFA2 get_factors
 .outMOFAFactorsCor <- function(resMOFA){
-    
+
     corFactor <- cor(get_factors(resMOFA)$group1)
     diag(corFactor) <- 0
     corProblem <- ifelse(any(corFactor > 0.5), TRUE, FALSE)
-    
+
     mofaText <- paste0("This graph represents the correlation between calculated factors.",
                        " Factors are supposed to be orthogonal (correlation close to 0 between them).",
                        " You must check that no correlation outside of the diagonal is greater than 0.5 (absolute value).",
                        " <b>If there are factors that are strongly correlated, the results are not reliable.</b>")
-    
+
     if (corProblem) {
-        mofaText <- paste0(mofaText, 
+        mofaText <- paste0(mofaText,
                            "<br> <b> You have correlation between factors greater than 0.5. </b>")
     } else {
-        mofaText <- paste0(mofaText, 
+        mofaText <- paste0(mofaText,
                            "<br> There is no correlation >0.5 between factors.")
     }
-    
+
     tagList(
         br(),
         div(class = "explain-p", HTML(mofaText)),
-        hr(),      
+        hr(),
         renderPlot(plot_factor_cor(resMOFA))
     )
 }
@@ -1401,7 +1399,7 @@
                        " This is the amount of variance within the dataset that is explained by the model (factors).",
                        " The second graph is interpreted as follows: 'Factor k explains xx% of the total variance of dataset X and yy% of the total variance of dataset Y.'"
     )
-    
+
     tagList(
         br(),
         div(class = "explain-p", HTML(mofaText)),
@@ -1426,13 +1424,13 @@
                        " In this graphs, the first features (by absolute weight value) are rank and presented by factor and dataset.",
                        " Weight scaling scales the factors so that the weights are all between -1 and 1." ,
                        " Weights should not be compared between datasets.")
-    
+
     renderUI({
         tagList(
             br(),
             div(class = "explain-p", HTML(mofaText)),
             hr(),
-            
+
             column(
                 3,
                 sliderInput(
@@ -1464,7 +1462,7 @@
                     width = NULL
                 )
             ),
-            
+
             column(12,
                    renderPlot({
                        ggplot_list <- list()
@@ -1487,11 +1485,11 @@
                                                scale = input$scale_WeightsPlot
                                            ) +
                                            ggtitle(paste0(vname, " - Factor ", i))
-                                       
+
                                        return(res_inter)
                                    }
                                )
-                               
+
                                return(unlist(res_inter, recursive = FALSE))
                            }
                        )
@@ -1499,7 +1497,7 @@
                            unlist(ggplot_list, recursive = FALSE)
                        nrowC <- max(input$WeightsPlot_Factors) -
                            min(input$WeightsPlot_Factors) + 1
-                       
+
                        ggarrange(
                            plotlist = ggplot_list,
                            ncol = length(views_names(resMOFA)),
@@ -1519,13 +1517,13 @@
                        " This table presents all the weights for the selected factors.",
                        " You can search for a specific feature."
     )
-    
+
     verticalLayout(
         br(),
         div(class = "explain-p", HTML(mofaText)),
         hr(),
-        
-        
+
+
         column(
             12,
             sliderInput(
@@ -1551,7 +1549,7 @@
                     scale = FALSE,
                     as.data.frame = TRUE
                 )
-                
+
                 datatable(
                     resTable,
                     extensions = 'Buttons',
@@ -1572,17 +1570,17 @@
 #' @keywords internal
 .outMOFAFactorsPlot <- function(session, resMOFA, input) {
     ns <- session$ns
-    
+
     mofaText <- paste0("These graphs represent the projection of the samples/observation onto factors.",
                        " They allow you to search for a biological interpretation of the factors. <br>",
                        " You can adjust the <b>color</b> of the samples and their <b>shape</b> to help caracterize a factor.",
                        " You can also group them according to a specific response variable, and add violins or box plots to the graph.",
                        " Scaling the factors places all coordinates between -1 and 1."
     )
-    
+
     moreChoices <- colnames(resMOFA@samples_metadata |>
                                 select(!c(sample, group)))
-    
+
     renderUI({
         tagList(
             br(),
@@ -1647,7 +1645,7 @@
                 if (any(input$add_violin_MOFA, input$add_boxplot_MOFA)) {
                     dodge_par <- TRUE
                 }
-                
+
                 plot_factor(
                     resMOFA,
                     factors = seq(
@@ -1678,7 +1676,7 @@
                        " Samples and features are clustered using euclidean distance and complete aggregation method. <br>",
                        " You can add <b>annotations</b>: choosing a specific response variable will add a color bar at the top of the heatmap, colored according to the modality of each sample.",
                        " The <b>denoise</b> options will print the weights and factors product (the model results without the unexplained part) for this factor and this dataset. ")
-    
+
     renderUI({
         verticalLayout(
             br(),
@@ -1742,7 +1740,7 @@
                         selected = "none"
                     )
                 )
-                
+
             ),
             fluidRow(column(12, # heatmap is too large with just renderPlot.
                             renderPlot({
@@ -1750,17 +1748,17 @@
                                 if (input$annot_samples_MOFA == "none") {
                                     annot_samples_values <- NULL
                                 }
-                                
+
                                 maxSlider <- get_dimensions(resMOFA)
                                 maxSlider <-
                                     maxSlider$D[input$view_heatmap_MOFA][[1]]
-                                
+
                                 observeEvent(input$view_heatmap_MOFA, {
                                     updateSliderInput(session,
                                                       inputId = "nfeat_choice_heatmap_MOFA",
                                                       max = maxSlider)
                                 })
-                                
+
                                 res_heatmap <- plot_data_heatmap(
                                     resMOFA,
                                     factor = input$factor_choice_heatmap_MOFA,
@@ -1769,7 +1767,7 @@
                                     denoise = input$denoise_heatmap_MOFA,
                                     annotation_samples = annot_samples_values
                                 )
-                                
+
                                 grid.draw(res_heatmap)
                             })))
         )
@@ -1781,12 +1779,12 @@
 #' @keywords internal
 #' @importFrom DT formatStyle datatable renderDataTable styleInterval
 .outMOFARelations <- function(resMOFA) {
-    
+
     mofaText <- paste0("Each of the cells is the pvalue result from a kruskal-wallis test between the factor and the response variable.",
                        " <b>Benjamini-Hochberg correction is applied in line (biological or metadata factor wise).</b>",
                        " This table is to help you detect a biological relation between a factor and a variable that you may have observed at the 'Factor Plots' panel. ")
     brks <- c(0.05, 0.1)
-    ResDF <- .relationsMOFA(mofaRes = resMOFA, 
+    ResDF <- .relationsMOFA(mofaRes = resMOFA,
                             method = "BH")
     renderUI({
         verticalLayout(
@@ -1794,15 +1792,15 @@
             div(class = "explain-p", HTML(mofaText)),
             hr(),
             renderDataTable({
-                datatable(ResDF, class = 'cell-border stripe', 
+                datatable(ResDF, class = 'cell-border stripe',
                           options = list(dom = 't'))  |>
                     formatStyle(
                         columns = colnames(ResDF),
-                        backgroundColor = styleInterval(brks, 
-                                                        c('forestgreen', 
+                        backgroundColor = styleInterval(brks,
+                                                        c('forestgreen',
                                                           "yellow2",
-                                                          'white'))) |> 
-                    formatSignif(columns = seq_len(ncol(ResDF)), 
+                                                          'white'))) |>
+                    formatSignif(columns = seq_len(ncol(ResDF)),
                                  digits = 3)
             }, options = list(pageLength = 15, lengthChange = FALSE))
         )})
@@ -1826,33 +1824,33 @@
         collapsible = TRUE,
         collapsed = TRUE,
         div(
-            h4(tags$span("(Sparse) Multi-Block Discriminant Analysis", 
+            h4(tags$span("(Sparse) Multi-Block Discriminant Analysis",
                          style = "color:orange")),
-            p("This module uses the mixOmics package, which is dedicated to the 
-        integration of multiple datasets from the same experimental design 
+            p("This module uses the mixOmics package, which is dedicated to the
+        integration of multiple datasets from the same experimental design
         (same samples)."),
-            
+
             p("A supervised analysis is performed using the block.(s)plsda function,
-          based on the sparsity parameter, which is a linear discriminant 
-          analysis adapted to multiple data: 
-          axes, similar in interpretation to those in a PCA, 
+          based on the sparsity parameter, which is a linear discriminant
+          analysis adapted to multiple data:
+          axes, similar in interpretation to those in a PCA,
           are calculated according to a given
-          response variable, leading to the best separation between 
-          response modalities. 
+          response variable, leading to the best separation between
+          response modalities.
           The weight of features (loadings) indicates their ability to
           seperate the groups of the response variable."),
-            
-            p("The use of multiple response variables in the same analysis 
+
+            p("The use of multiple response variables in the same analysis
           is not currently permitted. "),
-            
-            p("Sparse analysis allows you to select interesting 
-          features that discriminate between response modalities, 
-          but requires tuning, i.e. running several models to 
+
+            p("Sparse analysis allows you to select interesting
+          features that discriminate between response modalities,
+          but requires tuning, i.e. running several models to
           find the best one. This may take some time. "),
-            
-            p("For more information, please visit the mixOmics website or 
+
+            p("For more information, please visit the mixOmics website or
           github vignette."),
-            
+
         )
     )
 }
@@ -1874,23 +1872,23 @@
         collapsible = TRUE,
         collapsed = TRUE,
         div(
-            h4(tags$span("Unsupervised integration analysis:", 
+            h4(tags$span("Unsupervised integration analysis:",
                          style = "color:orange")),
-            p("This module uses the MOFA2 package, providing a general 
-              framework for the unsupervised integration analysis 
-              of multi-omics datasets."), 
-            
-            p("Given a set of data, it calculates the best axes as a linear 
+            p("This module uses the MOFA2 package, providing a general
+              framework for the unsupervised integration analysis
+              of multi-omics datasets."),
+
+            p("Given a set of data, it calculates the best axes as a linear
           combination of
-         features (similar to those of a PCA). "), 
-            
-            p("It is based on the assumption that each dataset X can 
+         features (similar to those of a PCA). "),
+
+            p("It is based on the assumption that each dataset X can
            be written as a linear model of the form: X = WF+e,
-           where W is the weight matrix (different for each dataset), 
-           F the factor coefficients (identical for each dataset) and 
-           the unexplained part of the model (residuals). "), 
-            
-            p("Factors are constructed with each dataset, enabling the contribution 
+           where W is the weight matrix (different for each dataset),
+           F the factor coefficients (identical for each dataset) and
+           the unexplained part of the model (residuals). "),
+
+            p("Factors are constructed with each dataset, enabling the contribution
            of each dataset to the overall model to be explored.")
         ),
     )

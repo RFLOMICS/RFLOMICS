@@ -4,7 +4,6 @@
 # N. Bessoltane,
 # A. Hulot <- shiny functions
 
-#' @importFrom htmltools span tagList p div a h4 h5 hr tags br HTML
 #' @importFrom shinydashboard box tabBox updateTabItems menuItem menuItemOutput
 #' tabItem renderMenu tabItems sidebarMenu menuSubItem
 #' @rawNamespace import(shiny, except = renderDataTable)
