@@ -5,6 +5,10 @@
 # D. Charif
 
 #' @import methods
+#' @import ggplot2
+#' @import knitr
+#' @import coseq
+#' @import htmltools
 
 # ---- resetRflomicsMAE ----
 #' @title resetRflomicsMAE

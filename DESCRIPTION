@@ -30,9 +30,10 @@ Depends:
     SummarizedExperiment,
     MultiAssayExperiment,
     shinyBS,
-    knitr,
     dplyr,
     ggplot2,
+    htmltools,
+    knitr,
     coseq
 biocViews: ShinyApps, DifferentialExpression, Metabolomics, Proteomics, Transcriptomics
 License: Artistic-2.0 
@@ -61,8 +62,6 @@ Imports:
     ggrepel,
     grDevices,
     grid,
-    gridExtra,
-    htmltools,
     limma,
     magrittr,
     methods,
