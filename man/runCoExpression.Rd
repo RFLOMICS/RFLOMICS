@@ -36,7 +36,6 @@
   meanFilterCutoff = NULL,
   scale = NULL,
   min.data.size = 100,
-  clustermq = FALSE,
   ...
 )
 
@@ -54,7 +53,6 @@
   meanFilterCutoff = NULL,
   scale = NULL,
   min.data.size = 100,
-  clustermq = FALSE,
   ...
 )
 
@@ -92,32 +90,32 @@
 \S4method{getCoexpClusters}{RflomicsMAE}(object, SE.name, clusterName = NULL)
 }
 \arguments{
-\item{object}{An object of class \link{RflomicsSE} or 
+\item{object}{An object of class \link{RflomicsSE} or
 class \link{RflomicsMAE-class}}
 
 \item{K}{Number of clusters (a single value or a vector of values)}
 
 \item{replicates}{The number of iteration for each K.}
 
-\item{contrastNames}{names of the contrasts from which the DE entities 
-have to be taken. Can be NULL, in that case every contrasts from the differential 
+\item{contrastNames}{names of the contrasts from which the DE entities
+have to be taken. Can be NULL, in that case every contrasts from the differential
 analysis are taken into consideration.}
 
 \item{merge}{\code{"union"} or \code{"intersection"}}
 
-\item{model}{Type of mixture model to use \code{"Poisson"} or 
+\item{model}{Type of mixture model to use \code{"Poisson"} or
 \code{"normal"}. By default, it is the normal.}
 
-\item{GaussianModel}{Type of \code{GaussianModel} to be used for the 
+\item{GaussianModel}{Type of \code{GaussianModel} to be used for the
 Normal mixture model only. This parameters
-is set to \code{"Gaussian_pk_Lk_Ck"} by default and doesn't have to 
+is set to \code{"Gaussian_pk_Lk_Ck"} by default and doesn't have to
 be changed except if an error message proposed
 to try another model like \code{"Gaussian_pk_Lk_Bk"}.}
 
-\item{transformation}{The transformation type to be used. By default, 
+\item{transformation}{The transformation type to be used. By default,
 it is the "arcsin" one.}
 
-\item{normFactors}{The type of estimator to be used to normalize for 
+\item{normFactors}{The type of estimator to be used to normalize for
 differences in library size.
 By default, it is the "TMM" one.}
 
@@ -128,13 +126,9 @@ By default, it is the "TMM" one.}
 
 \item{min.data.size}{The minimum allowed number of variables (default: 100)}
 
-\item{clustermq}{boolean. Does the computation need to be executed 
-on a distant server. A configuration file and a network connection are 
-needed to use this option.}
-
 \item{...}{Additional arguments.}
 
-\item{SE.name}{SE.name the name of the dataset if the input object 
+\item{SE.name}{SE.name the name of the dataset if the input object
 is a \link{RflomicsMAE-class}}
 
 \item{omicNames}{the name of the experiment to summarize.}
@@ -151,82 +145,82 @@ is a \link{RflomicsMAE-class}}
 An S4 object of class \link{RflomicsSE}
 All the results are stored as a named list \code{CoExpAnal}
  in the metadata slot of a given \code{RflomicsSE} object. Objects are:
-The runCoExpression method return several results, for \link{coseq} 
+The runCoExpression method return several results, for \link{coseq}
 method, objects are:
 \itemize{
-\item \code{settings:}  co-expression analysis settings. See \code{getCoexpSetting} 
-\item \code{results:}  boolean indicating if the co-expression analysis succeed 
+\item \code{settings:}  co-expression analysis settings. See \code{getCoexpSetting}
+\item \code{results:}  boolean indicating if the co-expression analysis succeed
 \itemize{
-\item \code{coseqResults:} the raw results of \code{coseq} 
-\item \code{clusters:}  a List of clusters 
-\item \code{cluster.nb:}  The number of cluster 
-\item \code{plots:}  The plots of \code{coseq} results 
-\item \code{stats:}  A tibble summarising failed jobs: reason, propoif any 
+\item \code{coseqResults:} the raw results of \code{coseq}
+\item \code{clusters:}  a List of clusters
+\item \code{cluster.nb:}  The number of cluster
+\item \code{plots:}  The plots of \code{coseq} results
+\item \code{stats:}  A tibble summarising failed jobs: reason, propoif any
 }
 \item \code{errors:} error list.
 }
 }
 \description{
-This method performs a co-expression/co-abundance analysis of 
+This method performs a co-expression/co-abundance analysis of
 omic-data.
 }
 \details{
 For now, only the coseq function of the coseq package is used.
-For RNAseq data, parameters used are those recommended in DiCoExpress 
-workflow (see the reference). This parameters are: \code{model="normal"}, 
+For RNAseq data, parameters used are those recommended in DiCoExpress
+workflow (see the reference). This parameters are: \code{model="normal"},
 \code{transformation="arcsin"}, \code{GaussianModel="Gaussian_pk_Lk_Ck"},
 \code{normFactors="TMM"}, \code{meanFilterCutoff = 50}
-For proteomic or metabolomic, data are scaled by protein or metabolite 
+For proteomic or metabolomic, data are scaled by protein or metabolite
 to group them by expression profiles rather than by expression intensity.
-After data scaling, recommended parameters (from \code{coseq} developers) 
+After data scaling, recommended parameters (from \code{coseq} developers)
 for co-expression analysis are:
-\code{model="normal"}, \code{transformation="none"}, 
+\code{model="normal"}, \code{transformation="none"},
 \code{GaussianModel="Gaussian_pk_Lk_Ck"},
 \code{normFactors="none"},  \code{meanFilterCutoff = NULL}.
 }
 \section{Accessors}{
- 
-A set of getters and setters generic functions to access and 
-modify objects of the slot metadata of a \link{RflomicsMAE-class} object or 
+
+A set of getters and setters generic functions to access and
+modify objects of the slot metadata of a \link{RflomicsMAE-class} object or
 a \link{RflomicsMAE-class} object.
 
- 
+
 \itemize{
-   \item getCoexpSettings: Access to the co-expression analysis settings 
-   of a given omic dataset 
+   \item getCoexpSettings: Access to the co-expression analysis settings
+   of a given omic dataset
 }
 
- 
+
 \itemize{
-   \item getCoexpClusters: get members of a cluster. 
+   \item getCoexpClusters: get members of a cluster.
  return The list of entities inside this cluster.
 }
 }
 
 \section{Plots}{
- 
+
 A collection of functions for plotting results from omic analysis steps.
 
- 
+
 \itemize{
    \item getCoExpAnalysesSummary: ...
 }
 
- 
+
 \itemize{
-   \item plotCoExpression: 
+   \item plotCoExpression:
    list plot of ICL, logLike and coseq object with min ICL
 }
 
- 
+
 \itemize{
-   \item plotCoExpressionProfile: 
+   \item plotCoExpressionProfile:
    ...
 }
 
- 
+
 \itemize{
-   \item plotCoseqContrasts: This function describes the composition of 
+   \item plotCoseqContrasts: This function describes the composition of
    clusters according to the contrast to which the gene belongs
 }
 }
@@ -282,9 +276,9 @@ clusters <- getCoexpClusters(MAE[["protetest"]], clusterName = "cluster_1")
 #plotCoseqContrasts(MAE[["protetest"]])
 }
 \references{
-Lambert, I., Paysant-Le Roux, C., Colella, S. et al. DiCoExpress: 
-a tool to process multifactorial RNAseq experiments from quality controls 
-to co-expression analysis through differential analysis based on contrasts 
+Lambert, I., Paysant-Le Roux, C., Colella, S. et al. DiCoExpress:
+a tool to process multifactorial RNAseq experiments from quality controls
+to co-expression analysis through differential analysis based on contrasts
 inside GLM models. Plant Methods 16, 68 (2020).
 }
 \seealso{

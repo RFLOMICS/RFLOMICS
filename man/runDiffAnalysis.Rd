@@ -45,7 +45,6 @@
   p.adj.method = "BH",
   p.adj.cutoff = 0.05,
   logFC.cutoff = 0,
-  clustermq = FALSE,
   cmd = FALSE,
   ...
 )
@@ -58,7 +57,6 @@
   p.adj.method = "BH",
   p.adj.cutoff = 0.05,
   logFC.cutoff = 0,
-  clustermq = FALSE,
   cmd = FALSE,
   ...
 )
@@ -162,9 +160,6 @@ the differential analysis.}
 
 \item{logFC.cutoff}{cutoff for absolute value of log2FC. Default is the
 parameter from the differential analysis.}
-
-\item{clustermq}{A boolean indicating whether the constrasts have to be
-computed in local or in a distant machine}
 
 \item{cmd}{boolean. Used in the interface. If TRUE, print cmd for the user.}
 

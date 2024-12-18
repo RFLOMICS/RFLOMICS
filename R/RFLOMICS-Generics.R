@@ -373,7 +373,6 @@ setGeneric(
                   p.adj.method="BH",
                   p.adj.cutoff=0.05,
                   logFC.cutoff=0,
-                  clustermq=FALSE,
                   cmd = FALSE,
                   ...)
     standardGeneric("runDiffAnalysis")
@@ -503,7 +502,6 @@ setGeneric(
                   meanFilterCutoff = NULL,
                   scale            = NULL,
                   min.data.size    = 100,
-                  clustermq        = FALSE,
                   ...)
   standardGeneric("runCoExpression")
 )

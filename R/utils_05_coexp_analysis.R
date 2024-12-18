@@ -15,104 +15,104 @@
 #' @keywords internal
 #' @noRd
 .coseq.results.process <- function(coseq.res.list, K){
-  
+
   CoExpAnal <- list()
-  
+
   replicates <- length(coseq.res.list)
-  
+
   detail.df <- data.frame()
   results.list <- list()
   for(x in names(coseq.res.list)){
-    
+
     coseq.res <- coseq.res.list[[x]]
-    
+
     # total failed
     if(!is.null(coseq.res$error)){
-      detail.df <- 
-        rbind(detail.df, 
-              c(unlist(strsplit(x, "_")), "failed", coseq.res$error, "NA", 
+      detail.df <-
+        rbind(detail.df,
+              c(unlist(strsplit(x, "_")), "failed", coseq.res$error, "NA",
                 "NA", "NA"))
     }
-    
+
     if(!is.null(coseq.res$result)){
-      
+
       logLike <- likelihood(coseq.res$result)
       ICL.res <- ICL(coseq.res$result)
-      
+
       for(i in names(logLike)){
-        detail.df <- 
-          rbind(detail.df, 
-                c(i, unlist(strsplit(x, "_"))[2], 
-                  ifelse(is.na(logLike[i]) | logLike[i] == 0, 
-                         "failed", "success"), 
-                  ifelse(is.na(logLike[i]) | logLike[i] == 0, 
-                         "The likelihood is equal to 0 or NA", NA), 
+        detail.df <-
+          rbind(detail.df,
+                c(i, unlist(strsplit(x, "_"))[2],
+                  ifelse(is.na(logLike[i]) | logLike[i] == 0,
+                         "failed", "success"),
+                  ifelse(is.na(logLike[i]) | logLike[i] == 0,
+                         "The likelihood is equal to 0 or NA", NA),
                   ifelse(is.null(coseq.res$warnings), NA,
                          paste(unique(coseq.res$warnings), collapse = "; ")),
                   logLike[i], ICL.res[i]))
       }
-      
+
       if(any(detail.df[,3] == "success")){
         results.list[[x]] <- coseq.res$result
       }
     }
   }
-  names(detail.df) <- 
+  names(detail.df) <-
     c("K", "n", "status", "errors", "warnings", "logLike", "ICL")
-  
+
   # stats
-  jobs.tab.sum <- detail.df |> 
+  jobs.tab.sum <- detail.df |>
     group_by(K, status, errors, warnings) |>
     summarise(prop = round(n()/replicates*100),.groups = 'drop')
-  
+
   CoExpAnal[["stats"]] <- jobs.tab.sum
-  
+
   # warning
   CoExpAnal[["warnings"]] <-
-    paste(unique(jobs.tab.sum$warnings[!is.na(jobs.tab.sum$warnings)]), 
+    paste(unique(jobs.tab.sum$warnings[!is.na(jobs.tab.sum$warnings)]),
           collapse = "; ")
-  
+
   if(any(detail.df$status == "success")){
-    
+
     ICL.list <- list()
-    
+
     #
-    ICL.tab <- 
+    ICL.tab <-
       filter(detail.df, status == "success") %>%
       select(K, n, logLike, ICL) %>%
-      mutate(ICL=as.numeric(ICL), 
+      mutate(ICL=as.numeric(ICL),
              logLike=as.numeric(logLike),
              n=as.numeric(n))
     ICL.list[["ICL.tab"]] <- ICL.tab
-    
+
     # Summarize the table: by K, compute the median of the replicate's ICL.
-    ICL.n <- 
-      group_by(ICL.tab, K) %>% 
-      summarize(median = median(as.numeric(ICL)), 
+    ICL.n <-
+      group_by(ICL.tab, K) %>%
+      summarize(median = median(as.numeric(ICL)),
                 min = min(as.numeric(ICL)), n=n())
     ICL.list[["ICL.n"]] <- ICL.n
-    
+
     nb_cluster <- ICL.n[ICL.n$median == min(ICL.n$median),]$K
-    # Search for a replicate with a ICL min corresponding to the 
-    # K with the min median 
+    # Search for a replicate with a ICL min corresponding to the
+    # K with the min median
     min_ICL <- ICL.n[ICL.n$K == nb_cluster,]$min
     min_ICL_rep <- filter(ICL.tab, K == nb_cluster, ICL == min_ICL)$n
     index <- paste0("K=", min(K), "-", max(K), "_", min_ICL_rep[1])
     coseq.res <- results.list[[index]]
-    
+
     nb_cluster <- as.numeric(str_remove(string = nb_cluster, pattern = "K="))
-    
+
     nK_success <- sum(ICL.n$n)
 
     # list of genes per cluster
     clusters_tmp <- clusters(coseq.res)
     if(length(unique(clusters_tmp)) != nb_cluster){
       CoExpAnal[["results"]] <- FALSE
-      CoExpAnal[["error"]] <- 
+      CoExpAnal[["error"]] <-
         "The optimal number of clusters does not correspond to the minimum ICL."
       return(CoExpAnal)
     }
-    
+
     clusters <- lapply(seq_len(nb_cluster), function(i){
       names(clusters_tmp[clusters_tmp == i])
     })
@@ -124,124 +124,17 @@
     CoExpAnal[["clusters"]]     <- clusters
     CoExpAnal[["cluster.nb"]]   <- nb_cluster
     CoExpAnal[["plots"]]        <- ICL.list
-    
+
   } else{
     # Pb of convergence: if there is no K.min.rep which correspond to the
     #  median.min, return an error
     CoExpAnal[["results"]] <- FALSE
-    
+
     CoExpAnal[["errors"]] <-
-      paste(unique(jobs.tab.sum$errors[!is.na(jobs.tab.sum$errors)]), 
+      paste(unique(jobs.tab.sum$errors[!is.na(jobs.tab.sum$errors)]),
             collapse = "; ")
   }
-  
-  return(CoExpAnal)
-}
 
-
-#' @title run Coseq for co-expression analysis on cluster
-#' @param counts matrix
-#' @param param.list list of coseq parameters
-#' @return coseqResults
-#  @importFrom clustermq Q_rows 
-#' @keywords internal
-#' @noRd
-#'
-.runCoseqClustermq <- function(counts, param.list){
-  
-  replicates <- param.list[["replicates"]]
-  K <- param.list[["K"]]
-  iter <- rep(K, replicates)
-  
-  args <- list(
-    object          = counts,
-    model           = param.list[["model"]],
-    transformation  = param.list[["transformation"]],
-    meanFilterCutoff = param.list[["meanFilterCutoff"]],
-    normFactors     = param.list[["normFactors"]],
-    GaussianModel   = param.list[["GaussianModel"]],
-    verbose         = FALSE
-  )
-  
-  df_args <- 
-    data.frame(x = iter, seed_arg = rep(seq_len(replicates), max(K) - 1))
-  
-  # setting to run coseq on clustermq
-  fx <- function(x, seed_arg){
-    
-    .tryRflomics <- function(expr) {
-      warn <- err <- NULL
-      value <- withCallingHandlers(
-        tryCatch(expr,
-                 error    = function(e){ err <- e
-                 NULL
-                 }),
-        warning = function(w){ warn <- w
-        invokeRestart("muffleWarning")}
-      )
-      list(value = value, warning = warn, error = err)
-    }
-    res <- .tryRflomics(do.call("coseq", c(args, list(K = x, seed = seed_arg))))
-    
-    return(res)
-  }
-  
-  coseq.res.list <- Q_rows(fun = fx,
-                           df = df_args, 
-                           export = param.list, 
-                           n_jobs = iter, pkgs = "coseq")
-  names(coseq.res.list) <- seq_len(iter)
-  
-  message("[RFLOMICS] #     => error management ")
-  
-  # Create a table of jobs summary
-  error.list <- unlist(lapply(coseq.res.list, function(x){
-    ifelse(is.null(x$error), "success", as.character(x$error))
-  }))
-  
-  nK_success <- table(error.list)["success"]
-  message("[RFLOMICS] #     => nbr of success jobs: ", nK_success)
-  
-  K.list <- rep(paste0("K=", K), each = replicates)
-  
-  jobs.tab <- data.frame(K = K.list, error.message = as.factor(error.list))
-  
-  jobs.tab.sum <- jobs.tab %>% group_by(K, error.message) %>%
-    summarise(n=n()) %>%  
-    mutate(prop.failed=round((n/replicates)*100)) %>%
-    filter(error.message != "success")
-  
-  # If they are at least the half of K which succeed, valid results
-  if(nK_success !=0 ){
-    
-    message("[RFLOMICS] #     => process results ")
-    # Generate the list of results
-    coseq.res.list[["value"]] <- list()
-    for(x in names(coseq.res.list)){
-      
-      if(!is.null(coseq.res.list[[x]]$value)){
-        coseq.res.list[["value"]][[x]] <- coseq.res.list[[x]]$value
-      }
-    }
-    
-    CoExpAnal <- .coseq.results.process(coseq.res.list[["value"]], 
-                                        K = K)
-    CoExpAnal[["warning"]] <- coseq.res.list$warning
-    
-    if(nK_success/length(iter) < 0.8){
-      CoExpAnal[["error"]] <- TRUE
-    }
-    
-  }
-  # Réinitialisation de l'objet CoExpAnal
-  else{
-    CoExpAnal[["results"]] <- FALSE
-    CoExpAnal[["error"]] <- TRUE
-    
-  }
-  
-  CoExpAnal[["stats"]] <- jobs.tab.sum
-  
   return(CoExpAnal)
 }
 
@@ -253,11 +146,11 @@
 #' @noRd
 #'
 .runCoseqLocal <- function(counts, param.list){
-  
+
   replicates <- param.list[["replicates"]]
   K <- param.list[["K"]]
   iter <- rep(K, replicates)
-  
+
   args <- list(
     object          = counts,
     model           = param.list[["model"]],
@@ -267,18 +160,18 @@
     GaussianModel   = param.list[["GaussianModel"]],
     verbose         = FALSE
   )
-  
+
   coseq.res.list <- lapply(seq_len(replicates), function(x){
-    
+
     res <- .tryCatch_rflomics(
       do.call("coseq", c(args, list(K = K, seed = x, parallel = TRUE))))
-    
+
     return(res)
-  })  
+  })
   names(coseq.res.list) <- paste0("K=",min(K),"-", max(K), "_", seq_len(replicates))
-  
-  coExpAnal <- 
+
+  coExpAnal <-
     .coseq.results.process(coseq.res.list = coseq.res.list, K = K)
-  
+
   return(coExpAnal)
 }

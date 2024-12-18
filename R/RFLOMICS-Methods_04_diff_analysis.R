@@ -36,8 +36,6 @@
 #' values as the ones of adj.p.adjust method.
 #' @param p.adj.cutoff The adjusted pvalue cut-off
 #' @param logFC.cutoff The lof2FC cutoff
-#' @param clustermq A boolean indicating whether the constrasts have to be
-#' computed in local or in a distant machine
 #' @param cmd boolean. Used in the interface. If TRUE, print cmd for the user.
 #' @param ... Additional arguments.
 #' @details
@@ -97,7 +95,6 @@ setMethod(
                         p.adj.method="BH",
                         p.adj.cutoff=0.05,
                         logFC.cutoff=0,
-                        clustermq=FALSE,
                         cmd = FALSE,
                         ...){
 
@@ -174,7 +171,6 @@ setMethod(
                 object          = object.p,
                 Contrasts.Coeff = DiffExpAnal[["settings"]][["contrastCoef"]],
                 FDR             = 1,
-                clustermq       = clustermq,
                 cmd             = cmd)
             ),
           "limmalmFit" =
@@ -184,7 +180,6 @@ setMethod(
                 Contrasts.Coeff = DiffExpAnal[["settings"]][["contrastCoef"]],
                 p.adj.cutoff    = 1,
                 p.adj.method    = p.adj.method,
-                clustermq       = clustermq,
                 cmd             = cmd)
             )
         )
@@ -250,7 +245,6 @@ setMethod(
                         p.adj.method="BH",
                         p.adj.cutoff=0.05,
                         logFC.cutoff=0,
-                        clustermq=FALSE,
                         cmd = FALSE,
                         ...){
 
@@ -262,7 +256,6 @@ setMethod(
                       method = method,
                       p.adj.cutoff = p.adj.cutoff,
                       logFC.cutoff = logFC.cutoff,
-                      clustermq = clustermq,
                       cmd = cmd
       )
 
