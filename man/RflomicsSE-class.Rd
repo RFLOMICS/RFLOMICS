@@ -44,19 +44,19 @@ A \code{RflomicsSE} object.
 }
 \description{
 RflomicsSE is a class that extends the \link{SummarizedExperiment} by imposing a structure
-on the metadata slot. This class is used by the Rflomics analysis workflow to store the 
-experimental design, the settings and results of a single omic analysis. 
+on the metadata slot. This class is used by the Rflomics analysis workflow to store the
+experimental design, the settings and results of a single omic analysis.
 The slot metadata is structured as follows:
 }
 \section{Slots}{
- 
+
 See \link{SummarizedExperiment}
 
 The slot metadata is structured as follows:
  \itemize{
    \item omicType: the type of omics dataset
    \item design: experimental design
-   \item DataProcessing: a list containing the data processing settings and results 
+   \item DataProcessing: a list containing the data processing settings and results
    \item PCAlist: a list containing the PCA settings and results
    \item DiffExpAnal: a list containing the Differential Analysis settings and results
    \item CoExpAnal: a list containing the Coexpression Analysis settings and results

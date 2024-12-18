@@ -77,17 +77,17 @@
 A \code{RflomicsMAE} object.
 }
 \description{
-RflomicsMAE is a class that extends the \link{MultiAssayExperiment}  
-class by imposing a structure to the metadata slot. This class is used by 
-the Rflomics analysis workflow to store the experimental design, the settings 
+RflomicsMAE is a class that extends the \link{MultiAssayExperiment}
+class by imposing a structure to the metadata slot. This class is used by
+the Rflomics analysis workflow to store the experimental design, the settings
 and results of a multi-omics integration analysis.
 }
 \section{Slots}{
- 
+
  \itemize{
    \item ExperimentList:
      \itemize{
-       \item A ExperimentList class object of \link{RflomicsSE} object 
+       \item A ExperimentList class object of \link{RflomicsSE} object
        for each assay dataset
        }
    \item colData: see \code{\link{MultiAssayExperiment}}
@@ -95,14 +95,14 @@ and results of a multi-omics integration analysis.
    \item metadata:
      \itemize{
        \item projectName: string. Project name.
-       \item omicList: list. Contains the list of omics datasets, with the 
+       \item omicList: list. Contains the list of omics datasets, with the
        type and name.
        \item design: The experimental design.
-       \item IntegrationAnalysis: A list containing the multi-omics 
-       integration analysis settings and results. 
-       \item design: The experimental design 
+       \item IntegrationAnalysis: A list containing the multi-omics
+       integration analysis settings and results.
+       \item design: The experimental design
        \item sessionInfo:
-       \item IntegrationAnalysis: A list containing the multi-omics 
+       \item IntegrationAnalysis: A list containing the multi-omics
        integration analysis settings and results.
        }
 }

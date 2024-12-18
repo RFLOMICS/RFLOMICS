@@ -13,7 +13,7 @@ runRFLOMICS(...)
 shinyApp
 }
 \description{
-running this function will open the shiny application. 
+running this function will open the shiny application.
 Run the shiny application
 }
 \examples{

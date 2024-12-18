@@ -1,7 +1,7 @@
 ### ============================================================================
 ### [RFLOMICS CLASS] accessors and plots
 ### ----------------------------------------------------------------------------
-# N. Bessoltane, 
+# N. Bessoltane,
 # D. Charif
 
 #' @import methods
@@ -12,16 +12,16 @@
 #' @rdname RflomicsMAE-class
 #' @title RflomicsMAE Class
 #' @description
-#' RflomicsMAE is a class that extends the \link{MultiAssayExperiment}  
-#' class by imposing a structure to the metadata slot. This class is used by 
-#' the Rflomics analysis workflow to store the experimental design, the settings 
+#' RflomicsMAE is a class that extends the \link{MultiAssayExperiment}
+#' class by imposing a structure to the metadata slot. This class is used by
+#' the Rflomics analysis workflow to store the experimental design, the settings
 #' and results of a multi-omics integration analysis.
 #' @param object An object of class \link{RflomicsMAE-class}
-#' @section Slots: 
+#' @section Slots:
 #'  \itemize{
 #'    \item ExperimentList:
 #'      \itemize{
-#'        \item A ExperimentList class object of \link{RflomicsSE} object 
+#'        \item A ExperimentList class object of \link{RflomicsSE} object
 #'        for each assay dataset
 #'        }
 #'    \item colData: see \code{\link{MultiAssayExperiment}}
@@ -29,14 +29,14 @@
 #'    \item metadata:
 #'      \itemize{
 #'        \item projectName: string. Project name.
-#'        \item omicList: list. Contains the list of omics datasets, with the 
+#'        \item omicList: list. Contains the list of omics datasets, with the
 #'        type and name.
 #'        \item design: The experimental design.
-#'        \item IntegrationAnalysis: A list containing the multi-omics 
-#'        integration analysis settings and results. 
-#'        \item design: The experimental design 
+#'        \item IntegrationAnalysis: A list containing the multi-omics
+#'        integration analysis settings and results.
+#'        \item design: The experimental design
 #'        \item sessionInfo:
-#'        \item IntegrationAnalysis: A list containing the multi-omics 
+#'        \item IntegrationAnalysis: A list containing the multi-omics
 #'        integration analysis settings and results.
 #'        }
 #' }
@@ -62,23 +62,23 @@ setClass(
   contains = "MultiAssayExperiment",
   validity = function(object) {
     metadata <- metadata(object)
-    
+
     # check if metadat is list()
     if (!is.list(metadata)) {
       return("The 'metadata' slot must be a list.")
     }
-    
+
     # Vérification des éléments requis dans `metadata`
-    required_elements <- 
+    required_elements <-
       c("omicList", "projectName", "design", "IntegrationAnalysis",
         "date","sessionInfo","rflomicsVersion")
-    
+
     missing_elements <- setdiff(required_elements, names(metadata))
     if (length(missing_elements) > 0) {
-      return(paste("The 'metadata' slot must contain the following elements:", 
+      return(paste("The 'metadata' slot must contain the following elements:",
                    paste(missing_elements, collapse = ", ")))
     }
-    
+
     # Vérification des types des éléments
     if (!is.character(metadata$projectName)) {
       return("The 'projectName' in 'metadata' must be a single string.")
@@ -98,8 +98,8 @@ setClass(
     if (!is.list(metadata$design)) {
       return("The 'design' in 'metadata' must be a list.")
     }
-    
-    TRUE  
+
+    TRUE
   }
 )
 
@@ -110,18 +110,18 @@ setClass(
 #' @rdname RflomicsSE-class
 #' @description
 #' RflomicsSE is a class that extends the \link{SummarizedExperiment} by imposing a structure
-#' on the metadata slot. This class is used by the Rflomics analysis workflow to store the 
-#' experimental design, the settings and results of a single omic analysis. 
+#' on the metadata slot. This class is used by the Rflomics analysis workflow to store the
+#' experimental design, the settings and results of a single omic analysis.
 #' The slot metadata is structured as follows:
 #' @param object An object of class \link{RflomicsSE}
-#' @section Slots: 
+#' @section Slots:
 #' See \link{SummarizedExperiment}
-#' 
+#'
 #' The slot metadata is structured as follows:
 #'  \itemize{
 #'    \item omicType: the type of omics dataset
 #'    \item design: experimental design
-#'    \item DataProcessing: a list containing the data processing settings and results 
+#'    \item DataProcessing: a list containing the data processing settings and results
 #'    \item PCAlist: a list containing the PCA settings and results
 #'    \item DiffExpAnal: a list containing the Differential Analysis settings and results
 #'    \item CoExpAnal: a list containing the Coexpression Analysis settings and results
@@ -138,24 +138,24 @@ setClass(
   contains = "SummarizedExperiment",
   validity = function(object) {
     metadata <- metadata(object)
-    
+
     # check if metadat is list()
     if (!is.list(metadata)) {
       return("The 'metadata' slot must be a list.")
     }
-    
+
     # Vérification des éléments requis dans `metadata`
-    required_elements <- 
-      c("omicType","design","DataProcessing","PCAlist","DiffExpAnal",   
+    required_elements <-
+      c("omicType","design","DataProcessing","PCAlist","DiffExpAnal",
         "CoExpAnal","DiffExpEnrichAnal", "CoExpEnrichAnal")
-    
+
     missing_elements <- setdiff(required_elements, names(metadata))
     if (length(missing_elements) > 0) {
-      return(paste("The 'metadata' slot must contain the following elements:", 
+      return(paste("The 'metadata' slot must contain the following elements:",
                    paste(missing_elements, collapse = ", ")))
     }
-    
-    TRUE  
+
+    TRUE
   }
 )
 
