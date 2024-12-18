@@ -5,109 +5,7 @@
 
 ######################## METHODS FOR OMICS INTEGRATION ########################
 
-# ---- Wrapper ----
-#' @title Wrapper for integration of omics data using RFLOMICS
-#' @description This function executes all the steps to ensure data integration
-#' from a \link{RflomicsMAE-class} object produced by FLOMICS. It encapsulates the
-#' three other functions: \code{\link{filterFeatures,RflomicsMAE-method}},
-#' \code{\link{prepareForIntegration,RflomicsMAE-method}}
-#' and \code{\link{runOmicsIntegration,RflomicsMAE-method}} otherwise necessary
-#' to complete the integration.
-#' @param object An object of class \link{RflomicsMAE-class}.
-#' It is expected the MAE object is produced by rflomics previous analyses,
-#' as it relies on their results.
-#' @param omicsNames vector of characters strings,
-#' referring to the names of the filtered table in 'object@ExperimentList'.
-#' @param rnaSeq_transfo character string, only supports 'limma (voom)'
-#' for now.
-#' Transformation of the rnaSeq data from counts to continuous data.
-#' @param selOpt list of selection option for each dataset: one of none, DE
-#' or a vector of contrasts or cluster names.
-#' @param type one of union or intersection.
-#' @param group Not implemented yet in the interface. Useful for MOFA2 run.
-#' @param method one of MOFA or mixOmics
-#' @param scale_views boolean. If TRUE, each dataset is scaled.
-#' @param maxiter MOFA2 parameter. Number of maximum iteration to use.
-#' @param num_factors MOFA2 parameter. Number of factor to compute.
-#' @param selectedResponse vector of character. Response variables for mixOmics
-#' @param ncomp mixOmics parameter. Number of component to compute.
-#' @param link_datasets mixOmics parameter. Link between datasets in the design.
-#' @param link_response mixOmics parameter. Link between dataset and response.
-#' @param sparsity mixOmics parameter. If TRUE, uses block.splsda.
-#' @param cases_to_try used for tuning when sparse analysis is TRUE.
-#' @param cmd used in the interface, print cmd lines.
-#' @return a RflomicsMAE object. According to the method (MOFA or mixOmics),
-#' the correct slot of metadata has been filled with the results and the
-#' settings.
-#' @aliases integrationWrapper
-#' @noRd
-#' @keywords internal
-setMethod(
-  f = "integrationWrapper",
-  signature = "RflomicsMAE",
-  definition = function(object,
-                        omicsNames = names(object),
-                        rnaSeq_transfo = "limma (voom)",
-                        selOpt = rep(list("DE"), length(omicsNames)),
-                        type = rep(list("union"), length(selOpt)),
-                        group = NULL,
-                        method = "MOFA",
-                        scale_views = FALSE,
-                        maxiter = 1000,
-                        num_factors = 10,
-                        selectedResponse = NULL,
-                        ncomp = 2,
-                        link_datasets = 1,
-                        link_response = 1,
-                        sparsity = FALSE,
-                        cases_to_try = 5,
-                        cmd = FALSE,
-                        ...) {
-    if (any(!omicsNames %in% names(object))) {
-      stop("There are omics to integrate that are not names from the object")
-    }
 
-    if (cmd)
-      message("[RFLOMICS] #     => Preparing for multi-omics analysis")
-
-    objectfilt <- filterFeatures(object = object,
-                                 selOpt = selOpt,
-                                 type = type)
-
-    variableLists <- lapply(experiments(objectfilt), names)
-
-    preparedObject <- prepareForIntegration(
-      object = object,
-      omicsNames = omicsNames,
-      rnaSeq_transfo = rnaSeq_transfo,
-      variableLists = variableLists,
-      group = group,
-      method = method,
-      cmd = cmd
-    )
-
-    if (cmd)
-      message("[RFLOMICS] #     => run data integration")
-
-    object <- runOmicsIntegration(
-      object = object,
-      preparedObject = preparedObject,
-      method = method,
-      scale_views = scale_views,
-      maxiter = maxiter,
-      num_factors = num_factors,
-      selectedResponse = selectedResponse,
-      ncomp = ncomp,
-      link_datasets = link_datasets,
-      link_response = link_response,
-      sparsity = sparsity,
-      cases_to_try = cases_to_try,
-      cmd = FALSE
-    )
-
-    return(object)
-  }
-)
 
 # ---- prepareForIntegration ----
 #' @title Preparation step for integration
@@ -116,9 +14,7 @@ setMethod(
 #' It checks for batch effects to correct them before integration.
 #' It also transforms RNASeq counts data into continuous data using
 #' \code{\link[limma]{voom}}.
-#' This is the second step into the integration. It is usually preceded by
-#' \link{filterFeatures} to extract the correct variables,
-#'  and followed by \link{runOmicsIntegration}.
+#' This is the second step into the integration.
 #' @param object An object of class \link{RflomicsMAE-class}.
 #' It is expected the MAE object is produced by rflomics previous analyses,
 #' as it relies on their results.
@@ -165,7 +61,7 @@ setMethod(
     if (is.null(omicsNames))
       omicsNames <- names(object)
 
-    if (any(!omicsNames%in%names(object)))
+    if (any(!omicsNames %in% names(object)))
 
     object <- object[, , omicsNames]
 
@@ -309,139 +205,6 @@ setMethod(
 )
 
 
-
-
-# ---- Select features to  keep for integration (MAE) ----
-#
-#' @title Feature selection in a Rflomics MAE
-#' @description This function selects all the features to keep according to
-#' user's choices on each omic data.
-#' @param object An object of class \link{RflomicsMAE-class}.
-#' It is expected the MAE object is produced by rflomics previous analyses,
-#' as it relies on their results.
-#' @param selOpt list of vectors. Preferred named list with names corresponding
-#' to the names of the experimentList in the object. For each Experiment, gives
-#' the option for the filtering: either 'all', 'DE', 'none',
-#' or a specific name of a
-#' contrast or cluster (if coexpression results are available). Default is
-#' taking all features for all experiment list. If the vector is named and an
-#' Experiment is missing, no feature will be selected from it.
-#' If the vector is not named, the selection will be applied in order of the
-#' Experiments in the object.
-#' @param type if selOpt is set to a specific set of contrasts or clusters,
-#' indicates whether the selection is "union" or "intersection" of entities in
-#' these sets.
-#' @return a RflomicsMAE, filtered with only the corresponding features.
-#' @rdname filterFeatures
-#' @aliases filterFeatures
-#' @exportMethod filterFeatures
-#' @example inst/examples/filterFeatures.R
-#'
-setMethod(
-  f = "filterFeatures",
-  signature = "RflomicsMAE",
-  definition = function(object,
-                        selOpt = rep(list("all"), length(object)),
-                        type = rep(list("union"), length(selOpt))) {
-    # check if named vector
-    if (is.null(names(selOpt))) {
-      names(selOpt) <- names(object)[seq_along(selOpt)]
-    }
-
-    if (is.null(names(type))) {
-      names(type) <- names(selOpt)[seq_along(selOpt)]
-    }
-
-    # Applying corresponding filtering
-    res <- lapply(
-      names(selOpt),
-      FUN = function(nam) {
-        SE.object <- object[[nam]]
-        vectSel <- selOpt[[nam]]
-        typeSel <- type[[nam]]
-
-        if (is.null(typeSel))
-          typeSel <- "union"
-
-        # intermediate list: list of features for each selectiontype
-        # default: take all if typo somewhere.
-        resInter <- lapply(
-          vectSel,
-          FUN = function(listSel) {
-            if (!listSel %in% c("all", "none", "DE")) {
-              originList <- .getOrigin(SE.object, listSel)
-            } else {
-              originList <- listSel
-            }
-
-            switch(
-              originList,
-              "all" = {
-                names(SE.object)
-              },
-              "none" = {
-                NULL
-              },
-              "DE"  = {
-                getDEMatrix(object = SE.object)$DEF
-              },
-              "DiffExp" = {
-                getDEList(object = SE.object, contrasts = listSel)
-              },
-              "Tag" = {
-                getDEList(object = SE.object, contrasts = listSel)
-                # TODO problem when only one selected
-              },
-              "CoExp" = {
-                getCoexpClusters(SE.object, clusterName = listSel)
-              },
-              {
-                # Default: all
-                message("Cannot detect origin of ",
-                        listSel,
-                        " for ",
-                        nam ,
-                        " taking all features")
-                names(SE.object)
-              }
-            )
-
-          }
-        )
-
-        # Union or intersection of all selected features
-        filtKeep <- if (!is.null(typeSel)) {
-          switch(typeSel,
-                 unique(unlist(resInter)),
-                 # default
-                 "intersection" = Reduce(intersect, resInter))
-        }
-        if (length(filtKeep) == 0) {
-          message("No feature to keep in ", nam,
-                  ", it will be dropped.")
-        }
-        return(SE.object[filtKeep, ])
-
-      }
-    )
-    names(res) <- names(selOpt)
-
-    res <- res[lengths(res) > 0]
-
-    return(
-      RflomicsMAE(
-        experiments = res,
-        colData = colData(object),
-        sampleMap = sampleMap(object),
-        omicList    = metadata(object)$omicList,
-        projectName = getProjectName(object),
-        design      = metadata(object)$design
-      )
-    )
-  }
-)
-
-
 # ---- Run Omics integration ----
 
 #' @title runOmicsIntegration
@@ -452,7 +215,7 @@ setMethod(
 #' It is expected the MAE object is produced by rflomics previous analyses,
 #' as it relies on their results.
 #' @param preparedObject An untrained MOFA object or a list of dataset.
-#' Usually a result of \link{prepareForIntegration}.
+#' Usually a result of prepareForIntegration.
 #' @param method one of MOFA or mixOmics.
 #' Method for which the object is prepared.
 #' @param scale_views boolean. If TRUE, scale each dataset to unit variance.
@@ -500,85 +263,96 @@ setMethod(
       "MIXOMICS" = "MixOmics",
       "MOFA"  = "MOFA",
       "MOFA2" = "MOFA",
-      "MOFA+" = "MOFA"
+      "MOFA+" = "MOFA",
+      {stop("This method is unrecognized")}
     )
 
-    if (toupper(method) == "MOFA") {
-      # metadata(object)[["MOFA"]] <- NULL
-      object <- setMOFA(object, NULL)
+    switch(toupper(method),
+           "MOFA" = {
 
-      if (cmd)
-        message("[RFLOMICS] #     => Running MOFA analysis")
+               if (!is(preparedObject, "MOFA")) {
+                   stop("Using MOFA requires that preparedObject is a MOFA object.")
+               }
 
-      MOFA_run <- .runMOFAAnalysis(
-        object = preparedObject,
-        scale_views = scale_views,
-        maxiter = maxiter,
-        num_factors = num_factors
-      )
+               object <- setMOFA(object, NULL)
 
-      object <- setMOFA(
-        object,
-        list(
-          "MOFA_results" = MOFA_run$MOFAObject.trained,
-          "MOFA_untrained" = MOFA_run$MOFAObject.untrained,
-          "MOFA_messages" = MOFA_run$MOFA.messages,
-          "settings" = list(
-            scale_views = scale_views,
-            maxiter     = maxiter,
-            num_factors = num_factors,
-            selectData  = names(preparedObject@data)
-          )
-        )
-      )
+               if (cmd)
+                   message("[RFLOMICS] #     => Running MOFA analysis")
 
-    } else if (toupper(method) == "MIXOMICS") {
-      # metadata(object)[["mixOmics"]] <- NULL
-      object <- setMixOmics(object, NULL)
+               MOFA_run <- .runMOFAAnalysis(
+                   object = preparedObject,
+                   scale_views = scale_views,
+                   maxiter = maxiter,
+                   num_factors = num_factors
+               )
 
-      if (cmd)
-        message("[RFLOMICS] #     => Running mixOmics analysis")
+               object <- setMOFA(
+                   object,
+                   list(
+                       "MOFA_results" = MOFA_run$MOFAObject.trained,
+                       "MOFA_untrained" = MOFA_run$MOFAObject.untrained,
+                       "MOFA_messages" = MOFA_run$MOFA.messages,
+                       "settings" = list(
+                           scale_views = scale_views,
+                           maxiter     = maxiter,
+                           num_factors = num_factors,
+                           selectData  = names(preparedObject@data)
+                       )
+                   )
+               )
 
-      if (is.null(selectedResponse))
-        selectedResponse <- getBioFactors(object)
+           },
+           "MIXOMICS" = {
 
-      MixOmics_res <- lapply(
-        selectedResponse,
-        FUN = function(response_var) {
-          res_mixOmics <- .runMixOmicsAnalysis(
-            object = preparedObject,
-            selectedResponse = response_var,
-            scale_views = scale_views,
-            ncomp = ncomp,
-            link_datasets = link_datasets,
-            link_response = link_response,
-            sparsity = sparsity,
-            cases_to_try = cases_to_try
-          )
+               if (!is(preparedObject, "list")) {
+                   stop("Using mixOmics requires a list as preparedObject.")
+               }
 
-          return(
-            list(
-              "MixOmics_tuning_results" = res_mixOmics$tuning_res,
-              "MixOmics_results"        = res_mixOmics$analysis_res
-            )
-          )
-        }
-      )
+               object <- setMixOmics(object, NULL)
 
+               if (cmd)
+                   message("[RFLOMICS] #     => Running mixOmics analysis")
 
-      names(MixOmics_res) <- selectedResponse
-      MixOmics_res$settings <- list(
-        scale_views      = scale_views,
-        ncomp            = ncomp,
-        sparsity         = sparsity,
-        cases_to_try     = cases_to_try,
-        selectedResponse = selectedResponse,
-        selectData  = names(preparedObject$blocks)
-      )
+               if (is.null(selectedResponse))
+                   selectedResponse <- getBioFactors(object)
 
-      object <- setMixOmics(object, MixOmics_res)
+               MixOmics_res <- lapply(
+                   selectedResponse,
+                   FUN = function(response_var) {
+                       res_mixOmics <- .runMixOmicsAnalysis(
+                           object = preparedObject,
+                           selectedResponse = response_var,
+                           scale_views = scale_views,
+                           ncomp = ncomp,
+                           link_datasets = link_datasets,
+                           link_response = link_response,
+                           sparsity = sparsity,
+                           cases_to_try = cases_to_try
+                       )
 
-    }
+                       return(
+                           list(
+                               "MixOmics_tuning_results" = res_mixOmics$tuning_res,
+                               "MixOmics_results"        = res_mixOmics$analysis_res
+                           )
+                       )
+                   }
+               )
+
+               names(MixOmics_res) <- selectedResponse
+               MixOmics_res$settings <- list(
+                   scale_views      = scale_views,
+                   ncomp            = ncomp,
+                   sparsity         = sparsity,
+                   cases_to_try     = cases_to_try,
+                   selectedResponse = selectedResponse,
+                   selectData  = names(preparedObject$blocks)
+               )
+
+               object <- setMixOmics(object, MixOmics_res)
+
+           })
+
     return(object)
   }
 )
