@@ -14,19 +14,17 @@
 )
 }
 \arguments{
-\item{object}{a object of \link{RflomicsSE} class or 
+\item{object}{a object of \link{RflomicsSE} class or
 \link{RflomicsMAE-class} class.}
 
 \item{reportName}{Name of the html report (default: date()_projectName.html).}
 
-\item{archiveName}{name of archive with all analysis results 
+\item{archiveName}{name of archive with all analysis results
 (default: date()_projectName.tar.gz).}
 
 \item{tmpDir}{temporary directory (default: working directory)}
 
 \item{...}{other arguments to pass into the render function.}
-
-\item{export}{boolean value to create archive (default: FALSE)}
 }
 \value{
 An html report or archive (tar.gz)
