@@ -28,15 +28,15 @@ referring to the names of the filtered table in 'object@ExperimentList'.}
 for now.
 Transformation of the rnaSeq data from counts to continuous data.}
 
-\item{variableLists}{list of variables to keep per dataset. Default is 
+\item{variableLists}{list of variables to keep per dataset. Default is
 keeping all features.}
 
 \item{group}{Not implemented yet in the interface. Useful for MOFA2 run.}
 
-\item{method}{one of MOFA or mixOmics. 
+\item{method}{one of MOFA or mixOmics.
 Method for which the object is prepared.}
 
-\item{transformData}{boolean. 
+\item{transformData}{boolean.
 Transform the data with the transform and normalization method?
 Default is TRUE.}
 
@@ -49,11 +49,9 @@ An untrained MOFA object or a list of dataset
 This function transforms a RflomicsMAE produced by rflomics
 into an untrained MOFA object or a list to use for mixOmics.
 It checks for batch effects to correct them before integration.
-It also transforms RNASeq counts data into continuous data using 
+It also transforms RNASeq counts data into continuous data using
 \code{\link[limma]{voom}}.
-This is the second step into the integration. It is usually preceded by
-\link{filterFeatures} to extract the correct variables,
- and followed by \link{runOmicsIntegration}.
+This is the second step into the integration.
 }
 \examples{
 library(RFLOMICS)

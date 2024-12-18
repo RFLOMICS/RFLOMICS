@@ -54,14 +54,14 @@
 \item{object}{a MAE object (produced by Flomics).}
 
 \item{preparedObject}{An untrained MOFA object or a list of dataset.
-Usually a result of \link{prepareForIntegration}.}
+Usually a result of prepareForIntegration.}
 
-\item{method}{one of MOFA or mixOmics. 
+\item{method}{one of MOFA or mixOmics.
 Method for which the object is prepared.}
 
 \item{scale_views}{boolean. If TRUE, scale each dataset to unit variance.}
 
-\item{maxiter}{MOFA2 parameter. 
+\item{maxiter}{MOFA2 parameter.
 Number of max iteration (otherwise stop when converged.)}
 
 \item{num_factors}{MOFA2 parameter. The number of factor to compute.}
@@ -72,7 +72,7 @@ If NULL, all variables are taken into account.}
 
 \item{ncomp}{mixOmics parameter. Number of components to compute.}
 
-\item{link_datasets}{mixOmics parameter. 
+\item{link_datasets}{mixOmics parameter.
 Link between datasets in the computation.}
 
 \item{link_response}{mixOmics parameter. Link between dataset and response.}
@@ -95,7 +95,7 @@ If you want to access all information of the integration,
 set onlyResults to FALSE.
 In MixOmics case, works only when response is specified.}
 
-\item{results}{The MOFA or mixOmics results to set in the object. 
+\item{results}{The MOFA or mixOmics results to set in the object.
 If null, set to NULL.}
 }
 \value{
@@ -118,8 +118,8 @@ Runs the integration according to the selected method (MOFA or
 mixOmics) and the settings given by the user. Requires to have the correct
 entry format in preparedObject before running.
 
-These methods are used to directly access the results of multi-omics 
-analyses or their settings, usually stored in the metadata of the 
+These methods are used to directly access the results of multi-omics
+analyses or their settings, usually stored in the metadata of the
 \link{RflomicsMAE-class} object. Setters are also available.
 }
 \examples{
