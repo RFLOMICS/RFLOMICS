@@ -169,7 +169,6 @@
 #'
 #' @return A list
 #' @keywords internal
-#' @importFrom reticulate py_config
 #' @noRd
 .writeSessionInfo <- function(){
 
@@ -194,8 +193,9 @@
     "Rsession.conf" = c("R version"=x$R.version$version.string,
                         "Platform"= x$R.version$platform,
                         "OS"= x$running),
-    "pkg.tab" = do.call(rbind, pkg),
-    "python.conf" = py_config()))
+    "pkg.tab" = do.call(rbind, pkg) #,
+    # "python.conf" = py_config())
+    ))
 }
 
 ## ---- getKEGGRelease ----
