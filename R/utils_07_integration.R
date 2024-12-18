@@ -14,7 +14,7 @@
 #'
 #' @param object An object of class \link{RflomicsMAE-class}
 #' @param SEobject An object of class \link{RflomicsSE}
-#' @param cmd Interface parameter, if TRUE, print commands. 
+#' @param cmd Interface parameter, if TRUE, print commands.
 #' @param scale if TRUE, each feature is scaled to unit variance.
 #' Default is TRUE.
 #' @return An object of class \link{RflomicsSE}
@@ -25,30 +25,26 @@
 #'
 .rbeFunction <- function(object, SEobject, cmd = FALSE, scale = TRUE) {
     assayTransform <- assay(SEobject)
-    assayTransform <- t(scale(t(assayTransform), 
-                              center = TRUE, 
+    assayTransform <- t(scale(t(assayTransform),
+                              center = TRUE,
                               scale = scale))
     colBatch <- getBatchFactors(SEobject)
-    
+
     if (cmd) {
-        message(
-            "[RFLOMICS] #     =>Correction for Batch: ",
-            paste(colBatch, collapse = " "),
-            " in ",
-            metadata(SEobject)$omicType
-        )
+        message("[RFLOMICS] #     =>Correction for Batch: ",
+            paste(colBatch, collapse = " "),  " in ",
+            metadata(SEobject)$omicType)
     }
-    
+
     newFormula <-
         gsub(pattern = paste(paste(colBatch, "[+]"),  collapse = "|"),
-             "",
-             getModelFormula(SEobject))
+             "", getModelFormula(SEobject))
     newFormula <- gsub(pattern = "~ [+] ", "~ ", newFormula) # use ?
     colData <- getDesignMat(SEobject)
     designToPreserve <-
         model.matrix(as.formula(newFormula), data = colData)
 
-    
+
     if (length(colBatch) == 1) {
         rbeRes <-
             removeBatchEffect(assayTransform, batch = colData[, colBatch],
@@ -63,12 +59,12 @@
     }
     if (length(colBatch) > 2)
         message("sorry, only 2 batches effect for now!")
-    
+
     metadata(SEobject)[["correction_batch_method"]] <-
         "limma (removeBatchEffect)"
 
     assay(SEobject) <- rbeRes
-  
+
     return(SEobject)
 }
 
@@ -100,45 +96,42 @@
                                 cmd = FALSE) {
     if (!is(object, "RflomicsMAE"))
         stop("object is not a RflomicsMAE")
-    
+
     rnaDat <- object[[SEname]]
     assayTransform <- assay(rnaDat)
-    
+
     if (!is.integer(assayTransform) &&
         !identical(assayTransform, floor(assayTransform))) {
-        message("You indicated RNASeq data for ",
-                SEname,
+        message("You indicated RNASeq data for ", SEname,
                 "but it is not recognized as count data")
     }
-    
+
     DMat      <- getDesignMat(rnaDat)
     coefNorm  <- getCoeffNorm(rnaDat)
     designMat <-
         model.matrix(formula(getModelFormula(rnaDat)), data = DMat)
-    
+
     DGEObject <- DGEList(
         counts       = assayTransform,
         norm.factors = coefNorm$norm.factors,
         lib.size     = coefNorm$lib.size,
         samples      = DMat
     )
-    
+
     limmaRes <- voom(DGEObject, design = designMat)
-    
+
     assay(rnaDat) <- limmaRes$E
-    
+
     if (correctBatch)
         rnaDat <- .rbeFunction(object, rnaDat)
     rnaDat <- rnaDat[variableNames,]
-    
-    rnaDat@metadata[["correction_batch"]]             <-
-        correctBatch
-    rnaDat@metadata[["transform_results_all"]]        <- limmaRes
-    rnaDat@metadata[["transform_method_integration"]] <-
-        transformation
-    
+
+    rnaDat@metadata[["correction_batch"]]  <- correctBatch
+    rnaDat@metadata[["transform_results_all"]]  <- limmaRes
+    rnaDat@metadata[["transform_method_integration"]] <- transformation
+
     object[[SEname]] <- rnaDat
-    
+
     return(object)
 }
 
@@ -163,17 +156,16 @@
                           choice = "DE",
                           cmd = FALSE) {
     omicsDat <- object[[SEname]]
-    metadata(omicsDat)[["correction_batch"]]             <-
-        correctBatch
+    metadata(omicsDat)[["correction_batch"]] <- correctBatch
     metadata(omicsDat)[["transform_method_integration"]] <-
         getTransSettings(omicsDat)$method
-    
+
     if (correctBatch)
         omicsDat <- .rbeFunction(object, omicsDat)
     omicsDat <- omicsDat[variableNames,]
-    
+
     object[[SEname]] <- omicsDat
-    
+
     return(object)
 }
 
@@ -192,16 +184,16 @@
                                  "% of explained variance")
     dat_explained$`% of explained variance` <-
         dat_explained$`% of explained variance` * 100
-    
+
     dat_comb <- dat_explained %>%
         group_by(Dataset) %>%
         summarise("Cumulative Explained Variance" = sum(`% of explained variance`))
-    
+
     if (is(Data_res, "block.splsda") ||
         is(Data_res, "block.plsda")) {
         dat_comb <- dat_comb %>% filter(Dataset != "Y")
     }
-    
+
     gg1 <- ggplot(dat_comb,
                   aes(x = Dataset,
                       y = `Cumulative Explained Variance`)) +
@@ -215,7 +207,7 @@
         ) +
         ylab("") + xlab("") +
         ggtitle("Cumulative explained variance")
-    
+
     return(gg1)
 }
 
@@ -226,19 +218,19 @@
     dat_explained <- melt(do.call("rbind", Data_res$prop_expl_var))
     colnames(dat_explained) <- c("Dataset", "Component",
                                  "% of explained variance")
-    
+
     dat_explained$`% of explained variance` <-
         dat_explained$`% of explained variance` * 100
-    
+
     if (is(Data_res, "block.splsda") ||
         is(Data_res, "block.plsda")) {
         dat_explained <- dat_explained %>% filter(Dataset != "Y")
     }
-    
+
     # Chunk of code to be cohesive with MOFA2::plot_explained_variance
     gg2 <- ggplot(dat_explained, aes(x = Dataset, y = Component)) +
         geom_tile(aes(fill = `% of explained variance`), color = "gray88") +
-        geom_text(aes(label = round(`% of explained variance`,2)), 
+        geom_text(aes(label = round(`% of explained variance`,2)),
                   color = "white", size = 4) +
         theme_classic() +
         theme(
@@ -257,7 +249,7 @@
             )
         ) +
         ggtitle("Percentage of explained variance \n per component per block")
-    
+
     return(gg2)
 }
 
@@ -289,11 +281,11 @@
     if (!is(object, "MOFA")) {
         stop("object has to be a MOFA results")
     }
-    
+
     data_opts  <- get_default_data_options(object)
     model_opts <- get_default_model_options(object)
     train_opts <- get_default_training_options(object)
-    
+
     data_opts$scale_views  <- scale_views
     train_opts$maxiter     <- maxiter
     train_opts$verbose     <- FALSE
@@ -309,18 +301,18 @@
         )
     }, warning = function(warn){
         MOFA.messages[[length(MOFA.messages) + 1]] <<- warn
-    } 
+    }
     )
-    outfile <- file.path(tempdir(), 
-                         paste0("mofa_", 
-                                format(Sys.time(), format = "%Y%m%d-%H%M%S"), 
+    outfile <- file.path(tempdir(),
+                         paste0("mofa_",
+                                format(Sys.time(), format = "%Y%m%d-%H%M%S"),
                                 ".hdf5"))
     MOFAObject.trained <-
         run_mofa(MOFAObject.untrained,
                  use_basilisk = FALSE,
                  outfile = outfile,
                  save_data = TRUE)
-    
+
     return(
         list(
             "MOFAObject.untrained" = MOFAObject.untrained,
@@ -380,14 +372,14 @@
                                  ...) {
     list_res <- list()
     dis_anal <- FALSE # is this a discriminant analysis
-    
+
     if (length(intersect(colnames(object$metadata), selectedResponse)) == 0) {
         stop("Selected Responses are not columns from metadata")
     }
-    
+
     Y <- data.frame(object$metadata, stringsAsFactors = TRUE)
     Y <- Y[, selectedResponse, drop = FALSE]
-    
+
     # Is this a discriminant analysis?
     # TODO : is this used?
     if (ncol(Y) == 1 && is.factor(Y[, 1])) {
@@ -407,12 +399,12 @@
                     }
                 }
             ))
-        
+
         Y <- cbind(Y %>% select_if(is.numeric), YFactors)
         Y <- apply(Y, 2, as.numeric)
         rownames(Y) <- YrowNames
     }
-    
+
     # Design matrix
     Design_mat <- matrix(
         link_datasets,
@@ -422,7 +414,7 @@
     Design_mat[, ncol(Design_mat)] <-
         Design_mat[nrow(Design_mat), ] <- link_response
     diag(Design_mat) <- 0
-    
+
     # What function to use for the analysis
     # (can't be sparse if there is a continous response)
     functionName <- "pls"
@@ -433,11 +425,11 @@
         functionName <- paste0("s", functionName)
     if (length(object$blocks) > 1)
         functionName <- paste0("block.", functionName)
-    
+
     # Model Tuning (if required, for sparsity)
     if (sparsity && dis_anal && functionName != "block.spls") {
         tune_function <- paste0("tune.", functionName)
-        
+
         test_keepX <- lapply(
             object$blocks,
             FUN = function(dat) {
@@ -448,28 +440,28 @@
                 ))
             }
         )
-        
+
         list_tuning_args <- list(
             X = object$blocks,
             Y = Y,
             ncomp = ncomp,
             scale = scale_views,
             test.keepX = test_keepX,
-            folds = min(table(Y) - 1, 10)  
+            folds = min(table(Y) - 1, 10)
         )
         if (length(object$blocks) > 1)
             list_tuning_args$design <- Design_mat
-        
+
         list_res$tuning_res <-
             do.call(getFromNamespace(tune_function, ns = "mixOmics"),
                     list_tuning_args)
     }
-    
+
     # Model fitting
     list_args <- list(Y = Y,
                       ncomp = ncomp,
                       scale = scale_views)
-    
+
     if (length(object$blocks) == 1) {
         list_args$X <- object$blocks[[1]]
     } else {
@@ -481,11 +473,11 @@
         !functionName %in% c("block.spls", "block.pls")) {
         list_args$keepX <- list_res$tuning_res$choice.keepX
     }
-    
+
     list_res$analysis_res <-
         do.call(getFromNamespace(functionName, ns = "mixOmics"),
                 list_args)
-    
+
     return(list_res)
 }
 
@@ -493,15 +485,15 @@
 # ---- MOFA relationship to factor ----
 
 #' @title Run test to compute relationship between MOFA2 factors and features
-#' @description 
-#' Run a kruskal.test between all factors and all biological and metadata 
+#' @description
+#' Run a kruskal.test between all factors and all biological and metadata
 #' factors entered by the user in the interface. Is used inside the interface
-#' and the report. 
-#' @param mofaRes an object from a MOFA run. 
-#' @param method P value adjustment method. One of "BH", "Bon", etc. Same as 
-#' in p.adjust method. 
-#' @param ... Not in use at the moment. 
-#' @return A table or a graph. 
+#' and the report.
+#' @param mofaRes an object from a MOFA run.
+#' @param method P value adjustment method. One of "BH", "Bon", etc. Same as
+#' in p.adjust method.
+#' @param ... Not in use at the moment.
+#' @return A table or a graph.
 #' @importFrom stats kruskal.test
 #' @importFrom MOFA2 get_factors
 #' @keywords internal
@@ -512,22 +504,22 @@
     ExpDesign <- mofaRes@samples_metadata
     ExpDesign$group  <- NULL
     ExpDesign$sample <- NULL
-    
+
     res_aov <- lapply(
         seq_len(ncol(ExpDesign)),
         FUN = function(i) {
             p.adjust(unlist(lapply(seq_len(ncol(factors$group1)),
                           FUN = function(j){
-                              kruskal.test(x = factors$group1[,j], 
+                              kruskal.test(x = factors$group1[,j],
                                            g = ExpDesign[,i])$p.value
                           })), method = method)
         }
     )
     names(res_aov) <- colnames(ExpDesign)
-    
+
     res_res <- data.frame(do.call("rbind", res_aov))
     # colnames(res_res) <- gsub("Response ", "", colnames(res_res))
     colnames(res_res) <- paste0("Factor ", seq_len(ncol(res_res)))
-    
+
     return(res_res)
 }

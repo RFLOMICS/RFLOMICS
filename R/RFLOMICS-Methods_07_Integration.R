@@ -86,11 +86,11 @@ setMethod(
         }
       }
     }
-    print("I'm here 3")
     # On each selected omics, according to its type,
     # apply transformation if demanded.
-    # Filter DE entities
+    # Filter DE entities (or not)
     for (SEname in omicsNames) {
+
       SEobject <- object[[SEname]]
       omicsType <- getOmicsTypes(SEobject)
 
@@ -98,7 +98,7 @@ setMethod(
         object = object,
         SEname = SEname,
         correctBatch = correct_batch,
-        variableNames = variableLists[[SEname]],
+        variableNames = intersect(variableLists[[SEname]], rownames(SEobject)),
         cmd = cmd
       )
 
@@ -117,7 +117,6 @@ setMethod(
     # MOFA add the entire view name if it's the case, MixOmics do not care.
     # For visualization purpose and coherence,
     # add .index at the end of duplicated variables.
-    print("I'm here 5")
     commonVarNames <- sum(duplicated(unlist(rownames(object))))
     if (commonVarNames > 0) {
       if (cmd) {
@@ -172,7 +171,6 @@ setMethod(
       MOFAObject <- create_mofa(object,
                                 groups = group,
                                 extract_metadata = TRUE)
-      print("I'm here 2")
       return(MOFAObject)
 
     } else if (method == "MixOmics") {
@@ -199,7 +197,6 @@ setMethod(
           mat[match(rownames(mat), rownames(MixOmicsObject$metadata)),]
         }
       )
-      print("I'm here 1")
 
       return(MixOmicsObject)
     }
@@ -268,9 +265,6 @@ setMethod(
       "MOFA+" = "MOFA",
       {stop("This method is unrecognized")}
     )
-
-    print("I'm here")
-
     switch(toupper(method),
            "MOFA" = {
 
