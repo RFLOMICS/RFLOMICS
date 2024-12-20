@@ -16,12 +16,12 @@
 #' analysis on omics datasets stored in an object of class
 #' \link{RflomicsSE} or \link{RflomicsMAE-class}. According to the type
 #' of omics and to a list of contrasts, a differential analysis
-#' is performef for each contrasts.
+#' is performed for each contrasts.
 #' Two methods are available according to the type of object:
 #' \itemize{
 #' \item For RNAseq data:  the \code{glmFit} function/model of the
 #' \code{edgeR} package is applied.
-#' \item For proteomic and metabolomic data:  the \code{\link{lmFit}}
+#' \item For proteomics and metabolomics data:  the \code{\link{lmFit}}
 #' function/model of the \code{limma} package is applied.
 #' }
 #' @param object An object of class \link{RflomicsSE} or
@@ -32,16 +32,16 @@
 #' analysis method to run. Either "edgeRglmfit" or "limmalmFit".
 #' @param contrastList data.frame of contrast from generateExpressionContrast().
 #' if NULL, it takes all selected contrasts.
-#' @param p.adj.method The method choosen to adjust pvalue. Takes the same
+#' @param p.adj.method The method chosen to adjust pvalue. Takes the same
 #' values as the ones of adj.p.adjust method.
 #' @param p.adj.cutoff The adjusted pvalue cut-off
 #' @param logFC.cutoff The lof2FC cutoff
-#' @param cmd boolean. Used in the interface. If TRUE, print cmd for the user.
+#' @param cmd Boolean. Used in the interface. If TRUE, print cmd for the user.
 #' @param ... Additional arguments.
 #' @details
 #' Functions and parameters used for RNAseq are those recommended in DiCoExpress
 #' workflow (see the paper in reference).
-#' Functions and parameters used for proteomic and metabolomic data are those
+#' Functions and parameters used for proteomics and metabolomics data are those
 #' recommended in the (Efstathiou *et al.*, 2017)
 #' @return A \link{RflomicsSE} or a \link{RflomicsMAE-class} object.
 #' All the results are stored as a named list \code{DiffExpAnal}
@@ -200,7 +200,7 @@ setMethod(
 
       }else{
 
-        DiffExpAnal[["errors"]] <- "Something is not working correctly :("
+        DiffExpAnal[["errors"]] <- "Something is not working correctly"
       }
     }
 
@@ -989,8 +989,8 @@ setMethod(
 #' @aliases getDiffSettings,RflomicsSE-method
 #' @section Accessors:
 #' \itemize{
-#'    \item getDiffSettings: retrun a list of differential expression analysis
-#'    settings of a given omic dataset}
+#'    \item getDiffSettings: return a list of differential expression analysis
+#'    settings of a given omics dataset}
 #' @exportMethod getDiffSettings
 #' @examples
 #' # See runDiffAnalysis for an example that includes getDiffSettings
@@ -1021,7 +1021,7 @@ setMethod(
 #' @aliases getValidContrasts,RflomicsSE-method
 #' @section Accessors:
 #' \itemize{
-#'    \item getValidContrasts: return a data.frame of valided contrasts}
+#'    \item getValidContrasts: return a data.frame of validated contrasts}
 #' @exportMethod getValidContrasts
 setMethod(
   f          = "getValidContrasts",
@@ -1100,7 +1100,7 @@ setMethod(
 #' @param plot FALSE or TRUE
 #' @param ylabelLength max length of the labels (characters)
 #' @param nbMaxLabel number of labels to print
-#' @param interface boolean. Is this plot for the interace or commandline?
+#' @param interface Boolean. Is this plot for the interface or commandline?
 #' @importFrom purrr reduce
 #' @importFrom reshape2 melt
 #' @exportMethod getDiffAnalysesSummary
