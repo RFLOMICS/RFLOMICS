@@ -22,12 +22,11 @@ knitr::opts_chunk$set(
 library(RFLOMICS)
 ```
 
-RFLOMICS can handle three types of omics (RNAseq, proteomics and metabolomics) and several datasets per omics generated from similar experimental design. Each dataset must have a complete design.
+RFLOMICS can handle three types of omics (transcriptomics (RNAseq), proteomics and metabolomics) and several datasets per omics generated from similar experimental design. Each dataset must have a complete design.
 
-Below each input file is detailed :
+Below each input file is detailed.
 
 ## Experimental design file
-<!-- ce fichier contient le plan experimental (conditions) plus des metadata par echantillons -->
 
 This file provides the experimental design table. The first column indicates the sample names. Next columns indicate experimental conditions (called biological factors or technical/batch factors) and metadata (optional). Each row describes a sample by specifying the level for each experimental condition.
 This file is edited by the user and must contain a header with column names corresponding respectively to the factor names and metadata names.
@@ -39,7 +38,7 @@ data(ecoseed.df)
 DT::datatable(ecoseed.df$design)
 ```
 
-## Omic data file
+## Omics data file
 
 For each omics: 
 The matrix-like file with abundance of omics data is needed. The first column indicates feature names (genes, proteins, or metabolites), column headers indicate the sample names.
@@ -56,7 +55,7 @@ DT::datatable(geneCount[1:10, 1:5])
 ```
 
 
-### **Proteomic data**
+### **Proteomics data**
 
 For proteomics data the values correspond to intensity of proteins.
 
@@ -67,7 +66,7 @@ DT::datatable(protAbundance[1:10, 1:5])
 ```
 
 
-### **Metabolomic data**
+### **Metabolomics data**
 
 For metabolomics data the values correspond to intensity of metabolites.
 
