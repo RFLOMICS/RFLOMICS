@@ -30,7 +30,7 @@ You can access the RFLOMICS app on Sk8 using this url:
 
 https://RFLOMICS.sk8.inrae.fr/
 
-WARNING: only 2Gb of ram available per app, we  recommand using the SK8 solution 
+WARNING: only 2 Gb of ram available per app, we recommend using the SK8 solution 
 only if your data have a small number of samples and features. 
 
 ### Locally 
@@ -96,8 +96,6 @@ binary and restart your session:
 echo "Sys.setenv(RETICULATE_PYTHON = \"path_to_python_bin\")" >> .Rprofile
 ```
 6. Install MOFA2 using `BiocManager::install("MOFA2")` in R. 
-
-
 
 
 ## Run RFLOMICS
