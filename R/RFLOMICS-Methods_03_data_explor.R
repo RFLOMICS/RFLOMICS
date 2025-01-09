@@ -107,7 +107,7 @@ setMethod(
                                userNormMethod = userNormMethod)
 
     # Run PCA for filtered & normalized data
-    message("[RFLOMICS] #    => Compute PCA ", getDatasetNames(object))
+    message("[RFLOMICS] #    => Computing PCA... ", getDatasetNames(object))
     object <- runOmicsPCA(object, ncomp = 5, raw = FALSE)
 
     # tag
@@ -940,7 +940,7 @@ setMethod(
     # check presence of bio factors
     if (!length(getBioFactors(object)) %in% seq_len(3)){
       output[["messages"]] <-
-        "Error: You need at least 1 biological factor with at least 2 modalities."
+        "Error: You need at least 1 biological factor with at least 2 levels"
       output[["error"]] <- TRUE
       return(output)
     }
@@ -991,7 +991,7 @@ setMethod(f         = "checkExpDesignCompleteness",
           signature = "RflomicsMAE",
           definition <- function(object, omicName, sampleList=NULL){
 
-            if(is.null(omicName)) stop("Arg omicName missed")
+            if (is.null(omicName)) stop("Argument omicName cannot be NULL.")
 
             SEObject <- getRflomicsSE(object, omicName)
 

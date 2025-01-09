@@ -51,7 +51,7 @@
 \S4method{sumMixOmics}{RflomicsMAE}(object, selectedResponse = NULL)
 }
 \arguments{
-\item{object}{a MAE object (produced by Flomics).}
+\item{object}{a RflomicsMAE object.}
 
 \item{preparedObject}{An untrained MOFA object or a list of dataset.
 Usually a result of prepareForIntegration.}

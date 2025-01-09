@@ -133,7 +133,7 @@ BP for GO.)}
 
 \item{annotation}{for custom annotation, a data frame of the annotation.
 The data frame must contains at least two columns: gene and term, with the
-omic name and the associated term id respectively. A column name
+omics name and the associated term id respectively. A column name
 can be added with the full name of the term (if  term is not the full name
 already). The column domain can be used to indicate either different databases
 (grouped analyses of kegg and go for example) or different domains for
@@ -194,7 +194,7 @@ n the clustering.}
 name of the RflomicsSE to look for.}
 }
 \value{
-A RflomicsMAE or a RflomicsS, depending on the class of object
+A RflomicsMAE or a RflomicsSE, depending on the class of object
 parameter. The enrichment results are added to the metadata slot, either
 in DiffExpEnrichAnal or CoExpEnrichAnal.
 
@@ -205,7 +205,7 @@ a list of tables or a table
 a list with all settings
 }
 \description{
-This function performs overrepresentation analysis (ORA) using
+This function performs over representation analysis (ORA) using
 clusterprofiler functions. It can be used with custom annotation file
 (via enricher), GO (enrichGO) or KEGG (enrichKEGG) annotations.
 }
@@ -243,7 +243,7 @@ a \link{RflomicsMAE-class} object.
 
 \section{Plots}{
 
-A collection of functions for plotting results from omic analysis steps.
+A collection of functions for plotting results from omics analysis steps.
 
 
 \itemize{

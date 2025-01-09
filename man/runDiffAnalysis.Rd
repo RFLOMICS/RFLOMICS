@@ -152,7 +152,7 @@ class \link{RflomicsMAE-class}}
 \item{method}{A character vector giving the name of the differential
 analysis method to run. Either "edgeRglmfit" or "limmalmFit".}
 
-\item{p.adj.method}{The method choosen to adjust pvalue. Takes the same
+\item{p.adj.method}{The method chosen to adjust pvalue. Takes the same
 values as the ones of adj.p.adjust method.}
 
 \item{p.adj.cutoff}{adjusted pvalue cutoff. Default is the parameter from
@@ -161,7 +161,7 @@ the differential analysis.}
 \item{logFC.cutoff}{cutoff for absolute value of log2FC. Default is the
 parameter from the differential analysis.}
 
-\item{cmd}{boolean. Used in the interface. If TRUE, print cmd for the user.}
+\item{cmd}{Boolean. Used in the interface. If TRUE, print cmd for the user.}
 
 \item{...}{Additional arguments.}
 
@@ -209,7 +209,7 @@ Defines the operation to perform on the DE lists from the contrasts.}
 
 \item{nbMaxLabel}{number of labels to print}
 
-\item{interface}{boolean. Is this plot for the interace or commandline?}
+\item{interface}{Boolean. Is this plot for the interface or commandline?}
 }
 \value{
 A \link{RflomicsSE} or a \link{RflomicsMAE-class} object.
@@ -245,12 +245,12 @@ This is an interface method which run a differential
 analysis on omics datasets stored in an object of class
 \link{RflomicsSE} or \link{RflomicsMAE-class}. According to the type
 of omics and to a list of contrasts, a differential analysis
-is performef for each contrasts.
+is performed for each contrasts.
 Two methods are available according to the type of object:
 \itemize{
 \item For RNAseq data:  the \code{glmFit} function/model of the
 \code{edgeR} package is applied.
-\item For proteomic and metabolomic data:  the \code{\link{lmFit}}
+\item For proteomics and metabolomics data:  the \code{\link{lmFit}}
 function/model of the \code{limma} package is applied.
 }
 
@@ -265,7 +265,7 @@ function/model of the \code{limma} package is applied.
 \details{
 Functions and parameters used for RNAseq are those recommended in DiCoExpress
 workflow (see the paper in reference).
-Functions and parameters used for proteomic and metabolomic data are those
+Functions and parameters used for proteomics and metabolomics data are those
 recommended in the (Efstathiou *et al.*, 2017)
 }
 \section{Accessors}{
@@ -282,12 +282,12 @@ recommended in the (Efstathiou *et al.*, 2017)
 
 
 \itemize{
-   \item getDiffSettings: retrun a list of differential expression analysis
-   settings of a given omic dataset}
+   \item getDiffSettings: return a list of differential expression analysis
+   settings of a given omics dataset}
 
 
 \itemize{
-   \item getValidContrasts: return a data.frame of valided contrasts}
+   \item getValidContrasts: return a data.frame of validated contrasts}
 
 
 \itemize{

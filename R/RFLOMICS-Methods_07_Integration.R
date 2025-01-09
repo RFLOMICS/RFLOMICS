@@ -16,7 +16,7 @@
 #' \code{\link[limma]{voom}}.
 #' This is the second step into the integration.
 #' @param object An object of class \link{RflomicsMAE-class}.
-#' It is expected the MAE object is produced by rflomics previous analyses,
+#' It is expected the MAE object is produced by RFLOMICS previous analyses,
 #' as it relies on their results.
 #' @param omicsNames vector of characters strings,
 #' referring to the names of the filtered table in 'object@ExperimentList'.
@@ -211,7 +211,7 @@ setMethod(
 #' mixOmics) and the settings given by the user. Requires to have the correct
 #' entry format in preparedObject before running.
 #' @param object An object of class \link{RflomicsMAE-class}.
-#' It is expected the MAE object is produced by rflomics previous analyses,
+#' It is expected the MAE object is produced by RFLOMICS previous analyses,
 #' as it relies on their results.
 #' @param preparedObject An untrained MOFA object or a list of dataset.
 #' Usually a result of prepareForIntegration.
@@ -364,7 +364,7 @@ setMethod(
 #' \link{RflomicsMAE-class} object. Setters are also available.
 #'
 #' @param object An object of class \link{RflomicsMAE-class}.
-#' It is expected the MAE object is produced by rflomics previous analyses,
+#' It is expected the MAE object is produced by RFLOMICS previous analyses,
 #' as it relies on their results.
 #' @param response a character giving the response variable to access
 #' specifically.
@@ -482,7 +482,7 @@ setMethod(
 
 #' @title Get an overview of MixOmics integration results
 #'
-#' @param object a MAE object (produced by Flomics).
+#' @param object a RflomicsMAE object.
 #' @param selectedResponse a character.
 #' Useful if MixOmics was run on several response variable.
 #' If NULL, all variables are taken into account.
@@ -521,7 +521,7 @@ setMethod(
 #' @title get one MixOmics result
 #' @description Get an overview of MixOmics integration results for
 #' a specific response variable.
-#' @param object a MAE object (produced by Flomics).
+#' @param object a RflomicsMAE object.
 #' @param selectedResponse a character string.
 #' @return A data frame.
 #' @keywords internal

@@ -139,7 +139,7 @@ metadata information: meta) and a reference level.
  (see RFLOMICS-input-data.html), please press the 'Load Ecoseed Data'.
  
 
-As soon as the data are loaded the **RFlomics MultiAssayExperiment** object is 
+As soon as the data are loaded the **RFLOMICS MultiAssayExperiment** object is 
 created. The data overview panel displays the samples overlap across datasets 
 and the number of datasets per combination of biological factors.
 
@@ -189,8 +189,7 @@ select a subset of samples to analyze, provided the completeness condition is me
 
  The design must be complete and as possible balanced. A **Complete design (mandatory)** 
  mean that all possible combinations of biological factors' levels (called groups) 
- are presents. A **Balanced design (recommended)** has an equal number of o
- bservations (replicates) for each group.
+ are presents. A **Balanced design (recommended)** has an equal number of observations (replicates) for each group.
 
 These constraints are checked and represented as graph (each square represent 1 
 group and each color level indicate the number of observations). 
@@ -236,13 +235,12 @@ factor of the design to decode the main sources of variation in the data.
 In this tab panel, we can run the differential expression analysis. The analysis
 is run by contrast.  
 For RNAseq data, the **glmFit()** function from the **edgeR** package is used 
-whereas for proteomic and metabolomic data, the **lmFit()** function from **limma**
-packages is used. The ability to run analysis on a cluster is offered by sliding 
-the cluster button (see RFLOMICS-configure-cluster-access vignette)
+whereas for proteomics and metabolomics data, the **lmFit()** function from **limma**
+packages is used.
 
 
 Results will appear in two components: a scrolling menu will give the results of 
-the analysis by contrat and, at the bottom of the panel, the intersecting sets of 
+the analysis by contrast and, at the bottom of the panel, the intersecting sets of 
 the lists of DEG is given thanks to the **UpSetR()** function.  
 
 Each results has to be validated:
@@ -290,9 +288,6 @@ the number of expressions' profile into which
 the DEG have to be cut, can be first set to 2 to precise the range of K and then 
 put to a minimum of 20 replicates per K.
 
-The ability to run the clustering analysis on a cluster is offered by sliding 
-the Cluster button (see Rflomics_configure-cluster-access).
-
 
 * Results description (see [CoSeq](https://www.bioconductor.org/packages/release/bioc/vignettes/coseq/inst/doc/coseq.html))
 
@@ -304,7 +299,7 @@ the Cluster button (see Rflomics_configure-cluster-access).
 
 ![ ](Images/05_coExpAnal.png){width=80%}
 
-### Annotation and Enrichment analysis using clusterProfilR
+### Annotation and Enrichment analysis using clusterProfiler
 
  We select the lists of DE genes or clusters to annotate. All available lists 
  are selected by default. 
@@ -408,7 +403,7 @@ Several figure are provided by the interface once the analysis is done.
  In RFLOMICS, we chose to only ask for a number of cases. This number of cases 
  is used to determine the keep.X argument, using a span of nfeatures/number of 
  cases. By example, if the user chose 5 cases and has 2 datasets with 
- respectively 500 and 250 features, the function will test 25 combinaisons of 
+ respectively 500 and 250 features, the function will test 25 combinations of 
  features per component. For each datasets, features will be picked-up in a 
  cumulative manner ie for the DS1: 100,200,300,400,500 and 
  DS2: 50, 100, 150, 200, 250. An example of combination will be 
@@ -431,7 +426,7 @@ the results is the same and visualization functions
 can be used to further investigate the analyses results
 and produce suitable figures for an article. 
 Most visualization functions from RFLOMICS return a ggplot object and can be
-modified using the ggplto2 functions.
+modified using the ggplot2 functions.
 
 Each of the analysis step has their own plot and getters methods. 
 

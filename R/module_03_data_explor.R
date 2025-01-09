@@ -2,7 +2,7 @@
 ### [03_data_processing] shiny modules
 ### ----------------------------------------------------------------------------
 # N. Bessoltane,
-# D. Charif, 
+# D. Charif,
 
 ### UI
 QCNormalizationTabUI <- function(id) {
@@ -44,7 +44,7 @@ QCNormalizationTabUI <- function(id) {
         "filtSummary2UI"
       )))
     ),
-    
+
     column(8, uiOutput(
       ns("tabPanelUI")
     ))))
@@ -54,15 +54,15 @@ QCNormalizationTabUI <- function(id) {
 ### server
 QCNormalizationTab <-
   function(input, output, session, dataset, rea.values) {
-    
+
     #---- sample list----
     output$selectSamplesUI <- renderUI({
       sampleList <-
         colnames(session$userData$FlomicsMultiAssay[[dataset]])
       pickerInput(
         inputId  = session$ns("selectSamples"),
-        label    = 
-          .addBSpopify(label = 'Samples list:', 
+        label    =
+          .addBSpopify(label = 'Samples list:',
                        content = "Select samples to include in further analyses"),
         choices  = sampleList,
         options  = list(
@@ -74,7 +74,7 @@ QCNormalizationTab <-
         selected = sampleList
       )
     })
-    
+
     #---- Completeness----
     output$completenessUI <- renderPlot({
       plotExpDesignCompleteness(
@@ -82,10 +82,10 @@ QCNormalizationTab <-
         sampleList = input$selectSamples
       )
     })
-    
+
     #---- adapted parameters for each omics type ----
     output$paramUI <- renderUI({
-      
+
       paramFeatureFilter <-
         switch (
           getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
@@ -93,21 +93,21 @@ QCNormalizationTab <-
             list(
               radioButtons(
                 inputId  = session$ns("selectFilterMethod"),
-                label    = 
+                label    =
                   .addBSpopify(
-                    label = 'Low count filtering', 
+                    label = 'Low count filtering',
                     content = "Genes with low counts will be removed based on count per million (cpm), accounting for the library size"),
                 choices  =  list("CPM" = "CPM"),
                 selected = "CPM"
               ),
               conditionalPanel(
-                condition = 
-                  paste0("input[\'", 
+                condition =
+                  paste0("input[\'",
                          session$ns("selectFilterMethod"),
                          "\'] == \'CPM\'"),
                 selectInput(
                   inputId  = session$ns("Filter_Strategy"),
-                  label    = .addBSpopify(label = 'Strategy', 
+                  label    = .addBSpopify(label = 'Strategy',
                                           content = "Choose the strategy to filter genes based on count per million (cpm). Keep genes if the NbOfsample_over_cpm >= Strategy."),
                   choices  = c("NbConditions" = "NbConditions",
                                "NbReplicates" = "NbReplicates"),
@@ -116,13 +116,13 @@ QCNormalizationTab <-
                 style="font-size:80%; font-family:Arial;"
               ),
               conditionalPanel(
-                condition = 
-                  paste0("input[\'", 
+                condition =
+                  paste0("input[\'",
                          session$ns("selectFilterMethod"),
                          "\'] == \'CPM\'"),
                 numericInput(
                   inputId = session$ns("FilterSeuil"),
-                  label = .addBSpopify(label = 'CPM cut-off', 
+                  label = .addBSpopify(label = 'CPM cut-off',
                                        content = "Choose the cpm cut-off"),
                   value = 1, min = 1, max = 10, step = 1
                 ),
@@ -135,9 +135,9 @@ QCNormalizationTab <-
             list(
               radioButtons(
                 inputId  = session$ns("selectImputMethod"),
-                label    = 
+                label    =
                   .addBSpopify(
-                    label = 'Missing Value Imputation', 
+                    label = 'Missing Value Imputation',
                     content = paste0("Imputation method, cannot be changed for ",
                                      getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
                                      " data.")),
@@ -148,8 +148,8 @@ QCNormalizationTab <-
             )
           }
         )
-      
-      paramTransform <- 
+
+      paramTransform <-
         switch (
           getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
           "RNAseq" = {},
@@ -157,22 +157,22 @@ QCNormalizationTab <-
             list(
               radioButtons(
                 inputId  = session$ns("dataTransform"),
-                label    = 
-                  .addBSpopify(label = 'Data Transformation', 
-                               content = paste0("Choose transformation method. ", 
+                label    =
+                  .addBSpopify(label = 'Data Transformation',
+                               content = paste0("Choose transformation method. ",
                                                 "If the data is already transformed, ",
                                                 "please specify the method, tool, or ",
                                                 "platform used for the processing.")),
-                choices  = c("log2" = "log2", 
+                choices  = c("log2" = "log2",
                              "Already transformed" = "none"),
                 selected = "log2"
               ),
               conditionalPanel(
-                condition = 
-                  paste0("input[\'", 
+                condition =
+                  paste0("input[\'",
                          session$ns("dataTransform"),
                          "\'] == \'none\'"),
-                textInput(inputId = session$ns("userTransMethod"), 
+                textInput(inputId = session$ns("userTransMethod"),
                           label = "by:", value = "unknown"),
                 style="font-size:80%; font-family:Arial;"
               ),
@@ -180,7 +180,7 @@ QCNormalizationTab <-
             )
           }
         )
-      
+
       paramNormalization <-
         switch (
           getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
@@ -188,8 +188,8 @@ QCNormalizationTab <-
             list(
               radioButtons(
                 inputId  = session$ns("selectNormMethod"),
-                label    = 
-                  .addBSpopify(label = 'Data Normalization', 
+                label    =
+                  .addBSpopify(label = 'Data Normalization',
                                content = "Normalization method, cannot be changed for counts data."),
                 choices  =  list("TMM (edgeR)" = "TMM"),
                 selected = "TMM"
@@ -198,11 +198,11 @@ QCNormalizationTab <-
             )
           },
           {
-            list(       
+            list(
               radioButtons(
                 inputId = session$ns("selectProtMetNormMethod"),
-                label   = 
-                  .addBSpopify(label = 'Data Normalization', 
+                label   =
+                  .addBSpopify(label = 'Data Normalization',
                                content = paste0("Choose normalization method. ",
                                                 "If the data is already normalized, ",
                                                 "please specify the method, tool, or ",
@@ -213,18 +213,18 @@ QCNormalizationTab <-
                 selected = "median"
               ),
               conditionalPanel(
-                condition = 
-                  paste0("input[\'", 
+                condition =
+                  paste0("input[\'",
                          session$ns("selectProtMetNormMethod"),
                          "\'] == \'none\'"),
-                textInput(inputId = session$ns("userNormMethod"), 
+                textInput(inputId = session$ns("userNormMethod"),
                           label = "by:", value = "unknown")
               ),
               hr()
             )
           }
         )
-      
+
       fluidRow(
         column(
           width = 12,
@@ -235,20 +235,20 @@ QCNormalizationTab <-
         )
       )
     })
-    
+
     #### PCA axis for plot
     # update/adapt PCA axis
     callModule(UpdateRadioButtons, "factors")
-    
+
     #### PCA for metadata axis for plot
     # update/adapt PCA axis
     callModule(UpdateRadioButtons, "meta")
-    
+
     #---- dataset filtering summary----
     output$filtSummary1UI <- renderUI({
       SE.data  <-
         session$userData$FlomicsMultiAssay[[dataset]]
-      
+
       tagList(
         box(
           title = length(names(SE.data)),
@@ -263,22 +263,22 @@ QCNormalizationTab <-
           "Initial number of samples"
         )
       )
-      
+
     })
-    
+
     #---- Summary UI----
     output$filtSummary2UI <- renderUI({
       if (rea.values[[dataset]]$process == FALSE)
         return()
-      
+
       SE.data  <- session$userData$FlomicsMultiAssay[[dataset]]
-      
+
       tagList(
         box(
           title = length(names(SE.data)),
           width = 6,
           background = "fuchsia",
-          paste0("Number of filtered ", 
+          paste0("Number of filtered ",
                  .omicsDic(SE.data)$variableName)
         ),
         box(
@@ -288,26 +288,26 @@ QCNormalizationTab <-
           "Number of filtered samples"
         )
       )
-      
+
     })
-    
-    
+
+
     #---- Exploratory of Biological and Technical variability----
     output$tabPanelUI <- renderUI({
       if (rea.values$model == FALSE)
         return()
-      
+
       MAE.data <- session$userData$FlomicsMultiAssay
       SE.data <- MAE.data[[dataset]]
-      
+
       tabPanel.default.list <- list(
         tabPanel(
           "Distribution (boxplots)",
           tags$br(),
           tags$i(
-            "It is expected to observe aligned boxplots/medians after running 
-                        the pre-processing steps. Samples with shifted median may 
-                        be outliers. Consider removing them."
+            "It is expected to observe aligned boxplots/medians after running
+                        the pre-processing steps. Samples with shifted median may
+                        be outliers, consider removing them."
           ),
           tags$br(),
           tags$hr(),
@@ -317,12 +317,12 @@ QCNormalizationTab <-
           "Distribution (density)",
           tags$br(),
           tags$i(
-            "It is expected to have a gaussian-like density distribution 
+            "It is expected to have a gaussian-like density distribution
                       after running  the pre-processing steps.
-                      If a second peak is observed at the beginning of the 
+                      If a second peak is observed at the beginning of the
                       curve, this could indicate that the low, uninformative
-                      values, have not been correctly filtered. 
-                      In this case, you may 
+                      values, have not been correctly filtered.
+                      In this case, you may
                       increase the filtering threshold."
           ),
           tags$br(),
@@ -333,15 +333,15 @@ QCNormalizationTab <-
           "Principal component analysis",
           tags$br(),
           tags$i(
-            "To observe the variability associated to each biological factor, 
-               you can change the colour of samples according to 
+            "To observe the variability associated to each biological factor,
+               you can change the colour of samples according to
                experimental factor (Factor button).
-               It will help you to interpret the PCA axes. You may identify 
+               It will help you to interpret the PCA axes. You may identify
                outliers samples that drives the variability. Consider removing
                them from the analysis.
-               In the best case scenario, biological replicates have to group 
-               together with superposed ellipses. 
-            If not, it may indicate batch effect."
+               In the best case scenario, biological replicates have to group
+               together with superposed ellipses.
+            If not, it may indicate a batch effect."
           ),
           tags$br(),
           tags$hr(),
@@ -354,14 +354,14 @@ QCNormalizationTab <-
           tags$i(paste0("Boxplot showing the expression profile of a selected ",
                         .omicsDic(SE.data)$variableName),
                  " colored by experimental factor's levels."),
-          
+
           tags$br(), tags$hr(), tags$br(),
           uiOutput(session$ns("FeatureBoxplot"))
         )
       )
-      
+
       tabPanel.list <- list()
-      
+
       switch(
         getOmicsTypes(SE.data),
         "RNAseq" = {
@@ -370,7 +370,7 @@ QCNormalizationTab <-
               "Library size",
               tags$br(),
               tags$i(
-                "It is expected that the library sizes are equals or at least 
+                "It is expected that the library sizes are equals or at least
                 close to each other after running the pre-processing steps."
               ),
               tags$br(),
@@ -378,7 +378,7 @@ QCNormalizationTab <-
               uiOutput(session$ns("LibSizeUI"))
             )
           ), tabPanel.default.list)
-          
+
         },
         "proteomics" = {
           tabPanel.list <- tabPanel.default.list
@@ -387,7 +387,7 @@ QCNormalizationTab <-
           tabPanel.list <- tabPanel.default.list
         }
       )
-      
+
       # Exploratory of Biological and Technical variability
       box(
         width = 14,
@@ -397,22 +397,22 @@ QCNormalizationTab <-
         do.call(what = tabsetPanel, args = tabPanel.list)
       )
     })
-    
+
     #---- QC plot for raw/processed data----
     # library size plot only for RNAseq data
     output$LibSizeUI <- renderUI({
       plot <- renderPlot(
         plotLibrarySize(session$userData$FlomicsMultiAssay[[dataset]], raw = TRUE))
-      
+
       if (rea.values[[dataset]]$process != FALSE) {
         plot <- list(renderPlot(
           plotLibrarySize(session$userData$FlomicsMultiAssay[[dataset]])
         ), plot)
       }
-      
+
       return(plot)
     })
-    
+
     # value (count/intensity) distribution (boxplot/density)
     output$boxplotUI <- renderUI({
       plot <- renderPlot(
@@ -422,7 +422,7 @@ QCNormalizationTab <-
           raw = TRUE
         )
       )
-      
+
       if (rea.values[[dataset]]$process != FALSE) {
         plot <- list(renderPlot(
           plotDataDistribution(
@@ -432,10 +432,10 @@ QCNormalizationTab <-
           )
         ), plot)
       }
-      
+
       return(plot)
     })
-    
+
     output$CountDistUI <- renderUI({
       plot <- renderPlot(
         plotDataDistribution(
@@ -444,7 +444,7 @@ QCNormalizationTab <-
           raw = TRUE
         )
       )
-      
+
       if (rea.values[[dataset]]$process != FALSE) {
         plot <- list(renderPlot(
           plotDataDistribution(
@@ -454,19 +454,19 @@ QCNormalizationTab <-
           )
         ), plot)
       }
-      
+
       return(plot)
     })
-    
+
     # PCA plot
     output$PCAcoordUI <- renderUI({
-      
-      factors_type   <- 
+
+      factors_type   <-
         getFactorTypes(session$userData$FlomicsMultiAssay[[dataset]])
       choices        <- names(factors_type)
       names(choices) <-
         paste(names(factors_type),  paste0("(", factors_type, ")"))
-      
+
       ui <- list(
         fluidRow(
           tags$br(),
@@ -483,26 +483,26 @@ QCNormalizationTab <-
           tags$br(),
         ),
         renderPlot({
-          
+
           plotOmicsPCA(
             session$userData$FlomicsMultiAssay[[dataset]],
             raw = TRUE,
-            axes = c(as.numeric(input$`factors-Firstaxis`[1]), 
+            axes = c(as.numeric(input$`factors-Firstaxis`[1]),
                      as.numeric(input$`factors-Secondaxis`[1])),
             groupColor = input$PCA.factor.condition
           )
-          
+
         })
       )
-      
+
       if (rea.values[[dataset]]$process != FALSE) {
-        ui <- 
+        ui <-
           list(
             renderPlot({
               plotOmicsPCA(
                 session$userData$FlomicsMultiAssay[[dataset]],
                 raw = FALSE,
-                axes = c(as.numeric(input$`factors-Firstaxis`[1]), 
+                axes = c(as.numeric(input$`factors-Firstaxis`[1]),
                          as.numeric(input$`factors-Secondaxis`[1])),
                 groupColor = input$PCA.factor.condition
               )
@@ -510,33 +510,33 @@ QCNormalizationTab <-
       }
       return(ui)
     })
-    
+
     # Boxplot
     output$FeatureBoxplot <- renderUI({
-      
+
       SE.data <- session$userData$FlomicsMultiAssay[[dataset]]
-      
+
       ui <- list(
         renderPlot({
           plotBoxplotDE(
-            object=session$userData$FlomicsMultiAssay[[dataset]], 
-            featureName=input$DE, 
-            groupColor=input$DEcondition, 
-            raw = TRUE) 
+            object=session$userData$FlomicsMultiAssay[[dataset]],
+            featureName=input$DE,
+            groupColor=input$DEcondition,
+            raw = TRUE)
         })
       )
-      
+
       if (rea.values[[dataset]]$process != FALSE) {
         ui <- list(
           renderPlot({
             plotBoxplotDE(
-              object=session$userData$FlomicsMultiAssay[[dataset]], 
-              featureName=input$DE, 
-              groupColor=input$DEcondition, 
-              raw = FALSE) 
+              object=session$userData$FlomicsMultiAssay[[dataset]],
+              featureName=input$DE,
+              groupColor=input$DEcondition,
+              raw = FALSE)
           }), ui)
       }
-      
+
       ui <- list(
         fluidRow(
           column(
@@ -561,19 +561,19 @@ QCNormalizationTab <-
         ), ui)
       return(ui)
     })
-    
+
     #---- run preprocessing - Normalization/transformation, filtering...----
     observeEvent(input$run, {
       # check if input$selectSamples is empty
       if (is.null(input$selectSamples)) {
-        showModal(modalDialog(title = "Error message", 
+        showModal(modalDialog(title = "Error message",
                               "Please select some samples to run the analysis."))
       }
       validate({
-        need(!is.null(input$selectSamples), 
+        need(!is.null(input$selectSamples),
              message = "Please select some samples to run the analysis.")
       })
-      
+
       # get parameters
       param.list <- switch(
         getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
@@ -594,7 +594,7 @@ QCNormalizationTab <-
         })
       param.list <-
         c(param.list, list(samples = input$selectSamples))
-      
+
       if (check_run_process_execution(
         session$userData$FlomicsMultiAssay,
         dataset = dataset,
@@ -602,7 +602,7 @@ QCNormalizationTab <-
       ) == FALSE &&
       rea.values[[dataset]]$process == TRUE)
         return()
-      
+
       # re-initialize reactive values
       rea.values[[dataset]]$process   <- FALSE
       rea.values[[dataset]]$diffAnal  <- FALSE
@@ -610,9 +610,9 @@ QCNormalizationTab <-
       rea.values[[dataset]]$DiffExp <- FALSE
       rea.values[[dataset]]$diffValid <- FALSE
       rea.values[[dataset]]$DiffValidContrast <- NULL
-      
+
       message("[RFLOMICS] # 03- Data processing: ", dataset)
-      
+
       catch.res <-
         .tryCatch_rflomics(runDataProcessing(
           object = session$userData$FlomicsMultiAssay,
@@ -625,22 +625,24 @@ QCNormalizationTab <-
           userNormMethod = param.list[["userNormMethod"]],
           userTransMethod = param.list[["userTransMethod"]]
         ))
-      
-      if(!is.null(catch.res$error))
+
+      if (!is.null(catch.res$error))
         showModal(
           modalDialog(title = "Error message", catch.res$error))
-      
+
       validate({
         need(is.null(catch.res$error), message = catch.res$error)
       })
-      
+
       session$userData$FlomicsMultiAssay <- catch.res$result
-      message(c(catch.res$messages, catch.res$warnings))
-      
+      message(gsub("\n$", "", paste(catch.res$messages, collapse = "")))
+      if (length(catch.res$warnings) > 0) message(catch.res$warnings)
+
+
       rea.values[[dataset]]$process <- TRUE
-      
+
       # re-initialize list of diff analized dataset
-      rea.values$datasetProcess <- 
+      rea.values$datasetProcess <-
         getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
                                 analyses = "DataProcessing")
       rea.values$datasetDiff <-
@@ -655,11 +657,11 @@ QCNormalizationTab <-
       rea.values$datasetCoExAnnot <-
         getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
                                 analyses = "CoExpEnrichAnal")
-      
+
     }, ignoreInit = TRUE)
-    
+
     return(input)
-    
+
   }
 
 
@@ -668,18 +670,18 @@ QCNormalizationTab <-
 # ----- check run norm execution ------
 check_run_process_execution <-
   function(object.MAE, dataset, param.list = NULL) {
-    
+
     SE <- object.MAE[[dataset]]
-    
-    # check filtred samples
+
+    # check filtered samples
     if (!dplyr::setequal(getSelectedSamples(SE), param.list$samples))
       return(TRUE)
-    
+
     switch(
       getOmicsTypes(SE),
       "RNAseq" = {
         # filtering setting
-        if (is.null(getFilterSettings(SE)$filterStrategy) || 
+        if (is.null(getFilterSettings(SE)$filterStrategy) ||
             param.list$Filter_Strategy != getFilterSettings(SE)$filterStrategy)
           return(TRUE)
         if (is.null(getFilterSettings(SE)$cpmCutoff) ||
@@ -696,7 +698,7 @@ check_run_process_execution <-
           return(TRUE)
       }
     )
-    
+
     if (is.null(getNormSettings(SE)$method) ||
         param.list$NormMethod != getNormSettings(SE)$method)
       return(TRUE)
@@ -704,6 +706,6 @@ check_run_process_execution <-
         (!is.null(getNormSettings(SE)$suppInfo) &&
          param.list$userNormMethod != getNormSettings(SE)$suppInfo))
       return(TRUE)
-    
+
     return(FALSE)
   }

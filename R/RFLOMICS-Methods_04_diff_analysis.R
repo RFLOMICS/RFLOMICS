@@ -593,23 +593,23 @@ setMethod(
       getAnalysis(object, name = "DiffExpAnal")
 
     if (is.null(DiffExpAnal[["results"]][["TopDEF"]][[contrastName]])) {
-      stop("no DE variables")
+      stop("There are no differentially expressed features")
     }
 
     resTable <- arrange(DiffExpAnal[["results"]][["TopDEF"]][[contrastName]],
                         Adj.pvalue)
 
     if (dim(resTable)[1] == 0) {
-      stop("no differentially expressed variables...")
+      stop("There are no differentially expressed features")
     }
 
     if (dim(resTable)[1] > 2000) {
-      message("differentially expressed variables exceeding 2000 variables, ",
+      message("The number of differentially expressed variables is exceeding 2000, ",
               "only the first 2000 will be displayed")
       resTable <- resTable[seq_len(2000),]
       title <- ifelse(title == "",
-                      paste0(title, "plot only 2000 TOP DE variables"),
-                      paste0(title, "\nplot only 2000 TOP DE variables"))
+                      paste0(title, "TOP 2000 DE ", .omicsDic(object)$variableName),
+                      paste0(title, "\nTOP 2000 DE ", .omicsDic(object)$variableName))
     }
 
     # object2 <- .checkTransNorm(object, raw = FALSE)

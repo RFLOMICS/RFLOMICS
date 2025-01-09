@@ -10,7 +10,7 @@
 UpdateRadioButtonsUI <- function(id) {
   # Namespace for id
   ns <- NS(id)
-  
+
   tagList(
     # Radio buttons for first axis
     radioButtons(
@@ -23,7 +23,7 @@ UpdateRadioButtonsUI <- function(id) {
       selected = 1,
       inline = TRUE
     ),
-    
+
     # Radio buttons for second axis
     radioButtons(
       inputId = ns("Secondaxis"),
@@ -55,7 +55,7 @@ UpdateRadioButtons <- function(input, output, session) {
                        },
                        inline = TRUE)
   })
-  
+
   # Update Firstaxis when Secondaxis changes
   observeEvent(input$Secondaxis, {
     selected_second <- input$Secondaxis
@@ -78,7 +78,7 @@ UpdateRadioButtons <- function(input, output, session) {
 RadioButtonsConditionUI <- function(id) {
   #name space for id
   ns <- NS(id)
-  
+
   tagList(uiOutput(ns('condColor')),)
 }
 
@@ -90,10 +90,10 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
     factors <- getFactorTypes(session$userData$FlomicsMultiAssay)
     factors <- factors[factors %in% typeFact]
     condition <- names(factors)
-    
+
     if (!any(typeFact %in% "Meta"))
       condition <- c("groups", condition)
-    
+
     radioButtons(inputId = session$ns("condColorSelect"),
                  label = 'Levels:',
                  choices = condition,
@@ -107,7 +107,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
 #' @noRd
 .modSingleOmicAnalysesSummaryUI <- function(id) {
   ns <- NS(id)
-  
+
   tagList(fluidPage(column(
     width = 12,
     fluidRow(uiOutput(ns("overView"))),
@@ -120,19 +120,19 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
 #' @noRd
 .modSingleOmicAnalysesSummary <-
   function(input, output, session, rea.values) {
-    
+
     # over view of dataset dimensions after processing
     output$overView <- renderUI({
       if (is.null(rea.values$datasetProcess))
         return()
-      
+
       box(title = "Dataset overview after data processing",
           width = 12,
           status = "warning",
           solidHeader = TRUE,
           collapsible = TRUE,
           collapsed = FALSE,
-          
+
           renderPlot({
             plotDataOverview(
               session$userData$FlomicsMultiAssay,
@@ -141,14 +141,14 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
           })
       )
     })
-    
+
     # summary of diff analysis on all dataset
     output$DiffSummary <- renderUI({
       if (is.null(rea.values$datasetDiff))
         return()
-      
+
       box(
-        title = "Summary of Differential expression analyses",
+        title = "Summary of differential expression analyses",
         width = 12,
         status = "warning",
         solidHeader = TRUE,
@@ -161,13 +161,13 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                        getDiffAnalysesSummary(
                          session$userData$FlomicsMultiAssay, plot = TRUE)
                      })))
-          
+
           p.list <- getAnnotAnalysesSummary(
             session$userData$FlomicsMultiAssay,
             from = "DiffExp",
             matrixType = "presence"
           )
-          
+
           if (!is.null(rea.values$datasetDiffAnnot)) {
             tabPanel.list <-
               c(tabPanel.list,
@@ -200,11 +200,11 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
         })
       )
     })
-    
+
     output$CoExSummary <- renderUI({
       if (is.null(rea.values$datasetCoEx))
         return()
-      
+
       box(
         title = "Summary of Co-expression analyses",
         width = 12,
@@ -212,9 +212,9 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
         solidHeader = TRUE,
         collapsible = TRUE,
         collapsed = TRUE,
-        
+
         tagList({
-          tabPanel.list <- 
+          tabPanel.list <-
             list(
               tabPanel(title = "CoExp results",
                        renderPlot({
@@ -223,13 +223,13 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                        })
               )
             )
-          
+
           p.list <- getAnnotAnalysesSummary(
             session$userData$FlomicsMultiAssay,
             from = "CoExp",
             matrixType = "presence"
           )
-          
+
           if (!is.null(rea.values$datasetCoExAnnot)) {
             tabPanel.list <-
               c(tabPanel.list,
@@ -255,12 +255,12 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                   )
                 }))
           }
-          
+
           do.call(what = tabsetPanel, args = tabPanel.list)
         })
       )
     })
-    
+
   }
 
 
@@ -277,20 +277,20 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
 .selectizeModuleServer <- function(id, featureType, choices) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-    
+
     # Dynamically generate the selectizeInput in the server.
     # Initialize choices to NULL to avoid loading everything on the client side.
-    # choices = NULL 
+    # choices = NULL
     output$select_ui <- renderUI({
       selectizeInput(
         inputId = ns("selectFeature"),
         label = paste0("Select DE ",featureType,":"),
         multiple = FALSE,
-        choices = NULL, 
+        choices = NULL,
         options = list(maxOptions = 1000)
       )
     })
-    
+
     # Use server-side mode to handle large lists.
     updateSelectizeInput(
       session = session,
@@ -298,7 +298,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
       choices = choices,
       server = TRUE
     )
-    
+
     # Return the reactive selection directly.
     return(reactive(input$selectFeature))
   })

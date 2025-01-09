@@ -225,7 +225,7 @@ setMethod(
 #' @name getAnalysis
 #' @rdname getAnalysis
 #' @description
-#' Get a specific analysis results from a Rflomcs MAE or a SE.
+#' Get a specific analysis results from a RflomicsMAE or a SE.
 #' @return The analysis metadata slot (a list of results)
 #' \itemize{
 #'    \item getAnalysis: return list of results from a specific analysis.}
@@ -428,15 +428,15 @@ setMethod(
 
 ## ---- rflomicsMAE2MAE ----
 
-#' @title convert rflomicsMAE to MAE
+#' @title convert a RflomicsMAE to a MultiAssayExperiment
 #' @aliases rflomicsMAE2MAE,RflomicsMAE-method
 #' @name rflomicsMAE2MAE
 #' @rdname rflomicsMAE2MAE
 #' @description
-#' Convert rflomicsMAE object to MultiAssayExperiment object.
+#' Convert RflomicsMAE object to MultiAssayExperiment object.
 #' @return object of MultiAssayExperiment class.
 #' @param object The RflomicsMAE object to convert.
-#' @param raw booleen. If TRUE raw omics data values.
+#' @param raw Boolean. If TRUE raw omics data values.
 #' @importFrom MultiAssayExperiment MultiAssayExperiment
 #' @exportMethod rflomicsMAE2MAE
 setMethod(

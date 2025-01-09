@@ -221,17 +221,17 @@
 
 \item{cpmCutoff}{The CPM cutoff for RNAseq data.}
 
-\item{transformMethod}{The transformation to store in the metadata}
+\item{transformMethod}{The transformation method to store in the metadata}
 
 \item{normMethod}{Normalization method. Accepted values: TMM for RNAseq, and
 median, totalSum, or none for proteomics and metabolomics data.
 Default values: TMM for RNAseq data and median for proteomics and metabolomics
 data}
 
-\item{imputMethod}{The imputation method ("MVI") for proteomics and 
+\item{imputMethod}{The imputation method ("MVI") for proteomics and
 metabolomics data.}
 
-\item{userTransMethod}{method used by user to transforme data.}
+\item{userTransMethod}{method used by user to transform data.}
 
 \item{userNormMethod}{method used by user to normalize data.}
 
@@ -247,18 +247,18 @@ metabolomics data.}
 
 \item{omicName}{a character string with the name of the dataset}
 
-\item{filter}{boolean. If TRUE, check if data is filtred (low counts/RNAseq)}
+\item{filter}{boolean. If TRUE, check if data is filtered (low counts/RNAseq)}
 
 \item{trans}{boolean. If TRUE, check if data is transformed}
 
 \item{norm}{boolean. If TRUE, check if data is normalized}
 
-\item{log}{boolean. If TRUE, check if the data has been log-transformed 
+\item{log}{boolean. If TRUE, check if the data has been log-transformed
 (RNAseq).}
 
 \item{plot}{plot type ("boxplot" or "density")}
 
-\item{axes}{A vector giving the two axis that have to be drawn for the 
+\item{axes}{A vector giving the two axis that have to be drawn for the
 factorial map}
 
 \item{groupColor}{All combination of level's factor}
@@ -267,69 +267,69 @@ factorial map}
 An object of class \link{RflomicsSE} or class \link{RflomicsSE}
 
 An object of class \link{RflomicsSE}
-The applied normalization method and computed scaling factors 
+The applied normalization method and computed scaling factors
 (by samples) are stored as a named list
-("normalization") of two elements (respectively "method" and 
+("normalization") of two elements (respectively "method" and
 "coefNorm") in the metadata slot of a
-given data set, stored itself in the ExperimentList slot of a 
+given data set, stored itself in the ExperimentList slot of a
 \link{RflomicsSE} object.
 
 An object of class \link{RflomicsSE}
 }
 \description{
-These functions applied a data processing (filtering, normalization 
-and/or transformation, PCA) on RNAseq, proteomic, or metabolomic data.
+These functions applied a data processing (filtering, normalization
+and/or transformation, PCA) on RNAseq, proteomics, or metabolomics data.
 
 runDataProcessing() calls the following functions:
 
 \itemize{
-\item runSampleFiltering: 
-  This function applied sample filtering on an dataset. 
+\item runSampleFiltering:
+  This function applied sample filtering on an dataset.
 }
 
 \itemize{
-\item runFeatureFiltering: This function allows filtering variables in omics 
-data. In the case of RNA-seq data, it involves filtering out transcripts with 
-low counts, while in the case of proteomics and metabolomics data, it applies 
+\item runFeatureFiltering: This function allows filtering variables in omics
+data. In the case of RNA-seq data, it involves filtering out transcripts with
+low counts, while in the case of proteomics and metabolomics data, it applies
 the imputation procedure.
 }
 
 \itemize{
-\item runTransformData: 
-   This function applied a transformation on dataset. The transformation 
-method is chosen according to dataset omic type 
-(RNaseq: none, metabolomics/proteomics: log2) 
+\item runTransformData:
+   This function applied a transformation to the dataset. The transformation
+method is chosen according to the dataset omicstype
+(RNAseq: none, metabolomics/proteomics: log2)
 }
 
 \itemize{
-\item runNormalization: 
- This function applied a normalization on a dataset. 
-The normalisation method is chosen according to dataset omic type 
-(RNAseq: TMM, metabolics/proteomics: median) 
+\item runNormalization:
+ This function applied a normalization on a dataset.
+The normalization method is chosen according to the dataset omics type
+(RNAseq: TMM, metabolomics/proteomics: median)
 }
 
 \itemize{
-\item runOmicsPCA: 
- This function performs a principal component analysis on omic 
+\item runOmicsPCA:
+ This function performs a principal component analysis on omic
 data stored in an object of class \link{RflomicsSE-class}
-Results are stored in the metadata slot of the same object. If a 
-"Normalization" slot is present in the metadata slot, then data are 
-normalized before running the PCA according to the indicated transform 
-method. 
+Results are stored in the metadata slot of the same object. If a
+"Normalization" slot is present in the metadata slot, then data are
+normalized before running the PCA according to the indicated transform
+method.
 }
-This function performs a principal component analysis on omic 
+This function performs a principal component analysis on omic
 data stored in an object of class \link{RflomicsSE-class}
-Results are stored in the metadata slot of the same object. If a 
-"Normalization" slot is present in the metadata slot, then data are 
-normalized before running the PCA according to the indicated transform 
+Results are stored in the metadata slot of the same object. If a
+"Normalization" slot is present in the metadata slot, then data are
+normalized before running the PCA according to the indicated transform
 method.
 
 \itemize{
    \item checkExpDesignCompleteness: return a string with message.
    This method checks some experimental design characteristics.
-   A complete design (all combinations of factor modalities with at 
+   A complete design (all combinations of factor modalities with at
    least 2 replicates for each have to be present) with
-   at least one biological and one batch factors are required to use the 
+   at least one biological and one batch factors are required to use the
    RFLOMICS workflow.}
 
 \itemize{
@@ -337,62 +337,63 @@ method.
    or abundance distribution.}
 }
 \details{
-Low count filtering procedure: By default, transcript with 0 count 
-are removed from the data. The function then computes the count per million 
-or read (CPM) for each gene in each sample and gives by genes the number of 
+Low count filtering procedure: By default, transcript with 0 count
+are removed from the data. The function then computes the count per million
+or read (CPM) for each gene in each sample and gives by genes the number of
 sample(s) which are over the cpmCutoff (NbOfsample_over_cpm).
 Then Two filtering strategies are proposed:
 \itemize{
-\item NbConditions:  keep gene if the NbOfsample_over_cpm >= NbConditions 
-\item NbReplicates:  keep gene if the NbOfsample_over_cpm >= min(NbReplicat) 
-\item filterByExpr: the default filtering method implemented 
-in the edgeR filterByExpr() function. 
+\item NbConditions:  keep gene if the NbOfsample_over_cpm >= NbConditions
+\item NbReplicates:  keep gene if the NbOfsample_over_cpm >= min(NbReplicates)
+\item filterByExpr: the default filtering method implemented
+in the edgeR filterByExpr() function.
 }
 
-Missing value imputation: This approach, applied to proteomics and 
-metabolomics data, replaces missing values (0 or NA) with the minimum value 
-among all non-zero values. Additionally, variables with at least one 
-condition group without any missing values are retained without further filtering.
+Missing value imputation: This approach, applied to proteomics and
+metabolomics data, replaces missing values (0 or NA) with the minimum value
+among all non-zero values. Additionally, variables with at least one
+condition group without any missing values are retained without further
+filtering.
 }
 \section{Accessors}{
 
 
- 
+
 \itemize{
-   \item getProcessedData: return Rflomics object with a processed data  
+   \item getProcessedData: return RflomicsSE object with a processed data
    (filtering, normalization and/or transformation)}
 
- 
-\itemize{
-   \item getTransSettings: return a list of transformation settings 
-   of a given omic dataset}
 
- 
 \itemize{
-   \item getFilterSettings: return a list the filtering settings of a given 
-   omic dataset}
+   \item getTransSettings: return a list of transformation settings
+   of a given omics dataset}
 
- 
+
 \itemize{
-   \item getFilteredFeatures: return a vector of filtered features of a given 
-   omic dataset}
+   \item getFilterSettings: return a list the filtering settings of a given
+   omics dataset}
 
- 
+
 \itemize{
-   \item getSelectedSamples: return a vector of selected samples of a given 
-   omic dataset}
+   \item getFilteredFeatures: return a vector of filtered features of a given
+   omics dataset}
 
- 
+
 \itemize{
-   \item getCoeffNorm: return a named vector with normalization coefficients 
-   of a given omic dataset}
+   \item getSelectedSamples: return a vector of selected samples of a given
+   omics dataset}
 
- 
+
 \itemize{
-   \item getNormSettings: return a list of normalization settings 
-   of a given omic dataset}
+   \item getCoeffNorm: return a named vector with normalization coefficients
+   of a given omics dataset}
 
- 
+
+\itemize{
+   \item getNormSettings: return a list of normalization settings
+   of a given omics dataset}
+
+
 \itemize{
    \item isProcessedData: return }
 }
@@ -400,25 +401,25 @@ condition group without any missing values are retained without further filterin
 \section{Plots}{
 
 
- 
+
 \itemize{
    \item plotLibrarySize: return barplot of library size by sample.}
 
- 
+
 \itemize{
-   \item plotOmicsPCA: 
+   \item plotOmicsPCA:
 This function plot the factorial map from a PCA object stored
 in a \link{RflomicsSE-class} object. By default, samples are
 colored by groups (all combinations of level's factor)}
 
- 
+
 \itemize{
-   \item plotExpDesignCompleteness: 
-This method checks that experimental design constraints are satisfied and 
+   \item plotExpDesignCompleteness:
+This method checks that experimental design constraints are satisfied and
 plot a summary of the design.
-A complete design (all combinations of factor modalities with at least 2 
-replicates for each have to be present) 
-with at least one biological and one batch factors are required to use the 
+A complete design (all combinations of factor modalities with at least 2
+replicates for each have to be present)
+with at least one biological and one batch factors are required to use the
 RFLOMICS workflow.}
 }
 
@@ -507,17 +508,17 @@ MAE <- runDataProcessing(MAE, SE.name = "protetest",
 # See runDataProcessing for an example that includes plotExpDesignCompleteness
 }
 \references{
-Lambert, I., Paysant-Le Roux, C., Colella, S. et al. 
+Lambert, I., Paysant-Le Roux, C., Colella, S. et al.
 DiCoExpress: a tool to process multifactorial
-RNAseq experiments from quality controls to co-expression analysis through 
-differential analysis based on contrasts inside GLM models. 
+RNAseq experiments from quality controls to co-expression analysis through
+differential analysis based on contrasts inside GLM models.
 Plant Methods 16, 68 (2020).
 }
 \seealso{
-\link{RflomicsMAE-class} 
-\link{RflomicsSE-class} 
-\link{getProcessedData} 
-\link{getTransSettings} 
+\link{RflomicsMAE-class}
+\link{RflomicsSE-class}
+\link{getProcessedData}
+\link{getTransSettings}
 \link{getFilterSettings}
 \link{getFilteredFeatures}
 \link{getCoeffNorm}

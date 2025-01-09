@@ -3,18 +3,18 @@
 \name{rflomicsMAE2MAE}
 \alias{rflomicsMAE2MAE}
 \alias{rflomicsMAE2MAE,RflomicsMAE-method}
-\title{convert rflomicsMAE to MAE}
+\title{convert a RflomicsMAE to a MultiAssayExperiment}
 \usage{
 \S4method{rflomicsMAE2MAE}{RflomicsMAE}(object, raw = FALSE)
 }
 \arguments{
 \item{object}{The RflomicsMAE object to convert.}
 
-\item{raw}{booleen. If TRUE raw omics data values.}
+\item{raw}{Boolean. If TRUE raw omics data values.}
 }
 \value{
 object of MultiAssayExperiment class.
 }
 \description{
-Convert rflomicsMAE object to MultiAssayExperiment object.
+Convert RflomicsMAE object to MultiAssayExperiment object.
 }

@@ -9,7 +9,7 @@
 ###==== METHOD runAnnotationEnrichment using CLUSTERPROFILER ====
 
 #' @title Run Gene Enrichment Analysis and process results
-#' @description This function performs overrepresentation analysis (ORA) using
+#' @description This function performs over representation analysis (ORA) using
 #' clusterprofiler functions. It can be used with custom annotation file
 #' (via enricher), GO (enrichGO) or KEGG (enrichKEGG) annotations.
 #' @param object An object of class \link{RflomicsSE} or
@@ -25,7 +25,7 @@
 #' @param domain subcatgory for the database (eg BP for GO)
 #' @param annotation for custom annotation, a data frame of the annotation.
 #' The data frame must contains at least two columns: gene and term, with the
-#' omic name and the associated term id respectively. A column name
+#' omics name and the associated term id respectively. A column name
 #' can be added with the full name of the term (if  term is not the full name
 #' already). The column domain can be used to indicate either different databases
 #' (grouped analyses of kegg and go for example) or different domains for
@@ -44,7 +44,7 @@
 #' @param minGSSize minimal size of genes annotated by Ontology term for testing.
 #' @param maxGSSize maximal size of genes annotated for testing
 #' @param ... additionnal parameters for enrichKEGG, enrichGO, enricher.
-#' @return A RflomicsMAE or a RflomicsS, depending on the class of object
+#' @return A RflomicsMAE or a RflomicsSE, depending on the class of object
 #' parameter. The enrichment results are added to the metadata slot, either
 #' in DiffExpEnrichAnal or CoExpEnrichAnal.
 #' @importFrom tidyselect all_of
@@ -59,7 +59,7 @@
 #' modify objects of the slot metadata of a \link{RflomicsMAE-class} object or
 #' a \link{RflomicsMAE-class} object.
 #' @section Plots:
-#' A collection of functions for plotting results from omic analysis steps.
+#' A collection of functions for plotting results from omics analysis steps.
 #' @example inst/examples/runAnnotationEnrichment.R
 setMethod(
     f = "runAnnotationEnrichment",

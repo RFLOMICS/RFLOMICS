@@ -122,7 +122,7 @@ By default, it is the "TMM" one.}
 \item{meanFilterCutoff}{a cutoff to filter a gene with a mean expression lower than this value.
 (only for RNAseq data, set to NULL for others).}
 
-\item{scale}{Boolean. If TRUE scale all variables tounit variance.}
+\item{scale}{Boolean. If TRUE scale all variables to unit variance.}
 
 \item{min.data.size}{The minimum allowed number of variables (default: 100)}
 
@@ -155,7 +155,8 @@ method, objects are:
 \item \code{clusters:}  a List of clusters
 \item \code{cluster.nb:}  The number of cluster
 \item \code{plots:}  The plots of \code{coseq} results
-\item \code{stats:}  A tibble summarising failed jobs: reason, propoif any
+\item \code{stats:}  A tibble summarizing failed jobs: reason, proportion,
+if any
 }
 \item \code{errors:} error list.
 }
@@ -170,7 +171,7 @@ For RNAseq data, parameters used are those recommended in DiCoExpress
 workflow (see the reference). This parameters are: \code{model="normal"},
 \code{transformation="arcsin"}, \code{GaussianModel="Gaussian_pk_Lk_Ck"},
 \code{normFactors="TMM"}, \code{meanFilterCutoff = 50}
-For proteomic or metabolomic, data are scaled by protein or metabolite
+For proteomics or metabolomics, data are scaled by protein or metabolite
 to group them by expression profiles rather than by expression intensity.
 After data scaling, recommended parameters (from \code{coseq} developers)
 for co-expression analysis are:
@@ -187,7 +188,7 @@ a \link{RflomicsMAE-class} object.
 
 \itemize{
    \item getCoexpSettings: Access to the co-expression analysis settings
-   of a given omic dataset
+   of a given omics dataset
 }
 
 
@@ -199,7 +200,7 @@ a \link{RflomicsMAE-class} object.
 
 \section{Plots}{
 
-A collection of functions for plotting results from omic analysis steps.
+A collection of functions for plotting results from omics analysis steps.
 
 
 \itemize{
@@ -209,7 +210,7 @@ A collection of functions for plotting results from omic analysis steps.
 
 \itemize{
    \item plotCoExpression:
-   list plot of ICL, logLike and coseq object with min ICL
+   list plot of ICL, logLikelihood and coseq object with min ICL
 }
 
 

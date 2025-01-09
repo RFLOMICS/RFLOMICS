@@ -18,7 +18,7 @@
 }
 \arguments{
 \item{object}{An object of class \link{RflomicsMAE-class}.
-It is expected the MAE object is produced by rflomics previous analyses,
+It is expected the MAE object is produced by RFLOMICS previous analyses,
 as it relies on their results.}
 
 \item{omicsNames}{vector of characters strings,

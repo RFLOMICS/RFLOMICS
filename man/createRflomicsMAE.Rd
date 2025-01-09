@@ -16,22 +16,22 @@ createRflomicsMAE(
 \arguments{
 \item{projectName}{Project name}
 
-\item{omicsData}{list of omics dataset, list of data.frame, matrix or 
+\item{omicsData}{list of omics dataset, list of data.frame, matrix or
 \link{SummarizedExperiment} objects, or \link{MultiAssayExperiment} object.}
 
 \item{omicsNames}{vector of dataset names.}
 
-\item{omicsTypes}{vector of dataset types: 
+\item{omicsTypes}{vector of dataset types:
 "RNAseq", "metabolomics", "proteomics"}
 
 \item{ExpDesign}{a data.frame which describes the experimental design.}
 
 \item{factorInfo}{a data.frame describing the experimental factors.
 \itemize{
-\item factorName: factor names 
-\item factorRef: factor references 
-\item factorType: factor type : "Bio", "batch", "Meta" 
-\item factorLevels: levels of each factor with "," separation. 
+\item factorName: factor names
+\item factorRef: factor references
+\item factorType: factor type : "Bio", "batch", "Meta"
+\item factorLevels: levels of each factor with "," separation.
 }}
 }
 \value{
@@ -41,7 +41,7 @@ An object of class \link{RflomicsMAE-class}
 This function is a constructor for the class
  \link{RflomicsMAE-class}.
 It initializes an object of class \link{RflomicsMAE-class}
-from a list of omics datasets, a vector of dataset names, 
+from a list of omics datasets, a vector of dataset names,
 a vector of omics types, and an experimental design.
 }
 \examples{

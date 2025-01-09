@@ -31,7 +31,7 @@ RFLOMICS is a R package that provides a complete workflow for the analysis of mu
 
 To ensure efficient data management the [MultiAssayExperiment](https://bioconductor.org/packages/MultiAssayExperiment/) and [SummarizedExperiment](https://bioconductor.org/packages/SummarizedExperiment/) classes were extended to fix an organization for the metadata slot. The statistical design and analysis parameters of the multi-omics data integration are stored in the `metadata` slot of the `RflomicsMAE` class, while the parameters and results of the single-omics are stored in the `metadata` slot of `RflomicsSE` objects of the `ExperimentList`.
 
-This organisation can be illustred by presenting the workflow of the RFLOMICS package.
+This organization can be illustrated by presenting the workflow of the RFLOMICS package.
 
 The workflow is structured in three main parts:
 
@@ -41,7 +41,7 @@ The workflow is structured in three main parts:
 
 -   The second part allows a complete single-omics analysis for each dataset. The raw and processed omic datasets are stored in the ExperimentList as RflomicsSE. For each analysis step, settings and results are stored (in green in Fig 2)
 
-    1.  The DataProcessing list in the metadata slot contains the parameters and results of pre-processing including filtering, normalisation and transformation
+    1.  The DataProcessing list in the metadata slot contains the parameters and results of pre-processing including filtering, normalization and transformation
 
     2.  The DiffExpAnal list in the metadata slot contains the parameters and results of the differential expression analysis.
 
@@ -49,13 +49,13 @@ The workflow is structured in three main parts:
 
     4.  DiffExpEnrichAnal and CoExpEnrichAnal lists in the metadata slot store the results and parameters of the functional enrichment analysis for the differential expression and the coexpression analysis, respectively.
 
-![Fig 2: Organisation of the metadata slot of the RflomicsSE objects](Images/DM_RflomicsSE-overview.png){width="150%"}
+![Fig 2: Organization of the metadata slot of the RflomicsSE objects](Images/DM_RflomicsSE-overview.png){width="150%"}
 
--   The third part is the multi-omics integration, with two proposed methods: a supervised approach using the MixOmics package (DIABLO), and an unsupervised approach using MOFA2. (settings and results stored in RflomicsMAE object)
+-   The third part is the multi-omics integration, with two proposed methods: a supervised approach using the mixOmics package (DIABLO), and an unsupervised approach using MOFA2. (settings and results stored in RflomicsMAE object)
 
 ![Fig 3: storage of multi-omics integration settings and results in the metadata slot of the RflomicsMAE object](Images/DM_RflomicsMAE-integration.png){width="100%"}
 
-As you will see, this analysis workflow is implemented as methods of the two classes (`RflomicsMAE` and `RflomicsSE`), providing a generic interface whatever the type of omics data being analysed (RNAseq, proteomics, metabolomics, etc.). These methods return the same class as the input object (`RflomicsMAE` and `RflomicsSE`) with the metadata slot enriched with parameters and results. Getter and Setter methods have been defined to access the metadata objects.
+As you will see, this analysis workflow is implemented as methods of the two classes (`RflomicsMAE` and `RflomicsSE`), providing a generic interface whatever the type of omics data being analyzed (RNAseq, proteomics, metabolomics, etc.). These methods return the same class as the input object (`RflomicsMAE` and `RflomicsSE`) with the metadata slot enriched with parameters and results. Getter and Setter methods have been defined to access the metadata objects.
 
 # Methods for RflomicsMAE and RflomicsSE classes
 
@@ -63,17 +63,17 @@ As you will see, this analysis workflow is implemented as methods of the two cla
 
 In this example we will instantiate a RflomicsMAE object from an existing MAE object and a design data.frame. We will use the ecoseed dataset from the RFLOMICS package (see `data(ecoseed)`).
 
-`ecoseed` is a multi-omics dataset composed of three data matrices: transcriptomic (raw RNAseq read count data matrix), metabolomic and proteomic (relative abundance matrix as XIC) obtained from a study examining the effect of seed production temperature on the germination potential of Arabidopsis thaliana.
+`ecoseed` is a multi-omics dataset composed of three data matrices: transcriptomics (raw RNAseq read count data matrix), metabolomics and proteomics (relative abundance matrix as XIC) obtained from a study examining the effect of seed production temperature on the germination potential of Arabidopsis thaliana.
 
 The experimental design includes three factors:
 
-\- Repeat: batch factor : rep1, rep2, rep3
+\- Repeat: batch factor: rep1, rep2, rep3
 
 \- temperature: biological factor with three conditions: Low, Medium, Elevated
 
 \- imbibition: biological factor with three conditions: DS (Dry Deed), EI (Early Imbibition), LI (Late Imbibition)
 
-Crucial informations is needed to complete the design and create the RflomicsMAE object. Experimental factors must be defined with their type (batch or biological) and a reference level. These informations are used to automatically generate the statistical design.
+Crucial information is needed to complete the design and create the RflomicsMAE object. Experimental factors must be defined with their type (batch or biological) and a reference level. These information are used to automatically generate the statistical design.
 
 PCA on raw data is performed during the instantiation of the RflomicsMAE object.
 
@@ -107,7 +107,7 @@ head(getDesignMat(MAE))
 
 ## Overview of the main methods
 
-Omics data is heterogeneous and each omics requires specific methods and parameters to take into account of the nature of data. Rflomics has a set of generic methods than can be applied to the `RflomicsMAE` or `RflomicsSE` objects and which adapt the methods and parameters to the type of omics data: RNAseq, proteomics, metabolomics.
+Omics data is heterogeneous and each omics requires specific methods and parameters to take into account of the nature of data. RFLOMICS has a set of generic methods than can be applied to the `RflomicsMAE` or `RflomicsSE` objects and which adapt the methods and parameters to the type of omics data: RNAseq, proteomics, metabolomics.
 
 The main methods are:
 
@@ -172,7 +172,7 @@ This statistical framework will be applied on all loaded datasets.
 
 #### Data processing and quality control
 
-Data processing, including normalisation and transformation parameters and results, can be carried out in a single step using the `runDataProcessing` method. Or in several steps using the methods called by `runDataProcessing`, which are: `filterLowAbundance` (`RNAseq`), `runNormalization` and `runTransformData`.
+Data processing, including normalization and transformation parameters and results, can be carried out in a single step using the `runDataProcessing` method. Or in several steps using the methods called by `runDataProcessing`, which are: `filterLowAbundance` (`RNAseq`), `runNormalization` and `runTransformData`.
 
 In this example, the three omics data sets are processed in a single step.
 
@@ -329,15 +329,11 @@ mixOmics::plotIndiv(getMixOmics(MAE, response = "temperature"))
 
 # Generating a report from the RflomicsMAE object
 
-The `generateReport` function is used to generate a report from a RflomicsMAE object. The report is generated in HTML format.
+The `generateReport` function is used to generate a report from a RflomicsMAE object. The report is generated in HTML format. 
 
 The MAE object can be saved (export = TRUE), exporting the object in a .RData, the report in html format, the graphs in png format and the data in txt (tabulated) format.
 
-```{r report, eval = TRUE}
-
-# generateReport(object = MAE, fileName = "ecoseed_report.html", export = FALSE)
-
-```
+It's use is straightforward, using the `generateReport(object = MAE, fileName = "ecoseed_report.html", export = FALSE)` command. It can take a long time, depending on the amount of analyses performed and the data size.
 
 # Session information
 

@@ -30,7 +30,7 @@ The analysis metadata slot (a list of results)
    \item getAnalysis: return list of results from a specific analysis.}
 }
 \description{
-Get a specific analysis results from a Rflomcs MAE or a SE.
+Get a specific analysis results from a RflomicsMAE or a SE.
 
 \itemize{
    \item getAnalyzedDatasetNames: return a list of performed analysis names.}

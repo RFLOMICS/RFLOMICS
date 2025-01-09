@@ -2,7 +2,7 @@
 ### [01_Load_Data] load data modules
 ### ----------------------------------------------------------------------------
 # N. Bessoltane,
-# D. Charif, 
+# D. Charif,
 
 #' @importFrom stringr str_subset
 #' @importFrom DT renderDataTable datatable
@@ -13,7 +13,7 @@
 # ---- modCreateRflomicsObject UI ----
 .modLoadOmicDataUI <- function(id) {
   ns <- NS(id)
-  
+
   tagList(uiOutput(outputId = ns("overViewUI")))
 }
 
@@ -25,7 +25,7 @@
            rea.values,
            local.rea.values) {
     message("[RFLOMICS] # 01- Load data: ", local.rea.values$projectName)
-    
+
     # create Rflomics object
     FlomicsMultiAssay.try <- tryCatch(
       createRflomicsMAE(
@@ -45,44 +45,44 @@
       warning = function(w)
         w
     )
-    
+
     if (!is.null(FlomicsMultiAssay.try$message)) {
-      showModal(modalDialog(title = "Error message", 
+      showModal(modalDialog(title = "Error message",
                             FlomicsMultiAssay.try$message))
       rea.values$validate.status <- 1
     }
     validate({
       need(is.null(FlomicsMultiAssay.try$message), message = "error")
     })
-    
+
     session$userData$FlomicsMultiAssay <- FlomicsMultiAssay.try
-    
+
     # update rea values
     rea.values$datasetList <-
       metadata(session$userData$FlomicsMultiAssay)$omicList
     rea.values$loadData    <- TRUE
     local.rea.values$plots <- TRUE
-    
+
     # data overview
     output$overViewUI <- renderUI({
       if (local.rea.values$plots == FALSE)
         return()
-      
+
       box(
         width = 12,
         status = "warning",
         title = "Data Overview",
         solidHeader = TRUE,
-        
+
         tabsetPanel(
           tabPanel(
             title = "Samples",
             tags$br(),
             tags$i(
-              "Overview of the input omics data. Each color 
-                            represents a distinct dataset, with its respective 
-                            samples on the x-axis and the number of features 
-                            on the y-axis. It illustrates the samples overlap 
+              "Overview of the input omics data. Each color
+                            represents a distinct dataset, with its respective
+                            samples on the x-axis and the number of features
+                            on the y-axis. It illustrates the samples overlap
                             across dataset."
             ),
             renderPlot(isolate({
@@ -93,9 +93,9 @@
             title = "Conditions",
             tags$br(),
             tags$i(
-              "Number of Datasets per Condition. Each axis 
-                            represents a distinct biological factor, and each 
-                            cell value signifies the number of datasets 
+              "Number of Datasets per Condition. Each axis
+                            represents a distinct biological factor, and each
+                            cell value signifies the number of datasets
                             associated with that specific condition."
             ),
             renderPlot(
@@ -105,13 +105,13 @@
         )
       )
     })
-    
+
   }
 
 # ---- modLoadOmicsData UI ----
 .modLoadDataUI <- function(id) {
   ns <- NS(id)
-  
+
   tagList(
     fluidRow(
       # load exp design
@@ -135,7 +135,7 @@
               inputId = ns("Experimental.Design.file"),
               label   = .addBSpopify(
                 label   = "Experimental design (tsv) ",
-                title   = .generateExample("design", 
+                title   = .generateExample("design",
                                            title = TRUE),
                 content = .generateExample("design")
               ),
@@ -169,14 +169,14 @@
                          "transcriptomics (RNASeq counts), proteomics, and metabolomics. ",
                          "Experimental factors settings will be automatically defined (",
                          "factor name, type, and the reference level)"
-                         
+
         ),
         placement = "top",
         trigger = "hover"
       )
     )),
     br(),
-    
+
     fluidRow(.modLoadOmicDataUI(id = ns("MAE")))
   )
 }
@@ -189,7 +189,7 @@
     "Proteomics" = "proteomics",
     "Metabolomics" = "metabolomics"
   )
-  
+
   # ---- initialization ----
   local.rea.values <- reactiveValues(
     plots        = FALSE,
@@ -197,7 +197,7 @@
     ExpDesignOrg = NULL,
     addDataNum   = 1
   )
-  
+
   # ---- Load experimental design ----
   # as soon as the "design file" has been loaded
   observeEvent(input$Experimental.Design.file, {
@@ -206,7 +206,7 @@
     local.rea.values$ExpDesign    <- NULL
     local.rea.values$plots        <- FALSE
     rea.values$exampleData        <- FALSE
-    
+
     # read and check design file
     design.tt <-
       tryCatch(
@@ -216,7 +216,7 @@
         warning = function(w)
           w
       )
-    
+
     if (!is.null(design.tt$message)) {
       showModal(modalDialog(title = "Error message", design.tt$message))
     }
@@ -224,10 +224,10 @@
       need(expr = is.null(design.tt$message),
            message = design.tt$message)
     })
-    
+
     local.rea.values$ExpDesignOrg <- design.tt
   })
-  
+
   # ---- Add new omic data ----
   # => a new select/file Input was display
   observeEvent(input$addData, {
@@ -235,9 +235,9 @@
     addDataNum <- local.rea.values$addDataNum
     if (input[[paste0('omicType', addDataNum)]] == "none")
       return()
-    
+
     addDataNum <- addDataNum + 1
-    
+
     output[[paste("toAddData", addDataNum, sep = "")]] <-
       renderUI({
         list(fluidRow(
@@ -274,18 +274,18 @@
             )
           )
         ),
-        
+
         uiOutput(session$ns(
           paste("toAddData", addDataNum + 1, sep = "")
         )))
       })
-    
+
     local.rea.values$addDataNum <- addDataNum
   })
-  
+
   # ---- Load Data button observe ----
   observeEvent(input$loadData, {
-    
+
     rea.values$loadData        <- FALSE
     rea.values$model           <- FALSE
     rea.values$analysis        <- FALSE
@@ -294,7 +294,7 @@
     rea.values$datasetDiff     <- NULL
     rea.values$datasetProcess  <- NULL
     session$userData$FlomicsMultiAssay <- NULL
-    
+
     if (isTRUE(rea.values$exampleData)) {
       local.rea.values$ExpDesignOrg <- NULL
       local.rea.values$ExpDesign    <- NULL
@@ -303,52 +303,52 @@
     rea.values$exampleData      <- FALSE
     local.rea.values$plots      <- FALSE
     rea.values$validate.status  <- 0
-    
+
     # check project name
     if (input$projectName == "") {
-      showModal(modalDialog(title = "Error message", 
+      showModal(modalDialog(title = "Error message",
                             "Project name is required"))
     }
     validate({
-      need(input$projectName != "", 
+      need(input$projectName != "",
            message = "Project name is required")
     })
-    
+
     # check design input
     if (is.null(local.rea.values$ExpDesign)) {
-      showModal(modalDialog(title = "Error message", 
+      showModal(modalDialog(title = "Error message",
                             "Experimental Design is required"))
     }
     validate({
-      need(!is.null(local.rea.values$ExpDesign), 
+      need(!is.null(local.rea.values$ExpDesign),
            message = "Experimental Design is required")
     })
     local.rea.values$projectName  <- input$projectName
-    
+
     # check design
     checkDesign <- .checkDesignInput(input, local.rea.values)
     local.rea.values$dF.List.ref  <- checkDesign$dF.List.ref
     local.rea.values$dF.Type.dFac <- checkDesign$dF.Type.dFac
-    
+
     # check omic data
     checkData <-
       .checkOmicInput(input, local.rea.values, rea.values)
     local.rea.values$omicsData    <- checkData$omicsData
     local.rea.values$omicsNames   <- checkData$omicsNames
     local.rea.values$omicsTypes   <- checkData$omicsTypes
-    
+
     # create Rflomics object and plot data over view
     callModule(module = .modLoadOmicData,
                id = "MAE",
                rea.values,
                local.rea.values)
-    
+
   }, ignoreInit = TRUE)
-  
+
   # ---- Load example data ----
   # load user own metadata file
   observeEvent(input$loadEcoseedData, {
-    
+
     rea.values$loadData        <- FALSE
     rea.values$model           <- FALSE
     rea.values$analysis        <- FALSE
@@ -357,13 +357,13 @@
     rea.values$datasetDiff     <- NULL
     rea.values$datasetProcess  <- NULL
     session$userData$FlomicsMultiAssay <- NULL
-    
+
     # reset
     local.rea.values$plots  <- FALSE
     rea.values$exampleData  <- TRUE
-    
+
     exampleData <- .generateEcoseedExampleData()
-    
+
     local.rea.values$dF.List.ref  <- exampleData$dF.List.ref
     local.rea.values$dF.Type.dFac <- exampleData$dF.Type.dFac
     local.rea.values$projectName  <- exampleData$projectName
@@ -372,23 +372,23 @@
     local.rea.values$omicsNames   <- exampleData$omicsNames
     local.rea.values$omicsTypes   <- exampleData$omicsTypes
     local.rea.values$omicsData    <- exampleData$omicsData
-    
+
     updateTextInput(session,
                     inputId = "projectName",
                     value = exampleData$projectName)
-    
+
     callModule(module = .modLoadOmicData,
                id = "MAE",
                rea.values,
                local.rea.values)
-    
+
   }, ignoreInit = TRUE)
-  
+
   output$displayDesignUI <- renderUI({
-    
+
     if (is.null(local.rea.values$ExpDesignOrg))
       return()
-    
+
     fluidRow(
       column(
         width = 12,
@@ -400,7 +400,7 @@
       )
     )
   })
-  
+
   # Display tab of exp design
   output$ExpDesignTable <- renderUI({
     box(
@@ -425,19 +425,19 @@
       )
     )
   })
-  
+
   # order and select modality for each factor
-  output$dipslayFactors <- 
+  output$dipslayFactors <-
     renderUI({
       ExpDesign <- local.rea.values$ExpDesignOrg
-      
+
       box(
         width = 12,
         background = "green",
         .addBSpopify(
-          tags$b("Select and order the levels of each factor"),
-          "You can remove levels and their associated samples. 
-          Deleting all levels of a factor results in ignoring that factor.</p>"
+          label = tags$b("Select and order the levels of each factor"),
+          content = "You can remove levels and their associated samples.
+          Deleting all levels of a factor results in ignoring that factor."
         ),
         fluidRow(lapply(names(ExpDesign), function(i) {
           column(
@@ -458,13 +458,13 @@
           session$ns("GetdFactorRef"))
         )
       )
-      
+
     })
   # set ref and type of each factor
   output$GetdFactorRef <- renderUI({
     if (is.null(local.rea.values$ExpDesignOrg))
       return()
-    
+
     ExpDesign <- local.rea.values$ExpDesignOrg
     # filter samples
     # filtering per conditions
@@ -476,29 +476,29 @@
         ExpDesign[[factor]] <-
           factor(ExpDesign[[factor]], levels = input[[paste0("selectFactors.", factor)]])
       }
-      
+
       if (length(input[[paste0("selectFactors.", factor)]]) <= 1) {
         ExpDesign <- select(ExpDesign, -all_of(factor))
       }
     }
     local.rea.values$ExpDesign <- ExpDesign
-    
+
     radioButtons.choices <- rep("Bio", ncol(ExpDesign))
-    
+
     if (isTRUE(rea.values$exampleData))
       radioButtons.choices <- local.rea.values$dF.Type.dFac
-    
+
     names(radioButtons.choices) <- names(ExpDesign)
-    
+
     # dispaly updated ui for selecting factors
     column(
       width = 12,
       # Construct the form to set the reference factor level
       .addBSpopify(
-        tags$b("Set the reference and the type of each factor"),
-        "It is mandatory to have at least one biological factor and one 
-                batch factor. Rflomics accepts 2 batch factors and supports up 
-                to 3 biological factors. If you have more than 3 biological factors, 
+        label = tags$b("Set the reference and the type of each factor"),
+        content = "It is mandatory to have at least one biological factor and one
+                batch factor. RFLOMICS accepts 2 batch factors and supports up
+                to 3 biological factors. If you have more than 3 biological factors,
                 the remainder must be defined as metadata factors."
       ),
       fluidRow(lapply(names(ExpDesign), function(i) {
@@ -511,21 +511,21 @@
             label   = tags$span(style = "color: black;", i) ,
             choices = levels(ExpDesign[[i]])
           ),
-          
+
           radioButtons(
             session$ns(paste0("dF.Type.", i)),
             label = NULL ,
             inline = FALSE,
             width = 2,
             selected = radioButtons.choices[i],
-            choiceNames = c("bio", "batch", "meta"),
+            choiceNames = c("biological", "batch", "metadata"),
             choiceValues = c("Bio", "batch", "Meta")
           )
         )
       }))
     )
   })
-  
+
   # ---- load data ui ----
   # display interface for load data
   output$LoadDataUI <- renderUI({
@@ -541,8 +541,8 @@
           # omic type
           selectInput(
             inputId = session$ns('omicType1'),
-            label = .addBSpopify(label = 'Omics type', 
-                                 content = "Rflomics supports up to 3 types of omics and up to 10 datasets per omics type."),
+            label = .addBSpopify(label = 'Omics type',
+                                 content = "RFLOMICS supports up to 3 types of omics and up to 10 datasets per omics type."),
             choices = omicTypes,
             selected = "none"
           )
@@ -575,10 +575,10 @@
         )
       ),
       uiOutput(outputId = session$ns("toAddData2")),
-      actionButton(inputId = session$ns("addData"),   "Add data", class = "butt")
+      actionButton(inputId = session$ns("addData"), "Add data", class = "butt")
     )
   })
-  
+
   return(input)
 }
 
@@ -594,18 +594,20 @@
     # list of level reference of factors
     dF.List.ref[dFac]  <- input[[paste0("dF.RefLevel.", dFac)]]
   }
-  
+
   # check number of factor bio
   if (!length(str_subset(dF.Type.dFac, "Bio")) %in% seq_len(3)) {
-    showModal(modalDialog(title = "Error message", "You need 1 to 3 biological factor(s)"))
+    showModal(modalDialog(title = "Error message", "You need 1 to 3 biological factor(s), you currently have ",
+                                                          length(str_subset(dF.Type.dFac, "Bio"))))
   }
-  
+
   # check number of factor batch
   if (!length(str_subset(dF.Type.dFac, "batch")) %in% c(1, 2)) {
-    showModal(modalDialog(title = "Error message", 
-                          "You need at least 1 batch factor (max = 2)"))
+    showModal(modalDialog(title = "Error message",
+                          "You need at least 1 batch factor (max = 2), you currently have ",
+                                 length(str_subset(dF.Type.dFac, "batch"))))
   }
-  
+
   validate({
     need((length(str_subset(
       dF.Type.dFac, "Bio"
@@ -614,7 +616,7 @@
         str_subset(dF.Type.dFac, "batch")
       ) %in% c(1, 2)), message = "")
   })
-  
+
   return(
     list(
       dF.Type.dFac = dF.Type.dFac,
@@ -628,47 +630,47 @@
   omicsData  <- list()
   omicsNames <- vector()
   omicsTypes <- vector()
-  
+
   # get list of omic data laoded from interface
   dataName.vec <- c()
   for (k in seq_len(local.rea.values$addDataNum)) {
     if (input[[paste0("omicType", k)]] != "none") {
       ### omics type ###
       omicType <- input[[paste0("omicType", k)]]
-      
+
       ### dataset name ###
       # => check presence of dataname
       dataName.tmp <-
         gsub("[[:space:]]", "", input[[paste0("DataName", k)]])
-      
+
       if (dataName.tmp == "") {
         showModal(
-          modalDialog(title = "Error message", 
-                      "Dataset names is required: dataset ", k)
+          modalDialog(title = "Error message",
+                      "A dataset name is required: dataset ", k, " has no name")
         )
         rea.values$validate.status <- 1
       }
       dataName <- paste0(omicType, ".", dataName.tmp)
       dataName.vec <- c(dataName.vec, dataName)
-      
+
       # => check duplicat dataset name
       if (any(duplicated(dataName.vec)) == TRUE) {
         showModal(
           modalDialog(
             title = "Error message",
             "Dataset names must be unique: dataset ",
-            (seq_len(addDataNum))[duplicated(dataName.vec)]
+            dataName.vec[duplicated(dataName.vec)], " is duplicated"
           )
         )
         rea.values$validate.status <- 1
       }
-      
+
       #### omics dataset
       # => check omics data
       if (is.null(input[[paste0("data", k)]])) {
         showModal(
           modalDialog(title = "Error message",
-                      "Omics dataset is required: dataset ", k)
+                      "Omics dataset is required: dataset ", k, " is missing")
         )
         rea.values$validate.status <- 1
       }
@@ -676,7 +678,7 @@
         need(expr = !is.null(input[[paste0("data", k)]]),
              message = "error")
       })
-      
+
       # => read data matrix
       dataFile <- input[[paste0("data", k)]]
       data.mat.tt <-
@@ -687,9 +689,9 @@
           warning = function(w)
             w
         )
-      
+
       if (!is.null(data.mat.tt$message)) {
-        showModal(modalDialog(title = "Error message", 
+        showModal(modalDialog(title = "Error message",
                               data.mat.tt$message))
         rea.values$validate.status <- 1
       }
@@ -699,19 +701,19 @@
           message = data.mat.tt$message
         )
       })
-      
+
       data.mat <- data.mat.tt
-      
+
       omicsData[[dataName]]  <- data.mat
       omicsNames <- c(omicsNames, dataName)
       omicsTypes <- c(omicsTypes, omicType)
-      
+
       validate({
         need(rea.values$validate.status == 0, message = "error")
       })
     }
   }
-  
+
   # check omicsData # no reason to check for null?
   if (is.null(omicsData)) {
     showModal(modalDialog(title = "Error message", "Please load at least one dataset"))
@@ -719,14 +721,14 @@
   validate({
     need(!is.null(omicsData), message = "Please load at least one dataset")
   })
-  
+
   if (length(omicsData) == 0) {
     showModal(modalDialog(title = "Error message", "Please load at least one dataset"))
   }
   validate({
     need(length(omicsData) > 0, message = "Please load at least one dataset")
   })
-  
+
   return(list(
     omicsData = omicsData,
     omicsNames = omicsNames,
@@ -778,10 +780,10 @@
                Genotype = c("Mutant1", "Mutant2", "Mutant1"),
                Repeat   = c("rep1", "rep1", "rep2")
              )
-             
+
              res <-
                c(
-                 paste0("<b>", paste(names(table), collapse = "\t"), 
+                 paste0("<b>", paste(names(table), collapse = "\t"),
                         "</b>"),
                  unite(table, "collapse", colnames(table), sep =
                          " \t")$collapse
@@ -797,7 +799,7 @@
                Indiv1 = c(435, 400, 500),
                Indiv2   = c(30, 0, 23)
              )
-             
+
              res <-
                c(
                  paste0("<b>", paste(names(table), collapse = "\t"), "</b>"),
@@ -808,7 +810,7 @@
              res <- paste0("Example:", "<pre>", res, "</pre>")
              title.res <- "File containing experimental measurements (read counts for transcripts, abundance for proteins and metabolites)."
            })
-    
+
     if (title == TRUE)
       return(title.res)
     return(res)
