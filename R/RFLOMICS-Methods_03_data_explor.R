@@ -614,7 +614,7 @@ setMethod(
   f          = "runTransformData",
   signature  = "RflomicsSE",
   definition = function(object,
-                        transformMethod = "log2",
+                        transformMethod = NULL,
                         userTransMethod = "unknown"
   ){
 

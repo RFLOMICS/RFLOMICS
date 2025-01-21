@@ -15,9 +15,10 @@ On windows, replace with `where python`. You should be able to see the path(s) w
 Python binaries are installed. You can have multiple python version installed at once.
 You have to make sure the one used by R is this correct one. 
 
-2. Install pip command (if not already done). For windows users, you can use [this guide](https://phoenixnap.com/kb/install-pip-windows).
-3. Install mofapy 2: in a shell terminal, run `pip install mofapy2`.
-4. Set the value of the RETICULATE_PYTHON environment variable to a Python 
+2. Install a python environment (conda, miniconda, anaconda, ...)
+3. Install pip command (if not already done). For windows users, you can use [this guide](https://phoenixnap.com/kb/install-pip-windows).
+4. Install mofapy 2: in a shell terminal, run `pip install mofapy2`.
+5. Set the value of the RETICULATE_PYTHON environment variable to a Python 
 binary and restart your session:
 * either manually indicate it in your .Rprofile (hidden file) 
 * or use the following command in a terminal, in the .Rprofile folder:
@@ -25,7 +26,7 @@ binary and restart your session:
 ```
 echo "Sys.setenv(RETICULATE_PYTHON = \"path_to_python_bin\")" >> .Rprofile
 ```
-5. Install MOFA2 using `BiocManager::install("MOFA2")` in R. 
+6. Install MOFA2 using `BiocManager::install("MOFA2")` in R. 
 
 You can check your configuration using `reticulate::py_config()` and 
 `reticulate::py_list_packages()` in R. 
