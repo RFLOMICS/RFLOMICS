@@ -222,7 +222,7 @@
       str_remove(pattern = "Release ")
   }
 
-  if(!is.null(try.res$warnings))
+  if(!is.null(try.res$warnings) && length(try.res$warnings) != 0)
     message("warning: ", try.res$warnings)
 
   if(!is.null(try.res$error))
