@@ -105,7 +105,7 @@
   imputMethod = NULL
 )
 
-\S4method{runTransformData}{RflomicsSE}(object, transformMethod = "log2", userTransMethod = "unknown")
+\S4method{runTransformData}{RflomicsSE}(object, transformMethod = NULL, userTransMethod = "unknown")
 
 \S4method{runTransformData}{RflomicsMAE}(
   object,
