@@ -22,16 +22,23 @@ knitr::opts_chunk$set(
 library(RFLOMICS)
 ```
 
-RFLOMICS can handle three types of omics (transcriptomics (RNAseq), proteomics and metabolomics) and several datasets per omics generated from similar experimental design. Each dataset must have a complete design.
+RFLOMICS can handle three types of omics (transcriptomics (RNAseq), proteomics 
+and metabolomics) and several datasets per omics generated from similar 
+experimental design. Each dataset must have a complete design.
 
 Below each input file is detailed.
 
 ## Experimental design file
 
-This file provides the experimental design table. The first column indicates the sample names. Next columns indicate experimental conditions (called biological factors or technical/batch factors) and metadata (optional). Each row describes a sample by specifying the level for each experimental condition.
-This file is edited by the user and must contain a header with column names corresponding respectively to the factor names and metadata names.
+This file provides the experimental design table. The first column indicates the 
+sample names. Next columns indicate experimental conditions (called biological 
+factors or technical/batch factors) and metadata (optional). Each row describes 
+a sample by specifying the level for each experimental condition.
+This file is edited by the user and must contain a header with column names 
+corresponding respectively to the factor names and metadata names.
 
-It is advised that each factor's level starts with a letter (for example, for a factor called Month, it is better to write M1 rather than 1).
+It is advised that each factor's level starts with a letter (for example, for a 
+factor called Month, it is better to write M1 rather than 1).
 
 ```{r ImportDesign, output="asis"}
 data(ecoseed.df)
@@ -41,7 +48,9 @@ DT::datatable(ecoseed.df$design)
 ## Omics data file
 
 For each omics: 
-The matrix-like file with abundance of omics data is needed. The first column indicates feature names (genes, proteins, or metabolites), column headers indicate the sample names.
+The matrix-like file with abundance of omics data is needed. The first column 
+indicates feature names (genes, proteins, or metabolites), column headers 
+indicate the sample names.
 
 ### **Transcriptomics (RNAseq counts data)**
 
@@ -77,7 +86,14 @@ DT::datatable(metaAbundance[1:10, 1:5])
 
 ## Annotation of features (optional)
 
-This file contains annotation about biological functions of genes/proteins/metabolites, or their implication in biological pathways. This annotation is needed to compute Over Representation Analysis (ORA). This file must contain at least 2 columns, names of features (identical to the ones used in the abundance matrix) and term identifiers (ex. GO term accession : GO:0034599). It is possible to add 2 more columns: names of terms (ex. cellular response to oxidative stress) and the domain of annotation (ex. biological_process).
+This file contains annotation about biological functions of 
+genes/proteins/metabolites, or their implication in biological pathways. 
+This annotation is needed to compute Over Representation Analysis (ORA). 
+This file must contain at least 2 columns, names of features (identical to the 
+ones used in the abundance matrix) and term identifiers
+(ex. GO term accession : GO:0034599). It is possible to add 2 more 
+columns: names of terms (ex. cellular response to oxidative stress) and the 
+domain of annotation (ex. biological_process).
 
 
 | Gene ID        | GO term accession | GO term name                              | GO domain          |

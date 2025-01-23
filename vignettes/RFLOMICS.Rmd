@@ -40,11 +40,18 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-The acquisition of multi-omics data with complex experimental designs is a widely adopted practice to identify entities and unravel the biological processes they are involved in.
+The acquisition of multi-omics data with complex experimental designs is a 
+widely adopted practice to identify entities and unravel the biological 
+processes they are involved in.
 
-Exploring each omics layer usually serves as an initial step to investigate and extract relevant biological variability. Statistical integration can then focus on pertinent omics layers and features.
+Exploring each omics layer usually serves as an initial step to investigate and
+extract relevant biological variability. Statistical integration can then focus
+on pertinent omics layers and features.
 
-Most existing solutions for the analysis of such data are command-line based, which limits accessibility for many users. Handling many packages, methods and their results can become a burden even for experienced R-users. Interface solutions exist, like [ExploreModelMatrix](https://www.bioconductor.org/packages/ExploreModelMatrix), 
+Most existing solutions for the analysis of such data are command-line based, 
+which limits accessibility for many users. Handling many packages, methods and 
+their results can become a burden even for experienced R-users. Interface solutions 
+exist, like [ExploreModelMatrix](https://www.bioconductor.org/packages/ExploreModelMatrix), 
 [pcaExplorer](https://www.bioconductor.org/packages/pcaExplorer)
 [MatrixQCvis](https://bioconductor.org/packages/MatrixQCvis/)
 or [ideal](https://bioconductor.org/packages/ideal/),
@@ -52,11 +59,18 @@ which each allows perform one particular step of the analysis, or
 [MSstatsShiny](https://bioconductor.org/packages/MSstatsShiny/), 
 which is designed for one particular omics type.
 
-Here we present RFLOMICS, an R package with a Shiny interface, designed to ensure a guided, comprehensive analysis and visualization of transcriptomics, proteomics, or metabolomics data. RFLOMICS covers the entire process from defining the statistical model to multi-omics integration, all within a single application.
+Here we present RFLOMICS, an R package with a Shiny interface, designed to ensure 
+a guided, comprehensive analysis and visualization of transcriptomics, proteomics,
+or metabolomics data. RFLOMICS covers the entire process from defining the statistical
+model to multi-omics integration, all within a single application.
 
-RFLOMICS uses extended classes of the [MultiAssayExperiment](https://bioconductor.org/packages/MultiAssayExperiment/)  and [SummarizedExperiment](https://bioconductor.org/packages/SummarizedExperiment/)  classes to ensure efficient data management of heterogeneous data.
+RFLOMICS uses extended classes of the [MultiAssayExperiment](https://bioconductor.org/packages/MultiAssayExperiment/) 
+and [SummarizedExperiment](https://bioconductor.org/packages/SummarizedExperiment/)  
+classes to ensure efficient data management of heterogeneous data.
 
-A flexible HTML report can be generated at any stage of the analysis, providing results, methods, and settings to facilitate the analysis reproducibility. Additionally, users can download an archive containing all produced results.
+A flexible HTML report can be generated at any stage of the analysis, providing 
+results, methods, and settings to facilitate the analysis reproducibility. 
+Additionally, users can download an archive containing all produced results.
 
 # Install and run RFLOMICS
 
@@ -74,8 +88,8 @@ library(RFLOMICS)
 
 # Guided tour of the interface
 
-This part of the vignette will follow the different steps of a multi-omics analysis trough the 
-RFLOMICS interface which are: 
+This part of the vignette will follow the different steps of a multi-omics 
+analysis trough the RFLOMICS interface which are: 
 
 - Data loading
 - Statistical framework setting
@@ -189,7 +203,8 @@ select a subset of samples to analyze, provided the completeness condition is me
 
  The design must be complete and as possible balanced. A **Complete design (mandatory)** 
  mean that all possible combinations of biological factors' levels (called groups) 
- are presents. A **Balanced design (recommended)** has an equal number of observations (replicates) for each group.
+ are presents. A **Balanced design (recommended)** has an equal number of 
+ observations (replicates) for each group.
 
 These constraints are checked and represented as graph (each square represent 1 
 group and each color level indicate the number of observations). 
