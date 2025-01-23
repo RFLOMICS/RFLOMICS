@@ -62,13 +62,12 @@ Imports:
     ggrepel,
     grDevices,
     grid,
+    httr,
     limma,
     magrittr,
     methods,
     mixOmics,
     MOFA2,
-    pathview,
-    png,
     purrr,
     RColorBrewer,
     reshape2,
@@ -84,6 +83,4 @@ Imports:
     tibble,
     tidyselect,
     UpSetR,
-    utils,
-    httr
 SystemRequirements: Python (>=3), numpy, pandas, h5py, scipy, argparse, sklearn, mofapy2

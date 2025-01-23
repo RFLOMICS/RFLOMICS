@@ -568,18 +568,6 @@ setGeneric(
 )
 
 setGeneric(
-  name = "plotKEGG",
-  def  = function(object,
-                  featureListName = NULL,
-                  pathway_id = NULL,
-                  species = "ath",
-                  gene_idtype = "kegg",
-                  ...)
-    standardGeneric("plotKEGG")
-
-)
-
-setGeneric(
   name = "plotClusterProfiler",
   def  = function(object,
                   featureListName = NULL,

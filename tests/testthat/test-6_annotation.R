@@ -342,16 +342,6 @@ test_that("getEnrichSettings - GO - proteomics is working", {
 # ---- KEGG tests (require internet connection) ----
 
 
-test_that("Valid url function is actually functionning", {
-
-    expect(isFALSE(RFLOMICS:::.validUrl("https://thisisnotaurl.imaginarydomain", timeout = 0.5)),
-           failure_message = "when reaching a nonexistant url, .validUrl returns TRUE anyway")
-
-    expect(isTRUE(RFLOMICS:::.validUrl("https://www.genome.jp/kegg/")),
-           failure_message = "Can't reach KEGG, or .validUrl is not functionning.")
-
-})
-
 test_that("KEGG annotation can be run", {
 
     # expects an organism name
@@ -386,29 +376,6 @@ test_that("KEGG annotation can be run", {
            failure_message = "KEGG enrichment: when providing no keytype,
            the keytype is not automatically kegg")
 
-
-    # Plot KEGG
-    test_pathway <- rownames(getEnrichRes(MAE[["protetest"]], database = "KEGG")[[1]][["no-domain"]]@result)[1]
-
-    # Plotting KEGG pathway without the pathway is throwing an error
-    expect_error(
-        plotKEGG(MAE[["protetest"]],
-                 featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS")
-    )
-
-    # plotting KEGG without a specie is not throwing an error
-    expect_no_error(
-        plotKEGG(MAE[["protetest"]],
-                 featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-                 pathway_id = test_pathway)
-    )
-
-    # plotting with every argument is not throwing any error
-    expect_no_error(
-        plotKEGG(MAE[["protetest"]],
-                 featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-                 species = "ath", pathway_id = test_pathway)
-    )
 })
 
 # ---- Custom tests ----

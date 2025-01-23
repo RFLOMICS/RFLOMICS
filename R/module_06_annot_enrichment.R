@@ -23,17 +23,7 @@
     box(
       title = span(tagList(
         icon("chart-pie"),
-        "Over Representation analysis (ClusterProfiler/Pathview)",
-        # a(
-        #   "ClusterProfiler/",
-        #   href = "https://bioconductor.org/packages/release/bioc/
-        #             vignettes/clusterProfiler/inst/doc/clusterProfiler.html"
-        # ),
-        # a(
-        #   "Pathview",
-        #   href = "https://bioconductor.org/packages/devel/bioc/
-        #             vignettes/pathview/inst/doc/pathview.pdf"
-        # ),
+        "Over Representation analysis (ClusterProfiler)",
         "   " ,
         tags$small("(Scroll down for instructions)")
       )),
@@ -1642,15 +1632,13 @@
   varLabel0 <- .omicsDic(dataSE)$variableName
   pathviewExplain <-
     paste0(
-      "<p>The map showed in this panel is generated using the pathvew R-package, which is a GPLv3 software.",
-      " If any of the map is used in a publication or products, please cite the pathview package.</p>",
-      " It lays the ",
-      varLabel0,
-      " in the list on the map, using the log2FC values if the list is a result of a differential analysis",
-      " or just an antiquewhite color for a co-expression cluster list."
+        "<p> The link generated in this panel can be copy-pasted to access an interactive KEGG MAP. ",
+        " On this MAP, you will find the ",
+        varLabel0,
+        "s of the list (contrast or cluster) highlighted."
     )
 
-  tabPanel("Pathview results",
+  tabPanel("KEGG Pathways results",
            br(),
            fluidRow(
              column(
@@ -1673,7 +1661,7 @@
                                        input[[paste0(listname, "-MAP.sel")]],
                                        "/",
                                        data[input[[paste0(listname, "-MAP.sel")]], "geneID"])
-                 paste0(link_to_map)
+                 cat(paste0(link_to_map))
                }),
 
                tags$style(
@@ -1686,34 +1674,7 @@
                div(class = "explain-p", HTML(pathviewExplain)),
              )
            ),
-           fluidRow(
-             column(
-               width = 12,
-               renderUI({
-                 link_to_map <- paste0("http://www.kegg.jp/kegg-bin/show_pathway?",
-                                       input[[paste0(listname, "-MAP.sel")]],
-                                       "/",
-                                       data[input[[paste0(listname, "-MAP.sel")]], "geneID"])
-
-                 # test validity of URL
-                 if (.validUrl(link_to_map)) {
-                   renderPlot({
-                     plotKEGG(
-                       object = dataSE,
-                       featureListName = listname,
-                       pathway_id = input[[paste0(listname, "-MAP.sel")]],
-                       species = input2$organism,
-                       gene_idtype = input2$keyTypeKEGG
-                     )
-                   }, res = 300, width = 1000, height = 1000)
-                 } else {
-                   renderText(
-                     "Please check your connection.
-                     It seems the URL does not exist, or you're not connected."
-                   )
-                 }
-
-               }))))
+        )
 }
 
 # ---- Summary ----

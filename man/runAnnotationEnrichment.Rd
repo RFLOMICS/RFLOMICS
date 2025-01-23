@@ -4,8 +4,6 @@
 \alias{runAnnotationEnrichment}
 \alias{runAnnotationEnrichment,RflomicsSE-method}
 \alias{runAnnotationEnrichment,RflomicsMAE-method}
-\alias{plotKEGG}
-\alias{plotKEGG,RflomicsSE-method}
 \alias{plotClusterProfiler}
 \alias{plotClusterProfiler,RflomicsSE-method}
 \alias{plotEnrichComp}
@@ -55,15 +53,6 @@
   qvalueCutoff = 1,
   minGSSize = 10,
   maxGSSize = 500,
-  ...
-)
-
-\S4method{plotKEGG}{RflomicsSE}(
-  object,
-  featureListName = NULL,
-  pathway_id = NULL,
-  species = "ath",
-  gene_idtype = "kegg",
   ...
 )
 
@@ -167,12 +156,6 @@ is a \link{RflomicsMAE-class}}
 \item{featureListName}{the contrastName or clusterName to retrieve
 the results from. If NULL, all results are returned.}
 
-\item{pathway_id}{the KEGG id pathway to plot.}
-
-\item{species}{Kegg code (eg hsa or ath)}
-
-\item{gene_idtype}{idtype (kegg, uniprot,...)}
-
 \item{plotType}{type of plot. Define the function used inside.
 One of dotplot, heatplot or cnetplot.}
 
@@ -197,8 +180,6 @@ name of the RflomicsSE to look for.}
 A RflomicsMAE or a RflomicsSE, depending on the class of object
 parameter. The enrichment results are added to the metadata slot, either
 in DiffExpEnrichAnal or CoExpEnrichAnal.
-
-Only displays the KEGG pathway, it does not return any object.
 
 a list of tables or a table
 
@@ -244,13 +225,6 @@ a \link{RflomicsMAE-class} object.
 \section{Plots}{
 
 A collection of functions for plotting results from omics analysis steps.
-
-
-\itemize{
-   \item plotKEGG: Plot the KEGG pathway using the pathview package.
-   It overlays the result of the differential analysis or the clusters
-   entity on the image.
-}
 
 
 \itemize{
