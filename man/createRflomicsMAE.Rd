@@ -16,10 +16,10 @@ createRflomicsMAE(
 \arguments{
 \item{projectName}{Project name}
 
-\item{omicsData}{list of omics dataset, list of data.frame, matrix or
+\item{omicsData}{list of omics dataset: named list of data.frame, matrix or
 \link{SummarizedExperiment} objects, or \link{MultiAssayExperiment} object.}
 
-\item{omicsNames}{vector of dataset names.}
+\item{omicsNames}{Vector of dataset names that we want to analyze.}
 
 \item{omicsTypes}{vector of dataset types:
 "RNAseq", "metabolomics", "proteomics"}
