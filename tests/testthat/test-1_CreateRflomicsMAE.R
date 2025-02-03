@@ -23,8 +23,9 @@ factorInfo <- data.frame(
 # create rflomicsMAE object
 MAE <- RFLOMICS::createRflomicsMAE(
   projectName = "Tests",
-  omicsData   = list(ecoseed.df$RNAtest, ecoseed.df$protetest, ecoseed.df$metatest),
-  omicsNames  = c("RNAtest", "protetest", "metatest"),
+  omicsData   = list(RNAtest = ecoseed.df$RNAtest, 
+                     protetest = ecoseed.df$protetest, 
+                     metatest = ecoseed.df$metatest),
   omicsTypes  = c("RNAseq","proteomics","metabolomics"),
   ExpDesign   = ecoseed.df$design,
   factorInfo  = factorInfo)
@@ -255,9 +256,9 @@ test_that("Test if samples in data matrix and rownames in design are ordered in 
 test_that("Test if samples in data matrix and rownames in design are orderd in same way", {
   
   omicsData <- list(
-    ecoseed.df$RNAtest,
-    ecoseed.df$metatest,
-    ecoseed.df$protetest)
+    RNAtest   = ecoseed.df$RNAtest,
+    metatest  = ecoseed.df$metatest,
+    protetest = ecoseed.df$protetest)
   
   omicsData[[1]] <- omicsData[[1]][,-5]
   omicsData[[2]] <- omicsData[[2]][,-10]
@@ -266,7 +267,6 @@ test_that("Test if samples in data matrix and rownames in design are orderd in s
   MAE <- RFLOMICS::createRflomicsMAE(
     projectName = "Tests", 
     omicsData   = omicsData,
-    omicsNames  = c("RNAtest", "metatest", "protetest"),
     omicsTypes  = c("RNAseq","metabolomics","proteomics"),
     ExpDesign   = ExpDesign,
     factorInfo   = factorInfo)
@@ -281,16 +281,15 @@ test_that("Test if samples in data matrix and rownames in design are orderd in s
 test_that("Test check of NA in data", {
   
   omicsData <- list(
-    ecoseed.df$RNAtest,
-    ecoseed.df$metatest,
-    ecoseed.df$protetest)
+    RNAtest = ecoseed.df$RNAtest,
+    metatest = ecoseed.df$metatest,
+    protetest = ecoseed.df$protetest)
   
   omicsData[[1]][6,7] <- NA
   
   expect_no_error(RFLOMICS::createRflomicsMAE(
     projectName = "Tests", 
     omicsData   = omicsData,
-    omicsNames  = c("RNAtest", "metatest", "protetest"),
     omicsTypes  = c("RNAseq","metabolomics","proteomics"),
     ExpDesign   = ecoseed.df$design,
     factorInfo  = factorInfo))
