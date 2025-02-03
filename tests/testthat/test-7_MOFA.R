@@ -15,42 +15,44 @@ data(ecoseed.mae)
 data(ecoseed.df)
 
 factorInfo <- data.frame(
-  "factorName"   = c("Repeat", "temperature", "imbibition"),
-  "factorType"   = c("batch", "Bio", "Bio")
+    "factorName"   = c("Repeat", "temperature", "imbibition"),
+    "factorType"   = c("batch", "Bio", "Bio")
 )
 
 # create rflomicsMAE object with ecoseed data
 MAE <- RFLOMICS::createRflomicsMAE(
-  projectName = "Tests",
-  omicsData   = ecoseed.mae,
-  omicsTypes  = c("RNAseq","proteomics","metabolomics"),
-  factorInfo  = factorInfo)
+    projectName = "Tests",
+    omicsData   = ecoseed.mae,
+    omicsTypes  = c("RNAseq","proteomics","metabolomics"),
+    factorInfo  = factorInfo)
 
 formulae <- generateModelFormulae( MAE)
 MAE <- setModelFormula(MAE, formulae[[1]])
 
 contrastList <- generateExpressionContrast(object = MAE) |>
-  purrr::reduce(rbind) |>
-  dplyr::filter(contrast %in% c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)",
-                                "((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS))/3",
-                                "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))" ))
+    purrr::reduce(rbind) |>
+    dplyr::filter(contrast %in% c("(temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS)",
+                                  "((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS))/3",
+                                  "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))" ))
 MAE <- MAE |>
-  setSelectedContrasts(contrastList)       |>
-  runDataProcessing(SE.name = "metatest", transformMethod = "log2",
-                    normMethod = "median") |>
-  runDiffAnalysis(SE.name = "metatest",  method = "limmalmFit",
-                  p.adj.cutoff = 0.2)   |>
-  runDataProcessing(SE.name = "protetest", transformMethod = "none",
-                    normMethod = "median") |>
-  runDataProcessing(SE.name = "RNAtest", normMethod = "TMM")    |>
-  runDiffAnalysis(SE.name = "RNAtest", method = "edgeRglmfit",
-                  p.adj.cutoff = 0.2)
+    setSelectedContrasts(contrastList)       |>
+    runDataProcessing(SE.name = "metatest", transformMethod = "log2",
+                      normMethod = "median") |>
+    runDiffAnalysis(SE.name = "metatest",  method = "limmalmFit",
+                    p.adj.cutoff = 0.2)   |>
+    runDataProcessing(SE.name = "protetest", transformMethod = "none",
+                      normMethod = "median") |>
+    runDataProcessing(SE.name = "RNAtest", normMethod = "TMM")    |>
+    runDiffAnalysis(SE.name = "RNAtest", method = "edgeRglmfit",
+                    p.adj.cutoff = 0.2)
 
 MAE0 <- MAE
 
 ###############################################################################
 ## This is to test equivalence, launch these after modifying the main methods #
 ###############################################################################
+
+
 
 
 # ----- TESTS -----
@@ -100,78 +102,159 @@ mixObj <- prepareForIntegration(MAE,
                                 variableLists = rownames(MAE),
                                 method = "mixOmics")
 
-test_that("RunOmics is running", {
+# check configuration for MOFA in following tests
+configMOFA <- FALSE
+catchRes <- RFLOMICS:::.tryCatch_rflomics(
+    runOmicsIntegration(MAE, preparedObject = MOFA.obj,
+                        method = "MOFA", scale_views = TRUE,
+                        maxiter = 1000, num_factors = 5))
 
-    expect_error(runOmicsIntegration(MAE))
+if (!is.null(catchRes$result)) {
+    configMOFA <- TRUE
+} else if (!is.null(catchRes$error)) {
 
-    # Checking parameters
-    expect_error(runOmicsIntegration(MAE, preparedObject = mofaObj,
-                                     method = "unknown"))
-    expect_error(runOmicsIntegration(MAE, preparedObject = mixObj))
-    expect_error(runOmicsIntegration(MAE, preparedObject = mixObj,
-                                     method = "mixOmics",
-                                     selectedResponse = "unknown"))
+    grepRes <-
+        grep(pattern = "mofapy", catchRes$error)
 
-    expect_no_error(runOmicsIntegration(MAE, preparedObject = mixObj,
-                                               method = "mixOmics"))
-    expect_no_error(runOmicsIntegration(MAE, preparedObject = mofaObj,
-                                               method = "MOFA"))
-})
+    if (length(grepRes) != 0 &&  grepRes == 1) {
+        warning("To use MOFA2, you need to correctly set up a python environment. ",
+                "We recommend reading the README (Troubleshooting MOFA2 section).")
 
-# Complete analyses for getters/summary
-MAE <- runOmicsIntegration(MAE, preparedObject = mofaObj,
-                           method = "MOFA")
-MAE <- runOmicsIntegration(MAE, preparedObject = mixObj,
-                           method = "mixOmics")
+    } else {
+        configMOFA <- TRUE # other error messages are interesting to keep
+    }
 
+}
 
-test_that("Getters and setters for integration are running", {
+if (!configMOFA)  skip("Tests for MOFA integration skipped")
+# end check config
 
-    # getMixOmics
-    expect_no_error(getMixOmics(MAE))
-    expect_no_error(getMixOmics(MAE, response = "temperature"))
-    expect_no_error(getMixOmics(MAE, response = "imbibition"))
-    expect(!is.null(getMixOmics(MAE, response = "temperature")),
-           failure_message = "Temperature results are NULL")
-    expect_no_error(getMixOmics(MAE, response = "temperature",
-                                onlyResults = FALSE))
-    expect_no_error(getMixOmicsSettings(MAE))
+if (configMOFA) {
 
-    # getMOFA
-    expect_no_error(getMOFA(MAE))
-    expect(is(getMOFA(MAE), "MOFA"),
-           failure_message = "getMOFA does not return a MOFA object")
-    expect_no_error(getMOFA(MAE, onlyResults = FALSE))
+    test_that("RunOmics is running", {
 
-    expect_no_error(getMOFASettings(MAE))
+        expect_error(runOmicsIntegration(MAE))
 
+        # Checking parameters
+        expect_error(runOmicsIntegration(MAE, preparedObject = mofaObj,
+                                         method = "unknown"))
+        expect_error(runOmicsIntegration(MAE, preparedObject = mixObj))
+        expect_error(runOmicsIntegration(MAE, preparedObject = mixObj,
+                                         method = "mixOmics",
+                                         selectedResponse = "unknown"))
 
-})
+        expect_no_error(runOmicsIntegration(MAE, preparedObject = mixObj,
+                                            method = "mixOmics"))
+        expect_no_error(runOmicsIntegration(MAE, preparedObject = mofaObj,
+                                            method = "MOFA"))
+    })
 
-test_that("Summary MixOmics", {
-
-    # Uses internal function .getOneMORes
-
-    expect_no_error(sumMixOmics(MAE))
-    expect(is(sumMixOmics(MAE), "list"),
-           failure_message = "sumMixOmics does not return a list")
-    expect_no_error(sumMixOmics(MAE, selectedResponse = "temperature"))
-    expect(is(sumMixOmics(MAE, selectedResponse = "temperature"), "matrix"),
-           failure_message = "sumMixOmics for temperature is not a matrix")
-
-})
+    # Complete analyses for getters/summary
+    MAE <- runOmicsIntegration(MAE, preparedObject = mofaObj,
+                               method = "MOFA")
+    MAE <- runOmicsIntegration(MAE, preparedObject = mixObj,
+                               method = "mixOmics")
 
 
-test_that("Plot functions are working", {
-    expect_no_error(RFLOMICS:::plotMOVarExp(MAE, selectedResponse = "temperature"))
-    expect(is(RFLOMICS:::plotMOVarExp(MAE, selectedResponse = "temperature"),
-              "ggplot"),
-           failure_message = "plotMOVarExp does not return a ggplot")
+    test_that("Getters and setters for integration are running", {
 
-    expect_no_error(RFLOMICS:::.relationsMOFA(getMOFA(MAE)))
-    expect(is(RFLOMICS:::.relationsMOFA(getMOFA(MAE)), "data.frame"),
-       failure_message = ".relationsMOFA is not a data.frame")
-})
+        # getMixOmics
+        expect_no_error(getMixOmics(MAE))
+        expect_no_error(getMixOmics(MAE, response = "temperature"))
+        expect_no_error(getMixOmics(MAE, response = "imbibition"))
+        expect(!is.null(getMixOmics(MAE, response = "temperature")),
+               failure_message = "Temperature results are NULL")
+        expect_no_error(getMixOmics(MAE, response = "temperature",
+                                    onlyResults = FALSE))
+        expect_no_error(getMixOmicsSettings(MAE))
+
+        # getMOFA
+        expect_no_error(getMOFA(MAE))
+        expect(is(getMOFA(MAE), "MOFA"),
+               failure_message = "getMOFA does not return a MOFA object")
+        expect_no_error(getMOFA(MAE, onlyResults = FALSE))
+
+        expect_no_error(getMOFASettings(MAE))
+
+
+    })
+
+    test_that("Summary MixOmics", {
+
+        # Uses internal function .getOneMORes
+
+        expect_no_error(sumMixOmics(MAE))
+        expect(is(sumMixOmics(MAE), "list"),
+               failure_message = "sumMixOmics does not return a list")
+        expect_no_error(sumMixOmics(MAE, selectedResponse = "temperature"))
+        expect(is(sumMixOmics(MAE, selectedResponse = "temperature"), "matrix"),
+               failure_message = "sumMixOmics for temperature is not a matrix")
+
+    })
+
+
+    test_that("Plot functions are working", {
+        expect_no_error(RFLOMICS:::plotMOVarExp(MAE, selectedResponse = "temperature"))
+        expect(is(RFLOMICS:::plotMOVarExp(MAE, selectedResponse = "temperature"),
+                  "ggplot"),
+               failure_message = "plotMOVarExp does not return a ggplot")
+
+        expect_no_error(RFLOMICS:::.relationsMOFA(getMOFA(MAE)))
+        expect(is(RFLOMICS:::.relationsMOFA(getMOFA(MAE)), "data.frame"),
+               failure_message = ".relationsMOFA is not a data.frame")
+    })
+
+} else {
+    test_that("RunOmics is running", {
+        # Checking parameters
+        expect_error(runOmicsIntegration(MAE, preparedObject = mixObj,
+                                         method = "mixOmics",
+                                         selectedResponse = "unknown"))
+
+        expect_no_error(runOmicsIntegration(MAE, preparedObject = mixObj,
+                                            method = "mixOmics"))
+    })
+
+    # Complete analyses for getters/summary
+    MAE <- runOmicsIntegration(MAE, preparedObject = mixObj,
+                               method = "mixOmics")
+
+
+    test_that("Getters and setters for integration are running", {
+
+        # getMixOmics
+        expect_no_error(getMixOmics(MAE))
+        expect_no_error(getMixOmics(MAE, response = "temperature"))
+        expect_no_error(getMixOmics(MAE, response = "imbibition"))
+        expect(!is.null(getMixOmics(MAE, response = "temperature")),
+               failure_message = "Temperature results are NULL")
+        expect_no_error(getMixOmics(MAE, response = "temperature",
+                                    onlyResults = FALSE))
+        expect_no_error(getMixOmicsSettings(MAE))
+    })
+
+    test_that("Summary MixOmics", {
+
+        # Uses internal function .getOneMORes
+
+        expect_no_error(sumMixOmics(MAE))
+        expect(is(sumMixOmics(MAE), "list"),
+               failure_message = "sumMixOmics does not return a list")
+        expect_no_error(sumMixOmics(MAE, selectedResponse = "temperature"))
+        expect(is(sumMixOmics(MAE, selectedResponse = "temperature"), "matrix"),
+               failure_message = "sumMixOmics for temperature is not a matrix")
+
+    })
+
+
+    test_that("Plot functions are working", {
+        expect_no_error(RFLOMICS:::plotMOVarExp(MAE, selectedResponse = "temperature"))
+        expect(is(RFLOMICS:::plotMOVarExp(MAE, selectedResponse = "temperature"),
+                  "ggplot"),
+               failure_message = "plotMOVarExp does not return a ggplot")
+    })
+
+}
 
 #######################################################################
 ## Equivalence testing, run these after modifying the main methods    #
@@ -251,97 +334,97 @@ test_that("Equivalence", {
                                          design = designToPreserve)
 
 
-  MOFA.obj <- suppressWarnings(
-    prepareForIntegration(object           = MAE,
-                          omicsNames       = selectedData,
-                          variableLists    = variableList,
-                          method           = "MOFA",
-                          transformData    = TRUE
-    ))
+    MOFA.obj <- suppressWarnings(
+        prepareForIntegration(object           = MAE,
+                              omicsNames       = selectedData,
+                              variableLists    = variableList,
+                              method           = "MOFA",
+                              transformData    = TRUE
+        ))
 
-  # ---- Equivalence after preparation : ----
-  expect(is(MOFA.obj, "MOFA"), failure_message = "Prepared MAE is not a MOFA object")
-  expect_equal(get_dimensions(MOFA.obj)$D, lengths(variableList))
+    # ---- Equivalence after preparation : ----
+    expect(is(MOFA.obj, "MOFA"), failure_message = "Prepared MAE is not a MOFA object")
+    expect_equal(get_dimensions(MOFA.obj)$D, lengths(variableList))
 
-  protRes <- MOFA.obj@data$protetest$group1
+    protRes <- MOFA.obj@data$protetest$group1
 
-  expect_equal(dim(protMat4), dim(protRes))
-  expect(identical(rownames(protMat4), rownames(protRes),
-                   attrib.as.set = FALSE),
-         failure_message = "proteins rownames are not identical")
-  expect(identical(colnames(protMat4), colnames(protRes),
-                   attrib.as.set = FALSE),
-         failure_message = "proteins colnames are not identical")
-  expect_identical(as.data.frame(protMat4), as.data.frame(protRes))
+    expect_equal(dim(protMat4), dim(protRes))
+    expect(identical(rownames(protMat4), rownames(protRes),
+                     attrib.as.set = FALSE),
+           failure_message = "proteins rownames are not identical")
+    expect(identical(colnames(protMat4), colnames(protRes),
+                     attrib.as.set = FALSE),
+           failure_message = "proteins colnames are not identical")
+    expect_identical(as.data.frame(protMat4), as.data.frame(protRes))
 
-  metaRes <- MOFA.obj@data$metatest$group1
+    metaRes <- MOFA.obj@data$metatest$group1
 
-  expect_equal(dim(metMat4), dim(metaRes))
-  expect(identical(rownames(metMat4), rownames(metaRes),
-                   attrib.as.set = FALSE),
-         failure_message = "metabolites rownames are not identical")
-  expect(identical(colnames(metMat4), colnames(metaRes),
-                   attrib.as.set = FALSE),
-         failure_message = "metabolites colnames are not identical")
-  expect_identical(as.data.frame(metMat4), as.data.frame(metaRes))
+    expect_equal(dim(metMat4), dim(metaRes))
+    expect(identical(rownames(metMat4), rownames(metaRes),
+                     attrib.as.set = FALSE),
+           failure_message = "metabolites rownames are not identical")
+    expect(identical(colnames(metMat4), colnames(metaRes),
+                     attrib.as.set = FALSE),
+           failure_message = "metabolites colnames are not identical")
+    expect_identical(as.data.frame(metMat4), as.data.frame(metaRes))
 
-  # ---- Equivalence on results: ----
+    # ---- Equivalence on results: ----
 
-  catchRes <- RFLOMICS:::.tryCatch_rflomics(
-    runOmicsIntegration(MAE, preparedObject = MOFA.obj,
-                        method = "MOFA", scale_views = TRUE,
-                        maxiter = 1000, num_factors = 5))
+    catchRes <- RFLOMICS:::.tryCatch_rflomics(
+        runOmicsIntegration(MAE, preparedObject = MOFA.obj,
+                            method = "MOFA", scale_views = TRUE,
+                            maxiter = 1000, num_factors = 5))
 
-  if(!is.null(catchRes$result)){
-    MAE3 <- catchRes$result
+    if(!is.null(catchRes$result)){
+        MAE3 <- catchRes$result
 
-    # equivalence
-    mofaobject <- create_mofa(data = list("protetest" = protMat4,
-                                          "metatest" = metMat4),
-                              extract_metadata = TRUE)
-    data_opts  <- get_default_data_options(mofaobject)
-    model_opts <- get_default_model_options(mofaobject)
-    train_opts <- get_default_training_options(mofaobject)
+        # equivalence
+        mofaobject <- create_mofa(data = list("protetest" = protMat4,
+                                              "metatest" = metMat4),
+                                  extract_metadata = TRUE)
+        data_opts  <- get_default_data_options(mofaobject)
+        model_opts <- get_default_model_options(mofaobject)
+        train_opts <- get_default_training_options(mofaobject)
 
-    data_opts$scale_views  <- TRUE
-    train_opts$maxiter     <- 1000
-    train_opts$verbose     <- FALSE
-    model_opts$num_factors <- 5
-    MOFAObject.untrained <- prepare_mofa(
-      object           = mofaobject,
-      data_options     = data_opts,
-      model_options    = model_opts,
-      training_options = train_opts
-    )
+        data_opts$scale_views  <- TRUE
+        train_opts$maxiter     <- 1000
+        train_opts$verbose     <- FALSE
+        model_opts$num_factors <- 5
+        MOFAObject.untrained <- prepare_mofa(
+            object           = mofaobject,
+            data_options     = data_opts,
+            model_options    = model_opts,
+            training_options = train_opts
+        )
 
-    MOFAObject.trained <- suppressWarnings(
-      run_mofa(MOFAObject.untrained,
-               use_basilisk = FALSE,
-               save_data = TRUE))
+        MOFAObject.trained <- suppressWarnings(
+            run_mofa(MOFAObject.untrained,
+                     use_basilisk = FALSE,
+                     save_data = TRUE))
 
-    resRFLOMICS <- get_factors(getMOFA(MAE3))$group1
-    resEquivalence <- get_factors(MOFAObject.trained)$group1
+        resRFLOMICS <- get_factors(getMOFA(MAE3))$group1
+        resEquivalence <- get_factors(MOFAObject.trained)$group1
 
-    resRFLOMICSW <- get_weights(getMOFA(MAE3))$group1
-    resEquivalenceW <- get_weights(MOFAObject.trained)$group1
+        resRFLOMICSW <- get_weights(getMOFA(MAE3))$group1
+        resEquivalenceW <- get_weights(MOFAObject.trained)$group1
 
-    expect_equal(resRFLOMICSW, resEquivalenceW)
-    expect_equal(resRFLOMICS, resEquivalence, tolerance = 10^-5)
+        expect_equal(resRFLOMICSW, resEquivalenceW)
+        expect_equal(resRFLOMICS, resEquivalence, tolerance = 10^-5)
 
-  }
-  else if(!is.null(catchRes$error)){
+    }
+    else if(!is.null(catchRes$error)){
 
-    grepRes <-
-      grep(pattern = "mofapy", catchRes$error)
+        grepRes <-
+            grep(pattern = "mofapy", catchRes$error)
 
-    if(length(grepRes) != 0 &&  grepRes == 1)
-      warning("To use MOFA2, you need to correctly set up a python environment. ",
-              "We recommend reading the README (Troubleshooting MOFA2 section).")
+        if(length(grepRes) != 0 &&  grepRes == 1)
+            warning("To use MOFA2, you need to correctly set up a python environment. ",
+                    "We recommend reading the README (Troubleshooting MOFA2 section).")
 
-    expect(length(grepRes) != 0 &&  grepRes == 1,
-           failure_message = catchRes$error)
+        expect(length(grepRes) != 0 &&  grepRes == 1,
+               failure_message = catchRes$error)
 
-  }
+    }
 })
 
 
