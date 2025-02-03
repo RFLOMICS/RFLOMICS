@@ -92,8 +92,10 @@ createRflomicsMAE <- function(projectName = NULL,
         "matrix"               = as.data.frame(omicsData[[dataName]]),
         "SummarizedExperiment" = {
           tmp <- as.data.frame(assay(omicsData[[dataName]]))
-          colnames(tmp) <- 
-            sampleMap(omicsData)[sampleMap(omicsData)$assay == dataName,]$primary
+          
+          if(class(omicsData)[1] == "MultiAssayExperiment")
+            colnames(tmp) <- 
+              sampleMap(omicsData)[sampleMap(omicsData)$assay == dataName,]$primary
           tmp
           },
         stop("The components of the omicsData object must be of class list, ",
@@ -178,7 +180,7 @@ createRflomicsMAE <- function(projectName = NULL,
   factorBatch <- filter(factorInfo, factorType == "batch")$factorName
 
   ## set ref and levels to ExpDesign
-  #refList <- vector()
+  # refList <- vector()
   for (i in 1:nrow(factorInfo)){
     
     if(factorInfo$factorType[i] == "Meta") next
@@ -186,6 +188,21 @@ createRflomicsMAE <- function(projectName = NULL,
     ExpDesign[[factorInfo[i,]$factorName]] <- 
       str_replace_all(string = ExpDesign[[factorInfo[i,]$factorName]], 
                       pattern = "[*# -/]", replacement = "")
+    
+    # set level
+    if (!is.null(factorInfo$factorLevels)){
+      levels <- str_split(factorInfo[i,]$factorLevels, ",") |>
+        unlist() %>% str_remove(" ")
+      
+      if(any(!levels %in% ExpDesign[[factorInfo[i,]$factorName]]))
+        stop("The factor levels: ", factorInfo[i,]$factorLevels, " don't exist") 
+    }
+    else{
+      levels <- unique(ExpDesign[[factorInfo[i,]$factorName]])
+    }
+    ExpDesign[[factorInfo[i,]$factorName]] <-
+      factor(ExpDesign[[factorInfo[i,]$factorName]], levels = levels)
+    
     # set ref
     ref <- NULL
     if (!is.null(factorInfo$factorRef)){
@@ -201,21 +218,6 @@ createRflomicsMAE <- function(projectName = NULL,
     #ExpDesign <- ExpDesign[order(row.names(ExpDesign)), ]
     ExpDesign[[factorInfo[i,]$factorName]] <-
       relevel(as.factor(ExpDesign[[factorInfo[i,]$factorName]]), ref=ref)
-
-    #refList <- c(refList, ref)
-
-    # set level
-    if (!is.null(factorInfo$factorLevels)){
-
-      levels <- str_split(factorInfo[i,]$factorLevels, ",") |>
-        unlist() %>%
-        str_remove(" ")
-      if(any(!levels %in% ExpDesign[[factorInfo[i,]$factorName]]))
-        stop("The factor levels: ", factorInfo[i,]$factorLevels, " don't exist")
-
-      ExpDesign[[factorInfo[i,]$factorName]] <-
-        factor(ExpDesign[[factorInfo[i,]$factorName]], levels = levels)
-    }
   }
 
   ## consctuct ExpDesign object
