@@ -105,7 +105,7 @@ mixObj <- prepareForIntegration(MAE,
 # check configuration for MOFA in following tests
 configMOFA <- FALSE
 catchRes <- RFLOMICS:::.tryCatch_rflomics(
-    runOmicsIntegration(MAE, preparedObject = MOFA.obj,
+    runOmicsIntegration(MAE, preparedObject = mofaObj,
                         method = "MOFA", scale_views = TRUE,
                         maxiter = 1000, num_factors = 5))
 
