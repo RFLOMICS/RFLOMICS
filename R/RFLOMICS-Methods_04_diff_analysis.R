@@ -133,8 +133,12 @@ setMethod(
 
     if(is.null(contrastList))
       contrastList <- getSelectedContrasts(object.p)
-    else
-      contrastList <- intersect(contrastList, contrast.sel)
+    else {
+        # contrastList <- intersect(contrastList, contrast.sel)
+        contrastList <- merge(contrastList, contrast.sel,
+                              all = FALSE)
+    }
+
     if(length(contrastList) == 0)
       stop("The specified contrasts do not match the selected contrasts")
 
@@ -187,7 +191,7 @@ setMethod(
       if (!is.null(ListRes$error)) {
         DiffExpAnal[["errors"]] <- ListRes$error
 
-      }else if(!is.null(ListRes$value)) {
+      }else if (!is.null(ListRes$value)) {
 
         if (!is.null(ListRes$value[["RawDEFres"]]))
           DiffExpAnal[["results"]][["RawDEFres"]] <- ListRes$value[["RawDEFres"]]
@@ -300,11 +304,13 @@ setMethod(
     factorBio <- getBioFactors(object)
 
     modelFormula <- getModelFormula(object)
+
     Contrasts.Coeff <-
       .getContrastMatrixF(ExpDesign = ExpDesign,
                           factorBio = factorBio,
                           contrastList = contrastList$contrast,
                           modelFormula)
+
     rownames(Contrasts.Coeff) <- contrastList$contrastName
 
     return(Contrasts.Coeff)
