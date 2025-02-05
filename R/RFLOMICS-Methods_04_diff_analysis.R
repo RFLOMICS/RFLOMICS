@@ -448,9 +448,10 @@ setMethod(
     if(length(unselectedContrasts) != 0)
       stop("These contrasts ", paste0(unselectedContrasts, collapse = ", "),
            " are not recognized.")
-
-    metadata(object)[["DiffExpAnal"]][["results"]][["Validcontrasts"]] <-
-      contrastList
+    
+    if(length(metadata(object)[["DiffExpAnal"]]) != 0)
+      metadata(object)[["DiffExpAnal"]][["results"]][["Validcontrasts"]] <-
+        contrastList
 
     return(object)
   })
