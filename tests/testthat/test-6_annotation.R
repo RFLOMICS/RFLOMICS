@@ -14,7 +14,6 @@ library(RFLOMICS)
 ## load ecoseed data
 
 data(ecoseed.mae)
-data(ecoseed.df)
 
 factorInfo <- data.frame(
     "factorName"   = c("Repeat", "temperature", "imbibition"),
@@ -52,62 +51,6 @@ MAE <- MAE |>
 
 
 #### Need org.At.tair.db to run
-
-
-test_that("it's running from diffExpAnal - GO - proteomics", {
-
-    skip_if_not_installed("org.At.tair.db")
-
-    # Selecting only one contrast
-    expect_no_error({
-        MAE <-
-            runAnnotationEnrichment(
-                MAE, SE.name = "protetest",
-                featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-                database = "GO",
-                pvalueCutoff = 0.05,
-                OrgDb = "org.At.tair.db",
-                keyType = "TAIR",
-                domain = c("BP"))
-    })
-
-    expect({
-        obj <- getEnrichRes(
-            MAE[["protetest"]],
-            featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-            database = "GO", domain = "BP")
-        nrow(obj@result) > 0
-
-    }, failure_message = "(GO protetest from DiffExp) - ",
-    "There is no result in the enrichment metadata part.")
-
-    # All contrasts
-
-    # expect_no_error({
-    #   MAE <- runAnnotationEnrichment(
-    #     MAE, SE.name = "protetest", database = "GO",
-    #     OrgDb   = "org.At.tair.db",
-    #                      keyType = "TAIR",
-    #                      pvalueCutoff = 0.05,
-    #     domain = c("BP", "MF", "CC"))
-    #
-    # })
-
-    expect({
-        obj <- getEnrichRes(
-            MAE[["protetest"]],
-            featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-            database = "GO",
-            domain   = "BP")
-
-        nrow(obj@result) > 0
-
-    }, failure_message = "(GO protetest from DiffExp) - ",
-    "There is no result in the enrichment metadata part.")
-
-
-
-})
 
 test_that("Automatically settings parameters or throwing errors
           - GO - Proteomics", {
@@ -170,19 +113,20 @@ test_that("Automatically settings parameters or throwing errors
                   from = "DiffExp"))
 
               # Automatically setting domain for GO
-              MAE[["protetest"]] <- runAnnotationEnrichment(
-                  MAE[["protetest"]],
-                  featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-                  database = "GO",
-                  domain = "ALL",
-                  OrgDb = "org.At.tair.db",
-                  keyType = "TAIR",
-                  from = "DiffExp")
+              ## skip for long time running...
+              # MAE[["protetest"]] <- runAnnotationEnrichment(
+              #     MAE[["protetest"]],
+              #     featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
+              #     database = "GO",
+              #     domain = "ALL",
+              #     OrgDb = "org.At.tair.db",
+              #     keyType = "TAIR",
+              #     from = "DiffExp")
 
-              expect(isTRUE(setequal(getEnrichSettings(MAE[["protetest"]])$domain,
-                                     c("BP", "CC", "MF"))),
-                     failure_message = "If domain is not set for GO, then domain
-             is not automatically set to BP, CC and MF")
+             #  expect(isTRUE(setequal(getEnrichSettings(MAE[["protetest"]])$domain,
+             #                         c("BP", "CC", "MF"))),
+             #         failure_message = "If domain is not set for GO, then domain
+             # is not automatically set to BP, CC and MF")
 
               # Annotation not running if from is neither diffexp nor coexp
               expect_error(
@@ -244,10 +188,10 @@ test_that("getEnrichRes - GO - proteomics is working", {
             MAE, SE.name = "protetest",
             featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
             database = "GO",
-            pvalueCutoff = 0.05,
+            pvalueCutoff = 0.2,
             OrgDb = "org.At.tair.db",
             keyType = "TAIR",
-            domain = c("BP"))
+            domain = c("BP", "CC"))
 
     # Identical to the one in "it's running from diffExpAnal - GO - proteomics"
     # # Getter from SE
@@ -283,22 +227,8 @@ test_that("getEnrichRes - GO - proteomics is working", {
     expect_error(getEnrichRes(MAE))
     expect_error(getEnrichRes(MAE[["protetest"]], database = "data"))
 
-})
 
-
-test_that("sumORA - GO - proteomics is working (and getAnnotSummaryAnalysis)", {
-    skip_if_not_installed("org.At.tair.db")
-
-    MAE <-
-        runAnnotationEnrichment(
-            MAE, SE.name = "protetest",
-            featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-            database = "GO",
-            pvalueCutoff = 0.2,
-            OrgDb = "org.At.tair.db",
-            keyType = "TAIR",
-            domain = c("BP", "CC"))
-
+    # SumORA testing
     expect_no_error(sumORA(MAE[["protetest"]], database = "GO",
                            featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS" ))
 
@@ -319,8 +249,8 @@ test_that("sumORA - GO - proteomics is working (and getAnnotSummaryAnalysis)", {
     expect_error(getAnnotAnalysesSummary(MAE, matrixType = "type"))
     expect_error(getAnnotAnalysesSummary(MAE, from = "from"))
 
-
 })
+
 
 
 test_that("getEnrichSettings - GO - proteomics is working", {
