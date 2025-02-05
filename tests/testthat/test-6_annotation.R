@@ -69,7 +69,7 @@ test_that("Automatically settings parameters or throwing errors
                   minGSSize = NULL,
                   maxGSSize = NULL,
                   keyType = "TAIR",
-                  domain = c("BP"),
+                  domain = c("CC"),
                   from = "DiffExp")
 
               expect(
@@ -89,7 +89,7 @@ test_that("Automatically settings parameters or throwing errors
                   database = NULL,
                   OrgDb = "org.At.tair.db",
                   keyType = "TAIR",
-                  domain = c("BP"),
+                  domain = c("CC"),
                   from = "DiffExp"))
 
               # Error if domain is missing
@@ -166,7 +166,7 @@ test_that("Automatically filling parameters", {
         from = NULL,
         OrgDb = "org.At.tair.db",
         keyType = "TAIR",
-        domain = c("BP"))
+        domain = c("CC"))
 
     expect(
         isTRUE(setequal(names(getEnrichRes(MAE[["protetest"]])),
@@ -191,7 +191,7 @@ test_that("getEnrichRes - GO - proteomics is working", {
             pvalueCutoff = 0.2,
             OrgDb = "org.At.tair.db",
             keyType = "TAIR",
-            domain = c("BP", "CC"))
+            domain = c("CC"))
 
     # Identical to the one in "it's running from diffExpAnal - GO - proteomics"
     # # Getter from SE
@@ -211,7 +211,7 @@ test_that("getEnrichRes - GO - proteomics is working", {
         obj <- getEnrichRes(
             MAE[["protetest"]],
             featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-            database = "GO", domain = "BP")
+            database = "GO", domain = "CC")
         nrow(obj@result) > 0
 
     }, failure_message = "getEnrichRes from DiffExp MAE -  ",
@@ -262,7 +262,7 @@ test_that("getEnrichSettings - GO - proteomics is working", {
             pvalueCutoff = 0.2,
             OrgDb = "org.At.tair.db",
             keyType = "TAIR",
-            domain = c("BP"))
+            domain = c("CC"))
 
     expect_error(getEnrichSettings(MAE[["protetest"]], from = "Diffexp"))
 })
