@@ -743,3 +743,32 @@ test_that("Error/warning messages", {
 
 })
 
+test_that("Test explor plot", {
+  
+  sampleToKeep <- colnames(MAE[["RNAtest"]])[-1]
+  MAE1 <- runDataProcessing(MAE, SE.name = "RNAtest",
+                            samples = sampleToKeep,
+                            filterStrategy = "NbReplicates",
+                            cpmCutoff = 1,
+                            normMethod = "TMM")
+  MAE1 <- runDataProcessing(MAE1, SE.name = "protetest",
+                            transformMethod = "none",
+                            normMethod = "none",
+                            imputMethod = "MVI")
+  
+  p <- plotLibrarySize(MAE1, SE.name = "RNAtest", raw = TRUE)
+  expect_equal(is(p), "gg")
+  expect_error(plotLibrarySize(MAE1, SE.name = "protetest"))
+  
+  p <- plotDataDistribution(MAE1, SE.name = "RNAtest", plot = "boxplot")
+  expect_equal(is(p), "gg")
+  
+  p <- plotDataDistribution(MAE1, SE.name = "protetest", plot = "density")
+  expect_equal(is(p), "gg")
+  
+  p <- plotOmicsPCA(MAE1, SE.name = "RNAtest")
+  expect_equal(is(p), "gg")
+  
+  p <- plotExpDesignCompleteness(MAE1, omicName = "RNAtest")
+  expect_equal(is(p), "gg")
+})

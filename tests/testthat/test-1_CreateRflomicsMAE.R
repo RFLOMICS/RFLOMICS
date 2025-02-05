@@ -65,6 +65,54 @@ test_that("test MAE omics types", {
   expect_identical(getOmicsTypes(MAE), omicsType)
 })
 
+## ---- colData ----
+test_that("colData", {
+  
+  Repeat      <- factor(rep(c("rep1", "rep2", "rep3"), 9), 
+                        levels =c("rep1", "rep2", "rep3"))
+  imbibition  <- factor(c(rep("DS", 9), rep("EI", 9), rep("LI", 9)), 
+                        levels =c("DS", "EI", "LI"))    
+  temperature <- factor(rep(c(rep("Low",3), rep("Medium", 3), rep("Elevated", 3)), 3),  
+                        levels =c("Low", "Medium", "Elevated"))
+  Repeat      <- relevel(as.factor(Repeat),      ref="rep1")
+  temperature <- relevel(as.factor(temperature), ref="Low")
+  imbibition  <- relevel(as.factor(imbibition),  ref="DS")
+  
+  # groups
+  groups.level <- character(0)
+  # Boucles imbriquées pour créer les combinaisons
+  for (v1 in c("Low", "Medium", "Elevated")) {
+    for (v2 in c("DS", "EI", "LI")) {
+      groups.level <- c(groups.level, paste(v1, v2, sep = "_"))
+    }
+  }
+  groups <- factor(paste(temperature, imbibition, sep = "_"),
+                   levels =groups.level)
+  
+  # samples
+  samples.level <- character(0)
+  # Boucles imbriquées pour créer les combinaisons
+  for (v1 in groups.level) {
+    for (v2 in 1:3) {
+      samples.level <- c(samples.level, paste(v1, v2, sep = "_"))
+    }
+  }
+  
+  samples <- factor(paste(temperature, imbibition, sub("rep", "", Repeat), sep = "_"),
+                    levels = samples.level)
+  
+  
+  colData <- data.frame(Repeat      = Repeat, 
+                        groups      = groups,
+                        temperature = temperature,
+                        imbibition  = imbibition,
+                        samples     = samples)
+  
+  rownames(colData) <- samples
+  
+  expect_equal(as.data.frame(getDesignMat(MAE)), as.data.frame(colData))
+})
+
 
 test_that("test MAE metadtata", {
   
@@ -208,16 +256,37 @@ test_that("test getDatasetNames", {
   expect_true(all(getDatasetNames(MAE) %in% c("RNAtest", "metatest", "protetest")))
 })
 
-test_that("Design accessors", {
+test_that("test getFactorTypes", {
+  
   expect_identical(getFactorTypes(MAE), metadata(MAE)$design$Factors.Type)
   
+  vec <- c("batch", "Bio", "Bio")
+  names(vec) <- c("Repeat", "temperature", "imbibition" )
+  expect_equal(getFactorTypes(MAE), vec)
+  
+  SE <- getRflomicsSE(MAE, "RNAtest")
+  expect_equal(getFactorTypes(SE), vec)
 })
 
 test_that("Factors types", {
   
-  expect_identical(getBioFactors(MAE), c("temperature", "imbibition"))
-  expect_identical(getBatchFactors(MAE), c("Repeat"))
+  SE <- getRflomicsSE(MAE, "RNAtest")
   
+  expect_identical(getBioFactors(MAE), c("temperature", "imbibition"))
+  expect_equal(getBioFactors(SE), c("temperature", "imbibition"))
+  
+  expect_identical(getBatchFactors(MAE), c("Repeat"))
+  expect_equal(getBatchFactors(SE), c("Repeat"))
+  
+  expect_null(getMetaFactors(MAE))
+  expect_null(getMetaFactors(SE))
+  
+})
+
+test_that("test getFactorModalities", {
+  
+  expect_equal(getFactorModalities(MAE, "imbibition"), c("DS", "EI", "LI"))
+  expect_equal(getFactorModalities(MAE[["protetest"]], "imbibition"),  c("DS", "EI", "LI"))
 })
 
 # Test of internal function
@@ -353,4 +422,17 @@ test_that("readOmicsData", {
   data_bis <- RFLOMICS:::readOmicsData(fileName)
   expect_true("data.frame" %in% is(data_bis))
   expect_equal(names(data_bis), paste0("S", 1:9))
+})
+
+
+test_that("Test plot", {
+  
+  p <- plotConditionsOverview(MAE)
+  expect_equal(is(p), "gg")
+  
+  p <- plotDataOverview(MAE)
+  expect_equal(is(p), "gg")
+  
+  p <- plotDataOverview(MAE, realSize = TRUE)
+  expect_equal(is(p), "gg")
 })

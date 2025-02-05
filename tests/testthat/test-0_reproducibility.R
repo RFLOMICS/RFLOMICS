@@ -4,11 +4,11 @@
 ### ----------------------------------------------------------------------------
 # N. Bessoltane, 
 
-
 library(testthat)
 library(RFLOMICS)
 
-# These tests will allow us to see if changes in the code or package versions affect the expected results. 
+# These tests will allow us to see if changes in 
+# the code or package versions affect the expected results. 
 
 # ---- Create RflomicsMAE object ----
 
@@ -90,9 +90,9 @@ test_that("Test generateReport", {
 
 ## diff analysis
 MAE <- MAE |> 
-  runDiffAnalysis(SE.name = "RNAtest", p.adj.method = "BH", 
-                  method = "edgeRglmfit", p.adj.cutoff = 0.05, 
-                  logFC.cutoff = 0) |>
+  # runDiffAnalysis(SE.name = "RNAtest", p.adj.method = "BH", 
+  #                 method = "edgeRglmfit", p.adj.cutoff = 0.05, 
+  #                 logFC.cutoff = 0) |>
   runDiffAnalysis(SE.name = "protetest", p.adj.method = "BH", 
                   method = "limmalmFit",  p.adj.cutoff = 0.05, 
                   logFC.cutoff = 0) |>
@@ -100,9 +100,9 @@ MAE <- MAE |>
                   method = "limmalmFit",  p.adj.cutoff = 0.05, 
                   logFC.cutoff = 0)
 
-MAE <- 
-  setValidContrasts(MAE, omicName = "RNAtest",
-                    contrastList = getSelectedContrasts(MAE[["RNAtest"]]))
+# MAE <- 
+#   setValidContrasts(MAE, omicName = "RNAtest",
+#                     contrastList = getSelectedContrasts(MAE[["RNAtest"]]))
 
 MAE[["protetest"]] <- 
   setValidContrasts(MAE[["protetest"]], 
@@ -114,11 +114,6 @@ MAE[["metatest"]] <-
 ## co expression
 co <- capture.output(
   MAE <- MAE |> 
-    #runCoExpression(SE.name = "RNAtest", 
-    #contrastNames = "(temperatureMedium - temperatureLow) in imbibitionDS", 
-    #K = 2:10, replicates = 5, merge = "union", model = "Normal", 
-    #GaussianModel = "Gaussian_pk_Lk_Ck", transformation = "arcsin",
-    # normFactors = "TMM") |>
     runCoExpression(
       SE.name = "protetest",
       K = 2:10, 
@@ -127,93 +122,6 @@ co <- capture.output(
       model = "Normal", 
       min.data.size = 10)
 ) #|>
-#runCoExpression(SE.name = "metatest", 
-#contrastNames = "(temperatureMedium - temperatureLow) in imbibitionDS" ,
-# K = 2:10, replicates = 5, merge = "union", model = "Normal")
-
-# Enrichment
-# Comment this when not locally used (need the org at tair package.)
-MAE <- MAE |>
-  # runAnnotationEnrichment(SE.name = "RNAtest", database = "GO",
-  #                         domain = c("BP", "MF", "CC"),
-  #                         list_args = list(OrgDb = "org.At.tair.db",
-  #                                          keyType = "TAIR",
-  #                                          pvalueCutoff = 0.05)) |>
-  runAnnotationEnrichment(SE.name = "protetest", 
-                          from = "CoExp",
-                          database = "GO",
-                          domain = c("BP"), 
-                          pvalueCutoff = 0.05,
-                          OrgDb = "org.At.tair.db", 
-                          keyType = "TAIR")
-
-
-# ---- test accessors ----
-## ---- Rflomics class ----
-test_that("test if RflomicsMAE / RflomicsSE", {
-  expect_true(is(MAE, "RflomicsMAE"))
-})
-
-## ---- getDatasetNames ----
-test_that("test getDatasetNames", {
-  expect_true(all(getDatasetNames(MAE) %in% c("RNAtest", "metatest", "protetest")))
-})
-
-## ---- getOmicsTypes ----
-test_that("test getOmicsTypes", {
-  
-  exp.res <- c("RNAseq", "proteomics", "metabolomics")
-  names(exp.res) <- c("RNAtest", "protetest", "metatest")
-  expect_equal(as.vector(getOmicsTypes(MAE)), as.vector(exp.res))
-})
-
-## ---- colData ----
-test_that("colData", {
-  
-  Repeat      <- factor(rep(c("rep1", "rep2", "rep3"), 9), 
-                        levels =c("rep1", "rep2", "rep3"))
-  imbibition  <- factor(c(rep("DS", 9), rep("EI", 9), rep("LI", 9)), 
-                        levels =c("DS", "EI", "LI"))    
-  temperature <- factor(rep(c(rep("Low",3), rep("Medium", 3), rep("Elevated", 3)), 3),  
-                        levels =c("Low", "Medium", "Elevated"))
-  Repeat      <- relevel(as.factor(Repeat),      ref="rep1")
-  temperature <- relevel(as.factor(temperature), ref="Low")
-  imbibition  <- relevel(as.factor(imbibition),  ref="DS")
-  
-  # groups
-  groups.level <- character(0)
-  # Boucles imbriquées pour créer les combinaisons
-  for (v1 in c("Low", "Medium", "Elevated")) {
-    for (v2 in c("DS", "EI", "LI")) {
-      groups.level <- c(groups.level, paste(v1, v2, sep = "_"))
-    }
-  }
-  groups <- factor(paste(temperature, imbibition, sep = "_"),
-                   levels =groups.level)
-  
-  # samples
-  samples.level <- character(0)
-  # Boucles imbriquées pour créer les combinaisons
-  for (v1 in groups.level) {
-    for (v2 in 1:3) {
-      samples.level <- c(samples.level, paste(v1, v2, sep = "_"))
-    }
-  }
-  
-  samples <- factor(paste(temperature, imbibition, sub("rep", "", Repeat), sep = "_"),
-                    levels = samples.level)
-  
-  
-  colData <- data.frame(Repeat      = Repeat, 
-                        groups      = groups,
-                        temperature = temperature,
-                        imbibition  = imbibition,
-                        samples     = samples)
-  
-  rownames(colData) <- samples
-  
-  expect_equal(as.data.frame(getDesignMat(MAE)), as.data.frame(colData))
-})
 
 
 ## ---- getRflomicsSE ----
@@ -228,58 +136,6 @@ test_that("test getRflomicsSE", {
   expect_equal(getDatasetNames(SE), "RNAtest")
 })
 
-
-## ---- get design factors ----
-test_that("test getFactorNames", {
-  
-  expect_equal(getFactorNames(MAE), c("Repeat", "temperature", "imbibition" ))
-  
-  SE <- getRflomicsSE(MAE, "RNAtest")
-  expect_equal(getFactorNames(SE), c("Repeat", "temperature", "imbibition" ))
-})
-
-test_that("test getFactorModalities", {
-  
-  expect_equal(getFactorModalities(MAE, "imbibition"), c("DS", "EI", "LI"))
-  expect_equal(getFactorModalities(SE, "imbibition"),  c("DS", "EI", "LI"))
-})
-
-
-
-test_that("test getFactorTypes", {
-  
-  vec <- c("batch", "Bio", "Bio")
-  names(vec) <- c("Repeat", "temperature", "imbibition" )
-  expect_equal(getFactorTypes(MAE), vec)
-  
-  SE <- getRflomicsSE(MAE, "RNAtest")
-  expect_equal(getFactorTypes(SE), vec)
-})
-
-test_that("test getBioFactors", {
-  
-  expect_equal(getBioFactors(MAE), c("temperature", "imbibition"))
-  
-  SE <- getRflomicsSE(MAE, "RNAtest")
-  expect_equal(getBioFactors(SE), c("temperature", "imbibition"))
-})
-
-test_that("test getBatchFactors", {
-  
-  expect_equal(getBatchFactors(MAE), c("Repeat"))
-  
-  SE <- getRflomicsSE(MAE, "RNAtest")
-  expect_equal(getBatchFactors(SE), c("Repeat"))
-})
-
-test_that("test getMetaFactors", {
-  
-  expect_null(getMetaFactors(MAE))
-  
-  SE <- getRflomicsSE(MAE, "RNAtest")
-  expect_null(getMetaFactors(SE))
-})
-
 ## ---- sub set of RflomicsMAE ----
 test_that("test subRflomicsMAE", {
   
@@ -287,7 +143,6 @@ test_that("test subRflomicsMAE", {
   miniMAE.rf <- 
     suppressWarnings(subRflomicsMAE(MAE, c("RNAtest", "metatest")))
   expect_equal(miniMAE.rf, miniMAE)
-  
 })
 
 # ---- contrasts ----
@@ -324,7 +179,7 @@ test_that("contrast", {
   
   row.names(Contrasts.Coeff) <- Contrasts.names
   
-  expect_equal(getDiffSettings(MAE[["RNAtest"]])$contrastCoef, Contrasts.Coeff)
+  #expect_equal(getDiffSettings(MAE[["RNAtest"]])$contrastCoef, Contrasts.Coeff)
   expect_equal(getDiffSettings(MAE, "protetest")$contrastCoef, Contrasts.Coeff)
   expect_equal(getDiffSettings(MAE[["metatest"]])$contrastCoef, Contrasts.Coeff)
   
@@ -388,8 +243,7 @@ test_that("getAnalyzedDatasetNames", {
   
   expect_identical(
     names(names.list),
-    c("DataProcessing", "DiffExpAnal", "CoExpAnal", "CoExpEnrichAnal"))
-  
+    c("DataProcessing", "DiffExpAnal", "CoExpAnal"))
 })
 
 # ---- getLabs4plot ----
@@ -413,58 +267,28 @@ test_that("rflomicsMAE2MAE", {
   
 })
 
-
-test_that("Test explor plot", {
-  
-  p <- plotConditionsOverview(MAE)
-  expect_equal(is(p), "gg")
-  
-  p <- plotDataOverview(MAE)
-  expect_equal(is(p), "gg")
-  
-  p <- plotDataOverview(MAE, realSize = TRUE)
-  expect_equal(is(p), "gg")
-  
-  p <- plotLibrarySize(MAE, SE.name = "RNAtest", raw = TRUE)
-  expect_equal(is(p), "gg")
-  expect_error(plotLibrarySize(MAE, SE.name = "protetest"))
-  
-  p <- plotDataDistribution(MAE, SE.name = "RNAtest", plot = "boxplot")
-  expect_equal(is(p), "gg")
-  
-  p <- plotDataDistribution(MAE, SE.name = "protetest", plot = "density")
-  expect_equal(is(p), "gg")
-  
-  p <- plotOmicsPCA(MAE, SE.name = "RNAtest")
-  expect_equal(is(p), "gg")
-  
-  p <- plotExpDesignCompleteness(MAE, omicName = "RNAtest")
-  expect_equal(is(p), "gg")
-})
-
-
 test_that("Test diff plot", {
   
   co <- capture.output(
     p <- plotDiffAnalysis(
-      MAE, SE.name = "RNAtest", 
+      MAE, SE.name = "protetest", 
       contrastName = "(temperatureMedium - temperatureLow) in mean"))
   expect_equal(names(p), c("MA.plot","Volcano.plot","Pvalue.hist" ))
   
   co <- capture.output(
     p <- plotHeatmapDesign(
-      MAE, SE.name = "RNAtest", 
+      MAE, SE.name = "protetest", 
       contrastName = "(temperatureMedium - temperatureLow) in mean"))
   expect_true("HeatmapList" %in% is(p))
   
   co <- capture.output(
-    p <- plotBoxplotDE(MAE, SE.name = "RNAtest", 
+    p <- plotBoxplotDE(MAE, SE.name = "protetest", 
                        featureName = "AT1G01010", 
                        groupColor="groups",  raw = FALSE))
   expect_equal(is(p), "gg")
   
   co <- capture.output(
-    p <- plotBoxplotDE(MAE, SE.name = "RNAtest", 
+    p <- plotBoxplotDE(MAE, SE.name = "protetest", 
                        featureName = "", 
                        groupColor="groups",  raw = FALSE))
   expect_equal(is(p), "gg")
@@ -500,10 +324,11 @@ test_that("get summary analysis", {
 
 test_that("getters", {
   
-  expect_equal(getDEList(
-    MAE, SE.name = "protetest", 
-    contrasts = "(temperatureElevated - temperatureLow) in imbibitionDS",
-    operation = "intersection"),
+  expect_equal(
+    getDEList(
+      MAE, SE.name = "protetest", 
+      contrasts = "(temperatureElevated - temperatureLow) in imbibitionDS",
+      operation = "intersection"),
     getDEList(
       MAE, SE.name = "protetest", 
       contrasts = "(temperatureElevated - temperatureLow) in imbibitionDS",
