@@ -93,7 +93,7 @@ createRflomicsMAE <- function(projectName = NULL,
         "SummarizedExperiment" = {
           tmp <- as.data.frame(assay(omicsData[[dataName]]))
           
-          if(class(omicsData)[1] == "MultiAssayExperiment")
+          if(is(omicsData , "MultiAssayExperiment"))
             colnames(tmp) <- 
               sampleMap(omicsData)[sampleMap(omicsData)$assay == dataName,]$primary
           tmp
