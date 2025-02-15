@@ -177,9 +177,10 @@
            assay(object) <- sweep(assayTransform, 2, coefNorm, "/")
          },
          "TMM" = {
-           scales_factors <- coefNorm$norm.factors * coefNorm$lib.size
-           assay(object) <- scale(assayTransform + 1, 
-                                  center = FALSE, 
+           scales_factors <- 
+             (coefNorm$norm.factors * coefNorm$lib.size) / mean(coefNorm$norm.factors * coefNorm$lib.size)
+           assay(object) <- scale(assayTransform,
+                                  center = FALSE,
                                   scale = scales_factors)
          },
          "none" = {
@@ -273,12 +274,7 @@
   
   assay(object) <- 
     switch(log,
-           "log2" = {
-             if(.isNormalized(object))
-               log2(assay(object))
-             else
-               log2(assay(object) + 1)
-           }
+           "log2" = log2(assay(object) + 1)
     )
   
   metadata(object)[["DataProcessing"]][["log"]] <- "log2"
@@ -374,7 +370,7 @@
   
   #remplacer le code ci-dessus par celui en bas
   group_count <- group_by_at(expDesign, bioFactors) %>% 
-    count(name = "Count")
+    dplyr::count(name = "Count")
   
   mod.fact <- lapply(names(group_count)[-ncol(group_count)], function(factor){
     unique(group_count[[factor]])
