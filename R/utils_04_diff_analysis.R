@@ -162,7 +162,7 @@
             }else{
                 ListRes[["DEF"]][[x]] <- topDEF
 
-                ListRes[["DEF"]][[x]] <- rename(topDEF,
+                ListRes[["DEF"]][[x]] <- dplyr::rename(topDEF,
                                                 "Abundance"="AveExpr",
                                                 "pvalue"="P.Value",
                                                 "Adj.pvalue"="adj.P.Val")
@@ -221,7 +221,7 @@
     Abundance <- logFC <- Adj.pvalue <- NULL
 
     tmp <- select(data, "Abundance", "logFC", "Adj.pvalue") %>%
-        rename(.,
+        dplyr::rename(.,
                baseMeanLog2 = Abundance,
                log2FoldChange = logFC,
                padj = Adj.pvalue

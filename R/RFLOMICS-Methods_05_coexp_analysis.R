@@ -366,7 +366,7 @@ setMethod(
             data.frame() %>%
             mutate(observations = rownames(.)) %>%
             melt(id = "observations", value.name = "y_profiles") %>%
-            rename(samples = variable) %>%
+            dplyr::rename(samples = variable) %>%
             full_join(Groups , by = "samples")
 
           y_profiles.gg %>% group_by(groups) %>%
@@ -517,7 +517,7 @@ setMethod(
       data.frame() %>%
       mutate(observations=rownames(.)) %>%
       melt(id="observations", value.name = "y_profiles") %>%
-      rename(samples = variable) %>%
+      dplyr::rename(samples = variable) %>%
       full_join(Groups , by = "samples")
 
     y_profiles.gg <- arrange(y_profiles.gg, get(condition))
