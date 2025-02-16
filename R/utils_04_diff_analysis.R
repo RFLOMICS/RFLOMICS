@@ -84,7 +84,7 @@
 
             }else{
                 ListRes[["DEF"]][[x]] <- topDEF
-                ListRes[["DEF"]][[x]] <- rename(topDEF,
+                ListRes[["DEF"]][[x]] <- dplyr::rename(topDEF,
                                                 "Abundance"  = "logCPM",
                                                 "pvalue"     = "PValue",
                                                 "Adj.pvalue" = "FDR")
