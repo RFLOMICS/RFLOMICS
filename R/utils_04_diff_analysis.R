@@ -16,8 +16,7 @@
 #' @return A list of object of class \link{DGELRT}
 #' @keywords internal
 #' @importFrom stats model.matrix as.formula
-#' @importFrom edgeR DGEList estimateGLMCommonDisp estimateGLMTrendedDisp
-#' estimateGLMTagwiseDisp glmFit glmLRT topTags
+#' @importFrom edgeR DGEList estimateDisp glmFit glmLRT topTags
 #' @noRd
 #'
 .edgeRAnaDiff <- function(object,
@@ -48,12 +47,14 @@
                    norm.factors = norm.factors)
 
     # Run the model
-    if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMCommonDisp(dge, design=model_matrix)")
-    dge <- estimateGLMCommonDisp(dge, design=model_matrix)
-    if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMTrendedDisp(dge, design=model_matrix)")
-    dge <- estimateGLMTrendedDisp(dge, design=model_matrix)
-    if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMTagwiseDisp(dge, design=model_matrix)")
-    dge <- estimateGLMTagwiseDisp(dge, design=model_matrix)
+    if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateDisp(dge, design=model_matrix)")
+    dge <- estimateDisp(dge, design=model_matrix)
+    # if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMCommonDisp(dge, design=model_matrix)")
+    # dge <- estimateGLMCommonDisp(dge, design=model_matrix)
+    # if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMTrendedDisp(dge, design=model_matrix)")
+    # dge <- estimateGLMTrendedDisp(dge, design=model_matrix)
+    # if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateGLMTagwiseDisp(dge, design=model_matrix)")
+    # dge <- estimateGLMTagwiseDisp(dge, design=model_matrix)
     if (cmd) message("[RFLOMICS] [cmd] fit.f <- edgeR::glmFit(dge,design=model_matrix)")
     fit.f <- glmFit(dge,design=model_matrix)
 
