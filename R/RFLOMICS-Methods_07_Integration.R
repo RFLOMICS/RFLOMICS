@@ -135,7 +135,7 @@ setMethod(
       omicstochange <- unique(dupTab$dataTable)
 
       res <- lapply(
-        seq_len(length(object)),
+        seq_len(length.out = length(object)),
         FUN = function(i) {
           SE.object <- object[[names(object)[i]]]
           if (names(object)[i] %in% omicstochange) {
@@ -541,7 +541,7 @@ setMethod(
     if (!is.null(res$MixOmics_tuning_results)) {
       df <- cbind(df, do.call("rbind", Data_res$keepX))
       colnames(df)[!colnames(df) %in% c("Ind", "Features")] <-
-        paste("Comp", seq_len(length(Data_res$keepX[[1]])))
+        paste("Comp", seq_len(length.out = length(Data_res$keepX[[1]])))
     }
 
     return(df)

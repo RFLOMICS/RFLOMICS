@@ -88,7 +88,8 @@
       message_capture <<- c(message_capture, m$message)
       invokeRestart("muffleMessage")
     }, warning = function(w) {
-      warning_capture <<- c(warning_capture, w$message)
+      warning_capture <<- c(warning_capture,
+                            paste(deparse(w$call), w$message, sep = ": "))
       invokeRestart("muffleWarning")
     })
   }, error = function(e) {

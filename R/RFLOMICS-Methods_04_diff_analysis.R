@@ -448,7 +448,7 @@ setMethod(
     if(length(unselectedContrasts) != 0)
       stop("These contrasts ", paste0(unselectedContrasts, collapse = ", "),
            " are not recognized.")
-    
+
     if(length(metadata(object)[["DiffExpAnal"]]) != 0)
       metadata(object)[["DiffExpAnal"]][["results"]][["Validcontrasts"]] <-
         contrastList
@@ -704,14 +704,14 @@ setMethod(
            column_names_gp = gpar(fontsize = 12),
            row_title_rot = 0 ,
            clustering_method_columns = "ward.D2",
-           cluster_column_slice = FALSE,
+           cluster_column_slices = FALSE,
            column_split = column_split.value,
            top_annotation = column_ha,
            column_title = title),
       heatmapArgs)
 
     # Arguments for drawing the heatmap
-    drawArgs <- c(list(merge_legend = TRUE),
+    drawArgs <- c(list(merge_legends = TRUE),
                   drawArgs)
 
     # Drawing heatmap in a null file to not plot it
@@ -1147,7 +1147,8 @@ setMethod(
 
 
     df <- reduce(df.list, rbind) |>
-      melt(id = c("dataset", "settings", "contrasts", "All"), value.name = "Up_Down") |>
+      melt(id.vars = c("dataset", "settings", "contrasts", "All"),
+           value.name = "Up_Down") |>
       filter(All != 0, !is.na(All)) |>
       mutate(percent = Up_Down / All * 100)
 

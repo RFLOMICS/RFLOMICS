@@ -1582,7 +1582,7 @@ setMethod(f         = "plotExpDesignCompleteness",
             group_count <- .countSamplesPerCondition(ExpDesign, bio.fact)
 
             plot <- .plotExperimentalDesign(counts = group_count,
-                                            message= check$message)
+                                            message= check[["messages"]])
             return(plot)
           })
 

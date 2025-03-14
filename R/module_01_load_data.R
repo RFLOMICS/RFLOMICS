@@ -27,8 +27,8 @@
     message("[RFLOMICS] # 01- Load data: ", local.rea.values$projectName)
 
     # create Rflomics object
-    FlomicsMultiAssay.try <- tryCatch(
-      createRflomicsMAE(
+    FlomicsMultiAssay.try <- .tryCatch_rflomics(
+      {createRflomicsMAE(
         projectName = local.rea.values$projectName,
         omicsData   = local.rea.values$omicsData,
         omicsNames  = local.rea.values$omicsNames,
@@ -39,23 +39,29 @@
           factorRef  = local.rea.values$dF.List.ref,
           factorType = local.rea.values$dF.Type.dFac
         )
-      ),
-      error = function(e)
-        e,
-      warning = function(w)
-        w
-    )
+      )})
 
-    if (!is.null(FlomicsMultiAssay.try$message)) {
+    if (is.null(FlomicsMultiAssay.try$result)) {
       showModal(modalDialog(title = "Error message",
-                            FlomicsMultiAssay.try$message))
+                            FlomicsMultiAssay.try$error))
       rea.values$validate.status <- 1
     }
     validate({
-      need(is.null(FlomicsMultiAssay.try$message), message = "error")
+      need(!is.null(FlomicsMultiAssay.try$result), message = "error")
     })
 
-    session$userData$FlomicsMultiAssay <- FlomicsMultiAssay.try
+
+    if (length(FlomicsMultiAssay.try[["warnings"]]) > 0 || length(FlomicsMultiAssay.try[["messages"]]) > 0) {
+        warning(paste(FlomicsMultiAssay.try[["warnings"]],
+                      FlomicsMultiAssay.try[["messages"]],
+                      collapse = "\n"))
+    #     showModal(modalDialog(title = "Warning",
+    #                           HTML(paste(FlomicsMultiAssay.try[["warnings"]],
+    #                                 FlomicsMultiAssay.try[["messages"]],
+    #                                 collapse = "<br>"))))
+    }
+
+    session$userData$FlomicsMultiAssay <- FlomicsMultiAssay.try$result
 
     # update rea values
     rea.values$datasetList <-

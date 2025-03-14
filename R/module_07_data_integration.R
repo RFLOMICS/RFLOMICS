@@ -153,9 +153,9 @@
             return(tab)
         }) |>
             reduce(full_join, by = "samples") |>
-            mutate(sum = rowSums(across(seq(2, (
-                length(MAE.red) + 1
-            ))), na.rm = TRUE))
+            mutate(sum = rowSums(across(seq(from = 2,
+                                            to = (length(MAE.red) + 1)
+            )), na.rm = TRUE))
 
         #---- progress bar ----#
         progress <- Progress$new()

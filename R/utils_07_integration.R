@@ -389,7 +389,7 @@
         YrowNames <- rownames(Y)
         YFactors <-
             do.call("cbind", lapply(
-                seq_len(ncol(Y)),
+                seq_len(length.out = ncol(Y)),
                 FUN = function(j) {
                     if (is.factor(Y[, j])) {
                         mat_return <- unmap(Y[, j])
@@ -506,9 +506,9 @@
     ExpDesign$sample <- NULL
 
     res_aov <- lapply(
-        seq_len(ncol(ExpDesign)),
+        seq_len(length.out = ncol(ExpDesign)),
         FUN = function(i) {
-            p.adjust(unlist(lapply(seq_len(ncol(factors$group1)),
+            p.adjust(unlist(lapply(seq_len(length.out = ncol(factors$group1)),
                           FUN = function(j){
                               kruskal.test(x = factors$group1[,j],
                                            g = ExpDesign[,i])$p.value
@@ -519,7 +519,7 @@
 
     res_res <- data.frame(do.call("rbind", res_aov))
     # colnames(res_res) <- gsub("Response ", "", colnames(res_res))
-    colnames(res_res) <- paste0("Factor ", seq_len(ncol(res_res)))
+    colnames(res_res) <- paste0("Factor ", seq_len(length.out = ncol(res_res)))
 
     return(res_res)
 }
