@@ -46,7 +46,7 @@ to the **`r getDiffSettings(dataset.SE)$p.adj.method`** procedure with a **cutof
 
 #### Intersection
 
-```{r Upset_plot, fig.show = "hold", out.width = "100%", fig.cap=paste0("<p style=\"color:grey\">","*fig: This **UpSetR** plot gives the number of common and specific differential expressed ",variableName," per contrasts.*", "</p>")}
+```{r Upset_plot, fig.show = "hold", out.width = "100%", fig.cap=paste0("*fig: This **UpSetR** plot gives the number of common and specific differential expressed ",variableName," per contrasts.*")}
 
 DEF_mat <- as.data.frame(DiffExpAnal[["mergeDEF"]])
 DEF_mat <- DEF_mat[c("DEF", validContrasts$contrastName)]
@@ -63,7 +63,7 @@ if(dim(DEF_mat)[2] > 2){
 ```
 
 #### Stat summary
-```{r , echo=FALSE, results="asis", fig.cap=paste0("<p style=\"color:grey\">","*tab: Table summarising the number of DE features by contrast.*", "</p>")}
+```{r , echo=FALSE, results="asis", fig.cap=paste0("*tab: Table summarising the number of DE features by contrast.*")}
 
 DE <- vector()
 DEup <- vector()

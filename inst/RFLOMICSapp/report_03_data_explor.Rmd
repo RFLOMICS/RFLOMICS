@@ -24,7 +24,7 @@ The *outlier samples* are removed: `r setdiff(getSelectedSamples(dataset.SE), co
 
 `r if(length(getSelectedSamples(dataset.SE)) - length(colnames(dataset.SE)) == 0) {"\\end{comment}"}`
 
-```{r check-design, out.width = "60%", fig.align='center', fig.cap=paste0("<p style=\"color:grey\">","*fig: Number of samples per combination of factor levels. The experimental design must be complete and ideally balanced*", "</p>")}
+```{r check-design, out.width = "60%", fig.align='center', fig.cap=paste0("*fig: Number of samples per combination of factor levels. The experimental design must be complete and ideally balanced*")}
 
 plotExpDesignCompleteness(dataset.SE)
 ```
@@ -113,7 +113,7 @@ write.table(x = processed.df,
 
 #### Distribution (boxplot):
 
-```{r boxplot, fig.show = "hold", out.width = "50%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Boxplots of distributions of count or abundance per samples before (left) and after (right) data processing*", "</p>")}
+```{r boxplot, fig.show = "hold", out.width = "50%", fig.cap=paste0("*fig: Boxplots of distributions of count or abundance per samples before (left) and after (right) data processing*")}
 
 plotDataDistribution(dataset.SE, plot = "boxplot", raw = TRUE)
 plotDataDistribution(dataset.SE, plot = "boxplot", raw = FALSE)
@@ -122,7 +122,7 @@ plotDataDistribution(dataset.SE, plot = "boxplot", raw = FALSE)
 
 #### Distribution (density)
 
-```{r density-plot, fig.show = "hold", out.width = "50%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Density distributions of count or abundance per sample before (left) and after (right) data processing*", "</p>")}
+```{r density-plot, fig.show = "hold", out.width = "50%", fig.cap=paste0("*fig: Density distributions of count or abundance per sample before (left) and after (right) data processing*")}
 
 plotDataDistribution(dataset.SE, plot = "density", raw = TRUE)
 plotDataDistribution(dataset.SE, plot = "density", raw = FALSE)
@@ -134,7 +134,7 @@ plotDataDistribution(dataset.SE, plot = "density", raw = FALSE)
 
 #### Library sizes:
 
-```{r Library_size_barplot, fig.show = "hold", out.width = "50%", eval=(getOmicsTypes(dataset.SE) == "RNAseq"), fig.cap=paste0("<p style=\"color:grey\">","*fig: Barplot of the library size for each sample before and after the normalization step*", "</p>")}
+```{r Library_size_barplot, fig.show = "hold", out.width = "50%", eval=(getOmicsTypes(dataset.SE) == "RNAseq"), fig.cap=paste0("*fig: Barplot of the library size for each sample before and after the normalization step*")}
 
 plotLibrarySize(dataset.SE, raw = TRUE)
 plotLibrarySize(dataset.SE, raw = FALSE)
@@ -162,14 +162,14 @@ write.table(getFilteredFeatures(dataset.SE),
 This figure represents a Principal Component Analysis (PCA) of the biological samples. It shows the percentage of variability explained by each principal axis, which aids in interpreting the relative importance of each biological factor.
 Outlier samples can be identified as they significantly influence the observed variability. Biological replicates should group together, forming overlapping ellipses, indicating consistency within groups. If not, this may indicate a batch effect, suggesting non-biological variations between the samples.
 
-```{r PCA_1_2, echo=FALSE , fig.show="hold", out.width = "50%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Factorial maps formed by the axis 1 and 2: before (left) and after (right) data processing*", "</p>")}
+```{r PCA_1_2, echo=FALSE , fig.show="hold", out.width = "50%", fig.cap=paste0("*fig: Factorial maps formed by the axis 1 and 2: before (left) and after (right) data processing*")}
 
 plotOmicsPCA(dataset.SE, raw=TRUE, axes=c(1, 2), groupColor="groups")
 plotOmicsPCA(dataset.SE, raw=FALSE, axes=c(1, 2), groupColor="groups")
 
 ```
 
-```{r PCA_1_3, echo=FALSE , fig.show="hold", out.width = "50%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Factorial maps formed by the axis 1 and 3: before (left) and after (right) data processing*", "</p>")}
+```{r PCA_1_3, echo=FALSE , fig.show="hold", out.width = "50%", fig.cap=paste0("*fig: Factorial maps formed by the axis 1 and 3: before (left) and after (right) data processing*")}
 
 plotOmicsPCA(dataset.SE, raw=TRUE, axes=c(1, 3), groupColor="groups")
 plotOmicsPCA(dataset.SE, raw=FALSE, axes=c(1, 3), groupColor="groups")

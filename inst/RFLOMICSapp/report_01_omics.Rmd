@@ -117,7 +117,7 @@ opts_chunk$set(
 ```
 
 
-```{r diffAnalysesSummary, results='asis', eval=("DiffExpAnal" %in% analysisTypes), fig.cap=paste0("<p style=\"color:grey\">","", "</p>")}
+```{r diffAnalysesSummary, results='asis', eval=("DiffExpAnal" %in% analysisTypes), fig.cap=paste0("")}
 
 cat("## 4.1 Summary\n")
 getDiffAnalysesSummary(rflomics.MAE, plot = TRUE, 
@@ -173,7 +173,7 @@ opts_chunk$set(
 ```
 
 
-```{r coExpAnalysesSummary, results='asis', eval=("CoExpAnal" %in% analysisTypes), fig.cap=paste0("<p style=\"color:grey\">","", "</p>")}
+```{r coExpAnalysesSummary, results='asis', eval=("CoExpAnal" %in% analysisTypes), fig.cap=paste0("")}
 cat("## 5.1 Summary\n")
 getCoExpAnalysesSummary(rflomics.MAE)
 cat("\n")

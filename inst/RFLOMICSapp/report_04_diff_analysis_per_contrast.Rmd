@@ -29,31 +29,31 @@ diff.plots <- plotDiffAnalysis(dataset.SE, contrastName=contrast)
 
 #### Pvalues distribution
 
-```{r pvDistrib-plot, out.width = "100%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Distribution of non-adjusted p-values. The most desirable shape is a peak of p-values at 0 following by a uniform distribution.*", "</p>")}
+```{r pvDistrib-plot, out.width = "100%", fig.cap="*fig: Distribution of non-adjusted p-values. The most desirable shape is a peak of p-values at 0 following by a uniform distribution.*"}
 diff.plots$Pvalue.hist
 ```
 
 #### MA plot
 
-```{r MA-plot, out.width = "100%", fig.cap=paste0("<p style=\"color:grey\">","*fig: MAplot (log2 fold change against average log2 expression for the features of a given contrast). The red dots are the ", variableName," significantly over-expressed in the left side of the contrast's expression whereas blue dots are ",variableName," significantly under-expressed in the rigth side of the contrast's expression. Only the top 20 ", variableName," DE are labeled.*", "</p>")}
+```{r MA-plot, out.width = "100%", fig.cap=paste("*fig: MAplot (log2 fold change against average log2 expression for the features of a given contrast). The red dots are the ", variableName," significantly over-expressed in the left side of the contrast's expression whereas blue dots are ", variableName," significantly under-expressed in the rigth side of the contrast's expression. Only the top 20 ", variableName," DE are labeled.*")}
 diff.plots$MA.plot
 ```
 
 #### VolcanoPlot
 
-```{r Volcano-plot, out.width = "100%", fig.cap=paste0("<p style=\"color:grey\">","*fig: VolcanoPlot (-Log10 non-adjusted pvalues against log2 fold change for the features of a given contrast). Red dots are ", variableName," of interest displaying both large magnitude log-fold-changes (x axis) and high statistical significance (y axis). Only the top 20 ",variableName," DE are labeled.*", "</p>")}
+```{r Volcano-plot, out.width = "100%", fig.cap=paste0("*fig: VolcanoPlot (-Log10 non-adjusted pvalues against log2 fold change for the features of a given contrast). Red dots are ", variableName," of interest displaying both large magnitude log-fold-changes (x axis) and high statistical significance (y axis). Only the top 20 ",variableName," DE are labeled.*")}
 diff.plots$Volcano.plot
 ```
 
 #### Heatmap
 
-```{r heatmap-plot, out.width = "100%", fig.cap=paste0("<p style=\"color:grey\">","*fig: Heatmap was performed on DE ", variableName," expression data table which has been transformed by: ", getTransSettings(dataset.SE)$method," method and normalized by: ", getNormSettings(dataset.SE)$method," method. Clustering was independently performed on samples (row) and centered ", variableName," (column) using euclidian distance and complete aggregation method*", "</p>")}
+```{r heatmap-plot, out.width = "100%", fig.cap=paste0( "*fig: Heatmap was performed on DE ", variableName," expression data table which has been transformed by: ", getTransSettings(dataset.SE)$method," method and normalized by: ", getNormSettings(dataset.SE)$method," method. Clustering was independently performed on samples (row) and centered ", variableName," (column) using euclidian distance and complete aggregation method*" )}
 plotHeatmapDesign(object = dataset.SE, contrastName = contrast)
 ```
 
 #### PCA on DE 
 
-```{r PCAonDE, out.width = "50%",fig.show = "hold", eval = evalPCA, fig.cap=paste0("<p style=\"color:grey\">","fig: Factorials maps formed by the axis 1,2 (left) and 1,3 (right) of the PCA performed on DE features.", "</p>")}
+```{r PCAonDE, out.width = "50%",fig.show = "hold", eval = evalPCA, fig.cap=paste0( "fig: Factorials maps formed by the axis 1,2 (left) and 1,3 (right) of the PCA performed on DE features." )}
 
 resTable      <- DiffExpAnal[["TopDEF"]][[contrast]]
 newDataset.SE <- dataset.SE[rownames(dataset.SE) %in% row.names(resTable)]
@@ -79,7 +79,7 @@ plotOmicsPCA(newDataset.SE, raw = FALSE,
 + B: log-odds that the prot/metabo is differentially expressed (limma-topTable)
 + Regulation: Up (green) or Down (red) regulated
 
-```{r table , eval = evalExport, fig.cap=paste0("<p style=\"color:grey\">","tab: table presenting the statisticals results of the differential analysis", "</p>")}
+```{r table , eval = evalExport, fig.cap=paste0( "tab: table presenting the statisticals results of the differential analysis" )}
 df <- signif(DiffExpAnal[["TopDEF"]][[contrast]],3)
 
 datatable(df, rownames = TRUE , class = 'cell-border stripe',

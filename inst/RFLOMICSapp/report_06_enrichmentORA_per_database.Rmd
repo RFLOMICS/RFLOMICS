@@ -46,7 +46,7 @@ MM.db <-
              "\n**enrichKEGG()** function from ClusterProfilter was used.")
     },
     "custom" = {
-      paste0("Provided by user. File name: ????.",
+      paste0("Provided by user.",
              "\n**enricher()** function from ClusterProfilter was used.")}
   )
 

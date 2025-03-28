@@ -27,4 +27,8 @@
   cursor: pointer;
 }
 
- 
+.figure-caption, .table-caption , .caption {
+    color: grey;
+    font-style: italic;
+    text-align: center;
+}

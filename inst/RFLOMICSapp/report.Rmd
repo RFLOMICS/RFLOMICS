@@ -13,6 +13,7 @@ output:
       smooth_scroll: true
     number_sections: false
     theme: flatly
+    css: www/style.css
 params: 
   outDir: NA
   FEdata: NA
