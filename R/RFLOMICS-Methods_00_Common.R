@@ -122,9 +122,8 @@ setMethod(
 #' \link{RflomicsMAE-class} object or archive with results.
 #' @param object a object of \link{RflomicsSE} class or
 #' \link{RflomicsMAE-class} class.
-#' @param reportName Name of the html report (default: date()_projectName.html).
-#' @param archiveName name of archive with all analysis results
-#' (default: date()_projectName.tar.gz).
+#' @param reportName Name of the html report.
+#' @param archiveName Name of archive with all analysis results
 #' @param tmpDir temporary directory (default: working directory)
 #' @param ... other arguments to pass into the render function.
 #' @return An html report or archive (tar.gz)
@@ -147,9 +146,31 @@ setMethod(
     if(is.null(getAnalyzedDatasetNames(object)))
       stop("An exploratory analysis must be performed on at least one of the datasets.")
 
-    if(is.null(reportName) && is.null(archiveName))
-      stop("You must provide either a reportName or an archiveName.")
-
+    if(is.null(reportName)){
+      
+      if(is.null(archiveName)){
+        
+        stop("You must provide either a reportName or an archiveName.")
+      }
+      else{
+        
+        dirN <- dirname(archiveName)
+        dirN <- normalizePath(dirN)
+        if (file.access(dirN, 2) != 0)
+          stop("No writing access in ", dirN)
+        
+        archiveName <- paste0(dirN, "/", basename(archiveName))
+      }
+    }
+    else{
+      dirN <- dirname(reportName)
+      dirN <- normalizePath(dirN)
+      if (file.access(dirN, 2) != 0)
+        stop("No writing access in ", dirN)
+      
+      reportName <- paste0(dirN, "/", basename(reportName))
+    }
+      
     projectName  <- getProjectName(object)
 
     # we need at least reportName or archiveName
@@ -159,10 +180,12 @@ setMethod(
       else
         tmpDir <- dirname(archiveName)
     }
-
-    # tmp dir
-    if (file.access(tmpDir, 2) != 0)
-      stop("No writing access in ", tmpDir)
+    else{
+      tmpDir <- normalizePath(tmpDir)
+      # tmp dir
+      if (file.access(tmpDir, 2) != 0)
+        stop("No writing access in ", tmpDir)
+    }
 
     tmpDir <-
       file.path(tmpDir,
@@ -189,8 +212,8 @@ setMethod(
       reportName <- file.path(
         tmpDir,
         paste0(format(Sys.time(), "%Y_%m_%d"), "_", projectName, ".html"))
-
-    render(
+    
+    rmarkdown::render(
       input             = system.file("RFLOMICSapp", "report.Rmd", package = "RFLOMICS"),
       output_file       = reportName,
       params            = param.list,
