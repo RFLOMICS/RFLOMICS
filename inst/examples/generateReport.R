@@ -55,4 +55,4 @@ MAE <- runDiffAnalysis(
 getAnalyzedDatasetNames(MAE)
 
 # generate report
-#generateReport(object = MAE, fileName = ecoseed_report.html)
+#generateReport(object = MAE, reportName = "ecoseed_report.html")
