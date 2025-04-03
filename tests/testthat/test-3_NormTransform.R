@@ -257,7 +257,7 @@ test_that("RNAseq - none + TMM + log2", {
   normFactors <- edgeR::calcNormFactors(rnaSeqMat, method = "TMM")
   libSize <-  colSums(rnaSeqMat)
 
-  tnDat <- scale(rnaSeqMat + 1, center = FALSE, scale = normFactors*libSize)
+  tnDat <- scale(rnaSeqMat, center = FALSE, scale = normFactors*libSize/mean(normFactors*libSize))
 
   tabMAE <- RFLOMICS:::getCoeffNorm(MAE2[["RNAtest"]])
   normFactorMAE <- tabMAE$norm.factors
@@ -268,7 +268,7 @@ test_that("RNAseq - none + TMM + log2", {
   expect_equal(normFactorMAE, normFactors)
   expect_equal(libsizeMAE, libSize)
 
-  pca.norm <- FactoMineR::PCA(t(log2(tnDat)), ncp = 5, graph = FALSE)
+  pca.norm <- FactoMineR::PCA(t(log2(tnDat+1)), ncp = 5, graph = FALSE)
 
   expect_equal(pca.norm$eig, MAE2[["RNAtest"]]@metadata$PCAlist$norm$eig, tolerance = 0)
   expect_equal(pca.norm$svd, MAE2[["RNAtest"]]@metadata$PCAlist$norm$svd, tolerance = 0)
@@ -294,3 +294,4 @@ test_that("RNAseq - correct behaviour of normalization and transformation",  {
 
 
 })
+
