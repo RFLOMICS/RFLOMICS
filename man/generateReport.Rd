@@ -17,10 +17,9 @@
 \item{object}{a object of \link{RflomicsSE} class or
 \link{RflomicsMAE-class} class.}
 
-\item{reportName}{Name of the html report (default: date()_projectName.html).}
+\item{reportName}{Name of the html report.}
 
-\item{archiveName}{name of archive with all analysis results
-(default: date()_projectName.tar.gz).}
+\item{archiveName}{Name of archive with all analysis results}
 
 \item{tmpDir}{temporary directory (default: working directory)}
 
@@ -91,5 +90,5 @@ MAE <- runDiffAnalysis(
 getAnalyzedDatasetNames(MAE)
 
 # generate report
-#generateReport(object = MAE, fileName = ecoseed_report.html)
+#generateReport(object = MAE, reportName = "ecoseed_report.html")
 }
