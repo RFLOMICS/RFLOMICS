@@ -83,4 +83,4 @@ Imports:
     tibble,
     tidyselect,
     UpSetR,
-SystemRequirements: Python (>=3), numpy, pandas, h5py, scipy, argparse, sklearn, mofapy2
+SystemRequirements: Python (>=3), numpy, pandas, h5py, scipy, argparse, sklearn, mofapy2 (>=0.7.1)
