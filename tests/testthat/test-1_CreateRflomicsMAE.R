@@ -414,7 +414,7 @@ test_that("readOmicsData", {
   
   names(data) <- c("genes", paste0("S", 1:9))
   
-  fileName <- file.path(tempdir(), "design.txt")
+  fileName <- file.path(tempdir(), "omics.txt")
   
   write.table(x = data, file = fileName, 
               sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
