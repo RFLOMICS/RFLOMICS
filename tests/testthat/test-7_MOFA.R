@@ -114,19 +114,22 @@ if (!is.null(catchRes$result)) {
 } else if (!is.null(catchRes$error)) {
 
     grepRes <-
-        grep(pattern = "mofapy", catchRes$error)
+        grep(pattern = "mofapy|scipy", catchRes$error)
 
     if (length(grepRes) != 0 &&  grepRes == 1) {
-        warning("To use MOFA2, you need to correctly set up a python environment. ",
-                "We recommend reading the README (Troubleshooting MOFA2 section).")
+        message("To use MOFA2, you need to correctly set up a python environment. ",
+                "We recommend reading the README (Troubleshooting MOFA2 section).
+                If scipy error, please check your mofapy2 version (>0.7.1). Encountered error:\n",
+                catchRes$error)
 
     } else {
-        configMOFA <- TRUE # other error messages are interesting to keep
+        configMOFA <- TRUE
+        # other error messages are interesting to keep to continue debug.
     }
 
 }
 
-if (!configMOFA)  skip("Tests for MOFA integration skipped")
+if (!configMOFA)  skip("Tests for MOFA integration skipped.")
 # end check config
 
 if (configMOFA) {
