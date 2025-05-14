@@ -132,7 +132,7 @@ createRflomicsMAE <- function(projectName = NULL,
     row.names(omicsData.df[[dataName]]) <- rowNames
 
     # check negative values
-    if(any(!is.na(omicsData.df[[dataName]][omicsData.df[[dataName]] < 0])))
+    if(omicsTypes[dataName] == "RNAseq" && any(!is.na(omicsData.df[[dataName]][omicsData.df[[dataName]] < 0])))
       stop("The ",dataName, " data contains negative values")
   }
 
