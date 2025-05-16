@@ -515,7 +515,9 @@ readExpDesign <- function(file){
     mutate(across(.cols = c(-1), ~str_remove_all(.x, pattern = fixed("_")))) %>%
     mutate(across(.cols = where(is.character), as.factor))
 
-  names(data)  <- str_remove_all(string = names(data), pattern = "[.,;:#@!?()$%&<>|=+-/\\]\\[\'\"\ _]") %>%
+  names(data)  <- 
+    str_remove_all(string = names(data), 
+                   pattern = "[.,;:#@!?()$%&<>|=+-/\\]\\[\'\"\ _]") %>%
     str_remove_all(., pattern = fixed("\\"))
 
   # check if there is duplication in sample names
@@ -526,6 +528,14 @@ readExpDesign <- function(file){
     stop("Duplicated sample names: ", paste0(sample.dup, collapse = ","))
   }
 
+  # warning if number of factors exceed n = 10
+  n <- 10
+  if (dim(data)[2]-1 >= n){
+    
+    data <- data[, 1:(n+1)]
+    warning("Large number of columns! only the first ", n," will be displayed")
+  }
+  
   # check if there is duplication in factor names
   # factor.dup <- as.vector(data[which(table(names(data[-1])) > 1),1])[[1]]
   factor.dup <- names(data[-1])[duplicated(names(data[-1]))]
@@ -545,23 +555,19 @@ readExpDesign <- function(file){
          paste0(mod.dup[1:10], collapse = ", "))
   }
 
-  # warning if number of factors exceed n = 10
-  n <- 10
-  if (dim(data)[2]-1 >= n){
-
-    data <- data[, 1:n]
-    warning("Large number of columns! only the first ", n," will be displayed")
-  }
-
   # check nbr of modality of the 5th fist columns
-  index <- sapply(names(data[-1]), function(x){ if(length(unique(data[-1][[x]]))>n){ FALSE }else{ TRUE } })
+  n <- 50
+  index <- 
+    sapply(names(data[-1]), function(x){ 
+      if(length(unique(data[-1][[x]]))>n){ FALSE }else{ TRUE } 
+      })
   F.mod <- names(data[-1])[index]
 
   ratio <- length(F.mod)/length(names(data[-1]))
-
+  
   if(ratio != 1)
   {
-    warning("The select input contains a large number of options")
+    stop("Large number of options (>50)!")
   }
 
   data            <- data.frame(data)

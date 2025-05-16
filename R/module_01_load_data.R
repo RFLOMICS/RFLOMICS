@@ -214,24 +214,23 @@
     rea.values$exampleData        <- FALSE
 
     # read and check design file
-    design.tt <-
-      tryCatch(
-        expr = readExpDesign(file = input$Experimental.Design.file$datapath),
-        error = function(e)
-          e,
-        warning = function(w)
-          w
-      )
-
-    if (!is.null(design.tt$message)) {
-      showModal(modalDialog(title = "Error message", design.tt$message))
+    design.tt <- 
+    .tryCatch_rflomics(
+        readExpDesign(file = input$Experimental.Design.file$datapath)
+        )
+    
+    if (is.null(design.tt$result)) {
+      showModal(modalDialog(title = "Error message", design.tt$error))
     }
     validate({
-      need(expr = is.null(design.tt$message),
-           message = design.tt$message)
+      need(!is.null(design.tt$result), message = design.tt$error)
     })
+    
+    if (!is.null(design.tt$warnings)) {
+      showModal(modalDialog(title = "Warning message", design.tt$warnings))
+    }
 
-    local.rea.values$ExpDesignOrg <- design.tt
+    local.rea.values$ExpDesignOrg <- design.tt$result
   })
 
   # ---- Add new omic data ----

@@ -363,7 +363,7 @@ test_that("Test check of NA in data", {
     ExpDesign   = ecoseed.df$design,
     factorInfo  = factorInfo))
   
-  omicsData[[2]][6,7] <- -1
+  omicsData[[1]][6,7] <- -1
   
   expect_error(RFLOMICS::createRflomicsMAE(
     projectName = "Tests", 
