@@ -214,19 +214,19 @@
     rea.values$exampleData        <- FALSE
 
     # read and check design file
-    design.tt <- 
+    design.tt <-
     .tryCatch_rflomics(
         readExpDesign(file = input$Experimental.Design.file$datapath)
         )
-    
+
     if (is.null(design.tt$result)) {
       showModal(modalDialog(title = "Error message", design.tt$error))
     }
     validate({
       need(!is.null(design.tt$result), message = design.tt$error)
     })
-    
-    if (!is.null(design.tt$warnings)) {
+
+    if (!is.null(design.tt$warnings) && length(design.tt[["warnings"]]) != 0) {
       showModal(modalDialog(title = "Warning message", design.tt$warnings))
     }
 
