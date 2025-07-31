@@ -59,7 +59,7 @@ createRflomicsMAE <- function(projectName = NULL,
 
   if (length(omicsData) == 0)
       stop("the omicsData arg is mandatory.")
-  
+
   if(is.null(names(omicsData)))
     stop("The omicsData must be named.")
 
@@ -72,7 +72,7 @@ createRflomicsMAE <- function(projectName = NULL,
   if (is.null(omicsNames)){
     omicsNames <- names(omicsData)
   }
-  else 
+  else
     if(any(!omicsNames %in% names(omicsData)))
       stop("the omicsNames values must match the names of omicsData object.")
 
@@ -84,7 +84,7 @@ createRflomicsMAE <- function(projectName = NULL,
   ## => omicsData to list of data.frames
   omicsData.df <- list()
   for(dataName in omicsNames){
-    
+
     omicsData.df[[dataName]] <-
       switch(
         class(omicsData[[dataName]])[1],
@@ -92,21 +92,21 @@ createRflomicsMAE <- function(projectName = NULL,
         "matrix"               = as.data.frame(omicsData[[dataName]]),
         "SummarizedExperiment" = {
           tmp <- as.data.frame(assay(omicsData[[dataName]]))
-          
+
           if(is(omicsData , "MultiAssayExperiment"))
-            colnames(tmp) <- 
+            colnames(tmp) <-
               sampleMap(omicsData)[sampleMap(omicsData)$assay == dataName,]$primary
           tmp
           },
         stop("The components of the omicsData object must be of class list, ",
              "SummarizedExperiment, or matrix.")
       )
-    
-    colnames(omicsData.df[[dataName]]) <- 
-      str_replace_all(string = colnames(omicsData.df[[dataName]]), 
+
+    colnames(omicsData.df[[dataName]]) <-
+      str_replace_all(string = colnames(omicsData.df[[dataName]]),
                       pattern = "[# /-]", replacement = "")
   }
-  
+
   ## => omicsTypes
   if(is.null(omicsTypes))
     stop("the list of omicsTypes is mandatory.")
@@ -162,7 +162,7 @@ createRflomicsMAE <- function(projectName = NULL,
 
   if (any(!factorInfo$factorName %in% colnames(ExpDesign)))
     stop("factorInfo$factorName don't match ExpDesign colnames")
-  
+
   ### => factorInfo$factorType
   if (is.null(factorInfo$factorType)) stop("factorInfo$factorType is mandatory.")
 
@@ -175,34 +175,34 @@ createRflomicsMAE <- function(projectName = NULL,
       factorName = c(factorInfo$factorName, metaFactors),
       factorType = c(factorInfo$factorType, rep("Meta", length(metaFactors))))
   }
-  
+
   factorBio   <- filter(factorInfo, factorType == "Bio")$factorName
   factorBatch <- filter(factorInfo, factorType == "batch")$factorName
 
   ## set ref and levels to ExpDesign
   # refList <- vector()
   for (i in 1:nrow(factorInfo)){
-    
+
     if(factorInfo$factorType[i] == "Meta") next
-    
-    ExpDesign[[factorInfo[i,]$factorName]] <- 
-      str_replace_all(string = ExpDesign[[factorInfo[i,]$factorName]], 
+
+    ExpDesign[[factorInfo[i,]$factorName]] <-
+      str_replace_all(string = ExpDesign[[factorInfo[i,]$factorName]],
                       pattern = "[*# -/]", replacement = "")
-    
+
     # set level
     if (!is.null(factorInfo$factorLevels)){
       levels <- str_split(factorInfo[i,]$factorLevels, ",") |>
         unlist() %>% str_remove(" ")
-      
+
       if(any(!levels %in% ExpDesign[[factorInfo[i,]$factorName]]))
-        stop("The factor levels: ", factorInfo[i,]$factorLevels, " don't exist") 
+        stop("The factor levels: ", factorInfo[i,]$factorLevels, " don't exist")
     }
     else{
       levels <- unique(ExpDesign[[factorInfo[i,]$factorName]])
     }
     ExpDesign[[factorInfo[i,]$factorName]] <-
       factor(ExpDesign[[factorInfo[i,]$factorName]], levels = levels)
-    
+
     # set ref
     ref <- NULL
     if (!is.null(factorInfo$factorRef)){
@@ -254,11 +254,11 @@ createRflomicsMAE <- function(projectName = NULL,
     k <- k+1
     omicType <- omicsTypes[data]
 
-    RflomicsSE <- 
+    RflomicsSE <-
       createRflomicsSE(
-        omicData  = omicsData.df[[data]], 
-        omicType  = omicType, 
-        ExpDesign = ExpDesign, 
+        omicData  = omicsData.df[[data]],
+        omicType  = omicType,
+        ExpDesign = ExpDesign,
         design    = typeList)
 
     #### run PCA for raw count
@@ -392,9 +392,12 @@ createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
   if (omicType == "RNAseq" &&
       !is.integer(matrix.filt) &&
       !identical(matrix.filt, floor(matrix.filt))) {
-    stop("OmicsType is RNAseq, expects counts. The omicData is not counts data.")
+    warning("OmicsType is RNAseq, expects counts. The omicData is not counts data.
+            Values will be rounded in this table.")
+
+      matrix.filt <- round(matrix.filt)
   }
-  
+
   # create SE object
   colData   <- mutate(ExpDesign, samples = row.names(ExpDesign)) |>
     filter(samples %in% sample.intersect) |>
@@ -515,8 +518,8 @@ readExpDesign <- function(file){
     mutate(across(.cols = c(-1), ~str_remove_all(.x, pattern = fixed("_")))) %>%
     mutate(across(.cols = where(is.character), as.factor))
 
-  names(data)  <- 
-    str_remove_all(string = names(data), 
+  names(data)  <-
+    str_remove_all(string = names(data),
                    pattern = "[.,;:#@!?()$%&<>|=+-/\\]\\[\'\"\ _]") %>%
     str_remove_all(., pattern = fixed("\\"))
 
@@ -531,11 +534,11 @@ readExpDesign <- function(file){
   # warning if number of factors exceed n = 10
   n <- 10
   if (dim(data)[2]-1 >= n){
-    
+
     data <- data[, 1:(n+1)]
     warning("Large number of columns! only the first ", n," will be displayed")
   }
-  
+
   # check if there is duplication in factor names
   # factor.dup <- as.vector(data[which(table(names(data[-1])) > 1),1])[[1]]
   factor.dup <- names(data[-1])[duplicated(names(data[-1]))]
@@ -557,14 +560,14 @@ readExpDesign <- function(file){
 
   # check nbr of modality of the 5th fist columns
   n <- 50
-  index <- 
-    sapply(names(data[-1]), function(x){ 
-      if(length(unique(data[-1][[x]]))>n){ FALSE }else{ TRUE } 
+  index <-
+    sapply(names(data[-1]), function(x){
+      if(length(unique(data[-1][[x]]))>n){ FALSE }else{ TRUE }
       })
   F.mod <- names(data[-1])[index]
 
   ratio <- length(F.mod)/length(names(data[-1]))
-  
+
   if(ratio != 1)
   {
     stop("Large number of options (>50)!")
