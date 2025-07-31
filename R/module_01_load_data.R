@@ -52,13 +52,13 @@
 
 
     if (length(FlomicsMultiAssay.try[["warnings"]]) > 0 || length(FlomicsMultiAssay.try[["messages"]]) > 0) {
-        warning(paste(FlomicsMultiAssay.try[["warnings"]],
-                      FlomicsMultiAssay.try[["messages"]],
-                      collapse = "\n"))
-    #     showModal(modalDialog(title = "Warning",
-    #                           HTML(paste(FlomicsMultiAssay.try[["warnings"]],
-    #                                 FlomicsMultiAssay.try[["messages"]],
-    #                                 collapse = "<br>"))))
+        # warning(paste(FlomicsMultiAssay.try[["warnings"]],
+        #               FlomicsMultiAssay.try[["messages"]],
+        #               collapse = "\n"))
+        showModal(modalDialog(title = "Warning",
+                              HTML(paste(FlomicsMultiAssay.try[["warnings"]],
+                                    FlomicsMultiAssay.try[["messages"]],
+                                    collapse = "<br>"))))
     }
 
     session$userData$FlomicsMultiAssay <- FlomicsMultiAssay.try$result
