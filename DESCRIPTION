@@ -67,6 +67,7 @@ Imports:
     methods,
     mixOmics,
     MOFA2,
+    plotly,
     purrr,
     RColorBrewer,
     reshape2,
