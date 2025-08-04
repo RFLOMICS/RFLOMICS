@@ -420,6 +420,7 @@ setMethod(
 #' enrichplot functions.
 #' @importFrom enrichplot cnetplot heatplot dotplot set_enrichplot_color
 #' @importFrom ggrepel geom_label_repel
+#' @importFrom plotly ggplotly
 #' @exportMethod plotClusterProfiler
 #' @rdname runAnnotationEnrichment
 #' @name plotClusterProfiler
@@ -436,6 +437,7 @@ setMethod(
                           searchExpr = "",
                           nodeLabel = "all",
                           p.adj.cutoff = NULL,
+                          interactive = FALSE,
                           ...) {
 
         if (is.null(featureListName))
@@ -531,7 +533,7 @@ setMethod(
                         low = "blue",
                         mid = "white",
                         high = "red",
-                        midpoint = 0
+                        midpoint = 0,
                     ) +
                     theme(axis.text.y = element_text(size = 10))
             },
@@ -546,6 +548,8 @@ setMethod(
                         w
                 )
             })
+
+        if(interactive) returnplot <- ggplotly(returnplot)
         return(returnplot)
     }
 )
