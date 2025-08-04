@@ -578,6 +578,7 @@ setGeneric(
                   searchExpr = "",
                   nodeLabel = "all",
                   p.adj.cutoff = NULL,
+                  interactive = FALSE,
                   ...)
     standardGeneric("plotClusterProfiler")
 
