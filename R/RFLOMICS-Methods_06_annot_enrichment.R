@@ -420,7 +420,6 @@ setMethod(
 #' enrichplot functions.
 #' @importFrom enrichplot cnetplot heatplot dotplot set_enrichplot_color
 #' @importFrom ggrepel geom_label_repel
-#' @importFrom plotly ggplotly
 #' @exportMethod plotClusterProfiler
 #' @rdname runAnnotationEnrichment
 #' @name plotClusterProfiler
@@ -437,7 +436,6 @@ setMethod(
                           searchExpr = "",
                           nodeLabel = "all",
                           p.adj.cutoff = NULL,
-                          interactive = FALSE,
                           ...) {
 
         if (is.null(featureListName))
@@ -549,7 +547,6 @@ setMethod(
                 )
             })
 
-        if(interactive) returnplot <- ggplotly(returnplot)
         return(returnplot)
     }
 )

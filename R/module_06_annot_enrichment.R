@@ -9,7 +9,7 @@
 #' @rawNamespace import(shiny, except = renderDataTable)
 #' @importFrom shinyWidgets pickerInput materialSwitch
 #' @importFrom DT datatable JS
-#' @importFrom plotly renderPlotly
+#' @importFrom plotly ggplotly renderPlotly
 
 # ---- Module enrichment : main -----
 
