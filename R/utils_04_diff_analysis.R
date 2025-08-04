@@ -266,8 +266,8 @@
 #' @param p.adj.cutoff adjusted pvalue cutoff
 #' @param logFC.cutoff log2FC cutoff (absolute value)
 #' @param contrastName the contrast, useful for plot title
-#' @return a volcano plot, made with the \link{EnhancedVolcano} package.
-#' @importFrom EnhancedVolcano EnhancedVolcano
+#' @return a volcano plot
+#' @importFrom ggrepel geom_text_repel
 #' @keywords internal
 #' @noRd
 #'
@@ -285,8 +285,12 @@
         stop("p.adj.cutoff must be between 0 and 1")
     }
 
-    pval1 <- data$pvalue[data$Adj.pvalue < p.adj.cutoff] %>% last()
-    pval2 <- data$pvalue[data$Adj.pvalue > p.adj.cutoff] %>% first()
+    data <- data[order(data[["pvalue"]], decreasing = FALSE),]
+
+    # pval1 <- data$pvalue[data$Adj.pvalue < p.adj.cutoff] %>% last()
+    # pval2 <- data$pvalue[data$Adj.pvalue > p.adj.cutoff] %>% first()
+    pval1 <- data[["pvalue"]][data[["Adj.pvalue"]] < p.adj.cutoff][sum(data[["Adj.pvalue"]] < p.adj.cutoff)]
+    pval2 <- data[["pvalue"]][data[["Adj.pvalue"]] > p.adj.cutoff][1]
     pvalCutoff <- (pval1 + pval2) / 2
 
     # If too low pvalues, unable to plot (error in if(d>0)...)
@@ -300,37 +304,84 @@
     }
 
     Abundance <- logFC <- Adj.pvalue <- NULL
-    p <- EnhancedVolcano(toptable = data,
-                         lab = rownames(data),
-                         x = 'logFC',
-                         y = 'pvalue',
-                         # pCutoff = p.adj.cutoff,
-                         xlim = c(min(data[['logFC']], na.rm = TRUE) - 0.5,
-                                  max(data[['logFC']], na.rm = TRUE) + 0.5),
-                         pCutoff = pvalCutoff,
-                         FCcutoff = logFC.cutoff,
-                         axisLabSize = 14,
-                         pointSize = 1.5,
-                         labSize = 2.5,
-                         title = contrastName,
-                         titleLabSize = 20,
-                         subtitle = "",
-                         subtitleLabSize = 10,
-                         caption = paste("logFC cutoff=",
-                                         logFC.cutoff,
-                                         " & " , "FDR cutoff=",
-                                         p.adj.cutoff,
-                                         sep = ""),
-                         legendPosition = "bottom",
-                         legendLabSize = 14,
-                         legendIconSize = 3.5,
-                         captionLabSize = 14,
-                         col = c('grey30', 'forestgreen', 'royalblue', 'red2'),
-                         colAlpha = 0.5,
-                         drawConnectors = FALSE,
-                         widthConnectors = 0.5,
-                         max.overlaps = 15
-    )
+
+    data[["Entity"]] <- rownames(data)
+    data[["log2FC"]] <- data[["logFC"]]
+    data[["-log10pvalue"]] <- -log10(data[["pvalue"]])
+    data[["criteria"]] <- "none"
+    data[["criteria"]][abs(data[["log2FC"]]) > logFC.cutoff] <- "log2FC"
+    data[["criteria"]][data[["Adj.pvalue"]] < p.adj.cutoff] <- "Adjusted Pvalue"
+    data[["criteria"]][data[["Adj.pvalue"]] < p.adj.cutoff & abs(data[["log2FC"]]) > logFC.cutoff] <- "Both"
+    data[["Entity"]][data[["criteria"]] != "Both"] <- NA
+
+    data <- data[order(data[["criteria"]]),]
+
+    if (sum(data[["criteria"]] == "Both") > 2000) {
+        data[["Entity"]][seq(from = 2000, to = nrow(data))] <- NA
+    }
+
+    data[["criteria"]][data[["criteria"]] == "Both"] <- "log2FC and Adj. Pvalue"
+
+    p <- ggplot(data, aes(x = log2FC, y = `-log10pvalue`,
+                          color = criteria, label = Entity)) +
+        geom_point(size = 1.5, alpha = 0.5) +
+        xlim(c(min(data[['logFC']], na.rm = TRUE) - 0.5,
+               max(data[['logFC']], na.rm = TRUE) + 0.5)) +
+        theme_bw() +
+        xlab(bquote(~Log[2]~ "Fold Change")) +
+        ylab(bquote(~-Log[10]~ "Pvalue")) +
+        labs(caption = paste("log2FC cutoff=",
+                             logFC.cutoff,
+                             " & " , "FDR cutoff=",
+                             p.adj.cutoff,
+                             sep = ""),
+             title = contrastName) +
+        theme(legend.position = "bottom",
+              plot.subtitle = element_text(size = 10),
+              axis.title = element_text(size = 14),
+              legend.text = element_text(size = 12),
+              legend.title = element_blank()) +
+        scale_color_manual(values = c("none" = 'grey30',
+                                      "log2FC" = 'forestgreen',
+                                      "Adjusted Pvalue" = 'royalblue',
+                                      "log2FC and Adj. Pvalue" = 'red2')) +
+        geom_vline(xintercept = logFC.cutoff, lty = "dashed", color = "gray28") +
+        geom_vline(xintercept = -logFC.cutoff, lty = "dashed", color = "gray28") +
+        geom_vline(xintercept = 0, lty = "dashed", color = "gray28") +
+        geom_hline(yintercept = -log10(pvalCutoff), lty = "dashed", color = "gray28") +
+        geom_text_repel(show.legend = FALSE, na.rm = TRUE)
+
+    # p <- EnhancedVolcano(toptable = data,
+    #                      lab = rownames(data),
+    #                      x = 'logFC',
+    #                      y = 'pvalue',
+    #                      # pCutoff = p.adj.cutoff,
+    #                      xlim = c(min(data[['logFC']], na.rm = TRUE) - 0.5,
+    #                               max(data[['logFC']], na.rm = TRUE) + 0.5),
+    #                      pCutoff = pvalCutoff,
+    #                      FCcutoff = logFC.cutoff,
+    #                      axisLabSize = 14,
+    #                      pointSize = 1.5,
+    #                      labSize = 2.5,
+    #                      title = contrastName,
+    #                      titleLabSize = 20,
+    #                      subtitle = "",
+    #                      subtitleLabSize = 10,
+    #                      caption = paste("logFC cutoff=",
+    #                                      logFC.cutoff,
+    #                                      " & " , "FDR cutoff=",
+    #                                      p.adj.cutoff,
+    #                                      sep = ""),
+    #                      legendPosition = "bottom",
+    #                      legendLabSize = 14,
+    #                      legendIconSize = 3.5,
+    #                      captionLabSize = 14,
+    #                      col = c('grey30', 'forestgreen', 'royalblue', 'red2'),
+    #                      colAlpha = 0.5,
+    #                      drawConnectors = FALSE,
+    #                      widthConnectors = 0.5,
+    #                      max.overlaps = 15
+    # )
 
     return(p)
 }
