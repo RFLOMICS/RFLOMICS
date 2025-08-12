@@ -147,18 +147,18 @@ setMethod(
       stop("An exploratory analysis must be performed on at least one of the datasets.")
 
     if(is.null(reportName)){
-      
+
       if(is.null(archiveName)){
-        
+
         stop("You must provide either a reportName or an archiveName.")
       }
       else{
-        
+
         dirN <- dirname(archiveName)
         dirN <- normalizePath(dirN)
         if (file.access(dirN, 2) != 0)
           stop("No writing access in ", dirN)
-        
+
         archiveName <- paste0(dirN, "/", basename(archiveName))
       }
     }
@@ -167,10 +167,10 @@ setMethod(
       dirN <- normalizePath(dirN)
       if (file.access(dirN, 2) != 0)
         stop("No writing access in ", dirN)
-      
+
       reportName <- paste0(dirN, "/", basename(reportName))
     }
-      
+
     projectName  <- getProjectName(object)
 
     # we need at least reportName or archiveName
@@ -212,7 +212,7 @@ setMethod(
       reportName <- file.path(
         tmpDir,
         paste0(format(Sys.time(), "%Y_%m_%d"), "_", projectName, ".html"))
-    
+
     rmarkdown::render(
       input             = system.file("RFLOMICSapp", "report.Rmd", package = "RFLOMICS"),
       output_file       = reportName,
@@ -417,7 +417,7 @@ setMethod(
 
     if(.isFiltered(object))
       title <- c(title,
-                 paste0("filtred (", getFilterSettings(object)$method, ")"))
+                 paste0("filtered (", getFilterSettings(object)$method, ")"))
 
     if(.isTransformed(object) && getTransSettings(object)$method != "none"){
       method <- getTransSettings(object)$method

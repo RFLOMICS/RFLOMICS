@@ -32,3 +32,25 @@
     font-style: italic;
     text-align: center;
 }
+
+.btn-disabled {
+  background-color: #cccccc !important;
+  border-color: #cccccc !important;
+  color: #666666 !important;
+}
+
+.btn-warning {
+  background-color: palevioletred !important;
+  border-color: palevioletred !important;
+  color: white !important;
+}
+
+select[id*='AnaDiffMethod'],
+select[id$='model'],
+select[id$='transfo'],
+select[id$='norm']
+{
+     background-color: #cccccc !important;
+  border-color: #cccccc !important;
+  color: #666666 !important;
+}

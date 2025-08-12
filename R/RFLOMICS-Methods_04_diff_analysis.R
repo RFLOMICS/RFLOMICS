@@ -793,7 +793,6 @@ setMethod(
         log = ifelse(getOmicsTypes(object) == "RNAseq", TRUE, FALSE))
 
     Groups <- getDesignMat(object)
-    # object <- .checkTransNorm(object, raw = raw)
 
     # check presence of variable in SE
     object.DE <- tryCatch(object[featureName], error = function(e) e)
@@ -829,8 +828,7 @@ setMethod(
       guides(fill = guide_legend(title = "condition")) +
       xlab("") +
       ylab(x_lab) +
-      ggtitle(title) #+
-    #geom_point(alpha = 1/100,size=0)
+      ggtitle(title)
 
     return(p)
 
@@ -983,7 +981,7 @@ setMethod(
 
     if(!SE.name %in% names(object))
       stop("This data name, ", SE.name,
-           ", does not exist in the your object")
+           ", does not exist in the object")
 
     getDEList(object = object[[SE.name]],
               contrasts = contrasts,
@@ -1050,7 +1048,7 @@ setMethod(
 
     if(!omicName %in% names(object))
       stop("This data name, ", omicName,
-           ", does not exist in the your object")
+           ", does not exist in the object")
 
     getValidContrasts(object[[omicName]])
 
@@ -1093,7 +1091,7 @@ setMethod(
 
     if(!SE.name %in% names(object))
       stop("This data name, ", SE.name,
-           ", does not exist in the your object")
+           ", does not exist in the object")
 
       getDiffStat(object[[SE.name]])
   })
@@ -1110,6 +1108,7 @@ setMethod(
 #' @param interface Boolean. Is this plot for the interface or commandline?
 #' @importFrom purrr reduce
 #' @importFrom reshape2 melt
+#' @importFrom stringr str_sub str_length
 #' @exportMethod getDiffAnalysesSummary
 #' @return a data.frame with differential analyses summary
 #' @rdname runDiffAnalysis
@@ -1133,13 +1132,13 @@ setMethod(
       if (is.null(Validcontrasts) || length(Validcontrasts) == 0)
         next
 
-      p.adj <- getDiffSettings(object[[dataset]])$p.adj.cutoff
-      logFC <- getDiffSettings(object[[dataset]])$abs.logFC.cutoff
+      p.adj <- getDiffSettings(object[[dataset]])[["p.adj.cutoff"]]
+      logFC <- getDiffSettings(object[[dataset]])[["abs.logFC.cutoff"]]
 
       df.list[[dataset]] <-
         as.data.frame(DiffExpAnal[["results"]][["stats"]])[Validcontrasts,] %>%
         mutate(dataset = dataset, contrasts = rownames(.),
-               settings = paste0("(p.adj: ", p.adj, " & logFC: ", logFC, ")"))
+               settings = paste0("(p.adj: ", p.adj, " & log2FC: ", logFC, ")"))
     }
 
     if (length(df.list) == 0)
@@ -1157,21 +1156,20 @@ setMethod(
 
     # For the interface, the labels (contrastNames) were replaced
     # by tags if they exceed nbMaxLabel to simplify the figures.
-    if(isTRUE(interface) && length(unique(df$contrasts)) > nbMaxLabel){
+    if (isTRUE(interface) && length(unique(df$contrasts)) > nbMaxLabel) {
 
       contrast.df <- getSelectedContrasts(object)
-      df$tabel <- lapply(df$contrasts, function(x){
+      df$tabel <- unlist(lapply(df$contrasts, function(x){
         contrast.df[contrastName == x,]$tag
-      }) %>% unlist
+      }) )
 
     }else{
 
       df$tabel <-
-        lapply(df$contrasts, function(x){
-          vec <- seq(1, stringr::str_length(x), ylabelLength)
-          stringr::str_sub(x, vec, vec+ylabelLength-1) %>%
-            paste(., collapse = "\n")
-        }) |> unlist()
+          unlist(lapply(df$contrasts, function(x){
+          vec <- seq(1, str_length(x), ylabelLength)
+          paste(str_sub(x, vec, vec+ylabelLength-1) , collapse = "\n")
+        }))
     }
 
     df$tabel <- factor(df$tabel, levels = unique(df$tabel))

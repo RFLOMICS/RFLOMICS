@@ -152,17 +152,17 @@ CoSeqAnalysis <- function(input, output, session, dataset, rea.values){
                         selectInput(session$ns("model"),
                                     label    = "Default parameters:",
                                     choices  = model ,
-                                    selected = model[1]),
+                                    selected = model[1], selectize = FALSE),
 
                         selectInput(session$ns("transfo"),
                                     label    = NULL,
                                     choices  = Trans,
-                                    selected = Trans[1]),
+                                    selected = Trans[1], selectize = FALSE),
 
                         selectInput(session$ns("norm"),
                                     label    = NULL,
                                     choices  = normF,
-                                    selected = normF[1]))),
+                                    selected = normF[1], selectize = FALSE))),
 
                 fluidRow(
                     column(

@@ -133,16 +133,16 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                         label = .addBSpopify(label = 'Method:',
                                              content = "Differential analysis method. Fixed parameter according to omics type."),
                         choices  = method,
-                        selected = method),
+                        selected = method, selectize =  FALSE),
 
                     numericInput(
                         inputId = session$ns("p.adj.cutoff"),
-                        label=.addBSpopify(label = 'Adjusted pvalue cutoff:',
-                                           content = "The adjusted p-value cut-off. Pvalues are adjusted using Benjamini-Hochberg method."),
+                        label = .addBSpopify(label = 'Adjusted pvalue cutoff:',
+                                             content = "The adjusted p-value cut-off. Pvalues are adjusted using Benjamini-Hochberg method."),
                         value=local.rea.values$p.adj.cutoff, min=0, max=1, 0.01),
                     numericInput(
                         inputId = session$ns("abs.logFC.cutoff"),
-                        label=.addBSpopify(label = '|log2FC| cutoff:',
+                        label=.addBSpopify(label = HTML("|log<sub>2</sub>FC| cutoff:"),
                                            content = "The absolute log2 FC cut-off"),
                         value=local.rea.values$abs.logFC.cutoff, min=0, max=100, 0.01),
 
@@ -805,6 +805,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                 resTable <-
                     metadata(dataset.SE)$DiffExpAnal[["results"]][["TopDEF"]][[contrastName]]
                 resTable$Regulation <- ifelse(resTable$logFC > 0, "Up", "Down")
+                resTable <- rename(resTable, log2FC = logFC)
                 resTable %>% DT::datatable(
                     extensions = 'Buttons',
                     options = list(dom = 'lfrtipB',

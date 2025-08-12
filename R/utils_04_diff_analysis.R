@@ -17,6 +17,7 @@
 #' @keywords internal
 #' @importFrom stats model.matrix as.formula
 #' @importFrom edgeR DGEList estimateDisp glmFit glmLRT topTags
+#' @importFrom dplyr rename
 #' @noRd
 #'
 .edgeRAnaDiff <- function(object,
@@ -85,7 +86,7 @@
 
             }else{
                 ListRes[["DEF"]][[x]] <- topDEF
-                ListRes[["DEF"]][[x]] <- dplyr::rename(topDEF,
+                ListRes[["DEF"]][[x]] <- rename(topDEF,
                                                 "Abundance"  = "logCPM",
                                                 "pvalue"     = "PValue",
                                                 "Adj.pvalue" = "FDR")
@@ -243,14 +244,15 @@
                   label.rectangle = TRUE,
                   font.legend = c(11, "plain", "black"),
                   font.main = c(11, "bold", "black"),
-                  caption = paste(
-                      "logFC cutoff=",
-                      logFC.cutoff,
-                      " and " ,
-                      "FDR cutoff=",
-                      p.adj.cutoff,
-                      sep = ""
-                  ),
+                  caption = bquote(log[2]*FC~cutoff~.(logFC.cutoff)~and~FDR~cutoff~.(p.adj.cutoff)),
+                  # caption = paste(
+                  #     "logFC cutoff=",
+                  #     logFC.cutoff,
+                  #     " and " ,
+                  #     "FDR cutoff=",
+                  #     p.adj.cutoff,
+                  #     sep = ""
+                  # ),
                   ggtheme = theme_linedraw()
     )
 
@@ -330,11 +332,12 @@
         theme_bw() +
         xlab(bquote(~Log[2]~ "Fold Change")) +
         ylab(bquote(~-Log[10]~ "Pvalue")) +
-        labs(caption = paste("log2FC cutoff=",
-                             logFC.cutoff,
-                             " & " , "FDR cutoff=",
-                             p.adj.cutoff,
-                             sep = ""),
+        # labs(caption = paste("log2FC cutoff=",
+        #                      logFC.cutoff,
+        #                      " & " , "FDR cutoff=",
+        #                      p.adj.cutoff,
+        #                      sep = ""),
+        labs(caption = bquote(log[2]*FC~cutoff~.(logFC.cutoff)~and~FDR~cutoff~.(p.adj.cutoff)),
              title = contrastName) +
         theme(legend.position = "bottom",
               plot.subtitle = element_text(size = 10),
@@ -350,38 +353,6 @@
         geom_vline(xintercept = 0, lty = "dashed", color = "gray28") +
         geom_hline(yintercept = -log10(pvalCutoff), lty = "dashed", color = "gray28") +
         geom_text_repel(show.legend = FALSE, na.rm = TRUE)
-
-    # p <- EnhancedVolcano(toptable = data,
-    #                      lab = rownames(data),
-    #                      x = 'logFC',
-    #                      y = 'pvalue',
-    #                      # pCutoff = p.adj.cutoff,
-    #                      xlim = c(min(data[['logFC']], na.rm = TRUE) - 0.5,
-    #                               max(data[['logFC']], na.rm = TRUE) + 0.5),
-    #                      pCutoff = pvalCutoff,
-    #                      FCcutoff = logFC.cutoff,
-    #                      axisLabSize = 14,
-    #                      pointSize = 1.5,
-    #                      labSize = 2.5,
-    #                      title = contrastName,
-    #                      titleLabSize = 20,
-    #                      subtitle = "",
-    #                      subtitleLabSize = 10,
-    #                      caption = paste("logFC cutoff=",
-    #                                      logFC.cutoff,
-    #                                      " & " , "FDR cutoff=",
-    #                                      p.adj.cutoff,
-    #                                      sep = ""),
-    #                      legendPosition = "bottom",
-    #                      legendLabSize = 14,
-    #                      legendIconSize = 3.5,
-    #                      captionLabSize = 14,
-    #                      col = c('grey30', 'forestgreen', 'royalblue', 'red2'),
-    #                      colAlpha = 0.5,
-    #                      drawConnectors = FALSE,
-    #                      widthConnectors = 0.5,
-    #                      max.overlaps = 15
-    # )
 
     return(p)
 }
