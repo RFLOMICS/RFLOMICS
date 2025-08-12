@@ -1796,15 +1796,23 @@
 
         options(DT.TOJSON_ARGS = list(na = 'string'))
 
-        text.help <- c(paste0("0: no term was found significantly enriched for this ",
-                              .omicsDic(dataset.SE)$variableName), " list")
+        text.help <- c("")
+        text.print <- FALSE
 
-        if(length(errorMessages) != 0){
-            if(length(unique(unlist(errorMessages))) == 1){
+        if (any(sORA == 0, na.rm = TRUE))  {
+            text.help <- c(text.help,
+                           paste0("0: no term was found significantly enriched for this ", .omicsDic(dataset.SE)$variableName, " list"))
+            text.print <- TRUE
+        }
+
+        if (length(errorMessages) != 0) {
+            text.print <- TRUE
+
+            if(length(unique(unlist(errorMessages))) == 1) {
                 text.help <-
                     c(text.help, paste0("NA: ", unique(unlist(errorMessages))))
 
-            }else{
+            } else {
                 text.help <-
                     c(text.help, "NA: see the 'error messages tab'")
             }
@@ -1821,18 +1829,21 @@
                 }),
                 br(),
                 renderUI({
-                    tagList(
-                        HTML(paste(
-                            "<div style='border: 1px solid black; padding: 10px; background-color: #f0f0f0; font-style: italic;'>",
-                            paste(text.help, collapse = "<br>"),
-                            "</div>"
-                        ))
-                    )
+                    if (text.print) {
+                        tagList(
+                            HTML(paste(
+                                "<div style='border: 1px solid black; padding: 10px; background-color: #f0f0f0; font-style: italic;'>",
+                                paste(text.help, collapse = "<br>"),
+                                "</div>"
+                            ))
+                        )
+                    }
+
                 })
             ))
 
         # summary enrichment plot
-        if(any(as.numeric(unlist(sORA[-1], recursive = TRUE)) > 0, na.rm = TRUE))
+        if (any(as.numeric(unlist(sORA[-1], recursive = TRUE)) > 0, na.rm = TRUE) && nrow(sORA) > 1)
             tabPanel.list <-
             c(tabPanel.list,
               list(
