@@ -1,6 +1,6 @@
 Package: RFLOMICS
 Title: Interactive web application for Omics-data analysis
-Version: 1.0.2
+Version: 1.1.2
 Authors@R: 
     c(
     person(given = "Nadia", family = "Bessoltane",
