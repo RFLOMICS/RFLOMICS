@@ -156,7 +156,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
         collapsed = TRUE,
         tagList({
           tabPanel.list <- list(
-            tabPanel(title = "diff results",
+            tabPanel(title = "DE results",
                      renderPlot({
                        getDiffAnalysesSummary(
                          session$userData$FlomicsMultiAssay, plot = TRUE)
