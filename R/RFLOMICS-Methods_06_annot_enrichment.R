@@ -568,12 +568,10 @@ setMethod(
 #' BP, CC and MF)
 #' @param matrixType Heatmap matrix to plot, one of GeneRatio, p.adjust or
 #' presence.
-#' @param nClust number of separate cluster to plot on the heatmap, based o
-#' n the clustering.
-#' @param ... more arguments for ComplexHeatmap::Heatmap.
+#' @param clustering if TRUE, a hierarchical clustering is performed on rows and
+#' columns and they will be ordered accordingly.
+#' It will not be displayed as a dendrogram.
 #' @importFrom reshape2 recast
-#' @importFrom circlize colorRamp2
-#' @importFrom ComplexHeatmap Heatmap ht_opt
 #' @importFrom stats hclust dist
 #' @importFrom stringr str_wrap
 #' @exportMethod plotEnrichComp
@@ -587,8 +585,8 @@ setMethod(
                           from = "DiffExp",
                           database = NULL,
                           domain = "no-domain",
-                          matrixType = "FC",
-                          nClust = NULL,
+                          matrixType = "presence",
+                          clustering = TRUE,
                           ...) {
 
         if (is.null(from))
@@ -619,6 +617,10 @@ setMethod(
         if (is.null(domain))   domain <- domainPoss
         if (any(!domain %in% domainPoss)) {
             stop("Trying to select a domain that does not exist in the object.")
+        }
+
+        if (!matrixType %in% c("presence", "GeneRatio", "p.adjust", "FC")) {
+            stop("matrixType must be one of presence, GeneRatio, FC or p.adjust")
         }
 
         extract <-
@@ -698,130 +700,67 @@ setMethod(
         ))
         extract$FC <- extract$GeneRatio / extract$BgRatio
 
-        dat <- switch(
-            matrixType,
-            "GeneRatio" = {
-                inter <- recast(
-                    extract[, c("Description", "contrastName", "GeneRatio")],
-                    Description ~ contrastName,
-                    measure.var = "GeneRatio")
-                rownames(inter) <- inter$Description
-                # inter <- inter[, colnames(inter) != "ID"]
-                inter <- inter[, colnames(inter) != "Description"]
-                inter[is.na(inter)] <- 0
-                inter
-            },
-            "p.adjust" = {
-                inter <- recast(
-                    extract[, c("Description", "contrastName", "p.adjust")],
-                    Description ~ contrastName,
-                    measure.var = "p.adjust")
-                rownames(inter) <- inter$Description
-                inter <- inter[, colnames(inter) != "Description"]
-                inter[is.na(inter)] <- 1
-                inter
-            },
-            "presence" = {
-                inter <- recast(
-                    extract[, c("Description", "contrastName", "p.adjust")],
-                    Description ~ contrastName,
-                    measure.var = "p.adjust")
-                rownames(inter) <- inter$Description
-                inter <-
-                    inter <- inter[, colnames(inter) != "Description"]
-                inter[!is.na(inter)] <- 1
-                inter[is.na(inter)]  <- 0
-                inter
-            },
-            "FC" = {
-                inter <- recast(
-                    extract[, c("Description", "contrastName", "FC")],
-                    Description ~ contrastName,
-                    measure.var = "FC")
-                rownames(inter) <- inter$Description
-                inter <- inter[, colnames(inter) != "Description"]
-                inter[is.na(inter)] <- 0
-                inter
-            },
-            "log2FC" = {
-                inter <- recast(
-                    extract[, c("Description", "contrastName", "FC")],
-                    Description ~ contrastName,
-                    measure.var = "FC")
-                rownames(inter) <- inter$Description
-                inter <- inter[, colnames(inter) != "Description"]
-                inter <- log2(inter)
-                inter[is.infinite(as.matrix(inter))] <- 0
-                # means FC is 0, shouldn't happen much...
-                inter[is.na(inter)] <- 0
-                # means it's not significant and not in the matrix.
-                inter
-            },
-            stop("This matrix type is not supported. Please chose one of log2FC, FC, presence, p.adjust, GeneRatio")
-        )
+        extract$presence <- 1
+        extract$presence <- factor(extract$presence)
 
-        if (nrow(dat) > 1) {
-            switch(matrixType,
-                   "presence" = {
-                       hcPlot <- hclust(dist(dat, method = "binary"),
-                                        method = "complete")
-                       hcCol <-
-                           hclust(dist(t(dat), method = "binary"),
-                                  method = "complete")
-                   },
-                   {
-                       hcPlot <- hclust(dist(dat, method = "euclidean"),
-                                        method = "complete")
-                       hcCol <-
-                           hclust(dist(t(dat), method = "euclidean"),
-                                  method = "complete")
-                   })
+        inter <- recast(
+            extract[, c("Description", "contrastName", "presence")],
+            Description ~ contrastName,
+            measure.var = "presence")
+        rownames(inter) <- inter$Description
+        inter <-
+            inter <- inter[, colnames(inter) != "Description"]
+        inter[is.na(inter)]  <- 0
+        dat <- inter
+
+        if (clustering) {
+            hcPlot <- hclust(dist(dat, method = "binary"),
+                             method = "complete")
+            hcCol <-
+                hclust(dist(t(dat), method = "binary"),
+                       method = "complete")
+
+            extract$contrastName <- factor(extract$contrastName, levels = colnames(dat)[hcCol[["order"]]])
+            extract$Description <- factor(extract$Description, levels = rownames(dat)[hcPlot[["order"]]])
+
         } else {
-            hcPlot <- FALSE
+            extract$Description <- factor(extract$Description)
+            extract$contrastName <- factor(extract$contrastName)
         }
 
-        colors <- switch(
-            matrixType,
-            "presence"   = {
-                structure(c("white", "firebrick"), names = c("0", "1"))
-            },
-            "GeneRatio"  = {
-                colorRamp2(c(0, max(dat)), c("white", "firebrick"))
-            },
-            "p.adjust"   = {
-                colorRamp2(c(0, pvalThresh, 1),
-                           c("firebrick", "white", "white"))
-            },
-            "FC"         = {
-                colorRamp2(c(0, max(dat)), c("white", "firebrick"))
-            },
-            "log2FC"     = {
-                colorRamp2(c(-max(abs(dat)), 0, max(abs(dat))),
-                           c("blue", "white", "firebrick"))
-            }
-        )
+        titlep <- paste("Enrichment Comparison -", database)
+        if (domain != "no-domain") {titlep <- paste(titlep, " - domain:", domain)}
 
-        ht_opt(DENDROGRAM_PADDING = unit(0.1, "cm"))
+        p <- switch(matrixType,
+                    "presence" = {
+                        ggplot(extract, aes(x = contrastName, y = Description)) +
+                            geom_tile(aes(fill = presence, group = p.adjust)) +
+                            scale_fill_manual(values = c("0" = "white", "1" = "firebrick"))},
+                    "GeneRatio" = {
+                        ggplot(extract, aes(x = contrastName, y = Description)) +
+                            geom_tile(aes(fill = GeneRatio, group = p.adjust)) +
+                            scale_fill_gradient2(low = "white", high = "red", guide = "colourbar") },
+                    "p.adjust" = {
+                        ggplot(extract, aes(x = contrastName, y = Description)) +
+                            geom_tile(aes(fill = p.adjust, group = GeneRatio)) +
+                            scale_fill_gradient2(low = "red", high = "white", guide = "colourbar", midpoint = pvalThresh)
+                    },
+                    "FC" = {
+                        ggplot(extract, aes(x = contrastName, y = Description)) +
+                            geom_tile(aes(fill = FC, group = p.adjust)) +
+                            scale_fill_gradient2(low = "white", high = "red", guide = "colourbar")
+                    })
 
-        suppressWarnings(
-            Heatmap(
-                dat,
-                col = colors,
-                name = matrixType,
-                cluster_columns = hcCol,
-                show_column_dend = FALSE,
-                cluster_rows = hcPlot,
-                row_names_side = "left",
-                column_names_rot = 30,
-                rect_gp = gpar(col = "gray50", lwd = 0.5),
-                width =  ncol(dat) * 5,
-                height = nrow(dat) * 5,
-                heatmap_legend_param = list(direction = "horizontal"),
-                border = TRUE,
-                column_names_gp = gpar(fontsize = 10),
-                row_names_gp = gpar(fontsize = 10)
-            )
-        )
+        p <- p + theme_bw() +
+            theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                  axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+                  axis.text.y = element_text(size = 12),
+                  axis.title.y = element_blank(),
+                  axis.title.x = element_blank(), legend.position = "bottom") +
+            labs(title = titlep,
+                 subtitle = paste("pvalueCutoff: ", pvalThresh))
+
+        return(p)
 
     }
 )
@@ -1007,10 +946,7 @@ setMethod(
 #' results (CoExp)
 #' @param matrixType Heatmap matrix to plot, one of GeneRatio, p.adjust
 #' or presence.
-#' @param ... more arguments for ComplexHeatmap::Heatmap.
-#' @importFrom reshape2 recast
-#' @importFrom circlize colorRamp2
-#' @importFrom ComplexHeatmap Heatmap ht_opt
+#' @param ... more arguments
 #' @importFrom stringr str_wrap
 #' @exportMethod getAnnotAnalysesSummary
 #' @rdname runAnnotationEnrichment
@@ -1026,12 +962,13 @@ setMethod(
         extract.list <- list()
 
         if (!matrixType %in% c("presence", "FC", "log2FC", "p.adjust", "GeneRatio"))
-            stop("matrixType ", matrixType, " is not recognize. Please chose one of:",
+            stop("matrixType ", matrixType, " is not recognized. Please chose one of:",
                  " presence, FC, log2FC, p.adjust or GeneRatio")
 
         if (!from %in% c("CoExp", "DiffExp"))
             stop("The from parameter must be one of DiffExp or CoExp, not ", from)
 
+        from0 <- from
         from <- paste0(from, "EnrichAnal")
 
         omicNames <- unique(unlist(getAnalyzedDatasetNames(object, from)))
@@ -1107,6 +1044,9 @@ setMethod(
                 extract$contrastName <-
                     paste(extract$contrastName, extract$dataset, sep = "\n")
 
+                extract$presence <- 1
+                extract$presence <- factor(extract$presence)
+
                 split.df <- unique(extract[c("dataset", "contrastName", "contrastNameLabel")])
                 split <- split.df$dataset
                 names(split) <- split.df$contrastName
@@ -1114,115 +1054,38 @@ setMethod(
                 if (nrow(extract) == 0)
                     next
 
-                dat <- switch(
-                    matrixType,
-                    "GeneRatio" = {
-                        inter <- recast(extract[, c("Description", "contrastName", "GeneRatio")],
-                                        Description ~ contrastName,
-                                        measure.var = "GeneRatio")
-                        rownames(inter) <- inter$Description
-                        #inter <- inter[, colnames(inter) != "Description"]
-                        inter <- select(inter, -"Description")
-                        inter[is.na(inter)] <- 0
-                        inter
-                    },
-                    "p.adjust" = {
-                        inter <-
-                            recast(extract[, c("Description", "contrastName", "p.adjust")],
-                                   Description ~ contrastName,
-                                   measure.var = "p.adjust")
-                        rownames(inter) <- inter$Description
-                        #inter <- inter[, colnames(inter) != "Description"]
-                        inter <- select(inter, -"Description")
-                        inter[is.na(inter)] <- 1
-                        inter
-                    },
-                    "presence" = {
-                        inter <- recast(extract[, c("Description", "contrastName", "p.adjust")],
-                                        Description ~ contrastName,
-                                        measure.var = "p.adjust")
-                        rownames(inter) <- inter$Description
-                        #inter <- inter[, colnames(inter) != "Description"]
-                        inter <- select(inter, -"Description")
-                        inter[!is.na(inter)] <- 1
-                        inter[is.na(inter)]  <- 0
-                        inter
-                    },
-                    "FC" = {
-                        inter <- recast(extract[, c("Description", "contrastName", "FC")],
-                                        Description ~ contrastName,
-                                        measure.var = "FC")
-                        rownames(inter) <- inter$Description
-                        #inter <- inter[, colnames(inter) != "Description"]
-                        inter <- select(inter, -"Description")
-                        inter[is.na(inter)] <- 0
-                        inter
-                    },
-                    "log2FC" = {
-                        inter <- recast(extract[, c("Description", "contrastName", "FC")],
-                                        Description ~ contrastName,
-                                        measure.var = "FC")
-                        rownames(inter) <- inter$Description
-                        #inter <- inter[, colnames(inter) != "Description"]
-                        inter <- select(inter, -"Description")
-                        inter <- log2(inter)
-                        inter[is.infinite(as.matrix(inter))] <- 0
-                        # means FC is 0, shouldn't happen much...
-                        inter[is.na(inter)] <- 0
-                        # means it's not significant and not in the matrix.
-                        inter
-                    }
-                )
+                extract$dataset <- unlist(lapply(extract$dataset, FUN = function(dat) {
+                        paste0(dat, "\n", "adj.p.value:", getEnrichSettings(object[[dat]], from0, database)$pvalueCutoff)
+                    }))
 
-                colors <- switch(
-                    matrixType,
-                    "presence"   = {
-                        structure(c("white", "firebrick"), names = c("0", "1"))
-                    },
-                    "GeneRatio"  = {
-                        colorRamp2(c(0, max(dat)), c("white", "firebrick"))
-                    },
-                    "p.adjust"   = {
-                        colorRamp2(c(0, pvalThresh, 1),
-                                   c("firebrick", "white", "white"))
-                    },
-                    "FC"         = {
-                        colorRamp2(c(0, max(dat)), c("white", "firebrick"))
-                    },
-                    "log2FC"     = {
-                        colorRamp2(
-                            c(-max(abs(dat)), 0, max(abs(dat))),
-                            c("blue", "white", "firebrick"))
-                    }
-                )
+                p.list[[database]][[dom]] <- switch(matrixType,
+                            "presence" = {
+                                ggplot(extract, aes(x = contrastName, y = Description)) +
+                                    geom_tile(aes(fill = presence, group = p.adjust)) +
+                                    scale_fill_manual(values = c("0" = "white", "1" = "firebrick"))},
+                            "GeneRatio" = {
+                                ggplot(extract, aes(x = contrastName, y = Description)) +
+                                    geom_tile(aes(fill = GeneRatio, group = p.adjust)) +
+                                    scale_fill_gradient2(low = "white", high = "red", guide = "colourbar") },
+                            "p.adjust" = {
+                                ggplot(extract, aes(x = contrastName, y = Description)) +
+                                    geom_tile(aes(fill = p.adjust, group = GeneRatio)) +
+                                    scale_fill_gradient2(low = "red", high = "white", guide = "colourbar", midpoint = 0.1)
+                            },
+                            "FC" = {
+                                ggplot(extract, aes(x = contrastName, y = Description)) +
+                                    geom_tile(aes(fill = FC, group = p.adjust)) +
+                                    scale_fill_gradient2(low = "white", high = "red", guide = "colourbar")
+                            })
 
-                ht_opt(DENDROGRAM_PADDING = unit(0.1, "cm"))
-
-                p.list[[database]][[dom]] <- suppressWarnings(
-                    Heatmap(
-                        t(dat),
-                        col = colors,
-                        name = matrixType,
-                        row_split = split[names(dat)],
-                        #cluster_columns = hcCol,
-                        #cluster_rows = hcPlot,
-                        show_column_dend = FALSE,
-                        show_row_dend = FALSE,
-                        row_names_side = "left",
-                        #column_names_rot = 20,
-                        row_labels = split.df[which(split.df$contrastName %in% names(dat)), ]$contrastNameLabel,
-                        # column_names_rot = 0,
-                        # column_names_centered = TRUE,
-                        rect_gp = gpar(col = "gray80", lwd = 0.1),
-                        width =  ncol(dat) * 5,
-                        height = nrow(dat) * 5,
-                        heatmap_legend_param = list(direction = "horizontal"),
-                        border = TRUE,
-                        column_names_gp = gpar(fontsize = 10),
-                        row_names_gp = gpar(fontsize = 10)
-                    )
-                )
-
+                p.list[[database]][[dom]] <- p.list[[database]][[dom]] + theme_bw() +
+                    facet_wrap(.~dataset) +
+                    theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                          axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+                          axis.text.y = element_text(size = 12),
+                          axis.title.y = element_blank(),
+                          axis.title.x = element_blank(), legend.position = "bottom",
+                          strip.text.x = element_text(size = 12))
 
             }
         }

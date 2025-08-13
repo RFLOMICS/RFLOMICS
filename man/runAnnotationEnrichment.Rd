@@ -74,8 +74,8 @@
   from = "DiffExp",
   database = NULL,
   domain = "no-domain",
-  matrixType = "FC",
-  nClust = NULL,
+  matrixType = "presence",
+  clustering = TRUE,
   ...
 )
 
@@ -148,7 +148,7 @@ iii) qvalueCutoff on qvalues to be reported.}
 
 \item{maxGSSize}{maximal size of genes annotated for testing}
 
-\item{...}{more arguments for ComplexHeatmap::Heatmap.}
+\item{...}{more arguments}
 
 \item{SE.name}{SE.name the name of the dataset if the input object
 is a \link{RflomicsMAE-class}}
@@ -170,8 +170,9 @@ One of dotplot, heatplot or cnetplot.}
 \item{matrixType}{Heatmap matrix to plot, one of GeneRatio, p.adjust
 or presence.}
 
-\item{nClust}{number of separate cluster to plot on the heatmap, based o
-n the clustering.}
+\item{clustering}{if TRUE, a hierarchical clustering is performed on rows and
+columns and they will be ordered accordingly.
+It will not be displayed as a dendrogram.}
 
 \item{experiment}{if the object is a RflomicsMAE, then experiment is the
 name of the RflomicsSE to look for.}
