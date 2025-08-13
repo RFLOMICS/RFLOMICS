@@ -574,6 +574,8 @@ setMethod(
 #' @importClassesFrom ComplexHeatmap Heatmap HeatmapAnnotation
 #' @importMethodsFrom ComplexHeatmap draw
 #' @importFrom ComplexHeatmap HeatmapAnnotation
+#' @importFrom ComplexHeatmap Heatmap
+#' @importFrom ComplexHeatmap draw
 #' @importFrom grid gpar
 #' @examples
 #' # See runDiffAnalysis for an example that includes plotHeatmapDesign
