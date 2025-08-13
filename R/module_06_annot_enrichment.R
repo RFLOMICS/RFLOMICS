@@ -1953,7 +1953,7 @@
 
         # display results
         verticalLayout(fluidRow(column(
-            6,
+            4,
             radioButtons(
                 inputId = ns(paste0(database, "-compDomain")),
                 label = "Domain",
@@ -1963,7 +1963,7 @@
             )
         ),
         column(
-            6,
+            4,
             radioButtons(
                 inputId = ns(paste0(database, "-compType")),
                 label = "Matrix Type",
@@ -1971,17 +1971,20 @@
                 selected = "FC",
                 inline = TRUE
             )
-        ),),
+        ),
+        column(
+            4,
+            radioButtons(
+                inputId = ns(paste0(database, "-compRender")),
+                label = "Rendering",
+                choices = c("static", "interactive"),
+                selected = "static",
+                inline = TRUE
+            )),
+        ),
         fluidRow(
             column(12,
                    renderUI({
-                       clustmeth <- switch(input[[paste0(database, "-compType")]],
-                                           "presence" = "complete",
-                                           "complete")
-                       distmeth <-
-                           switch(input[[paste0(database, "-compType")]],
-                                  "presence" = "binary",
-                                  "euclidean")
                        additionalMessage <- switch(
                            input[[paste0(database, "-compType")]],
                            "presence" = "Red tiles indicates the term has
@@ -2003,10 +2006,10 @@
                                    varLabel0,
                                    " lists.",
                                    " Clustering of terms was computed using <b> ",
-                                   distmeth,
+                                   "binary",
                                    "</b> and <b>",
-                                   clustmeth,
-                                   "</b>. ",
+                                   "complete",
+                                   "</b> on presence matrix. ",
                                    additionalMessage
                                )
                            },
@@ -2018,10 +2021,10 @@
                                    varLabel0,
                                    " lists.",
                                    " Clustering of terms was computed using <b> ",
-                                   distmeth,
+                                   "binary",
                                    "</b> and <b>",
-                                   clustmeth,
-                                   "</b>. ",
+                                   "complete",
+                                   "</b> on presence matrix. ",
                                    additionalMessage
                                )
                        )
@@ -2040,30 +2043,41 @@
                        error = function(err)
                            err)
 
-                       if (is(outHeatmap, "Heatmap")) {
-                           column(
-                               width = 12,
-                               tags$style(
-                                   ".explain-p {
+                       if (is(outHeatmap, "gg")) {
+                           switch(input[[paste0(database, "-compRender")]],
+                                  "static" = {
+                                      column(
+                                          width = 12,
+                                          tags$style(
+                                              ".explain-p {
                     color: Gray;
                     text-justify: inter-word;
                     font-style: italic;
                   }"
-                               ),
-                               hr(),
-                               div(class = "explain-p", HTML(plotExplain)),
-                               hr(),
-                               renderPlot({
-                                   draw(
-                                       outHeatmap,
-                                       heatmap_legend_side = "top",
-                                       padding = unit(5, "mm"),
-                                       gap = unit(2, "mm")
-                                   )
-                               },
-                               width = "auto",
-                               height = min(400 + nrow(outHeatmap@matrix) * 50, 1000))
-                           )
+                                          ),
+                                          hr(),
+                                          div(class = "explain-p", HTML(plotExplain)),
+                                          hr(),
+                                          renderPlot({ outHeatmap }, width = "auto", height = 500)
+                                      )
+                                  },
+                                  "interactive" = {
+                                      column(
+                                          width = 12,
+                                          tags$style(
+                                              ".explain-p {
+                    color: Gray;
+                    text-justify: inter-word;
+                    font-style: italic;
+                  }"
+                                          ),
+                                          hr(),
+                                          div(class = "explain-p", HTML(plotExplain)),
+                                          hr(),
+                                          renderPlotly({ ggplotly(outHeatmap) }, width = "auto", height = 500)
+                                      )
+                                  })
+
                        } else {
                            renderText({
                                outHeatmap$message
