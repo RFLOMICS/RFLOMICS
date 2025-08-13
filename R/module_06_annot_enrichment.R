@@ -295,6 +295,7 @@
         output$enrichSummary <- .outEnrichSummary(session,
                                                   rea.values,
                                                   input,
+                                                  output,
                                                   listSource,
                                                   title,
                                                   dataset,
@@ -1770,6 +1771,7 @@
 .outEnrichSummary <- function(session,
                               rea.values,
                               input,
+                              output,
                               listSource,
                               title,
                               dataset,
@@ -1854,6 +1856,7 @@
                           session,
                           rea.values,
                           input,
+                          output,
                           listSource,
                           dataset,
                           database
@@ -1923,11 +1926,13 @@
 }
 
 #' @description draw the heatmap for the enrichment summary
+#' @importFrom plotly plotlyOutput renderPlotly ggplotly
 #' @noRd
 #' @keywords internal
 .outCompResults <- function(session,
                             rea.values,
                             input,
+                            output,
                             listSource,
                             dataset,
                             database) {
@@ -1950,6 +1955,8 @@
             FUN = function(x)
                 names(x)
         )))
+
+
 
         # display results
         verticalLayout(fluidRow(column(
@@ -2029,8 +2036,8 @@
                                )
                        )
 
-                       outHeatmap <- tryCatch({
-                           outHeatmap <-  plotEnrichComp(
+                       outHeat <- tryCatch({
+                           plotEnrichComp(
                                dataSE,
                                from = listSource,
                                database = database,
@@ -2043,44 +2050,69 @@
                        error = function(err)
                            err)
 
-                       if (is(outHeatmap, "gg")) {
+                       plotHeat <- FALSE
+                       textHeat <- FALSE
+
+                       if (is(outHeat, "gg") && input[[paste0(database, "-compRender")]] == "static") {
+                           plotHeat <- TRUE
+                           output[[paste0(database, "-outHeatmap")]] <-
+                               renderPlot(outHeat)
+                       } else if (is(outHeat, "gg") && input[[paste0(database, "-compRender")]] == "interactive") {
+                           plotHeat <- TRUE
+                           output[[paste0(database, "-outHeatmap")]] <- renderPlotly(ggplotly(outHeat))
+                       } else {
+                           output[[paste0(database, "-outHeatmap")]] <- renderText(outHeat$message)
+                           textHeat <- TRUE
+                       }
+
+                       if (plotHeat) {
+                           #          column(
+                           #              width = 12,
+                           #              tags$style(
+                           #                  ".explain-p {
+                           #   color: Gray;
+                           #   text-justify: inter-word;
+                           #   font-style: italic;
+                           # }"
+                           #              ),
+                           #              div(class = "explain-p", HTML(plotExplain)),
+                           #              hr(),
                            switch(input[[paste0(database, "-compRender")]],
                                   "static" = {
-                                      column(
-                                          width = 12,
-                                          tags$style(
-                                              ".explain-p {
-                    color: Gray;
-                    text-justify: inter-word;
-                    font-style: italic;
-                  }"
-                                          ),
-                                          hr(),
-                                          div(class = "explain-p", HTML(plotExplain)),
-                                          hr(),
-                                          renderPlot({ outHeatmap }, width = "auto", height = 500)
-                                      )
-                                  },
-                                  "interactive" = {
-                                      column(
-                                          width = 12,
-                                          tags$style(
-                                              ".explain-p {
-                    color: Gray;
-                    text-justify: inter-word;
-                    font-style: italic;
-                  }"
-                                          ),
-                                          hr(),
-                                          div(class = "explain-p", HTML(plotExplain)),
-                                          hr(),
-                                          renderPlotly({ ggplotly(outHeatmap) }, width = "auto", height = 500)
-                                      )
-                                  })
 
+                                      column( width = 12,
+                                              tags$style(
+                                                  ".explain-p {
+                                                    color: Gray;
+                                                    text-justify: inter-word;
+                                                    font-style: italic;
+                                                  }"
+                                              ),
+                                              div(class = "explain-p", HTML(plotExplain)),
+                                              hr(),
+
+                                              plotOutput(ns(paste0(database, "-outHeatmap")),
+                                                         width = "auto", height = 1000)
+
+
+                                      )},
+                                  "interactive" = {
+                                      column( width = 12,
+                                              tags$style(
+                                                  ".explain-p {
+                                                    color: Gray;
+                                                    text-justify: inter-word;
+                                                    font-style: italic;
+                                                  }"
+                                              ),
+                                              div(class = "explain-p", HTML(plotExplain)),
+                                              hr(),
+
+                                              plotlyOutput(ns(paste0(database, "-outHeatmap")), height = 1000)
+                                      )})
                        } else {
-                           renderText({
-                               outHeatmap$message
+                           textOutput({
+                               ns(paste0(database, "-outHeatmap"))
                            })
                        }
                    })) ))
