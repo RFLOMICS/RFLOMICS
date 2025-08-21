@@ -32,6 +32,8 @@
   # reactive value for reinitialisation of UIoutput
   local.rea.values <- reactiveValues(contrast = NULL)
 
+  restoring <- reactiveVal(FALSE)
+
   # Construct the form to select the model
   output$SetModelFormula <- renderUI({
 
@@ -152,7 +154,7 @@
     message("[RFLOMICS] #    => selected contrasts: ", nrow(contrast.sel.vec))
 
     # check if user has selected the contrasts to test
-    if(nrow(contrast.sel.vec) == 0){
+    if (nrow(contrast.sel.vec) == 0){
 
       showModal(modalDialog(title = "Error: no contrast selected",
                             "Please select at least one hypothesis (contrast) to test."))
@@ -171,6 +173,22 @@
     rea.values$analysis <- TRUE
 
   }, ignoreInit = TRUE)
+
+  # ---- Bookmark functions ----
+  onBookmark(function(state, session = getDefaultReactiveDomain()) {
+      if (!is.null(getSelectedContrasts(session$userData$FlomicsMultiAssay))) {
+        state$values$Contrasts.Sel <- getSelectedContrasts(session$userData$FlomicsMultiAssay)
+      }
+
+  })
+
+  onRestore(function(state, session = getDefaultReactiveDomain()) {
+      restoring(TRUE)
+      # rea.values$analysis <- TRUE
+  })
+
+  onRestored(function(state, session = getDefaultReactiveDomain()) {
+  })
 
   return(input)
 }

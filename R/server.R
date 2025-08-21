@@ -575,6 +575,19 @@ rflomicsServer <- function(input, output, session) {
         })
 
 
+    # onBookmark(function(state) {
+    #     if (!is.null(input$Experimental.Design.file$datapath)) {
+    #         state$values$experimentalDesignPath <- input$Experimental.Design.file$datapath
+    #     }
+    # })
+    #
+    # onRestore(function(state) {
+    #     if (!is.null(state$values$experimentalDesignPath)) {
+    #         print(state$values$experimentalDesignPath)
+    #     }
+    # })
+
+
     # # Automatically bookmark every time an input changes
     # observe({
     #   reactiveValuesToList(input)
@@ -582,5 +595,16 @@ rflomicsServer <- function(input, output, session) {
     # })
     # # Update the query string
     # onBookmarked(updateQueryString)
+    # BOOKMARK
+    # onBookmark(function(state, session = getDefaultReactiveDomain()) {
+    #     .mod_data_bookmark(state, session, local.rea.values.data, rea.values, input)
+    #     # mod_suivant_bookmark(state, session, local.rea.values.suivant, rea.values)
+    # })
+    #
+    # # RESTORE
+    # onRestore(function(state, session = getDefaultReactiveDomain()) {
+    #     .mod_data_restore(state, session, local.rea.values.data, rea.values, input)
+    #     # mod_suivant_restore(state, session, local.rea.values.suivant, rea.values)
+    # })
 }
 

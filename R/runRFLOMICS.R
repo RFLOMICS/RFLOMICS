@@ -22,5 +22,5 @@
 #'
 runRFLOMICS <- function(...) {
   addResourcePath(prefix = 'www', system.file('RFLOMICSapp/www/', package = 'RFLOMICS'))
-  shinyApp(ui = rflomicsUI, server = shinyServer(rflomicsServer),  enableBookmarking = "url", ...)
+  shinyApp(ui = rflomicsUI, server = shinyServer(rflomicsServer),  enableBookmarking = "server", ...)
 }

@@ -9,26 +9,26 @@
 #' @rawNamespace import(shiny, except = renderDataTable)
 #' @noRd
 #' @return a user interface.
-rflomicsUI <- function(){
-  
+rflomicsUI <- function(request){
+
   ui <- tagList(
-    
+
     tags$head(
       tags$link(
         rel = "stylesheet",
         type = "text/css",
         href = "www/style.css")
     ),
-    
+
     dashboardPage(
-      
+
       dashboardHeader(title = "RFLOMICS"),
       dashboardSidebar(
-        
+
         uiOutput("mysidebar")
       ),
       dashboardBody({
-        
+
         uiOutput("mycontent")
       })
     ))
