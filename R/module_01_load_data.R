@@ -69,6 +69,7 @@
             metadata(session$userData$FlomicsMultiAssay)$omicList
         rea.values$loadData    <- TRUE
         local.rea.values$plots <- TRUE
+        # local.rea.values$restoring <- FALSE
 
         # data overview
         output$overViewUI <- renderUI({
@@ -198,41 +199,129 @@
     )
 
     # ---- initialization ----
+
+
     local.rea.values <- reactiveValues(
         plots        = FALSE,
-        ExpDesign    = NULL,
-        ExpDesignOrg = NULL,
         addDataNum   = 1
     )
 
-    restoring <- reactiveVal(FALSE)
 
-    # ---- Load experimental design ----
-    # as soon as the "design file" has been loaded
+    # ---- Bookmark functions ----
+    # .getRefFactor <- reactive({
+    #     ExpDesign <- local.rea.values$ExpDesignOrg
+    #     for (factor in names(ExpDesign)) {
+    #         # if select 1 modality or 0 for a Factor we exclude this factor
+    #         if (length(input[[paste0("selectFactors.", factor)]]) > 0) {
+    #             ExpDesign <-
+    #                 filter(ExpDesign, get(factor) %in% input[[paste0("selectFactors.", factor)]])
+    #             ExpDesign[[factor]] <-
+    #                 factor(ExpDesign[[factor]], levels = input[[paste0("selectFactors.", factor)]])
+    #         }
+    #
+    #         if (length(input[[paste0("selectFactors.", factor)]]) <= 1) {
+    #             ExpDesign <- select(ExpDesign, -all_of(factor))
+    #         }
+    #     }
+    #     ExpDesign
+    # })
 
-    .dataCond <- reactive({
-        req(input$Experimental.Design.file)
-        .tryCatch_rflomics(
-            readExpDesign(file = input$Experimental.Design.file$datapath)
-        )
-    })
+    # .dataCond <- reactive({
+    #     req(input$Experimental.Design.file)
+    #     .tryCatch_rflomics(
+    #         readExpDesign(file = input$Experimental.Design.file$datapath)
+    #     )
+    # })
 
-    .checkDIn <- reactive(
-        .checkDesignInput(input, local.rea.values)
-    )
+    # .checkDIn <- reactive(
+    #     .checkDesignInput(input, local.rea.values)
+    # )
 
     .checkOIn <- reactive(
         .checkOmicInput(input, local.rea.values, rea.values)
     )
 
-    # .getRFLOMICSMAE <- reactive(
-    #     session$userData$FlomicsMultiAssay
-    # )
+
+    onBookmark(function(state, session = getDefaultReactiveDomain()) {
+
+        if (!is.null(input$Experimental.Design.file)) {
+            ExpDesign <-   .tryCatch_rflomics(
+                readExpDesign(file = input$Experimental.Design.file$datapath)
+            )
+            print("SAVING -- OnBookmark")
+            print(paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"))
+
+            write.table(data.frame("Samples" = rownames(ExpDesign[["result"]]), ExpDesign[["result"]]),
+                        file = paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"),
+                        sep = "\t",
+                        quote = FALSE,
+                        row.names = FALSE,
+                        col.names = TRUE)
+        }
+
+        if (!is.null(input$loadData)) {
+            checkDat <- .checkOIn()
+            nData <- max(as.numeric(gsub("DataName", "", names(input)[grep("DataName", names(input))])))
+
+            for (i in seq(1, nData)) {
+                print(paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"))
+                write.table(data.frame("Entities" = rownames(checkDat[["omicsData"]][[i]]),
+                                       checkDat[["omicsData"]][[i]]),
+                            file = paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"),
+                            sep = "\t",
+                            quote = FALSE,
+                            row.names = FALSE,
+                            col.names = TRUE)
+            }
+        }
+    })
+
+    onRestore(function(state, session = getDefaultReactiveDomain()) {
+        print("[RFLOMICS] RESTORE -- OnRestore")
+        print("[RFLOMICS] RESTORE -- 01 - Load Data")
+
+        # Experimental Design File
+        Experimental.Design.file <- paste(state[["dir"]], state$input$Experimental.Design.file[["name"]], sep = "/")
+        # print(Experimental.Design.file)
+
+        design.tt <-  .tryCatch_rflomics(readExpDesign(file = Experimental.Design.file) )
+
+        local.rea.values$ExpDesign <- design.tt$result
+        local.rea.values$ExpDesignOrg <- design.tt$result
+        local.rea.values$restoring  <- TRUE
+        local.rea.values$stateDir   <- state[["dir"]]
+
+        local.rea.values$checkDesign <- .checkDesignInput(state$input, local.rea.values)
+
+        nData <- max(as.numeric(gsub("DataName", "", names(state[["input"]])[grep("DataName", names(state[["input"]]))])))
+
+        omicsData <- list()
+        omicsNames <- c()
+        omicsTypes <- c()
+
+        for (k in seq(1, nData)) {
+            omicsNames <- c(omicsNames, state[["input"]][[paste0("DataName", k)]])
+            omicsTypes <- c(omicsTypes, state[["input"]][[paste0("omicType", k)]])
+            # print(paste(state[["dir"]], state[["input"]][[paste0("data", k)]][["name"]], sep = "/"))
+            omicsData[[state[["input"]][[paste0("DataName", k)]]]] <- readOmicsData(file = paste(state[["dir"]],
+                                                                                                 state[["input"]][[paste0("data", k)]][["name"]], sep = "/")
+            )
+        }
+        local.rea.values$checkData <- list(omicsData = omicsData,
+                                           omicsNames = omicsNames,
+                                           omicsTypes = omicsTypes)
+
+        rea.values$restoring <- TRUE
+    })
+
+    # ---- Load experimental design ----
+    # as soon as the "design file" has been loaded
+
 
     observeEvent(input$Experimental.Design.file, {
         req(input$Experimental.Design.file)
 
-        if (!restoring()) {
+        if (is.null(local.rea.values$restoring) || !local.rea.values$restoring) {
             local.rea.values$ExpDesignOrg <- NULL
             local.rea.values$ExpDesign    <- NULL
             local.rea.values$plots        <- FALSE
@@ -240,112 +329,40 @@
 
             Experimental.Design.file <- input$Experimental.Design.file
 
-            design.tt <- .dataCond()
+            design.tt <- .tryCatch_rflomics(
+                readExpDesign(file = Experimental.Design.file$datapath)
+            )
+
+            if (is.null(design.tt$result)) {
+                showModal(modalDialog(title = "Error message", design.tt$error))
+            }
+            validate({
+                need(!is.null(design.tt$result), message = design.tt$error)
+            })
+
+            if (!is.null(design.tt$warnings) && length(design.tt[["warnings"]]) != 0) {
+                showModal(modalDialog(title = "Warning message", design.tt$warnings))
+            }
+
+            local.rea.values$ExpDesignOrg <- design.tt$result
         } else {
-            design.tt <- local.rea.values$design.tt
+            local.rea.values$plots        <- FALSE
+            rea.values$exampleData        <- FALSE
+
+            print("[RFLOMICS] RESTORE -- Experimental Design File")
+
         }
 
-        if (is.null(design.tt$result)) {
-            showModal(modalDialog(title = "Error message", design.tt$error))
-        }
-        validate({
-            need(!is.null(design.tt$result), message = design.tt$error)
-        })
 
-        if (!is.null(design.tt$warnings) && length(design.tt[["warnings"]]) != 0) {
-            showModal(modalDialog(title = "Warning message", design.tt$warnings))
-        }
-
-        local.rea.values$ExpDesignOrg <- design.tt$result
-    })
-
-
-    # ---- Bookmark functions ----
-    onBookmark(function(state, session = getDefaultReactiveDomain()) {
-
-        state$values$rea.values <- reactiveValuesToList(rea.values)
-
-        if (!is.null(input$Experimental.Design.file)) {
-            state$values$Experimental.Design.file_content <- .dataCond()
-            state$values$checkDesignInput <- .checkDIn()
-            state$values$ExpDesign <- .getRefFactor()
-        }
-
-        if (!is.null(input$projectName)) {
-            state$values$projectName <- input$projectName
-        }
-
-        if (!is.null(input$loadData)) {
-            state$values$checkData <- .checkOIn()
-        }
-
-        if (!is.null(session$userData$FlomicsMultiAssay)) {
-            state$values$FlomicsMultiAssay <- session$userData$FlomicsMultiAssay
-        }
+        print("EXP DESIGN ORG")
 
     })
-
-    onRestore(function(state, session = getDefaultReactiveDomain()) {
-        restoring(TRUE)
-
-        Experimental.Design.file <- input$Experimental.Design.file
-        local.rea.values$design.tt <- state$values$Experimental.Design.file_content
-
-        local.rea.values$ExpDesignOrg <- local.rea.values$design.tt$result
-
-        if (isTRUE(rea.values$exampleData)) {
-            local.rea.values$ExpDesignOrg <- NULL
-            local.rea.values$ExpDesign    <- NULL
-            updateTextInput(session, inputId = "projectName", value = "")
-        }
-
-        local.rea.values$projectName  <- state$values$projectName
-
-        # check design
-        local.rea.values$checkDesign <- state$values$checkDesignInput
-        local.rea.values$dF.List.ref  <- local.rea.values$checkDesign$dF.List.ref
-        local.rea.values$dF.Type.dFac <- local.rea.values$checkDesign$dF.Type.dFac
-
-        # # check omic data
-        local.rea.values$checkData <- state$values$checkData
-        local.rea.values$omicsData    <- local.rea.values$checkData$omicsData
-        local.rea.values$omicsNames   <- local.rea.values$checkData$omicsNames
-        local.rea.values$omicsTypes   <- local.rea.values$checkData$omicsTypes
-
-        ExpDesign <- state$values$ExpDesign
-        local.rea.values$ExpDesign <- ExpDesign
-
-        session$userData$FlomicsMultiAssay <- state$values$FlomicsMultiAssay
-        rv_list <- state$values$rea.values
-        for (nm in names(rv_list)) {
-            rea.values[[nm]] <- rv_list[[nm]]
-        }
-
-    })
-
-    # onRestored(function(state, session = getDefaultReactiveDomain()) {
-    #     val <- input$loadData
-    #
-    #     if (!is.null(val) && val > 0) {
-    #         rea.values$loadData <- TRUE
-    #     }
-    # })
-
-    # onRestored(function(state, session = getDefaultReactiveDomain()) {
-    #     # val <- input$loadData
-    #     #
-    #     # if (!is.null(val) && val > 0 && isFALSE(rea.values$loadData)) {
-    #     #     rea.values$loadData <- TRUE
-    #     # } else if (!is.null(val) && val > 0) {
-    #     #     rea.values$loadData <- FALSE
-    #     #     rea.values$loadData <- TRUE
-    #     # }
-    #     restoring(FALSE)
-    # })
 
     # ---- Add new omic data ----
     # => a new select/file Input was display
     observeEvent(input$addData, {
+        if (!is.null(local.rea.values$restoring) && local.rea.values$restoring) print("[RFLOMICS] RESTORE -- addData")
+
         # add input select for new data
         addDataNum <- local.rea.values$addDataNum
         if (input[[paste0('omicType', addDataNum)]] == "none")
@@ -398,84 +415,12 @@
         local.rea.values$addDataNum <- addDataNum
     })
 
-    # ---- Load Data button observe ----
-    observeEvent(input$loadData, {
-        if (!restoring()) {
 
-        rea.values$loadData        <- FALSE
-        rea.values$model           <- FALSE
-        rea.values$analysis        <- FALSE
-        rea.values$Contrasts.Sel   <- NULL
-        rea.values$datasetList     <- NULL
-        rea.values$datasetDiff     <- NULL
-        rea.values$datasetProcess  <- NULL
-        session$userData$FlomicsMultiAssay <- NULL
-
-        if (isTRUE(rea.values$exampleData)) {
-            local.rea.values$ExpDesignOrg <- NULL
-            local.rea.values$ExpDesign    <- NULL
-            updateTextInput(session, inputId = "projectName", value = "")
-        }
-        rea.values$exampleData      <- FALSE
-        local.rea.values$plots      <- FALSE
-        rea.values$validate.status  <- 0
-
-        }
-
-
-        # check project name
-        if (input$projectName == "") {
-            showModal(modalDialog(title = "Error message",
-                                  "Project name is required"))
-        }
-        validate({
-            need(input$projectName != "",
-                 message = "Project name is required")
-        })
-
-        # check design input
-        if (is.null(local.rea.values$ExpDesign)) {
-            showModal(modalDialog(title = "Error message",
-                                  "Experimental Design is required"))
-        }
-        validate({
-            need(!is.null(local.rea.values$ExpDesign),
-                 message = "Experimental Design is required")
-        })
-        local.rea.values$projectName  <- input$projectName
-
-
-        # check design
-        if (!restoring()) {
-            checkDesign <- .checkDesignInput(input, local.rea.values)
-        } else {
-            checkDesign <- local.rea.values$checkDesign
-        }
-        local.rea.values$dF.List.ref  <- checkDesign$dF.List.ref
-        local.rea.values$dF.Type.dFac <- checkDesign$dF.Type.dFac
-
-        # check omic data
-        if (!restoring()) {
-            checkData <-
-                .checkOmicInput(input, local.rea.values, rea.values)
-        } else {
-            checkData <- local.rea.values$checkData
-        }
-        local.rea.values$omicsData    <- checkData$omicsData
-        local.rea.values$omicsNames   <- checkData$omicsNames
-        local.rea.values$omicsTypes   <- checkData$omicsTypes
-
-        # create Rflomics object and plot data over view
-        callModule(module = .modLoadOmicData,
-                   id = "MAE",
-                   rea.values,
-                   local.rea.values)
-
-    }, ignoreInit = TRUE)
 
     # ---- Load example data ----
     # load user own metadata file
     observeEvent(input$loadEcoseedData, {
+        if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)  print("[RFLOMICS] RESTORE -- Load Ecoseed data")
 
         rea.values$loadData        <- FALSE
         rea.values$model           <- FALSE
@@ -531,6 +476,11 @@
 
     # Display tab of exp design
     output$ExpDesignTable <- renderUI({
+
+
+        if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
+            print("[RFLOMICS] RESTORE -- ExpDesignTable UI (output)")
+
         box(
             width = 12,
             background = "light-blue",
@@ -557,6 +507,10 @@
     # order and select modality for each factor
     output$dipslayFactors <-
         renderUI({
+
+            if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
+                print("[RFLOMICS] RESTORE -- dipslayFactors UI (output)")
+
             ExpDesign <- local.rea.values$ExpDesignOrg
 
             box(
@@ -592,7 +546,14 @@
 
     # set ref and type of each factor
 
-    .getRefFactor <- reactive({
+    output$GetdFactorRef <- renderUI({
+
+        if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
+            print("[RFLOMICS] RESTORE -- GetdFactorRef UI")
+
+        if (is.null(local.rea.values$ExpDesignOrg))
+            return()
+
         ExpDesign <- local.rea.values$ExpDesignOrg
         for (factor in names(ExpDesign)) {
             # if select 1 modality or 0 for a Factor we exclude this factor
@@ -607,30 +568,6 @@
                 ExpDesign <- select(ExpDesign, -all_of(factor))
             }
         }
-        ExpDesign
-    })
-
-    output$GetdFactorRef <- renderUI({
-        if (is.null(local.rea.values$ExpDesignOrg))
-            return()
-
-        # ExpDesign <- local.rea.values$ExpDesignOrg
-        # # filter samples
-        # # filtering per conditions
-        # for (factor in names(ExpDesign)) {
-        #     # if select 1 modality or 0 for a Factor we exclude this factor
-        #     if (length(input[[paste0("selectFactors.", factor)]]) > 0) {
-        #         ExpDesign <-
-        #             filter(ExpDesign, get(factor) %in% input[[paste0("selectFactors.", factor)]])
-        #         ExpDesign[[factor]] <-
-        #             factor(ExpDesign[[factor]], levels = input[[paste0("selectFactors.", factor)]])
-        #     }
-        #
-        #     if (length(input[[paste0("selectFactors.", factor)]]) <= 1) {
-        #         ExpDesign <- select(ExpDesign, -all_of(factor))
-        #     }
-        # }
-        ExpDesign <- .getRefFactor()
         local.rea.values$ExpDesign <- ExpDesign
 
         radioButtons.choices <- rep("Bio", ncol(ExpDesign))
@@ -729,6 +666,101 @@
         )
     })
 
+    # ---- Load Data button observe ----
+    observeEvent(input$loadData, {
+
+        if (is.null(local.rea.values$restoring) || !local.rea.values$restoring) {
+
+            rea.values$loadData        <- FALSE
+            rea.values$model           <- FALSE
+            rea.values$analysis        <- FALSE
+            rea.values$Contrasts.Sel   <- NULL
+            rea.values$datasetList     <- NULL
+            rea.values$datasetDiff     <- NULL
+            rea.values$datasetProcess  <- NULL
+            session$userData$FlomicsMultiAssay <- NULL
+
+            if (isTRUE(rea.values$exampleData)) {
+                local.rea.values$ExpDesignOrg <- NULL
+                local.rea.values$ExpDesign    <- NULL
+                updateTextInput(session, inputId = "projectName", value = "")
+            }
+            rea.values$exampleData      <- FALSE
+            local.rea.values$plots      <- FALSE
+            rea.values$validate.status  <- 0
+
+        } else {
+
+            print("[RFLOMICS] RESTORE -- load Data Input")
+
+            # localLoad <<- local.rea.values
+            # inputLoad <<- input
+
+            ExpDesign <- local.rea.values$ExpDesignOrg
+
+            rea.values$validate.status  <- 0
+            rea.values$exampleData      <- FALSE
+            local.rea.values$plots      <- FALSE
+            session$userData$FlomicsMultiAssay <- NULL
+        }
+
+
+        print("EXP DESIGN")
+
+
+        # check project name
+        if (input$projectName == "") {
+            showModal(modalDialog(title = "Error message",
+                                  "Project name is required"))
+        }
+        validate({
+            need(input$projectName != "",
+                 message = "Project name is required")
+        })
+
+        # check design input
+        if (is.null(local.rea.values$ExpDesign)) {
+            showModal(modalDialog(title = "Error message",
+                                  "Experimental Design is required"))
+        }
+        validate({
+            need(!is.null(local.rea.values$ExpDesign),
+                 message = "Experimental Design is required")
+        })
+        local.rea.values$projectName  <- input$projectName
+
+        # check design
+        if (is.null(local.rea.values$restoring) || !local.rea.values$restoring) {
+            print("CHECK DESIGN")
+            checkDesign <- .checkDesignInput(input, local.rea.values)
+        } else {
+            print("[RFLOMICS] RESTORE -- Check Design")
+            checkDesign <- local.rea.values$checkDesign
+        }
+        # print(head(checkDesign))
+        local.rea.values$dF.List.ref  <- checkDesign$dF.List.ref
+        local.rea.values$dF.Type.dFac <- checkDesign$dF.Type.dFac
+
+        # check omic data
+        if (is.null(local.rea.values$restoring) || !local.rea.values$restoring) {
+            print("CHECK OMICS")
+            checkData <- .checkOmicInput(input, local.rea.values, rea.values)
+        } else {
+            print("[RFLOMICS] RESTORE -- Check OMICS")
+            checkData <- local.rea.values$checkData
+        }
+        local.rea.values$omicsData    <- checkData$omicsData
+        local.rea.values$omicsNames   <- checkData$omicsNames
+        local.rea.values$omicsTypes   <- checkData$omicsTypes
+
+        # create Rflomics object and plot data over view
+        callModule(module = .modLoadOmicData,
+                   id = "MAE",
+                   rea.values,
+                   local.rea.values)
+
+    }, ignoreInit = TRUE)
+
     return(input)
 }
 
@@ -741,8 +773,14 @@
     for (dFac in names(local.rea.values$ExpDesign)) {
         # list of type of factors (bio or batch)
         dF.Type.dFac[dFac] <- input[[paste0("dF.Type.", dFac)]]
+        # dF.Type.dFac[dFac] <- ifelse(is.null(local.rea.values$restoring) || !local.rea.values$restoring,
+        #                              input[[paste0("dF.Type.", dFac)]],
+        #                              local.rea.values[[paste0("dF.Type.", dFac)]])
         # list of level reference of factors
         dF.List.ref[dFac]  <- input[[paste0("dF.RefLevel.", dFac)]]
+        # dF.List.ref[dFac]  <- ifelse(is.null(local.rea.values$restoring) || !local.rea.values$restoring,
+        #                              input[[paste0("dF.RefLevel.", dFac)]],
+        #                              local.rea.values[[paste0("dF.RefLevel.", dFac)]])
     }
 
     # check number of factor bio
@@ -781,17 +819,31 @@
     omicsNames <- vector()
     omicsTypes <- vector()
 
-    # get list of omic data laoded from interface
+    # get list of omics data loaded from interface
     dataName.vec <- c()
-    for (k in seq_len(local.rea.values$addDataNum)) {
-        if (input[[paste0("omicType", k)]] != "none") {
+    inputMax <- local.rea.values$addDataNum
+
+    #Retrieve the number of tables
+
+    for (k in seq_len(inputMax)) {
+
+        # KomicType <- ifelse(is.null(local.rea.values$restoring) || !local.rea.values$restoring,
+        #                     input[[paste0("omicType", k)]],
+        #                     local.rea.values[[paste0("omicType", k)]])
+
+        KomicType <- input[[paste0("omicType", k)]]
+
+        if (KomicType != "none") {
             ### omics type ###
-            omicType <- input[[paste0("omicType", k)]]
+            omicType <- KomicType
 
             ### dataset name ###
             # => check presence of dataname
-            dataName.tmp <-
-                gsub("[[:space:]]", "", input[[paste0("DataName", k)]])
+            # nam <- ifelse(is.null(local.rea.values$restoring) || !local.rea.values$restoring,
+            #               input[[paste0("DataName", k)]],
+            #               local.rea.values[[paste0("DataName", k)]])
+            nam <- input[[paste0("DataName", k)]]
+            dataName.tmp <- gsub("[[:space:]]", "", nam)
 
             if (dataName.tmp == "") {
                 showModal(
@@ -817,7 +869,11 @@
 
             #### omics dataset
             # => check omics data
-            if (is.null(input[[paste0("data", k)]])) {
+            inDataK <- NULL
+            # if (is.null(local.rea.values$restoring) || !local.rea.values$restoring) {
+            inDataK <- input[[paste0("data", k)]]
+
+            if (is.null(inDataK)) {
                 showModal(
                     modalDialog(title = "Error message",
                                 "Omics dataset is required: dataset ", k, " is missing")
@@ -825,20 +881,31 @@
                 rea.values$validate.status <- 1
             }
             validate({
-                need(expr = !is.null(input[[paste0("data", k)]]),
+                need(expr = !is.null(inDataK),
                      message = "error")
             })
 
             # => read data matrix
-            dataFile <- input[[paste0("data", k)]]
             data.mat.tt <-
                 tryCatch(
-                    readOmicsData(file = dataFile$datapath),
+                    readOmicsData(file = inDataK$datapath),
                     error = function(e)
                         e,
                     warning = function(w)
                         w
                 )
+            # } else {
+            #     inDataK <- local.rea.values[[paste0("data", k)]]
+            #
+            #     data.mat.tt <-
+            #         tryCatch(
+            #             readOmicsData(file = inDataK),
+            #             error = function(e)
+            #                 e,
+            #             warning = function(w)
+            #                 w
+            #         )
+            # }
 
             if (!is.null(data.mat.tt$message)) {
                 showModal(modalDialog(title = "Error message",
@@ -852,6 +919,7 @@
                 )
             })
 
+            print("Im here")
             data.mat <- data.mat.tt
 
             omicsData[[dataName]]  <- data.mat
