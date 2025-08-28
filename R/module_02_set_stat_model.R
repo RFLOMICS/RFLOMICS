@@ -58,16 +58,11 @@
     # => The model formulae is set and the interface to select the contrasts appear
     observeEvent(input$validModelFormula, {
 
-        # if (!rea.values$restoring) {
         rea.values$model          <- FALSE
         rea.values$analysis       <- FALSE
         rea.values$Contrasts.Sel  <- NULL
         rea.values$datasetDiff    <- NULL
         rea.values$datasetProcess <- NULL
-        if (rea.values$restoring) {
-            print("[RFLOMICS] RESTORE -- 02 - Model")
-            print("[RFLOMICS] RESTORE -- Valid Formula")
-        }
 
         message("[RFLOMICS] # 02- Statistical setting...")
         message("[RFLOMICS] #    => model formula: ", input$model.formulae)
@@ -144,9 +139,6 @@
             rea.values[[dataset]]$diffValid <- FALSE
             rea.values[[dataset]]$DiffValidContrast <- NULL
         })
-        if (rea.values$restoring) {
-            print("[RFLOMICS] RESTORE -- Contrast Selection")
-        }
 
         #get list of selected contrast data frames with expression, name and type
 
@@ -160,7 +152,7 @@
         message("[RFLOMICS] #    => selected contrasts: ", nrow(contrast.sel.vec))
 
         # check if user has selected the contrasts to test
-        if (nrow(contrast.sel.vec) == 0){
+        if (nrow(contrast.sel.vec) == 0) {
 
             showModal(modalDialog(title = "Error: no contrast selected",
                                   "Please select at least one hypothesis (contrast) to test."))
