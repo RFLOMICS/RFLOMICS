@@ -214,26 +214,14 @@
 
 
     onBookmark(function(state, session = getDefaultReactiveDomain()) {
+
         if (is.null(rea.values$exampleData) || !rea.values$exampleData) {
 
-            # if (is.null(rea.values$restoring) || !rea.values$restoring) {
-
-            # }
-            # if (!is.null(input$Experimental.Design.file)) { # At this point in the analysis, it can't be null
-            # ExpDesign <-   .tryCatch_rflomics(
-            #     readExpDesign(file = input$Experimental.Design.file$datapath)
-            # ) # TODO why do I need to read it again ?!
             ExpDesign <- local.rea.values[["ExpDesignOrg"]]
 
-            print("SAVING -- OnBookmark")
-            print(paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"))
+            # print("SAVING -- OnBookmark")
+            # print(paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"))
 
-            # write.table(data.frame("Samples" = rownames(ExpDesign[["result"]]), ExpDesign[["result"]]),
-            #             file = paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"),
-            #             sep = "\t",
-            #             quote = FALSE,
-            #             row.names = FALSE,
-            #             col.names = TRUE)
             write.table(data.frame("Samples" = rownames(ExpDesign), ExpDesign),
                         file = paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"),
                         sep = "\t",
@@ -247,22 +235,9 @@
                                  omicsNames = local.rea.values$omicsNames,
                                  omicsTypes = local.rea.values$omicsTypes)
 
-                # nData <- max(as.numeric(gsub("DataName", "", names(input)[grep("DataName", names(input))])))
                 nData <- length(checkDat$omicsData)
-
-                # for (i in seq(1, nData)) {
-                #     print(paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"))
-                #     write.table(data.frame("Entities" = rownames(checkDat[["omicsData"]][[i]]),
-                #                            checkDat[["omicsData"]][[i]]),
-                #                 file = paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"),
-                #                 sep = "\t",
-                #                 quote = FALSE,
-                #                 row.names = FALSE,
-                #                 col.names = TRUE)
-                # }
-                #
                 for (i in seq(1, nData)) {
-                    print(paste(state[["dir"]], checkDat[["omicsNames"]][[i]], sep = "/"))
+                    # print(paste(state[["dir"]], checkDat[["omicsNames"]][[i]], sep = "/"))
                     write.table(data.frame("Entities" = rownames(checkDat[["omicsData"]][[i]]),
                                            checkDat[["omicsData"]][[i]]),
                                 file = paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"),
@@ -276,8 +251,8 @@
     })
 
     onRestore(function(state, session = getDefaultReactiveDomain()) {
-        print("[RFLOMICS] RESTORE -- OnRestore")
-        print("[RFLOMICS] RESTORE -- 01 - Load Data")
+        # print("[RFLOMICS] RESTORE -- OnRestore")
+        # print("[RFLOMICS] RESTORE -- 01 - Load Data")
 
         if (is.null(state[["input"]][["loadEcoseedData"]]) || state[["input"]][["loadEcoseedData"]] == 0) {
 
@@ -351,19 +326,15 @@
             local.rea.values$plots        <- FALSE
             rea.values$exampleData        <- FALSE
 
-            print("[RFLOMICS] RESTORE -- Experimental Design File")
 
         }
-
-
-        print("EXP DESIGN ORG")
 
     })
 
     # ---- Add new omic data ----
     # => a new select/file Input was display
     observeEvent(input$addData, {
-        if (!is.null(local.rea.values$restoring) && local.rea.values$restoring) print("[RFLOMICS] RESTORE -- addData")
+        # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring) print("[RFLOMICS] RESTORE -- addData")
 
         # add input select for new data
         addDataNum <- local.rea.values$addDataNum
@@ -422,7 +393,7 @@
     # ---- Load example data ----
     # load user own metadata file
     observeEvent(input$loadEcoseedData, {
-        if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)  print("[RFLOMICS] RESTORE -- Load Ecoseed data")
+        # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)  print("[RFLOMICS] RESTORE -- Load Ecoseed data")
 
         rea.values$loadData        <- FALSE
         rea.values$model           <- FALSE
@@ -479,9 +450,8 @@
     # Display tab of exp design
     output$ExpDesignTable <- renderUI({
 
-
-        if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
-            print("[RFLOMICS] RESTORE -- ExpDesignTable UI (output)")
+        # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
+        #     print("[RFLOMICS] RESTORE -- ExpDesignTable UI (output)")
 
         box(
             width = 12,
@@ -510,8 +480,8 @@
     output$dipslayFactors <-
         renderUI({
 
-            if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
-                print("[RFLOMICS] RESTORE -- dipslayFactors UI (output)")
+            # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
+                # print("[RFLOMICS] RESTORE -- dipslayFactors UI (output)")
 
             ExpDesign <- local.rea.values$ExpDesignOrg
 
@@ -550,8 +520,8 @@
 
     output$GetdFactorRef <- renderUI({
 
-        if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
-            print("[RFLOMICS] RESTORE -- GetdFactorRef UI")
+        # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
+            # print("[RFLOMICS] RESTORE -- GetdFactorRef UI")
 
         if (is.null(local.rea.values$ExpDesignOrg))
             return()
@@ -693,7 +663,7 @@
 
         } else {
 
-            print("[RFLOMICS] RESTORE -- load Data Input")
+            # print("[RFLOMICS] RESTORE -- load Data Input")
 
             # localLoad <<- local.rea.values
             # inputLoad <<- input
@@ -705,9 +675,6 @@
             local.rea.values$plots      <- FALSE
             session$userData$FlomicsMultiAssay <- NULL
         }
-
-
-        print("EXP DESIGN")
 
 
         # check project name
@@ -733,22 +700,18 @@
 
         # check design
         if (is.null(local.rea.values$restoring) || !local.rea.values$restoring) {
-            print("CHECK DESIGN")
             checkDesign <- .checkDesignInput(input, local.rea.values)
         } else {
-            print("[RFLOMICS] RESTORE -- Check Design")
             checkDesign <- local.rea.values$checkDesign
         }
-        # print(head(checkDesign))
         local.rea.values$dF.List.ref  <- checkDesign$dF.List.ref
         local.rea.values$dF.Type.dFac <- checkDesign$dF.Type.dFac
 
         # check omic data
         if (is.null(local.rea.values$restoring) || !local.rea.values$restoring) {
-            print("CHECK OMICS")
             checkData <- .checkOmicInput(input, local.rea.values, rea.values)
         } else {
-            print("[RFLOMICS] RESTORE -- Check OMICS")
+            # print("[RFLOMICS] RESTORE -- Check OMICS")
             checkData <- local.rea.values$checkData
         }
         local.rea.values$omicsData    <- checkData$omicsData
@@ -775,14 +738,8 @@
     for (dFac in names(local.rea.values$ExpDesign)) {
         # list of type of factors (bio or batch)
         dF.Type.dFac[dFac] <- input[[paste0("dF.Type.", dFac)]]
-        # dF.Type.dFac[dFac] <- ifelse(is.null(local.rea.values$restoring) || !local.rea.values$restoring,
-        #                              input[[paste0("dF.Type.", dFac)]],
-        #                              local.rea.values[[paste0("dF.Type.", dFac)]])
         # list of level reference of factors
         dF.List.ref[dFac]  <- input[[paste0("dF.RefLevel.", dFac)]]
-        # dF.List.ref[dFac]  <- ifelse(is.null(local.rea.values$restoring) || !local.rea.values$restoring,
-        #                              input[[paste0("dF.RefLevel.", dFac)]],
-        #                              local.rea.values[[paste0("dF.RefLevel.", dFac)]])
     }
 
     # check number of factor bio
@@ -829,10 +786,6 @@
 
     for (k in seq_len(inputMax)) {
 
-        # KomicType <- ifelse(is.null(local.rea.values$restoring) || !local.rea.values$restoring,
-        #                     input[[paste0("omicType", k)]],
-        #                     local.rea.values[[paste0("omicType", k)]])
-
         KomicType <- input[[paste0("omicType", k)]]
 
         if (KomicType != "none") {
@@ -841,9 +794,6 @@
 
             ### dataset name ###
             # => check presence of dataname
-            # nam <- ifelse(is.null(local.rea.values$restoring) || !local.rea.values$restoring,
-            #               input[[paste0("DataName", k)]],
-            #               local.rea.values[[paste0("DataName", k)]])
             nam <- input[[paste0("DataName", k)]]
             dataName.tmp <- gsub("[[:space:]]", "", nam)
 
@@ -872,7 +822,6 @@
             #### omics dataset
             # => check omics data
             inDataK <- NULL
-            # if (is.null(local.rea.values$restoring) || !local.rea.values$restoring) {
             inDataK <- input[[paste0("data", k)]]
 
             if (is.null(inDataK)) {
@@ -896,18 +845,7 @@
                     warning = function(w)
                         w
                 )
-            # } else {
-            #     inDataK <- local.rea.values[[paste0("data", k)]]
-            #
-            #     data.mat.tt <-
-            #         tryCatch(
-            #             readOmicsData(file = inDataK),
-            #             error = function(e)
-            #                 e,
-            #             warning = function(w)
-            #                 w
-            #         )
-            # }
+
 
             if (!is.null(data.mat.tt$message)) {
                 showModal(modalDialog(title = "Error message",
