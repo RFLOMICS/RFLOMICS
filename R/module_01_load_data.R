@@ -208,70 +208,69 @@
 
 
     # ---- Bookmark functions ----
-    # .getRefFactor <- reactive({
-    #     ExpDesign <- local.rea.values$ExpDesignOrg
-    #     for (factor in names(ExpDesign)) {
-    #         # if select 1 modality or 0 for a Factor we exclude this factor
-    #         if (length(input[[paste0("selectFactors.", factor)]]) > 0) {
-    #             ExpDesign <-
-    #                 filter(ExpDesign, get(factor) %in% input[[paste0("selectFactors.", factor)]])
-    #             ExpDesign[[factor]] <-
-    #                 factor(ExpDesign[[factor]], levels = input[[paste0("selectFactors.", factor)]])
-    #         }
-    #
-    #         if (length(input[[paste0("selectFactors.", factor)]]) <= 1) {
-    #             ExpDesign <- select(ExpDesign, -all_of(factor))
-    #         }
-    #     }
-    #     ExpDesign
-    # })
-
-    # .dataCond <- reactive({
-    #     req(input$Experimental.Design.file)
-    #     .tryCatch_rflomics(
-    #         readExpDesign(file = input$Experimental.Design.file$datapath)
-    #     )
-    # })
-
-    # .checkDIn <- reactive(
-    #     .checkDesignInput(input, local.rea.values)
-    # )
-
     .checkOIn <- reactive(
         .checkOmicInput(input, local.rea.values, rea.values)
     )
 
 
     onBookmark(function(state, session = getDefaultReactiveDomain()) {
+        if (is.null(rea.values$exampleData) || !rea.values$exampleData) {
 
-        if (!is.null(input$Experimental.Design.file)) {
-            ExpDesign <-   .tryCatch_rflomics(
-                readExpDesign(file = input$Experimental.Design.file$datapath)
-            )
+            # if (is.null(rea.values$restoring) || !rea.values$restoring) {
+
+            # }
+            # if (!is.null(input$Experimental.Design.file)) { # At this point in the analysis, it can't be null
+            # ExpDesign <-   .tryCatch_rflomics(
+            #     readExpDesign(file = input$Experimental.Design.file$datapath)
+            # ) # TODO why do I need to read it again ?!
+            ExpDesign <- local.rea.values[["ExpDesignOrg"]]
+
             print("SAVING -- OnBookmark")
             print(paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"))
 
-            write.table(data.frame("Samples" = rownames(ExpDesign[["result"]]), ExpDesign[["result"]]),
+            # write.table(data.frame("Samples" = rownames(ExpDesign[["result"]]), ExpDesign[["result"]]),
+            #             file = paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"),
+            #             sep = "\t",
+            #             quote = FALSE,
+            #             row.names = FALSE,
+            #             col.names = TRUE)
+            write.table(data.frame("Samples" = rownames(ExpDesign), ExpDesign),
                         file = paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"),
                         sep = "\t",
                         quote = FALSE,
                         row.names = FALSE,
                         col.names = TRUE)
-        }
+            # }
 
-        if (!is.null(input$loadData)) {
-            checkDat <- .checkOIn()
-            nData <- max(as.numeric(gsub("DataName", "", names(input)[grep("DataName", names(input))])))
+            if (!is.null(input$loadData)) {
+                checkDat <- list(omicsData = local.rea.values$omicsData,
+                                 omicsNames = local.rea.values$omicsNames,
+                                 omicsTypes = local.rea.values$omicsTypes)
 
-            for (i in seq(1, nData)) {
-                print(paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"))
-                write.table(data.frame("Entities" = rownames(checkDat[["omicsData"]][[i]]),
-                                       checkDat[["omicsData"]][[i]]),
-                            file = paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"),
-                            sep = "\t",
-                            quote = FALSE,
-                            row.names = FALSE,
-                            col.names = TRUE)
+                # nData <- max(as.numeric(gsub("DataName", "", names(input)[grep("DataName", names(input))])))
+                nData <- length(checkDat$omicsData)
+
+                # for (i in seq(1, nData)) {
+                #     print(paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"))
+                #     write.table(data.frame("Entities" = rownames(checkDat[["omicsData"]][[i]]),
+                #                            checkDat[["omicsData"]][[i]]),
+                #                 file = paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"),
+                #                 sep = "\t",
+                #                 quote = FALSE,
+                #                 row.names = FALSE,
+                #                 col.names = TRUE)
+                # }
+                #
+                for (i in seq(1, nData)) {
+                    print(paste(state[["dir"]], checkDat[["omicsNames"]][[i]], sep = "/"))
+                    write.table(data.frame("Entities" = rownames(checkDat[["omicsData"]][[i]]),
+                                           checkDat[["omicsData"]][[i]]),
+                                file = paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"),
+                                sep = "\t",
+                                quote = FALSE,
+                                row.names = FALSE,
+                                col.names = TRUE)
+                }
             }
         }
     })
@@ -280,38 +279,41 @@
         print("[RFLOMICS] RESTORE -- OnRestore")
         print("[RFLOMICS] RESTORE -- 01 - Load Data")
 
-        # Experimental Design File
-        Experimental.Design.file <- paste(state[["dir"]], state$input$Experimental.Design.file[["name"]], sep = "/")
-        # print(Experimental.Design.file)
+        if (is.null(state[["input"]][["loadEcoseedData"]]) || state[["input"]][["loadEcoseedData"]] == 0) {
 
-        design.tt <-  .tryCatch_rflomics(readExpDesign(file = Experimental.Design.file) )
+            # Experimental Design File
+            Experimental.Design.file <- paste(state[["dir"]], state$input$Experimental.Design.file[["name"]], sep = "/")
 
-        local.rea.values$ExpDesign <- design.tt$result
-        local.rea.values$ExpDesignOrg <- design.tt$result
-        local.rea.values$restoring  <- TRUE
-        local.rea.values$stateDir   <- state[["dir"]]
+            design.tt <-  .tryCatch_rflomics(readExpDesign(file = Experimental.Design.file) )
 
-        local.rea.values$checkDesign <- .checkDesignInput(state$input, local.rea.values)
+            local.rea.values$ExpDesign <- design.tt$result
+            local.rea.values$ExpDesignOrg <- design.tt$result
+            local.rea.values$restoring  <- TRUE
+            local.rea.values$stateDir   <- state[["dir"]]
 
-        nData <- max(as.numeric(gsub("DataName", "", names(state[["input"]])[grep("DataName", names(state[["input"]]))])))
+            local.rea.values$checkDesign <- .checkDesignInput(state$input, local.rea.values) # TODO : already checked, why do I need to check it again ?
 
-        omicsData <- list()
-        omicsNames <- c()
-        omicsTypes <- c()
+            nData <- max(as.numeric(gsub("DataName", "", names(state[["input"]])[grep("DataName", names(state[["input"]]))])))
 
-        for (k in seq(1, nData)) {
-            omicsNames <- c(omicsNames, state[["input"]][[paste0("DataName", k)]])
-            omicsTypes <- c(omicsTypes, state[["input"]][[paste0("omicType", k)]])
-            # print(paste(state[["dir"]], state[["input"]][[paste0("data", k)]][["name"]], sep = "/"))
-            omicsData[[state[["input"]][[paste0("DataName", k)]]]] <- readOmicsData(file = paste(state[["dir"]],
-                                                                                                 state[["input"]][[paste0("data", k)]][["name"]], sep = "/")
-            )
+            omicsData <- list()
+            omicsNames <- c()
+            omicsTypes <- c()
+
+            for (k in seq(1, nData)) {
+                namDat <- paste(state[["input"]][[paste0("omicType", k)]], state[["input"]][[paste0("DataName", k)]], sep = ".")
+                omicsNames <- c(omicsNames, namDat)
+                omicsTypes <- c(omicsTypes, state[["input"]][[paste0("omicType", k)]])
+                omicsData[[namDat]] <- readOmicsData(file = paste(state[["dir"]],
+                                                                  state[["input"]][[paste0("data", k)]][["name"]], sep = "/")
+                )
+            }
+            local.rea.values$checkData <- list(omicsData = omicsData,
+                                               omicsNames = omicsNames,
+                                               omicsTypes = omicsTypes)
+            rea.values$restoring <- TRUE
         }
-        local.rea.values$checkData <- list(omicsData = omicsData,
-                                           omicsNames = omicsNames,
-                                           omicsTypes = omicsTypes)
 
-        rea.values$restoring <- TRUE
+
     })
 
     # ---- Load experimental design ----
@@ -919,7 +921,6 @@
                 )
             })
 
-            print("Im here")
             data.mat <- data.mat.tt
 
             omicsData[[dataName]]  <- data.mat
