@@ -113,6 +113,7 @@
             )
         })
 
+        local.rea.values$restoring <- FALSE
     }
 
 # ---- modLoadOmicsData UI ----
@@ -295,9 +296,17 @@
             rea.values$restoring <- TRUE
         }
 
-        message("[RFLOMICS] # RESTORED SESSION -- You may have to click on each tab to trigger their restoration")
-
+        message("[RFLOMICS] # RESTORED STATE -- ")
+        message("[RFLOMICS] #                -- You may have to click on each tab to trigger their restoration")
+        message("[RFLOMICS] #                -- It is better to restart your analysis if any loadData parameter has to be changed")
+        message("[RFLOMICS] #                -- If you change any parameters in the loadData tab, you might encounter some errors")
     })
+
+#     onRestored(function(state, session = getDefaultReactiveDomain()){
+#
+#         local.rea.values$restoring <- FALSE
+#
+#     })
 
     # ---- Load experimental design ----
     # as soon as the "design file" has been loaded
