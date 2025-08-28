@@ -69,7 +69,6 @@
             metadata(session$userData$FlomicsMultiAssay)$omicList
         rea.values$loadData    <- TRUE
         local.rea.values$plots <- TRUE
-        # local.rea.values$restoring <- FALSE
 
         # data overview
         output$overViewUI <- renderUI({
@@ -221,26 +220,31 @@
 
             # print("SAVING -- OnBookmark")
             # print(paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"))
+            # print(local.rea.values$ExpFileName)
+            # print(input[["Experimental.Design.file"]])
 
             write.table(data.frame("Samples" = rownames(ExpDesign), ExpDesign),
-                        file = paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"),
+                        file = paste(state[["dir"]], local.rea.values[["ExpFileName"]], sep = "/"),
                         sep = "\t",
                         quote = FALSE,
                         row.names = FALSE,
                         col.names = TRUE)
             # }
+            # state$input$Experimental.Design.file[["name"]] <- local.rea.values[["ExpFileName"]]
 
             if (!is.null(input$loadData)) {
-                checkDat <- list(omicsData = local.rea.values$omicsData,
-                                 omicsNames = local.rea.values$omicsNames,
-                                 omicsTypes = local.rea.values$omicsTypes)
+                checkDat <- list(omicsData = local.rea.values$omicsData, # list
+                                 omicsNames = local.rea.values$omicsNames, # vectors
+                                 omicsTypes = local.rea.values$omicsTypes,
+                                 omicsPaths = local.rea.values$omicsFileNames)
 
-                nData <- length(checkDat$omicsData)
+                nData <- length(checkDat[["omicsData"]])
                 for (i in seq(1, nData)) {
-                    # print(paste(state[["dir"]], checkDat[["omicsNames"]][[i]], sep = "/"))
+                    # print(paste(state[["dir"]], checkDat[["omicsPaths"]][i], sep = "/"))
                     write.table(data.frame("Entities" = rownames(checkDat[["omicsData"]][[i]]),
                                            checkDat[["omicsData"]][[i]]),
-                                file = paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"),
+                                # file = paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"),
+                                file = paste(state[["dir"]], checkDat[["omicsPaths"]][i], sep = "/"),
                                 sep = "\t",
                                 quote = FALSE,
                                 row.names = FALSE,
@@ -258,6 +262,7 @@
 
             # Experimental Design File
             Experimental.Design.file <- paste(state[["dir"]], state$input$Experimental.Design.file[["name"]], sep = "/")
+            local.rea.values[["ExpFileName"]] <- state$input$Experimental.Design.file[["name"]]
 
             design.tt <-  .tryCatch_rflomics(readExpDesign(file = Experimental.Design.file) )
 
@@ -266,28 +271,31 @@
             local.rea.values$restoring  <- TRUE
             local.rea.values$stateDir   <- state[["dir"]]
 
-            local.rea.values$checkDesign <- .checkDesignInput(state$input, local.rea.values) # TODO : already checked, why do I need to check it again ?
+            local.rea.values$checkDesign <- .checkDesignInput(state$input, local.rea.values) # TODO : already checked, do I need to check it again ?
 
             nData <- max(as.numeric(gsub("DataName", "", names(state[["input"]])[grep("DataName", names(state[["input"]]))])))
 
             omicsData <- list()
             omicsNames <- c()
             omicsTypes <- c()
+            omicsFileNames <- c()
 
             for (k in seq(1, nData)) {
                 namDat <- paste(state[["input"]][[paste0("omicType", k)]], state[["input"]][[paste0("DataName", k)]], sep = ".")
                 omicsNames <- c(omicsNames, namDat)
                 omicsTypes <- c(omicsTypes, state[["input"]][[paste0("omicType", k)]])
                 omicsData[[namDat]] <- readOmicsData(file = paste(state[["dir"]],
-                                                                  state[["input"]][[paste0("data", k)]][["name"]], sep = "/")
-                )
+                                                                  state[["input"]][[paste0("data", k)]][["name"]], sep = "/"))
+                omicsFileNames <- c(omicsFileNames, state[["input"]][[paste0("data", k)]][["name"]])
             }
             local.rea.values$checkData <- list(omicsData = omicsData,
                                                omicsNames = omicsNames,
-                                               omicsTypes = omicsTypes)
+                                               omicsTypes = omicsTypes,
+                                               omicsFileNames = omicsFileNames)
             rea.values$restoring <- TRUE
         }
 
+        message("[RFLOMICS] # RESTORED SESSION -- You may have to click on each tab to trigger their restoration")
 
     })
 
@@ -305,6 +313,7 @@
             rea.values$exampleData        <- FALSE
 
             Experimental.Design.file <- input$Experimental.Design.file
+            local.rea.values$ExpFileName <- Experimental.Design.file[["name"]]
 
             design.tt <- .tryCatch_rflomics(
                 readExpDesign(file = Experimental.Design.file$datapath)
@@ -481,7 +490,7 @@
         renderUI({
 
             # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
-                # print("[RFLOMICS] RESTORE -- dipslayFactors UI (output)")
+            # print("[RFLOMICS] RESTORE -- dipslayFactors UI (output)")
 
             ExpDesign <- local.rea.values$ExpDesignOrg
 
@@ -521,7 +530,7 @@
     output$GetdFactorRef <- renderUI({
 
         # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
-            # print("[RFLOMICS] RESTORE -- GetdFactorRef UI")
+        # print("[RFLOMICS] RESTORE -- GetdFactorRef UI")
 
         if (is.null(local.rea.values$ExpDesignOrg))
             return()
@@ -717,6 +726,7 @@
         local.rea.values$omicsData    <- checkData$omicsData
         local.rea.values$omicsNames   <- checkData$omicsNames
         local.rea.values$omicsTypes   <- checkData$omicsTypes
+        local.rea.values$omicsFileNames <- checkData$omicsFileNames
 
         # create Rflomics object and plot data over view
         callModule(module = .modLoadOmicData,
@@ -777,6 +787,7 @@
     omicsData  <- list()
     omicsNames <- vector()
     omicsTypes <- vector()
+    omicsFileNames <- vector()
 
     # get list of omics data loaded from interface
     dataName.vec <- c()
@@ -864,6 +875,7 @@
             omicsData[[dataName]]  <- data.mat
             omicsNames <- c(omicsNames, dataName)
             omicsTypes <- c(omicsTypes, omicType)
+            omicsFileNames <- c(omicsFileNames, inDataK$name)
 
             validate({
                 need(rea.values$validate.status == 0, message = "error")
@@ -889,7 +901,8 @@
     return(list(
         omicsData = omicsData,
         omicsNames = omicsNames,
-        omicsTypes = omicsTypes
+        omicsTypes = omicsTypes,
+        omicsFileNames = omicsFileNames
     ))
 }
 
