@@ -125,7 +125,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
         output$overView <- renderUI({
             if (is.null(rea.values$datasetProcess))
                 return()
-            toto <<- session$userData$FlomicsMultiAssay
+
             box(title = "Dataset overview after data processing",
                 width = 12,
                 status = "warning",
@@ -264,11 +264,11 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                 collapsible = TRUE,
                 collapsed = TRUE,
                 tagList({
-
                     do.call(what = tabsetPanel, args = tabPanel.list)
                 })
             )
         })
+
 
         # coexpression summary
         output$CoExSummary <- renderUI({
@@ -376,6 +376,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                 tabPanel.list <- c(tabPanel.list,tabPanel_annot.list)
             }
 
+
             box(
                 title = "Summary of Co-expression analyses",
                 width = 12,
@@ -427,6 +428,84 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
 
         # Return the reactive selection directly.
         return(reactive(input$selectFeature))
+    })
+}
+
+
+
+# ---- Module load State ----
+
+#' @keywords internal
+#' @noRd
+.modLoadStateUI <- function(id) {
+    ns <- NS(id)
+
+    tagList(
+        uiOutput(ns("tableState"))
+    )
+}
+
+#' @keywords internal
+#' @noRd
+.modLoadState <-  function(id) {
+    moduleServer(id, function(input, output, session) {
+        ns <- session$ns
+
+        folders <- reactive({
+            folder <- getwd()
+            if (dir.exists(paste0(folder, "/shiny_bookmarks/"))) {
+                folder <- paste0(folder, "/shiny_bookmarks/")
+            } else if (dir.exists(paste0(folder, "/tmp/shiny_bookmarks/"))) {
+                folder <- paste0(folder, "/tmp/shiny_bookmarks/")
+            } else {
+                print("Searching for shiny_bookmarks but not finding any")
+            }
+
+            dirs <- list.dirs(folder, full.names = TRUE, recursive = FALSE)
+            if (length(dirs) == 0) return(NULL)
+
+            df <- data.frame(
+                "State_Folder" = basename(dirs),
+                "Last_Modification" = file.info(dirs)$mtime,
+                stringsAsFactors = FALSE
+            )
+            df[order(df[["Last_Modification"]], decreasing = TRUE),]
+        })
+
+        # Table of state folders available, with a button for each
+        output$tableState <- renderUI({
+            df <- folders()
+            if (is.null(df)) return(NULL)
+
+            df[["Choose"]] <- vapply(
+                df[["State_Folder"]],
+                function(x) {
+                    as.character(actionButton(
+                        ns(paste0("choose_", x)), "Choose",
+                        onclick = sprintf("Shiny.setInputValue('%s', '%s', {priority: 'event'})",
+                                          ns("chosen"), x)
+                    ))
+                },
+                character(1)
+            )
+
+            datatable(
+                df,
+                escape = FALSE,
+                options = list(dom = "t", paging = FALSE),
+                colnames = c("Stage Folder", "Last Modification", "Choose")
+            )
+        })
+
+        # Observer for updating the url
+        observeEvent(input$chosen, {
+            chosenState <- input$chosen
+            updateQueryString(
+                paste0("?_state_id_=", chosenState),
+                mode = "replace", session = session
+            )
+            session$reload()
+        })
     })
 }
 

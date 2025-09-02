@@ -68,6 +68,7 @@ shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targe
                                  icon = icon('dna'), selected = TRUE),
                         # menuItem(text = "Glossary page", tabName = "GlossaryPage",
                         #          icon = icon("address-book")),
+
                         menuItem(text = "Restore state", tabName = "loadState",
                                  icon = icon("upload")),
                         menuItem(text = "Load Data", tabName = "importData",
@@ -248,6 +249,24 @@ shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targe
         )
     })
 
+    # #### Item to save state ####
+    # output$restoreState <- renderUI({
+    #     column(
+    #         width = 12,
+    #         actionButton(
+    #             inputId = "restoreState",
+    #             label =  'Restore State')
+    #     )
+    # })
+
+    # observeEvent(input$restoreState, {
+    #   selectInput # for previously store states
+    #   updateQueryString(queryString = "?_state_id_=latest")
+    #   session$reload()
+    # })
+
+
+>>>>>>> 32e5c9a (added load state button and page)
     #############################################
     # dynamic content #
     output$mycontent <- renderUI({
