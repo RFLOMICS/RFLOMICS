@@ -139,6 +139,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                         omicNames = rea.values$datasetProcess,
                         raw = FALSE
                     )
+
                 })
             )
         })
@@ -429,6 +430,41 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
 
                 do.call(what = tabsetPanel, args = tabPanel.list)
 
+                    p.list <- getAnnotAnalysesSummary(
+                        session$userData$FlomicsMultiAssay,
+                        from = "CoExp",
+                        matrixType = "presence"
+                    )
+
+                    if (!is.null(rea.values$datasetCoExAnnot)) {
+                        tabPanel.list <-
+                            c(tabPanel.list,
+                              lapply(names(p.list), function(database) {
+                                  tabPanel(
+                                      title = paste0("ORA results from ", database),
+                                      fluidRow(column(width = 12,
+                                                      radioButtons(
+                                                          inputId = session$ns(paste0(
+                                                              database, "-domain.coex"
+                                                          )),
+                                                          label = "Domain",
+                                                          choices = names(p.list[[database]]),
+                                                          selected = names(p.list[[database]])[1],
+                                                          inline = TRUE
+                                                      )
+                                      )),
+                                      fluidRow(column(width = 12,
+                                                      renderPlot({
+                                                          p.list[[database]][[input[[paste0(database, "-domain.coex")]]]]
+                                                      },
+                                                      height = function() {500*length(rea.values$datasetProcess)},
+                                                      width = "auto")))
+                                  )
+                              }))}
+
+                    do.call(what = tabsetPanel, args = tabPanel.list)
+                })
+>>>>>>> 2309e2c (added load state button and page)
             )
         })
     }
