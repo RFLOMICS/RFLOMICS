@@ -49,37 +49,6 @@ rflomicsServer <- function(input, output, session) {
     # dynamic sidebar menu #
     output$mysidebar <- renderUI({
 
-        # listSideBarTags <- list(
-        #     sidebarMenu(id="tabs",
-        #                 menuItem(text = "Welcome", tabName = "coverPage",
-        #                          icon = icon('dna'), selected = TRUE),
-        #                 # menuItem(text = "Glossary page", tabName = "GlossaryPage",
-        #                 #          icon = icon("address-book")),
-        #                 menuItem(text = "Load Data", tabName = "importData",
-        #                          icon = icon('download')),
-        #                 menuItemOutput(outputId = "SetUpModelMenu"),
-        #                 menuItemOutput(outputId = "omics"),
-        #                 menuItemOutput(outputId = "omicsSumUI"),
-        #                 menuItemOutput(outputId = "Integration")
-        #     ),
-        #
-        #     tags$br(),
-        #     tags$br(),
-        #     uiOutput("runReport"),
-        #     tags$br(),
-        #     tags$br(),
-        #     uiOutput("downloadResults")
-        # )
-        #
-        # if (rea.values[["loadData"]]) {
-        #     listSideBarTags <- c(listSideBarTags,
-        #                          list(tags$br(),
-        #                               tags$br(),
-        #                               bookmarkButton(label =  'Save State')))
-        # }
-        #
-        # do.call(tagList, listSideBarTags)
-
         tagList(
             sidebarMenu(id="tabs",
                         menuItem(text = "Welcome", tabName = "coverPage",
@@ -616,6 +585,18 @@ rflomicsServer <- function(input, output, session) {
                 })
         })
 
+
+    # ---- Restore ----
+
+    onRestore(function(state) {
+        rea.values$stateDir <- state[["dir"]]
+        rea.values$restoring <- TRUE
+        rea.values$stateInput <- state[["input"]]
+    })
+
+    onRestored(function(state) {
+        print("Server restoration is completed")
+    })
 
 
 }
