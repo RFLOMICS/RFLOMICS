@@ -200,7 +200,6 @@
 
     # ---- initialization ----
 
-
     local.rea.values <- reactiveValues(
         plots        = FALSE,
         addDataNum   = 1
@@ -256,8 +255,8 @@
     })
 
     onRestore(function(state, session = getDefaultReactiveDomain()) {
-        # print("[RFLOMICS] RESTORE -- OnRestore")
-        # print("[RFLOMICS] RESTORE -- 01 - Load Data")
+        rea.values$restoring <- TRUE
+        local.rea.values$restoring <- TRUE
 
         if (is.null(state[["input"]][["loadEcoseedData"]]) || state[["input"]][["loadEcoseedData"]] == 0) {
 
@@ -296,21 +295,15 @@
             rea.values$restoring <- TRUE
         }
 
-        message("[RFLOMICS] # RESTORED STATE -- ")
-        message("[RFLOMICS] #                -- You may have to click on each tab to trigger their restoration")
-        message("[RFLOMICS] #                -- It is better to restart your analysis if any loadData parameter has to be changed")
-        message("[RFLOMICS] #                -- If you change any parameters in the loadData tab, you might encounter some errors")
+        message("[RFLOMICS] # RESTORED STATE ")
+        message("[RFLOMICS] # ---> You may have to click on each tab to trigger their restoration")
+        message("[RFLOMICS] # ---> You HAVE TO click on the Load Data tab to be able to save properly again")
+        message("[RFLOMICS] # ---> It is better to restart your analysis if any loadData parameter has to be changed")
+        message("[RFLOMICS] # ---> If you change any parameters in the loadData tab, you might encounter some errors")
     })
-
-#     onRestored(function(state, session = getDefaultReactiveDomain()){
-#
-#         local.rea.values$restoring <- FALSE
-#
-#     })
 
     # ---- Load experimental design ----
     # as soon as the "design file" has been loaded
-
 
     observeEvent(input$Experimental.Design.file, {
         req(input$Experimental.Design.file)
