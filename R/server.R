@@ -55,6 +55,8 @@ rflomicsServer <- function(input, output, session) {
                                  icon = icon('dna'), selected = TRUE),
                         # menuItem(text = "Glossary page", tabName = "GlossaryPage",
                         #          icon = icon("address-book")),
+                        menuItem(text = "Load State", tabName = "loadState",
+                                 icon = icon("address-book")),
                         menuItem(text = "Load Data", tabName = "importData",
                                  icon = icon('download')),
                         menuItemOutput(outputId = "SetUpModelMenu"),
@@ -71,7 +73,10 @@ rflomicsServer <- function(input, output, session) {
             uiOutput("downloadResults"),
             tags$br(),
             tags$br(),
-            uiOutput("saveState")
+            uiOutput("saveState"),
+            # tags$br(),
+            # tags$br(),
+            # uiOutput("restoreState")
 
         )
     })
@@ -161,6 +166,22 @@ rflomicsServer <- function(input, output, session) {
     })
 
 
+    # #### Item to save state ####
+    # output$restoreState <- renderUI({
+    #     column(
+    #         width = 12,
+    #         actionButton(
+    #             inputId = "restoreState",
+    #             label =  'Restore State')
+    #     )
+    # })
+
+    # observeEvent(input$restoreState, {
+    #   selectInput # for previously store states
+    #   updateQueryString(queryString = "?_state_id_=latest")
+    #   session$reload()
+    # })
+
 
     #############################################
     # dynamic content #
@@ -194,6 +215,11 @@ rflomicsServer <- function(input, output, session) {
                 #         GlossaryPageUI()
                 #
                 # ),
+                #### Load State        ####
+                ###########################
+                tabItem(tabName = "loadState",
+                        .modLoadStateUI("staterefresh")
+                ),
                 #### Import data       ####
                 ###########################
                 tabItem(tabName = "importData",
@@ -402,6 +428,8 @@ rflomicsServer <- function(input, output, session) {
     # check design (complete and balanced)
     inputData <- callModule(.modLoadData, "data", rea.values)
 
+    .modLoadState("staterefresh")
+
     ##########################################
     # Part2 : Set GLM model
     ##########################################
@@ -594,9 +622,9 @@ rflomicsServer <- function(input, output, session) {
         rea.values$stateInput <- state[["input"]]
     })
 
-    onRestored(function(state) {
-        message("RESTORED STATE Server restoration is completed")
-    })
+    # onRestored(function(state) {
+    #     message("RESTORED STATE Server restoration is completed")
+    # })
 
 
 }
