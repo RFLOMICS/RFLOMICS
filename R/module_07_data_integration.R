@@ -119,15 +119,14 @@
     })
 
     # select datasets to integrate
-    output$selectDataUI <- .integrationSelectDataUI(session, rea.values,
-                                                    input)
+    output$selectDataUI <- .integrationSelectDataUI(session, rea.values, input)
 
     # select method of variable reduction
     output$selectVariablesUI <-
         .integrationPrepareParamUI(session, input, rea.values)
 
     # over view of selected data after variable reduction
-    output$prepareDataUI <- .integrationPrepareDataUI(session, input)
+    output$prepareDataUI <- .integrationPrepareDataUI(session, input, method)
 
     # before MOFA integration
     observeEvent(input$run_prep, {
@@ -768,7 +767,7 @@
 #
 #' @noRd
 #' @keywords internal
-.integrationPrepareDataUI <- function(session, input) {
+.integrationPrepareDataUI <- function(session, input, method) {
 
     renderUI({
         if (length(input$selectData) == 0) return()
@@ -778,9 +777,9 @@
         MAE2Integrate <- subRflomicsMAE(session$userData$FlomicsMultiAssay,
                                         input$selectData)
 
-        for(set in input$selectData){
+        for (set in input$selectData){
 
-            if(input[[paste0("selectmethode", set)]] == "diff"){
+            if( input[[paste0("selectmethode", set)]] == "diff"){
 
                 variable.to.keep <- getDEList(
                     object = session$userData$FlomicsMultiAssay[[set]],
@@ -825,10 +824,20 @@
 
         textExp <- "This graph represents the dataset you will use in
         the integration (tables and samples).
-        Gray areas represent missing samples. "
+        White areas represent missing samples. "
+
+        for (SE.name in names(MAE2Integrate)) {
+            MAE2Integrate[[SE.name]] <- MAE2Integrate[[SE.name]][, getSelectedSamples(MAE2Integrate, SE.name = SE.name)]
+        }
+
+        if (method == "mixOmics") {
+            textExp <- paste0(textExp,
+            "You chose mixOmics, only the complete cases will be analyzed.")
+            MAE2Integrate <- MAE2Integrate[, complete.cases(MAE2Integrate), ]
+        }
 
         box(
-            title = "Overview",
+            title = "Overview of the data to integrate",
             width = 12,
             status = "warning",
             solidHeader = FALSE,
