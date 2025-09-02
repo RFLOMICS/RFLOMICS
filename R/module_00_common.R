@@ -126,6 +126,13 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
             if (is.null(rea.values$datasetProcess))
                 return()
 
+            todisplay <- session$userData$FlomicsMultiAssay
+
+            for (SE.name in names(todisplay)) {
+                todisplay[[SE.name]] <-
+                    todisplay[[SE.name]][, getSelectedSamples(todisplay, SE.name = SE.name)]
+            }
+
             box(title = "Dataset overview after data processing",
                 width = 12,
                 status = "warning",
@@ -135,7 +142,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
 
                 renderPlot({
                     plotDataOverview(
-                        session$userData$FlomicsMultiAssay,
+                        todisplay,
                         omicNames = rea.values$datasetProcess
                     )
                 })
