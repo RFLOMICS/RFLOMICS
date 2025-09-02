@@ -53,7 +53,6 @@
              dataset,
              rea.values) {
         ns <- session$ns
-        local.rea.values <- reactiveValues()
 
         # UI
         output$tabsetPanel_DB_UI <- renderUI({
@@ -81,6 +80,8 @@
             }
             do.call(what = tabsetPanel, args = tabPanel.list)
         })
+
+
 
         # SERVEUR
         callModule(
@@ -148,9 +149,39 @@
                              database,
                              rea.values) {
     ns <- session$ns
-    local.rea.values <- reactiveValues(dataPathAnnot = NULL)
 
-    # UI
+    if (!rea.values$restoring) {
+        local.rea.values <- reactiveValues()
+        local.rea.values$dataPathAnnot <- NULL
+    } else {
+        local.rea.values <- reactiveValues(restoring = TRUE,
+                                           CustomFilehasbeenrestored = FALSE)
+    }
+
+
+    ### select columns
+    observeEvent(input$annotationFileCPR, { # runs after the input$run if restoring :(
+
+        if (is.null(local.rea.values$restoring) || !local.rea.values$restoring || local.rea.values$CustomFilehasbeenrestored) {
+            # Outside of restoration state, restored after observe input$run, for some reason.
+
+            local.rea.values$dataPathAnnot <- NULL
+            local.rea.values$dataAnnotName <- NULL
+
+            local.rea.values$dataPathAnnot <- input$annotationFileCPR$datapath
+            local.rea.values$dataAnnotName <- input$annotationFileCPR$name
+        } else  {
+            if ("annotationFileCPR" %in% names(input)) {
+                local.rea.values$dataPathAnnot <- paste0(rea.values$stateDir, "/",  session$ns(""), "DiffExpEnrichAnal/", input$annotationFileCPR$name)
+                local.rea.values$dataAnnotName <- input$annotationFileCPR$name
+                local.rea.values$CustomFilehasbeenrestored <- TRUE
+            } else {
+                modalDialog("Missing Annotation File Input")
+            }
+        }
+        output$selectColumnsCustom <- .annotFileColumns(session, local.rea.values, rea.values, dataset)
+
+    })
 
     ## setting
     output$ParamDB_UI <- renderUI({
@@ -172,6 +203,7 @@
     ## display results of enrichment analysis for selected database
     output$tabsetRes_UI <- renderUI({
         ### for diff analysis results
+
         tabPanel.list <- list(
             tabPanel(
                 "Enrichment from differential expression analysis results",
@@ -206,17 +238,6 @@
     ## custom settings
     output$AnnotParamCustom_UI <-
         .annotParamCustom(session, rea.values, dataset)
-
-    ### select columns
-    observeEvent(input$annotationFileCPR, {
-        local.rea.values$dataPathAnnot <- NULL
-        local.rea.values$dataPathAnnot <-
-            input$annotationFileCPR$datapath
-        output$selectColumnsCustom <-
-            .annotFileColumns(session, local.rea.values,
-                              dataset)
-
-    })
 
     # SERVEUR
     callModule(
@@ -289,7 +310,7 @@
         # UI
         ## setting
         output$settings <-
-            .annotSettings(session, rea.values, dataset, listSource)
+            .annotSettings(session, rea.values, dataset, listSource, local.rea.values)
 
         ## display results
         output$enrichSummary <- .outEnrichSummary(session,
@@ -312,7 +333,22 @@
 
         ## run enrichment
         # ---- run Annotation  ----
-        observeEvent(input$run, {
+        observeEvent(input$run, { # 1er observer à passer, ça ne devrait pas être le premier
+
+            # Local reactive variables for controling the restoration.
+            if(is.null(local.rea.values[[paste0("hasbeenrestored-", listSource)]]))
+                local.rea.values[[paste0("hasbeenrestored-", listSource)]] <- FALSE
+
+            if (rea.values$restoring &&
+                is.null(local.rea.values[[paste0("restoring-", listSource)]]) &&
+                !local.rea.values[[paste0("hasbeenrestored-", listSource)]]) {
+                local.rea.values[[paste0("restoring-", listSource)]] <- TRUE
+            }
+
+            # Condition for going into restoration mode.
+            restoringCond <- !is.null(local.rea.values[[paste0("restoring-", listSource)]] )  &&
+                local.rea.values[[paste0("restoring-", listSource)]]  &&
+                !local.rea.values[[paste0("hasbeenrestored-", listSource)]]
 
             ### GO checks ###
             if (database == "GO") {
@@ -407,60 +443,124 @@
             }
 
             ### Custom checks ###
-            if (database == "custom") {
+            if (database == "custom") { # apres input$run (normal, il est dedans)
+
+                # --- Bookmark functions ----
+                onBookmark(function(state, session = getDefaultReactiveDomain()) {
+
+                    if (!is.null(local.rea.values$dataPathAnnot)) {
+
+                        annotation <-
+                            fread(
+                                file = local.rea.values$dataPathAnnot,
+                                sep = "\t",
+                                header = TRUE
+                            )
+
+                        write.table(annotation,
+                                    file = paste(state[["dir"]], local.rea.values[["dataAnnotName"]], sep = "/"),
+                                    sep = "\t",
+                                    quote = FALSE,
+                                    row.names = FALSE,
+                                    col.names = TRUE)
+                    }
+                })
+
+
                 # check param
                 ## if custom annotation file
-                condition <- !is.null(local.rea.values$dataPathAnnot)
-                messCond  <- "Please load a custom annotation file."
-                if (!condition) {
-                    showModal(modalDialog(title = "Missing annotation file", messCond))
-                }
-                validate({
-                    need(condition,  message = messCond)
-                })
 
-                # Check some custom elements and annotation file
-                condition <-
-                    input2$col_geneName != "" && input2$col_termID != ""
-                messCond <-
-                    "Please choose the columns names for the omics features names/ID and the ontology terms ID."
-                if (!condition) {
-                    showModal(modalDialog(title = "Missing mandatory settings", messCond))
-                }
-                validate({
-                    need(condition, message = messCond)
-                })
+                if (restoringCond) {
 
-                # set param
-                domain <- NULL
-                annotation2 <- NULL
-                col_domain_arg <- NULL
+                    name1 <- session$ns("")
+                    local.rea.values$dataPathAnnot <- paste0(rea.values$stateDir, "/", gsub("-$","", name1), "/", input2$annotationFileCPR$name)
+                    local.rea.values$dataAnnotName <- input2$annotationFileCPR$name
 
-                annotation <-
-                    fread(
-                        file = local.rea.values$dataPathAnnot,
-                        sep = "\t",
-                        header = TRUE
-                    )
+                    annotation <-
+                        fread(
+                            file = local.rea.values$dataPathAnnot,
+                            sep = "\t",
+                            header = TRUE
+                        )
 
-                annotation <- rename(annotation,
-                                     gene = input2$col_geneName,
-                                     term = input2$col_termID)
-
-                if (input2$col_domain != "")
+                    # At this stage, does not know input2$col_geneName and co.
+                    # problem with output$selectColumnsCustom
+                    # Even with priority = 1 in annotationCPR input, there is no
+                    # input2$col_geneName.
+                    # Relying on rea.values$stateInput instead.
+                    # onRestore won't work, for some reason...
+                    # TODO : fix this!
+                    name1 <- gsub("DiffExpEnrichAnal-|CoExpEnrichAnal-", "", name1)
                     annotation <- rename(annotation,
-                                         domain = input2$col_domain)
+                                         gene = rea.values$stateInput[[paste0(name1, "col_geneName")]],
+                                         term = rea.values$stateInput[[paste0(name1, "col_termID")]])
 
-                if (input2$col_termName != "")
+                    if (!is.null(rea.values$stateInput[[paste0(name1, "col_domain")]]) &&
+                        rea.values$stateInput[[paste0(name1, "col_domain")]] != "")
+                        annotation <- rename(annotation,
+                                             domain = rea.values$stateInput[[paste0(name1, "col_domain")]])
+
+                    if ( !is.null(rea.values$stateInput[[paste0(name1, "col_termName")]]) &&
+                         rea.values$stateInput[[paste0(name1, "col_termName")]] != "")
+                        annotation <- rename(annotation,
+                                             name = rea.values$stateInput[[paste0(name1, "col_termName")]])
+
+                } else {
+                    # Outside of restoration state (normal mode)
+
+                    condition <- !is.null(local.rea.values$dataPathAnnot)
+                    messCond  <- "Please load a custom annotation file."
+                    if (!condition) {
+                        showModal(modalDialog(title = "Missing annotation file", messCond))
+                    }
+                    validate({
+                        need(condition,  message = messCond)
+                    })
+
+                    # Check some custom elements and annotation file
+                    condition <-
+                        input2$col_geneName != "" && input2$col_termID != ""
+                    messCond <-
+                        "Please choose the columns names for the omics features names/ID and the ontology terms ID."
+                    if (!condition) {
+                        showModal(modalDialog(title = "Missing mandatory settings", messCond))
+                    }
+                    validate({
+                        need(condition, message = messCond)
+                    })
+
+                    # set param
+                    domain <- NULL
+                    annotation2 <- NULL
+                    col_domain_arg <- NULL
+
+                    annotation <-
+                        fread(
+                            file = local.rea.values$dataPathAnnot,
+                            sep = "\t",
+                            header = TRUE
+                        )
+
                     annotation <- rename(annotation,
-                                         name = input2$col_termName)
+                                         gene = input2$col_geneName,
+                                         term = input2$col_termID)
 
-                ##
+                    if (input2$col_domain != "")
+                        annotation <- rename(annotation,
+                                             domain = input2$col_domain)
+
+                    if (input2$col_termName != "")
+                        annotation <- rename(annotation,
+                                             name = input2$col_termName)
+                }
+
+
                 paramList <- list(
                     pvalueCutoff = input2$pValue_custom,
                     database     = database,
                     annotation   = annotation
                 )
+
             }
 
             # prevent multiple execution
@@ -503,6 +603,9 @@
                 do.call(runAnnotationEnrichment, paramList)
 
             rea.values[[dataset]][[listSource]] <- TRUE
+
+            local.rea.values[[paste0("restoring-", listSource)]] <- FALSE # No need for it anymore
+            local.rea.values[[paste0("hasbeenrestored-", listSource)]] <- TRUE # force stop restoration for this
 
             #---- progress bar ----#
             progress$inc(1, detail = paste("All done", 100, "%", sep = ""))
@@ -586,7 +689,7 @@
 # ---- UI param functions ----
 #' @noRd
 #' @keywords internal
-.annotSettings <- function(session, rea.values, dataset, listSource) {
+.annotSettings <- function(session, rea.values, dataset, listSource, local.rea.values) {
     ns <- session$ns
 
     renderUI({
@@ -635,6 +738,11 @@
 .annotParamCustom <- function(session, rea.values, dataset) {
     ns <- session$ns
 
+    dataSE <- session$userData$FlomicsMultiAssay[[dataset]]
+    varLabel <- .omicsDic(dataSE)$variableName
+    varLabel <- paste0(toupper(substr(varLabel, 1, 1)),
+                       substr(varLabel, 2, nchar(varLabel)))
+
     renderUI({
         if (rea.values[[dataset]]$diffValid == FALSE)
             return()
@@ -676,17 +784,27 @@
             )
         )
     })
+
 }
 
 #' @noRd
 #' @keywords internal
-.annotFileColumns <- function(session, local.rea.values,
-                              dataset) {
+.annotFileColumns <- function(session, local.rea.values, rea.values, dataset) {
     ns <- session$ns
     dataSE <- session$userData$FlomicsMultiAssay[[dataset]]
     varLabel <- .omicsDic(dataSE)$variableName
     varLabel <- paste0(toupper(substr(varLabel, 1, 1)),
                        substr(varLabel, 2, nchar(varLabel)))
+
+    # Cette partie pose problème à la restoration
+    # N'a acces qu'aux variables locales réactives, pas aux variables globales
+    # N'est pas un observeEvent, ne sera pas trigger par le restore
+
+    annotation <- fread(
+        file = local.rea.values$dataPathAnnot,
+        sep = "\t",
+        header = TRUE
+    )
 
     renderUI({
         annotation <- fread(
@@ -745,6 +863,7 @@
         )
     })
 }
+
 
 #' @noRd
 #' @keywords internal
