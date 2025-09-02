@@ -252,9 +252,12 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                                                           p.list[[database]][[input[[paste0(database, "-domain.coex")]]]]
                                                       },
                                                       height = function() {500*length(rea.values$datasetProcess)},
-                                                      width = "auto")))
+
+                                                      width = "auto")
+                                      ))
                                   )
-                              }))}
+                              }))
+                    }
 
                     do.call(what = tabsetPanel, args = tabPanel.list)
                 })
