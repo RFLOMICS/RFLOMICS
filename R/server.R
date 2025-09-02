@@ -595,7 +595,7 @@ rflomicsServer <- function(input, output, session) {
     })
 
     onRestored(function(state) {
-        print("Server restoration is completed")
+        message("RESTORED STATE Server restoration is completed")
     })
 
 
