@@ -190,7 +190,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                                           width = 12,
                                           renderPlot({
                                               p.list[[database]][[input[[paste0(database, "-domain.diff")]]]]
-                                          })
+                                          }, height = function() {400*length(rea.values$datasetProcess)})
                                       ))
                                   )
                               })
@@ -250,7 +250,9 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                                       fluidRow(column(width = 12,
                                                       renderPlot({
                                                           p.list[[database]][[input[[paste0(database, "-domain.coex")]]]]
-                                                      })
+                                                      },
+                                                      height = function() {500*length(rea.values$datasetProcess)},
+                                                      width = "auto")
                                       ))
                                   )
                               }))
