@@ -137,8 +137,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                     plotDataOverview(
                         session$userData$FlomicsMultiAssay,
                         omicNames = rea.values$datasetProcess,
-                        raw = FALSE
-                    )
+                        raw = FALSE)
                 })
             )
         })
@@ -253,11 +252,9 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                                                           p.list[[database]][[input[[paste0(database, "-domain.coex")]]]]
                                                       },
                                                       height = function() {500*length(rea.values$datasetProcess)},
-                                                      width = "auto")
-                                      ))
+                                                      width = "auto")))
                                   )
-                              }))
-                    }
+                              }))}
 
                     do.call(what = tabsetPanel, args = tabPanel.list)
                 })
@@ -372,6 +369,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                 )
                 df[order(df[["Last_Modification"]], decreasing = TRUE),]
             }
+
 
         })
 
