@@ -1041,8 +1041,8 @@ setMethod(
                 extract$FC <- extract$GeneRatio / extract$BgRatio
 
                 extract$contrastNameLabel <- extract$contrastName
-                extract$contrastName <-
-                    paste(extract$contrastName, extract$dataset, sep = "\n")
+                # extract$contrastName <-
+                #     paste(extract$contrastName, extract$dataset, sep = "\n")
 
                 extract$presence <- 1
                 extract$presence <- factor(extract$presence)
@@ -1058,34 +1058,36 @@ setMethod(
                         paste0(dat, "\n", "adj.p.value:", getEnrichSettings(object[[dat]], from0, database)$pvalueCutoff)
                     }))
 
+                ntab <- length(unique(extract$dataset))
+
                 p.list[[database]][[dom]] <- switch(matrixType,
                             "presence" = {
-                                ggplot(extract, aes(x = contrastName, y = Description)) +
+                                ggplot(extract, aes(x = Description, y = contrastName)) +
                                     geom_tile(aes(fill = presence, group = p.adjust)) +
                                     scale_fill_manual(values = c("0" = "white", "1" = "firebrick"))},
                             "GeneRatio" = {
-                                ggplot(extract, aes(x = contrastName, y = Description)) +
+                                ggplot(extract, aes(x = Description, y = contrastName)) +
                                     geom_tile(aes(fill = GeneRatio, group = p.adjust)) +
                                     scale_fill_gradient2(low = "white", high = "red", guide = "colourbar") },
                             "p.adjust" = {
-                                ggplot(extract, aes(x = contrastName, y = Description)) +
+                                ggplot(extract, aes(x = Description, y = contrastName)) +
                                     geom_tile(aes(fill = p.adjust, group = GeneRatio)) +
                                     scale_fill_gradient2(low = "red", high = "white", guide = "colourbar", midpoint = 0.1)
                             },
                             "FC" = {
-                                ggplot(extract, aes(x = contrastName, y = Description)) +
+                                ggplot(extract, aes(x = Description, y = contrastName)) +
                                     geom_tile(aes(fill = FC, group = p.adjust)) +
                                     scale_fill_gradient2(low = "white", high = "red", guide = "colourbar")
                             })
 
                 p.list[[database]][[dom]] <- p.list[[database]][[dom]] + theme_bw() +
-                    facet_wrap(.~dataset) +
+                    facet_wrap(dataset~., nrow = ntab, strip.position = "left") +
                     theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
                           axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
                           axis.text.y = element_text(size = 12),
                           axis.title.y = element_blank(),
                           axis.title.x = element_blank(), legend.position = "bottom",
-                          strip.text.x = element_text(size = 12))
+                          strip.text.y = element_text(size = 12))
 
             }
         }
