@@ -264,6 +264,48 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                 collapsible = TRUE,
                 collapsed = TRUE,
                 tagList({
+                    tabPanel.list <- list(
+                        tabPanel(title = "DE results",
+                                 renderPlot({
+                                     getDiffAnalysesSummary(
+                                         session$userData$FlomicsMultiAssay, plot = TRUE)
+                                 })))
+
+                    p.list <- getAnnotAnalysesSummary(
+                        session$userData$FlomicsMultiAssay,
+                        from = "DiffExp",
+                        matrixType = "presence"
+                    )
+
+                    if (!is.null(rea.values$datasetDiffAnnot)) {
+                        tabPanel.list <-
+                            c(tabPanel.list,
+                              lapply(names(p.list), function(database) {
+                                  tabPanel(
+                                      title = paste0("ORA results from ", database),
+                                      fluidRow(column(
+                                          width = 12,
+                                          radioButtons(
+                                              inputId = session$ns(paste0(
+                                                  database, "-domain.diff"
+                                              )),
+                                              label = "Domain",
+                                              choices = names(p.list[[database]]),
+                                              selected = names(p.list[[database]])[1],
+                                              inline = TRUE
+                                          )
+                                      )),
+                                      fluidRow(column(
+                                          width = 12,
+                                          renderPlot({
+                                              p.list[[database]][[input[[paste0(database, "-domain.diff")]]]]
+                                          }, height = function() {400*length(rea.values$datasetProcess)})
+                                      ))
+                                  )
+                              })
+                            )
+                    }
+>>>>>>> 38e219a (master rebase conflicts)
                     do.call(what = tabsetPanel, args = tabPanel.list)
                 })
             )
@@ -386,6 +428,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                 collapsed = TRUE,
 
                 do.call(what = tabsetPanel, args = tabPanel.list)
+
             )
         })
     }
