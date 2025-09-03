@@ -69,7 +69,9 @@ setGeneric(
   name = "plotDataOverview",
   def  = function(object,
                   omicNames = NULL,
-                  realSize = FALSE)
+                  realSize = FALSE,
+                  raw = FALSE,
+                  completeCases = FALSE)
     standardGeneric("plotDataOverview")
 )
 

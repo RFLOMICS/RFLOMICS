@@ -222,14 +222,14 @@
                     # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
                     #                                  raw = FALSE)
                     transformedSE <-
-                      switch (
-                        getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
-                        "RNAseq" =
-                          getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                           filter = TRUE, log = TRUE ),
-                        getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                         norm = TRUE)
-                      )
+                        switch (
+                            getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
+                            "RNAseq" =
+                                getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                                 filter = TRUE, log = TRUE ),
+                            getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                             norm = TRUE)
+                        )
                     transformedSE <- assay(transformedSE)
 
                     cv_vect <- unlist(
@@ -477,8 +477,11 @@
 
                 listTab <- list(
                     tabPanel(
-                        "Overview",
+                        "Overview - Features Table",
                         .outMOOverview(Data_res, settings)),
+                    tabPanel(
+                        "Overview - Samples Graph",
+                        .outMOOverviewDisplay(session, Data_res)),
                     tabPanel(
                         "Explained Variance",
                         .outMOexplainedVar(session, Response)
@@ -794,14 +797,14 @@
                 # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
                 #                                  raw = FALSE)
                 transformedSE <-
-                  switch (
-                    getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
-                    "RNAseq" =
-                      getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                       filter = TRUE, log = TRUE ),
-                    getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                     norm = TRUE)
-                )
+                    switch (
+                        getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
+                        "RNAseq" =
+                            getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                             filter = TRUE, log = TRUE ),
+                        getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                         norm = TRUE)
+                    )
                 transformedSE <- assay(transformedSE)
                 cv_vect <- unlist(
                     lapply(seq_len(nrow(transformedSE)),
@@ -826,13 +829,9 @@
         the integration (tables and samples).
         White areas represent missing samples. "
 
-        for (SE.name in names(MAE2Integrate)) {
-            MAE2Integrate[[SE.name]] <- MAE2Integrate[[SE.name]][, getSelectedSamples(MAE2Integrate, SE.name = SE.name)]
-        }
-
         if (method == "mixOmics") {
             textExp <- paste0(textExp,
-            "You chose mixOmics, only the complete cases will be analyzed.")
+                              "You chose mixOmics, only the complete cases will be analyzed.")
             MAE2Integrate <- MAE2Integrate[, complete.cases(MAE2Integrate), ]
         }
 
@@ -853,7 +852,8 @@
             hr(),
             renderPlot(
                 plotDataOverview(MAE2Integrate,
-                                 omicNames = input$selectData) +
+                                 omicNames = input$selectData,
+                                 raw = FALSE) +
                     theme(axis.text.y = element_text(size = 12),
                           axis.text.x = element_text(size = 10,
                                                      angle = 45,
@@ -1068,6 +1068,33 @@
 
         }))
     )
+}
+
+#' @noRd
+#' @keywords internal
+.outMOOverviewDisplay <- function(session, Data_res) {
+
+    textExplained <- paste0("This graph shows the data, samples and feature numbers that have been used for mixOmics integration.",
+                            " As mixOmics only takes into account the complete cases,",
+                            " some samples might have been removed during the processing.")
+
+    renderUI({
+        tagList(
+            br(),
+            div(class = "explain-p", HTML(textExplained)),
+            column(12, renderPlot({
+
+                plotDataOverview(session$userData$FlomicsMultiAssay,
+                                 omicNames = names(Data_res[["X"]]),
+                                 raw = FALSE,
+                                 completeCases = TRUE) +
+                    theme(axis.text.y = element_text(size = 12),
+                          axis.text.x = element_text(size = 10,
+                                                     angle = 45,
+                                                     hjust = 1))
+            }))
+        )
+    })
 }
 
 #' @noRd
