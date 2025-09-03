@@ -313,8 +313,32 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
 .modLoadStateUI <- function(id) {
     ns <- NS(id)
 
+    textExp <- "On this page, you can restore previously saved (or bookmarked, in shiny language) states.
+    When bookmarking, the app will automatically save the inputs and tables inside a folder named
+    shiny_bookmarks/ (or tmp/shiny_bookmards/ depending on your operating system). If you have any state
+    in this bookmark folder, they will appear here."
+
     tagList(
-        uiOutput(ns("tableState"))
+        tags$head(
+            tags$link(rel = "stylesheet", type = "text/css", href = "classesStyles.css")
+        ),
+        br(),
+        box(
+            title = "Loading and restoring previous bookmarked states",
+            width = 12,
+            status = "warning",
+            tags$style(
+                ".explain-p {
+                            color: Gray;
+                            text-justify: inter-word;
+                            font-style: italic;
+                            }"
+            ),
+            div(class = "explain-p", HTML(textExp)),
+            br(),
+            br(),
+            uiOutput(ns("tableState"))
+        )
     )
 }
 
