@@ -58,7 +58,13 @@
 
 \S4method{subRflomicsMAE}{RflomicsMAE}(object, omicNames = NULL)
 
-\S4method{plotDataOverview}{RflomicsMAE}(object, omicNames = NULL, realSize = FALSE)
+\S4method{plotDataOverview}{RflomicsMAE}(
+  object,
+  omicNames = NULL,
+  realSize = FALSE,
+  raw = FALSE,
+  completeCases = FALSE
+)
 
 \S4method{plotConditionsOverview}{RflomicsMAE}(object, omicNames = NULL)
 }
@@ -71,7 +77,13 @@
 
 \item{omicNames}{a vector with dataset names}
 
-\item{realSize}{booleen value}
+\item{realSize}{booleen value, influence the display size}
+
+\item{raw}{boolean. If TRUE, displays the raw data without any selection. If
+FALSE, displays the data with removed samples.}
+
+\item{complete.cases}{boolean. If true, only shows the complete cases of the
+object.}
 }
 \value{
 A \code{RflomicsMAE} object.
@@ -130,7 +142,7 @@ and results of a multi-omics integration analysis.
 
 
 \itemize{
-   \item getOmicsTypes: return a named vector with omics type of each 
+   \item getOmicsTypes: return a named vector with omics type of each
    dataset ("RNAseq", "proteomics", "metabolomics")}
 
 
@@ -139,7 +151,7 @@ and results of a multi-omics integration analysis.
 
 
 \itemize{
-   \item getFactorTypes: return a named vector with experimental factor types 
+   \item getFactorTypes: return a named vector with experimental factor types
    ("bio", "batch" or "meta").}
 
 
@@ -156,17 +168,17 @@ and results of a multi-omics integration analysis.
 
 
 \itemize{
-   \item getRflomicsSE: return a \link{RflomicsSE} object with selected 
+   \item getRflomicsSE: return a \link{RflomicsSE} object with selected
    dataset}
 
 
 \itemize{
-   \item getFactorModalities: return a vector with the modality names of 
+   \item getFactorModalities: return a vector with the modality names of
    selected factor.}
 
 
 \itemize{
-   \item subRflomicsMAE: return a \link{RflomicsMAE-class} object with selected 
+   \item subRflomicsMAE: return a \link{RflomicsMAE-class} object with selected
    datasets.}
 }
 
@@ -176,13 +188,13 @@ and results of a multi-omics integration analysis.
 
 \itemize{
    \item plotDataOverview:
-This function plot an overview of the loaded datasets displaying per sample 
+This function plot an overview of the loaded datasets displaying per sample
 (n=number of entities (genes/metabolites/proteins); k=number of samples)}
 
 
 \itemize{
    \item plotConditionsOverview:
-A complete design and at least one biological and one batch factors are 
+A complete design and at least one biological and one batch factors are
 required for using RFLOMICS workflow.}
 }
 

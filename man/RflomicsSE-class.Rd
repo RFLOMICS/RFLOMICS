@@ -78,7 +78,7 @@ The slot metadata is structured as follows:
 
 
 \itemize{
-   \item getOmicsTypes: return a named vector with omics type of dataset 
+   \item getOmicsTypes: return a named vector with omics type of dataset
    ("RNAseq", "proteomics", "metabolomics")}
 
 
@@ -87,7 +87,7 @@ The slot metadata is structured as follows:
 
 
 \itemize{
-   \item getFactorTypes: return a named vector with experimental factor types 
+   \item getFactorTypes: return a named vector with experimental factor types
    ("bio", "batch" or "meta").}
 
 
@@ -104,7 +104,7 @@ The slot metadata is structured as follows:
 
 
 \itemize{
-   \item getFactorModalities: return a vector with the modality names of 
+   \item getFactorModalities: return a vector with the modality names of
    selected factor.}
 }
 

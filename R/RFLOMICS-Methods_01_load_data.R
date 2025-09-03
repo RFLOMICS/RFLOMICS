@@ -32,7 +32,7 @@ setMethod(f          = "getProjectName",
 setMethod(f          = "getDesignMat",
           signature  = "RflomicsMAE",
           definition <- function(object){
-            
+
             return(as.data.frame(colData(object)))
           })
 
@@ -46,7 +46,7 @@ setMethod(f          = "getDesignMat",
 setMethod(f          = "getDesignMat",
           signature  = "RflomicsSE",
           definition <- function(object){
-            
+
             return(as.data.frame(colData(object)))
           })
 
@@ -62,10 +62,10 @@ setMethod(f          = "getDesignMat",
 setMethod(f          = "getDatasetNames",
           signature  = "RflomicsMAE",
           definition <- function(object){
-            
+
             ExperimentNames <- unlist(metadata(object)$omicList)
             names(ExperimentNames) <- NULL
-            
+
             return(ExperimentNames)
           })
 
@@ -80,7 +80,7 @@ setMethod(f          = "getDatasetNames",
 setMethod(f          = "getDatasetNames",
           signature  = "RflomicsSE",
           definition <- function(object){
-            
+
             return(names(metadata(object)$omicType))
           })
 
@@ -94,23 +94,23 @@ setMethod(f          = "getDatasetNames",
 #' @importFrom purrr reduce
 #' @section Accessors:
 #' \itemize{
-#'    \item getOmicsTypes: return a named vector with omics type of each 
+#'    \item getOmicsTypes: return a named vector with omics type of each
 #'    dataset ("RNAseq", "proteomics", "metabolomics")}
 setMethod(
   f          = "getOmicsTypes",
   signature  = "RflomicsMAE",
   definition <- function(object){
-    
-    OmicsTypes <- lapply(names(metadata(object)$omicList), function(x){ 
-      
+
+    OmicsTypes <- lapply(names(metadata(object)$omicList), function(x){
+
       datasetNames <- metadata(object)$omicList[[x]]
       datasetType  <- rep(x, length(datasetNames))
       names(datasetType) <- datasetNames
-      
+
       return(datasetType)
-      
+
     }) |> reduce(c)
-    
+
     return(OmicsTypes)
   })
 
@@ -121,13 +121,13 @@ setMethod(
 #' @rdname RflomicsSE-class
 #' @section Accessors:
 #' \itemize{
-#'    \item getOmicsTypes: return a named vector with omics type of dataset 
+#'    \item getOmicsTypes: return a named vector with omics type of dataset
 #'    ("RNAseq", "proteomics", "metabolomics")}
 setMethod(
   f          = "getOmicsTypes",
   signature  = "RflomicsSE",
   definition <- function(object){
-    
+
     return(metadata(object)$omicType)
   })
 
@@ -145,7 +145,7 @@ setMethod(
   f          = "getFactorNames",
   signature  = "RflomicsMAE",
   definition <- function(object){
-    
+
     return(names(metadata(object)$design$Factors.Type))
   })
 
@@ -161,7 +161,7 @@ setMethod(
   f          = "getFactorNames",
   signature  = "RflomicsSE",
   definition <- function(object){
-    
+
     return(names(metadata(object)$design$factorType))
   })
 
@@ -173,13 +173,13 @@ setMethod(
 #' @rdname RflomicsMAE-class
 #' @section Accessors:
 #' \itemize{
-#'    \item getFactorTypes: return a named vector with experimental factor types 
+#'    \item getFactorTypes: return a named vector with experimental factor types
 #'    ("bio", "batch" or "meta").}
 setMethod(
   f          = "getFactorTypes",
   signature  = "RflomicsMAE",
   definition <- function(object){
-    
+
     return(metadata(object)$design$Factors.Type)
   })
 
@@ -190,7 +190,7 @@ setMethod(
 #' @rdname RflomicsSE-class
 #' @section Accessors:
 #' \itemize{
-#'    \item getFactorTypes: return a named vector with experimental factor types 
+#'    \item getFactorTypes: return a named vector with experimental factor types
 #'    ("bio", "batch" or "meta").}
 setMethod(
   f          = "getFactorTypes",
@@ -213,10 +213,10 @@ setMethod(
   f          = "getBioFactors",
   signature  = "RflomicsMAE",
   definition <- function(object){
-    
+
     factVect <- toupper(getFactorTypes(object))
     res <- names(factVect)[factVect == "BIO"]
-    
+
     if(length(res) == 0) return(NULL)
     return(res)
   })
@@ -232,10 +232,10 @@ setMethod(
   f          = "getBioFactors",
   signature  = "RflomicsSE",
   definition <- function(object){
-    
+
     factVect <- toupper(getFactorTypes(object))
     res <- names(factVect)[factVect == "BIO"]
-    
+
     if(length(res) == 0) return(NULL)
     return(res)
   })
@@ -253,10 +253,10 @@ setMethod(
   f          = "getBatchFactors",
   signature  = "RflomicsMAE",
   definition <- function(object){
-    
+
     factVect <- toupper(getFactorTypes(object))
     res <- names(factVect)[factVect == "BATCH"]
-    
+
     if(length(res) == 0) return(NULL)
     return(res)
   })
@@ -272,10 +272,10 @@ setMethod(
   f          = "getBatchFactors",
   signature  = "RflomicsSE",
   definition <- function(object){
-    
+
     factVect <- toupper(getFactorTypes(object))
     res <- names(factVect)[factVect == "BATCH"]
-    
+
     if(length(res) == 0) return(NULL)
     return(res)
   })
@@ -293,10 +293,10 @@ setMethod(
   f          = "getMetaFactors",
   signature  = "RflomicsMAE",
   definition <- function(object){
-    
+
     factVect <- toupper(getFactorTypes(object))
     res <- names(factVect)[factVect == "META"]
-    
+
     if(length(res) == 0) return(NULL)
     return(res)
   })
@@ -313,10 +313,10 @@ setMethod(
   f          = "getMetaFactors",
   signature  = "RflomicsSE",
   definition <- function(object){
-    
+
     factVect <- toupper(getFactorTypes(object))
     res <- names(factVect)[factVect == "META"]
-    
+
     if(length(res) == 0) return(NULL)
     return(res)
   })
@@ -330,16 +330,16 @@ setMethod(
 #' @param datasetName the name of the RflomicsSE to retrieve
 #' @section Accessors:
 #' \itemize{
-#'    \item getRflomicsSE: return a \link{RflomicsSE} object with selected 
+#'    \item getRflomicsSE: return a \link{RflomicsSE} object with selected
 #'    dataset}
 setMethod(
   f          = "getRflomicsSE",
   signature  = "RflomicsMAE",
-  definition <- function(object, 
+  definition <- function(object,
                          datasetName = NULL){
-    
+
     if(is.null(datasetName)) return(NULL)
-    
+
     return(object[[datasetName]])
   })
 
@@ -352,16 +352,16 @@ setMethod(
 #' @param factorName factor name
 #' @section Accessors:
 #' \itemize{
-#'    \item getFactorModalities: return a vector with the modality names of 
+#'    \item getFactorModalities: return a vector with the modality names of
 #'    selected factor.}
 setMethod(
   f          = "getFactorModalities",
   signature  = "RflomicsMAE",
   definition <- function(object, factorName){
-    
+
     if(is.null(factorName)) return(NULL)
-    if(!factorName %in% getFactorNames(object)) return(NULL) 
-    
+    if(!factorName %in% getFactorNames(object)) return(NULL)
+
     return(levels(getDesignMat(object)[[factorName]]))
   })
 
@@ -372,16 +372,16 @@ setMethod(
 #' @param factorName factor name
 #' @section Accessors:
 #' \itemize{
-#'    \item getFactorModalities: return a vector with the modality names of 
+#'    \item getFactorModalities: return a vector with the modality names of
 #'    selected factor.}
 setMethod(
   f          = "getFactorModalities",
   signature  = "RflomicsSE",
   definition <- function(object, factorName){
-    
+
     if(is.null(factorName)) return(NULL)
-    if(!factorName %in% getFactorNames(object)) return(NULL) 
-    
+    if(!factorName %in% getFactorNames(object)) return(NULL)
+
     return(levels(getDesignMat(object)[[factorName]]))
   })
 
@@ -392,7 +392,7 @@ setMethod(
 #' @rdname RflomicsMAE-class
 #' @section Accessors:
 #' \itemize{
-#'    \item subRflomicsMAE: return a \link{RflomicsMAE-class} object with selected 
+#'    \item subRflomicsMAE: return a \link{RflomicsMAE-class} object with selected
 #'    datasets.}
 #' @param omicNames dataset name.
 #' @exportMethod subRflomicsMAE
@@ -400,15 +400,15 @@ setMethod(
   f          = "subRflomicsMAE",
   signature  = "RflomicsMAE",
   definition <- function(object, omicNames = NULL){
-    
+
     if(is.null(omicNames)) return(object)
     dataset.names <- names(object)
-    
+
     if(!all(omicNames %in% dataset.names)) return(NULL)
-    
+
     object.sub <- .tryCatch_rflomics(object[,, omicNames])
     if(!is.null(object.sub$error)) stop(object.sub$error)
-    
+
     return(object.sub$result)
   })
 
@@ -422,66 +422,83 @@ setMethod(
 #' @section Plots:
 #' \itemize{
 #'    \item plotDataOverview:
-#' This function plot an overview of the loaded datasets displaying per sample 
+#' This function plot an overview of the loaded datasets displaying per sample
 #' (n=number of entities (genes/metabolites/proteins); k=number of samples)}
 #' @param omicNames a vector with dataset names
-#' @param realSize booleen value
+#' @param realSize booleen value, influence the display size
+#' @param raw boolean. If TRUE, displays the raw data without any selection. If
+#' FALSE, displays the data with removed samples.
+#' @param complete.cases boolean. If true, only shows the complete cases of the
+#' object.
 #' @exportMethod plotDataOverview
 #' @examples
 #' # See createRflomicsMAE for an example that includes plotDataOverview
 setMethod(
   f         = "plotDataOverview",
   signature = "RflomicsMAE",
-  definition <- function(object, 
-                         omicNames=NULL, 
-                         realSize=FALSE){
-    
+  definition <- function(object,
+                         omicNames=NULL,
+                         realSize=FALSE,
+                         raw = FALSE,
+                         completeCases = FALSE){
+
     if(length(object) == 0) stop("object is NULL")
-    
+
     object <- subRflomicsMAE(object, omicNames)
-    
-    if(is.null(object)) return(NULL)
-    
+
+
+    if (is.null(object)) return(NULL)
+
+    if (!raw) {
+        for (SE.name in names(object)) {
+            object[[SE.name]] <- object[[SE.name]][, getSelectedSamples(object, SE.name = SE.name)]
+        }
+    }
+
+    if (completeCases) {
+        object <- object[,complete.cases(object),]
+    }
+
     Groups <- getDesignMat(object)
-    
-    nb_entities <- 
-      lapply(names(object), function(SE){ 
-        dim(object[[SE]])[1] }) %>% 
+
+    nb_entities <-
+      lapply(names(object), function(SE){
+        dim(object[[SE]])[1] }) %>%
       unlist()
     names(nb_entities) <- names(object)
-    
-    data <- 
-      data.frame(nb_entities = nb_entities, 
+
+    data <-
+      data.frame(nb_entities = nb_entities,
                  assay = names(nb_entities)) %>%
       full_join(data.frame(sampleMap(object)), by="assay") %>%
       mutate(y.axis = paste0(assay, "\n", "n=", nb_entities)) %>% arrange(primary)
-    
-    data$primary <- factor(data$primary, levels = levels(Groups$samples)) 
-    
-    nb_entities_ord <- 
-      select(data, y.axis, nb_entities) %>% 
-      unique() %>% 
+
+    data$primary <- factor(data$primary, levels = levels(Groups$samples))
+
+    nb_entities_ord <-
+      select(data, y.axis, nb_entities) %>%
+      unique() %>%
       arrange(desc(nb_entities))
     nb_entities_ord$nb_entities <- log(nb_entities_ord$nb_entities)
     tmp.vec <- c(0)
     breaks  <- vector()
-    for(i in seq_len(length(nb_entities_ord$nb_entities))){ 
+    for(i in seq_len(length(nb_entities_ord$nb_entities))){
       tmp.vec[i+1] <- tmp.vec[i] + nb_entities_ord$nb_entities[i]
-      breaks[i] <- tmp.vec[i] + nb_entities_ord$nb_entities[i]/2 
-    } 
-    
+      breaks[i] <- tmp.vec[i] + nb_entities_ord$nb_entities[i]/2
+    }
+
     switch (
       as.character(realSize),
       "TRUE"  = {
         p <- ggplot(data, aes(x=primary, y=log(nb_entities))) +
-          geom_col(aes(fill = y.axis)) + 
-          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), 
-                panel.background = element_blank(), axis.ticks = element_blank(), 
+          geom_col(aes(fill = y.axis)) +
+          theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+                panel.background = element_blank(), axis.ticks = element_blank(),
                 axis.text.x = element_text(angle = 90, hjust = 1), legend.position="none",
-                axis.text.y = element_text(hjust = 0)) +  
+                axis.text.y = element_text(hjust = 0)) +
           labs(x=paste0("Samples (k=", length(unique(sampleMap(object)$primary)), ")"), y="") +
           scale_y_continuous(breaks = (breaks), labels = nb_entities_ord$y.axis)
-        
+
       },
       "FALSE" = {
         p <- ggplot(data, aes(x=primary, y=y.axis)) +
@@ -493,7 +510,7 @@ setMethod(
       }
     )
     return(p)
-  }) 
+  })
 
 ## ---- plotConditionsOverview ----
 
@@ -503,7 +520,7 @@ setMethod(
 #' @section Plots:
 #' \itemize{
 #'    \item plotConditionsOverview:
-#' A complete design and at least one biological and one batch factors are 
+#' A complete design and at least one biological and one batch factors are
 #' required for using RFLOMICS workflow.}
 #' @param omicNames a vector with dataset names
 #' @importFrom purrr reduce
@@ -513,83 +530,83 @@ setMethod(
 setMethod(
   f         = "plotConditionsOverview",
   signature = "RflomicsMAE",
-  definition <- function(object, 
+  definition <- function(object,
                          omicNames = NULL){
-    
+
     # check presence of bio factors
-    if (!length(getBioFactors(object)) %in% seq_len(3)){ 
+    if (!length(getBioFactors(object)) %in% seq_len(3)){
       stop("No bio factor! or nbr of bio factors exceed 3!") }
-    if (!length(getBatchFactors(object)) %in% c(1,2)){ 
+    if (!length(getBatchFactors(object)) %in% c(1,2)){
       stop("No replicates found!") }
-    
+
     BioFact <- getBioFactors(object)
     coldata <- getDesignMat(object) %>%
       mutate(samples=rownames(.))
     #coldata <- tibble::as_tibble(coldata)
-    coldata <- sampleMap(object) %>% as.data.frame() %>% 
+    coldata <- sampleMap(object) %>% as.data.frame() %>%
       left_join(coldata, by = c("primary" = "samples"))
-    
-    all_combin_cond <- lapply(BioFact, function(x){ 
+
+    all_combin_cond <- lapply(BioFact, function(x){
       df <- unique(coldata[x])
       rownames(df) <- seq_len(nrow(df))
-      return(df) 
+      return(df)
     }) %>% reduce(merge)
-    
-    counts <- coldata %>% select(assay, all_of(BioFact)) %>% 
-      unique() %>% 
-      group_by_at(BioFact) %>% count(name = "Count") %>% 
-      right_join(all_combin_cond, by = BioFact) %>% 
+
+    counts <- coldata %>% select(assay, all_of(BioFact)) %>%
+      unique() %>%
+      group_by_at(BioFact) %>% count(name = "Count") %>%
+      right_join(all_combin_cond, by = BioFact) %>%
       mutate_at(.vars = "Count", .funs = function(x) {
         if_else(is.na(x), 0, x)})
-    
-    
-    counts <- counts %>% 
-      mutate(status = if_else(Count == length(object) , "all_data", 
+
+
+    counts <- counts %>%
+      mutate(status = if_else(Count == length(object) , "all_data",
                               if_else(Count == 0 , "no_data", "some_data")))
-    
+
     #list of factor names
     factors <- names(counts)[seq_len(dim(counts)[2]-2)]
-    
+
     col.panel <- c("all_data", "some_data", "no_data")
     names(col.panel) <- c("#00BA38", "orange", "red")
-    
+
     col.panel.u <- col.panel[col.panel %in% unique(counts$status)]
-    
+
     switch (
       length(factors),
-      "1" = { p <- ggplot(counts, aes(x = !!sym(factors[1]), y = 1)) + 
-        theme(axis.text.y = element_blank()) + ylab("") 
+      "1" = { p <- ggplot(counts, aes(x = !!sym(factors[1]), y = 1)) +
+        theme(axis.text.y = element_blank()) + ylab("")
       },
       "2" = { p <- ggplot(counts, aes(x = !!sym(factors[1]), y = !!sym(factors[2])))
       },
       "3" = {
         #get factor with min conditions -> to select for "facet_grid"
-        factors.l <- 
-          lapply(factors, function(x){ 
+        factors.l <-
+          lapply(factors, function(x){
             length(unique(counts[[x]])) }) %>% unlist()
         names(factors.l) <- factors
         factor.min <- names(factors.l[factors.l == min(factors.l)][1])
-        
+
         factors <- factors[factors != factor.min]
-        
+
         #add column to rename facet_grid
-        counts <- counts %>% 
+        counts <- counts %>%
           mutate(grid = paste0(factor.min, "=",get(factor.min)))
-        
+
         p <- ggplot(counts , aes(x = !!sym(factors[1]), y = !!sym(factors[2]))) +
-          facet_grid(grid~.) 
+          facet_grid(grid~.)
       }
     )
-    
-    p <- p + geom_tile(aes(fill = status), 
+
+    p <- p + geom_tile(aes(fill = status),
                        color = "white", linewidth = 1,
-                       width = 1, height = 1)  + 
+                       width = 1, height = 1)  +
       geom_text(aes(label = Count)) +
-      theme(panel.grid.major = element_blank(), 
+      theme(panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
-            axis.ticks = element_blank(), 
+            axis.ticks = element_blank(),
             axis.text.x=element_text(angle=90, hjust=1),
             legend.position = "none")
     return(p)
-    
+
   })
