@@ -331,24 +331,31 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
             } else if (dir.exists(paste0(folder, "/tmp/shiny_bookmarks/"))) {
                 folder <- paste0(folder, "/tmp/shiny_bookmarks/")
             } else {
-                print("Searching for shiny_bookmarks but not finding any")
+                return(NULL)
             }
 
-            dirs <- list.dirs(folder, full.names = TRUE, recursive = FALSE)
-            if (length(dirs) == 0) return(NULL)
+            if (!is.null(folder)) {
+                dirs <- list.dirs(folder, full.names = TRUE, recursive = FALSE)
+                if (length(dirs) == 0) return(NULL)
 
-            df <- data.frame(
-                "State_Folder" = basename(dirs),
-                "Last_Modification" = file.info(dirs)$mtime,
-                stringsAsFactors = FALSE
-            )
-            df[order(df[["Last_Modification"]], decreasing = TRUE),]
+                df <- data.frame(
+                    "State_Folder" = basename(dirs),
+                    "Last_Modification" = file.info(dirs)$mtime,
+                    stringsAsFactors = FALSE
+                )
+                df[order(df[["Last_Modification"]], decreasing = TRUE),]
+            }
+
         })
 
         # Table of state folders available, with a button for each
         output$tableState <- renderUI({
             df <- folders()
-            if (is.null(df)) return(NULL)
+            if (is.null(df)) {
+                return(
+                    renderText(expr = {"There is no shiny_bookmarks/ or tmp/shiny_bookmarks/ folder in your working directory"})
+                )
+            }
 
             df[["Choose"]] <- vapply(
                 df[["State_Folder"]],
