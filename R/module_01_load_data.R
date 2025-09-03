@@ -215,11 +215,6 @@
 
             ExpDesign <- local.rea.values[["ExpDesignOrg"]]
 
-            # print("SAVING -- OnBookmark")
-            # print(paste(state[["dir"]], input[["Experimental.Design.file"]][["name"]], sep = "/"))
-            # print(local.rea.values$ExpFileName)
-            # print(input[["Experimental.Design.file"]])
-
             Experimental.Design.file <- input$Experimental.Design.file
             local.rea.values$ExpFileName <- Experimental.Design.file[["name"]]
 
@@ -362,7 +357,6 @@
     # ---- Add new omic data ----
     # => a new select/file Input was display
     observeEvent(input$addData, {
-        # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring) print("[RFLOMICS] RESTORE -- addData")
 
         # add input select for new data
         addDataNum <- local.rea.values$addDataNum
@@ -421,7 +415,6 @@
     # ---- Load example data ----
     # load user own metadata file
     observeEvent(input$loadEcoseedData, {
-        # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)  print("[RFLOMICS] RESTORE -- Load Ecoseed data")
 
         rea.values$loadData        <- FALSE
         rea.values$model           <- FALSE
@@ -478,9 +471,6 @@
     # Display tab of exp design
     output$ExpDesignTable <- renderUI({
 
-        # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
-        #     print("[RFLOMICS] RESTORE -- ExpDesignTable UI (output)")
-
         box(
             width = 12,
             background = "light-blue",
@@ -507,9 +497,6 @@
     # order and select modality for each factor
     output$dipslayFactors <-
         renderUI({
-
-            # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
-            # print("[RFLOMICS] RESTORE -- dipslayFactors UI (output)")
 
             ExpDesign <- local.rea.values$ExpDesignOrg
 
@@ -547,9 +534,6 @@
     # set ref and type of each factor
 
     output$GetdFactorRef <- renderUI({
-
-        # if (!is.null(local.rea.values$restoring) && local.rea.values$restoring)
-        # print("[RFLOMICS] RESTORE -- GetdFactorRef UI")
 
         if (is.null(local.rea.values$ExpDesignOrg))
             return()
@@ -691,11 +675,6 @@
 
         } else {
 
-            # print("[RFLOMICS] RESTORE -- load Data Input")
-
-            # localLoad <<- local.rea.values
-            # inputLoad <<- input
-
             ExpDesign <- local.rea.values$ExpDesignOrg
 
             rea.values$validate.status  <- 0
@@ -739,7 +718,6 @@
         if (is.null(local.rea.values$restoring) || !local.rea.values$restoring) {
             checkData <- .checkOmicInput(input, local.rea.values, rea.values)
         } else {
-            # print("[RFLOMICS] RESTORE -- Check OMICS")
             checkData <- local.rea.values$checkData
         }
         local.rea.values$omicsData    <- checkData$omicsData
