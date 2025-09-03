@@ -32,9 +32,6 @@
     # reactive value for reinitialisation of UIoutput
     local.rea.values <- reactiveValues(contrast = NULL)
 
-
-    objectOut <<- session$userData$FlomicsMultiAssay
-
     # Construct the form to select the model
     output$SetModelFormula <- renderUI({
 
