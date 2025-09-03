@@ -53,9 +53,6 @@
 
 
         if (length(FlomicsMultiAssay.try[["warnings"]]) > 0 || length(FlomicsMultiAssay.try[["messages"]]) > 0) {
-            # warning(paste(FlomicsMultiAssay.try[["warnings"]],
-            #               FlomicsMultiAssay.try[["messages"]],
-            #               collapse = "\n"))
             showModal(modalDialog(title = "Warning",
                                   HTML(paste(FlomicsMultiAssay.try[["warnings"]],
                                              FlomicsMultiAssay.try[["messages"]],
@@ -223,14 +220,19 @@
             # print(local.rea.values$ExpFileName)
             # print(input[["Experimental.Design.file"]])
 
+            Experimental.Design.file <- input$Experimental.Design.file
+            local.rea.values$ExpFileName <- Experimental.Design.file[["name"]]
+
+            design.tt <- .tryCatch_rflomics(
+                readExpDesign(file = Experimental.Design.file$datapath)
+            )
+
             write.table(data.frame("Samples" = rownames(ExpDesign), ExpDesign),
                         file = paste(state[["dir"]], local.rea.values[["ExpFileName"]], sep = "/"),
                         sep = "\t",
                         quote = FALSE,
                         row.names = FALSE,
                         col.names = TRUE)
-            # }
-            # state$input$Experimental.Design.file[["name"]] <- local.rea.values[["ExpFileName"]]
 
             if (!is.null(input$loadData)) {
                 checkDat <- list(omicsData = local.rea.values$omicsData, # list
@@ -240,10 +242,8 @@
 
                 nData <- length(checkDat[["omicsData"]])
                 for (i in seq(1, nData)) {
-                    # print(paste(state[["dir"]], checkDat[["omicsPaths"]][i], sep = "/"))
                     write.table(data.frame("Entities" = rownames(checkDat[["omicsData"]][[i]]),
                                            checkDat[["omicsData"]][[i]]),
-                                # file = paste(state[["dir"]], input[[paste0("data", i)]][["name"]], sep = "/"),
                                 file = paste(state[["dir"]], checkDat[["omicsPaths"]][i], sep = "/"),
                                 sep = "\t",
                                 quote = FALSE,
@@ -270,6 +270,23 @@
             local.rea.values$ExpDesignOrg <- design.tt$result
             local.rea.values$restoring  <- TRUE
             local.rea.values$stateDir   <- state[["dir"]]
+
+            ExpDesign <- local.rea.values$ExpDesignOrg
+            for (factor in names(ExpDesign)) {
+                # if select 1 modality or 0 for a Factor we exclude this factor
+                if (length(state[["input"]][[paste0("selectFactors.", factor)]]) > 0) {
+                    ExpDesign <-
+                        filter(ExpDesign, get(factor) %in% state[["input"]][[paste0("selectFactors.", factor)]])
+                    ExpDesign[[factor]] <-
+                        factor(ExpDesign[[factor]], levels = state[["input"]][[paste0("selectFactors.", factor)]])
+                }
+
+                if (length(state[["input"]][[paste0("selectFactors.", factor)]]) <= 1) {
+                    ExpDesign <- select(ExpDesign, -all_of(factor))
+                }
+            }
+
+            local.rea.values$ExpDesign <- ExpDesign
 
             local.rea.values$checkDesign <- .checkDesignInput(state$input, local.rea.values) # TODO : already checked, do I need to check it again ?
 
