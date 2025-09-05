@@ -274,6 +274,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
         rea.values[[dataset]]$coExpAnal  <- FALSE
         rea.values[[dataset]]$DiffExp  <- FALSE
         rea.values[[dataset]]$CoExp <- FALSE
+        rea.values$datasetDiff <- NULL
 
         session$userData$FlomicsMultiAssay <-
             resetRflomicsMAE(session$userData$FlomicsMultiAssay,
