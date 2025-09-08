@@ -157,7 +157,9 @@
                 )), )
             )
         ),
-        fluidRow(uiOutput(outputId = ns("LoadDataUI"))),
+        fluidRow(
+            useShinyjs(),
+            uiOutput(outputId = ns("LoadDataUI"))),
         fluidRow(column(
             width = 12,
             actionButton(inputId = ns("loadData"), "Load Data", class = "butt"),
@@ -187,6 +189,9 @@
 }
 
 # ---- modLoadOmicsData SERVER ----
+#' @importFrom shinyjs click useShinyjs
+#' @noRd
+#' @keywords internal
 .modLoadData <- function(input, output, session, rea.values) {
     omicTypes <- c(
         "None" = "none",
@@ -202,12 +207,10 @@
         addDataNum   = 1
     )
 
-
     # ---- Bookmark functions ----
     .checkOIn <- reactive(
         .checkOmicInput(input, local.rea.values, rea.values)
     )
-
 
     onBookmark(function(state, session = getDefaultReactiveDomain()) {
 
@@ -300,18 +303,20 @@
                                                                   state[["input"]][[paste0("data", k)]][["name"]], sep = "/"))
                 omicsFileNames <- c(omicsFileNames, state[["input"]][[paste0("data", k)]][["name"]])
             }
+
             local.rea.values$checkData <- list(omicsData = omicsData,
                                                omicsNames = omicsNames,
                                                omicsTypes = omicsTypes,
                                                omicsFileNames = omicsFileNames)
-            rea.values$restoring <- TRUE
-        }
 
-        message("[RFLOMICS] # RESTORED STATE ")
-        message("[RFLOMICS] # ---> You may have to click on each tab to trigger their restoration")
-        message("[RFLOMICS] # ---> You HAVE TO click on the Load Data tab to be able to save properly again")
-        message("[RFLOMICS] # ---> It is better to restart your analysis if any loadData parameter has to be changed")
-        message("[RFLOMICS] # ---> If you change any parameters in the loadData tab, you might encounter some errors")
+            rea.values$restoring <- TRUE
+
+            message("[RFLOMICS] # RESTORED STATE ")
+            message("[RFLOMICS] # ---> You may have to click on each tab to trigger their restoration")
+            message("[RFLOMICS] # ---> You HAVE TO click on the Load Data tab to be able to save properly again")
+            message("[RFLOMICS] # ---> It is better to restart your analysis if any loadData parameter has to be changed")
+            message("[RFLOMICS] # ---> If you change any parameters in the loadData tab, you might encounter some errors")
+        }
     })
 
     # ---- Load experimental design ----
@@ -353,64 +358,6 @@
         }
 
     })
-
-    # ---- Add new omic data ----
-    # => a new select/file Input was display
-    observeEvent(input$addData, {
-
-        # add input select for new data
-        addDataNum <- local.rea.values$addDataNum
-        if (input[[paste0('omicType', addDataNum)]] == "none")
-            return()
-
-        addDataNum <- addDataNum + 1
-
-        output[[paste("toAddData", addDataNum, sep = "")]] <-
-            renderUI({
-                list(fluidRow(
-                    column(
-                        4,
-                        # omic type
-                        selectInput(
-                            inputId = session$ns(paste0('omicType', addDataNum)),
-                            label = 'Omic type',
-                            choices = omicTypes,
-                            selected = "none"
-                        )
-                    ),
-                    column(
-                        6,
-                        # matrix count/abundance input
-                        fileInput(
-                            inputId = session$ns(paste0("data", addDataNum)),
-                            label  = "Dataset matrix (tsv)",
-                            accept = c(
-                                "text/csv",
-                                "text/comma-separated-values,text/plain",
-                                ".csv"
-                            )
-                        )
-                    ),
-                    column(
-                        2,
-                        # dataset Name
-                        textInput(
-                            inputId = session$ns(paste0("DataName", addDataNum)),
-                            label = "Dataset name",
-                            value = paste0("set", as.character(addDataNum))
-                        )
-                    )
-                ),
-
-                uiOutput(session$ns(
-                    paste("toAddData", addDataNum + 1, sep = "")
-                )))
-            })
-
-        local.rea.values$addDataNum <- addDataNum
-    })
-
-
 
     # ---- Load example data ----
     # load user own metadata file
@@ -600,6 +547,7 @@
     # ---- load data ui ----
     # display interface for load data
     output$LoadDataUI <- renderUI({
+
         box(
             width = 12,
             title = "Load Omics Data",
@@ -607,6 +555,7 @@
             height = NULL,
             solidHeader = TRUE,
             fluidRow(
+                useShinyjs(),
                 column(
                     4,
                     # omic type
@@ -646,8 +595,82 @@
                 )
             ),
             uiOutput(outputId = session$ns("toAddData2")),
-            actionButton(inputId = session$ns("addData"), "Add data", class = "butt")
+            actionButton(inputId = session$ns("addData"), "Add data", class = "butt"),
         )
+    })
+
+
+    # ---- Add new omic data ----
+    # => a new select/file Input was display
+    observeEvent(input$addData, {
+
+        # add input select for new data
+        addDataNum <- local.rea.values$addDataNum
+
+        if (!rea.values$restoring && input[[paste0('omicType', addDataNum)]] == "none") {
+                return()
+        } else {
+            if (local.rea.values$addDataNum == length(local.rea.values$checkData$omicsNames))
+                return()
+        }
+
+        addDataNum <- addDataNum + 1
+
+        output[[paste("toAddData", addDataNum, sep = "")]] <-
+            renderUI({
+                list(fluidRow(
+                    column(
+                        4,
+                        # omic type
+                        selectInput(
+                            inputId = session$ns(paste0('omicType', addDataNum)),
+                            label = 'Omic type',
+                            choices = omicTypes,
+                            selected = "none"
+                        )
+                    ),
+                    column(
+                        6,
+                        # matrix count/abundance input
+                        fileInput(
+                            inputId = session$ns(paste0("data", addDataNum)),
+                            label  = "Dataset matrix (tsv)",
+                            accept = c(
+                                "text/csv",
+                                "text/comma-separated-values,text/plain",
+                                ".csv"
+                            )
+                        )
+                    ),
+                    column(
+                        2,
+                        # dataset Name
+                        textInput(
+                            inputId = session$ns(paste0("DataName", addDataNum)),
+                            label = "Dataset name",
+                            value = paste0("set", as.character(addDataNum))
+                        )
+                    )
+                ),
+
+                uiOutput(session$ns(
+                    paste("toAddData", addDataNum + 1, sep = "")
+                )))
+            })
+        local.rea.values$addDataNum <- addDataNum
+
+    })
+
+
+    # For restoration: force the app to click on addData so that all data are
+    # displayed. Otherwise only two will appear on the loadData tab,
+    # and only two will be saved (and problems...)
+    observe({
+        if (!is.null(local.rea.values$restoring) && !local.rea.values$restoring) {
+            if (local.rea.values$addDataNum < length(local.rea.values$checkData$omicsNames)) {
+                click("addData")
+            }
+        }
     })
 
     # ---- Load Data button observe ----
