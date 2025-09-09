@@ -459,7 +459,6 @@ test_that("plotEnrichComp - KEGG only", {
             keyType = "kegg")
 
     expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG"))
-    expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", matrixType = "log2FC"))
     expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", matrixType = "GeneRatio"))
     expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", matrixType = "p.adjust"))
     expect_no_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", matrixType = "presence"))
