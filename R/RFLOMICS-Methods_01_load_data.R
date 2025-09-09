@@ -428,7 +428,7 @@ setMethod(
 #' @param realSize booleen value, influence the display size
 #' @param raw boolean. If TRUE, displays the raw data without any selection. If
 #' FALSE, displays the data with removed samples.
-#' @param complete.cases boolean. If true, only shows the complete cases of the
+#' @param completeCases boolean. If true, only shows the complete cases of the
 #' object.
 #' @exportMethod plotDataOverview
 #' @examples
