@@ -82,7 +82,7 @@
 \item{raw}{boolean. If TRUE, displays the raw data without any selection. If
 FALSE, displays the data with removed samples.}
 
-\item{complete.cases}{boolean. If true, only shows the complete cases of the
+\item{completeCases}{boolean. If true, only shows the complete cases of the
 object.}
 }
 \value{
