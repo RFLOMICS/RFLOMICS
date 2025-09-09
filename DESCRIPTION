@@ -1,6 +1,6 @@
 Package: RFLOMICS
 Title: Interactive web application for Omics-data analysis
-Version: 1.1.2
+Version: 1.1.3
 Authors@R: 
     c(
     person(given = "Nadia", family = "Bessoltane",
@@ -49,7 +49,6 @@ Imports:
     vroom,
     org.At.tair.db,
     AnnotationDbi,
-    circlize,
     clusterProfiler,
     ComplexHeatmap,
     data.table,
