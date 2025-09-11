@@ -108,6 +108,8 @@
                                        warnMess = NULL,
                                        messMess = NULL)
 
+
+
     # if any preprocessing or validation of differential analysis is done
     observeEvent(rea.values$datasetProcess, {
         local.rea.values$runintegration    <- FALSE
@@ -117,6 +119,11 @@
             multiAnalyses = c("IntegrationAnalysis")
         )
     })
+
+    observe(
+        if (rea.values$restoring && is.null(local.rea.values$restoring))
+                local.rea.values$restoring <- TRUE
+    )
 
     # select datasets to integrate
     output$selectDataUI <- .integrationSelectDataUI(session, rea.values, input)
@@ -130,6 +137,13 @@
 
     # before MOFA integration
     observeEvent(input$run_prep, {
+
+        metadata(session$userData$FlomicsMultiAssay)$IntegrationAnalysis[[method]] <- NULL
+        local.rea.values$runintegration <- FALSE
+        local.rea.values$preparedObject <- NULL
+        MAE.red <- NULL
+        variableLists <- list()
+
         # check: number of selected dataset min = 2
         condition <- length(input$selectData) > 1
         messCond <- "Please select at least 2 table."
@@ -140,7 +154,7 @@
             need(condition, messCond)
         })
 
-        local.rea.values$runintegration <- FALSE
+
         MAE.red <-
             session$userData$FlomicsMultiAssay[, , input$selectData]
 
@@ -211,42 +225,82 @@
 
         # create list with variations to keep per table
         variableLists <- lapply(input$selectData, function(set) {
-            switch(
-                input[[paste0("selectmethode", set)]],
-                "diff"  = getDEList(
-                    object = session$userData$FlomicsMultiAssay[[set]],
-                    contrasts = input[[paste0("selectContrast", set)]],
-                    operation = input[[paste0("unionORintersect", set)]]
-                ),
-                "CV" = {
-                    # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
-                    #                                  raw = FALSE)
-                    transformedSE <-
-                        switch (
-                            getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
-                            "RNAseq" =
-                                getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                                 filter = TRUE, log = TRUE ),
-                            getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                             norm = TRUE)
-                        )
-                    transformedSE <- assay(transformedSE)
 
-                    cv_vect <- unlist(
-                        lapply(seq_len(nrow(transformedSE)),
-                               FUN = function(row_i){
-                                   x <- transformedSE[row_i,]
-                                   sd(x)/mean(x)
-                               }))
-                    names(cv_vect) <- rownames(transformedSE)
-                    cv_vect <- cv_vect[order(cv_vect, decreasing = TRUE)]
+            exprswitch <- input[[paste0("selectmethode", set)]]
 
-                    names(cv_vect)[seq_len(input[[paste0("numberFeat", set)]])]
-                },
-                "none"  = names(MAE.red[[set]])
+            restoration <- ifelse(!rea.values$restoring ||
+                                      is.null(local.rea.values$restoring) ||
+                                      !local.rea.values$restoring,
+                                  FALSE, TRUE)
+
+            if (restoration)
+                exprswitch <- rea.values$stateInput[[paste0(session$ns(""),"selectmethode", set)]]
+
+            exprswitch <- paste(exprswitch, as.character(restoration), sep = "-" )
+
+            switch(exprswitch,
+                   "diff-FALSE"  = getDEList(
+                       object = session$userData$FlomicsMultiAssay[[set]],
+                       contrasts = input[[paste0("selectContrast", set)]],
+                       operation = input[[paste0("unionORintersect", set)]]
+                   ),
+                   "CV-TRUE" = {
+                       transformedSE <-
+                           switch (
+                               getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
+                               "RNAseq" =
+                                   getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                                    filter = TRUE, log = TRUE ),
+                               getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                                norm = TRUE)
+                           )
+                       transformedSE <- assay(transformedSE)
+
+                       cv_vect <- unlist(
+                           lapply(seq_len(nrow(transformedSE)),
+                                  FUN = function(row_i){
+                                      x <- transformedSE[row_i,]
+                                      sd(x)/mean(x)
+                                  }))
+                       names(cv_vect) <- rownames(transformedSE)
+                       cv_vect <- cv_vect[order(cv_vect, decreasing = TRUE)]
+
+                       names(cv_vect)[seq_len(rea.values$stateInput[[paste0(session$ns(""),"numberFeat", set)]])]
+                   },
+                   "CV-FALSE" = {
+                       transformedSE <-
+                           switch (
+                               getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
+                               "RNAseq" =
+                                   getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                                    filter = TRUE, log = TRUE ),
+                               getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                                norm = TRUE)
+                           )
+                       transformedSE <- assay(transformedSE)
+
+                       cv_vect <- unlist(
+                           lapply(seq_len(nrow(transformedSE)),
+                                  FUN = function(row_i){
+                                      x <- transformedSE[row_i,]
+                                      sd(x)/mean(x)
+                                  }))
+                       names(cv_vect) <- rownames(transformedSE)
+                       cv_vect <- cv_vect[order(cv_vect, decreasing = TRUE)]
+
+                       names(cv_vect)[seq_len(input[[paste0("numberFeat", set)]])]
+                   },
+                   "diff-TRUE"  = getDEList(
+                       object = session$userData$FlomicsMultiAssay[[set]],
+                       contrasts = rea.values$stateInput[[paste0(session$ns(""), "selectContrast", set)]],
+                       operation = rea.values$stateInput[[paste0(session$ns(""), "unionORintersect", set)]]
+                   ),
+                   "none-TRUE" = ,
+                   "none-FALSE"  = names(MAE.red[[set]])
             )
         })
         names(variableLists) <- input$selectData
+        local.rea.values$restoring <- FALSE
 
         # check: table with nb of variables less then 5
         lowNbVarTab <- names(variableLists)[lengths(variableLists) < 5]
@@ -266,8 +320,13 @@
         progress$inc(5 / 10, detail = paste("Run analyses ", 50, "%", sep = ""))
         #-----------------------#
 
+        local.rea.values$MAE.red <- NULL
+        local.rea.values$MAE.red <- MAE.red
+        local.rea.values$restoring <- FALSE
+
         # MAE to mixOmics object (list)
         message("[RFLOMICS] # 8- prepare data for integration with ", method)
+        local.rea.values$preparedObject <- NULL
         local.rea.values$preparedObject <-  prepareForIntegration(
             object           = MAE.red,
             omicsNames       = input$selectData,
@@ -357,12 +416,6 @@
         progress$inc(1 / 2, detail = paste("Running ", 50, "%", sep = ""))
         #----------------------#
         tryRomics <- NULL
-        # tryRomics <-  tryCatch(
-        #     expr    = do.call(
-        #         getFromNamespace("runOmicsIntegration", ns = "RFLOMICS"),
-        #         list_args),
-        #     error   = function(err) err
-        # )
 
         tryRomics <- .tryCatch_rflomics({
             do.call(
@@ -390,6 +443,7 @@
         session$userData$FlomicsMultiAssay <- tryRomics$result
         rm(tryRomics)
 
+        # TODO : does it really work in restore mode?
         listSelection <- list()
         listSelection <- lapply(input$selectData, FUN = function(set) {
             c("method"    = input[[paste0("selectmethode", set)]],
@@ -407,6 +461,7 @@
         progress$inc(1, detail = paste("Finished ", 100, "%", sep = ""))
         #----------------------#
 
+        local.rea.values$runintegration <- FALSE
         local.rea.values$runintegration <- TRUE
     })
 
@@ -465,8 +520,10 @@
              local.rea.values) {
         ## Output results
         output$resultsUI <- renderUI({
-            if (isFALSE(local.rea.values$runintegration))
+            if (isFALSE(local.rea.values$runintegration)) {
+                Data_res <- NULL
                 return()
+            }
 
             settings <-
                 getMixOmicsSettings(session$userData$FlomicsMultiAssay)
@@ -777,12 +834,15 @@
         if (is.null(input$selectData)) return()
         if (is.null(input[[paste0("selectmethode", input$selectData[1])]])) return()
 
+        MAE2Integrate <- NULL
+        variable.to.keep <- NULL
+
         MAE2Integrate <- subRflomicsMAE(session$userData$FlomicsMultiAssay,
                                         input$selectData)
 
-        for (set in input$selectData){
+        for (set in input$selectData) {
 
-            if( input[[paste0("selectmethode", set)]] == "diff"){
+            if (input[[paste0("selectmethode", set)]] == "diff") {
 
                 variable.to.keep <- getDEList(
                     object = session$userData$FlomicsMultiAssay[[set]],
@@ -793,11 +853,11 @@
                 MAE2Integrate[[set]] <-
                     session$userData$FlomicsMultiAssay[[set]][variable.to.keep]
 
-            } else if (input[[paste0("selectmethode", set)]] == "CV") {
+            } else if (input[[paste0("selectmethode", set)]] == "CV" && !is.null(input[[paste0("numberFeat", set)]])) {
                 # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
                 #                                  raw = FALSE)
                 transformedSE <-
-                    switch (
+                    switch(
                         getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
                         "RNAseq" =
                             getProcessedData(session$userData$FlomicsMultiAssay[[set]],
@@ -1078,15 +1138,14 @@
                             " As mixOmics only takes into account the complete cases,",
                             " some samples might have been removed during the processing.")
 
+    feattokeep <- unlist(lapply(Data_res$X, colnames))
+
     renderUI({
         tagList(
             br(),
             div(class = "explain-p", HTML(textExplained)),
             column(12, renderPlot({
-
-                plotDataOverview(session$userData$FlomicsMultiAssay,
-                                 omicNames = names(Data_res[["X"]]),
-                                 raw = FALSE,
+                plotDataOverview(session$userData$FlomicsMultiAssay[feattokeep, , names(Data_res[["X"]])],
                                  completeCases = TRUE) +
                     theme(axis.text.y = element_text(size = 12),
                           axis.text.x = element_text(size = 10,
