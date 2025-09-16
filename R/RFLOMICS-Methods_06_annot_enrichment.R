@@ -944,6 +944,11 @@ setMethod(
 #' @param from indicates if the enrichment results are taken from differential
 #' analysis results (DiffExp) or from the co-expression analysis
 #' results (CoExp)
+#' @param listNames List of names of differential expression feature lists 
+#' (from = "DiffExp") or list of names of annotated co-expression clusters 
+#' (from = "CoExp")
+#' @param omicNames List of dataset names
+#' @param databaseList List of used databases
 #' @param ... more arguments
 #' @importFrom stringr str_wrap
 #' @importFrom reshape2 dcast
