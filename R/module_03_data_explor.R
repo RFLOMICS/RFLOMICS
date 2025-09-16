@@ -626,6 +626,10 @@ QCNormalizationTab <-
           userTransMethod = param.list[["userTransMethod"]]
         ))
 
+      print(names(rea.values))
+      reaOutData <- rea.values[[dataset]]
+      print(rea.values[[dataset]])
+
       if (!is.null(catch.res$error))
         showModal(
           modalDialog(title = "Error message", catch.res$error))
@@ -641,10 +645,15 @@ QCNormalizationTab <-
 
       rea.values[[dataset]]$process <- TRUE
 
-      # re-initialize list of diff analized dataset
+      # re-initialize list of diff analyzed dataset
       rea.values$datasetProcess <-
         getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
                                 analyses = "DataProcessing")
+
+
+      reaAllOut <<- rea.values
+      processedout <<- rea.values$datasetProcess
+
       rea.values$datasetDiff <-
         getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
                                 analyses = "DiffExpAnal")

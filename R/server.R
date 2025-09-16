@@ -22,6 +22,9 @@ rflomicsServer <- function(input, output, session) {
         updateTabItems(session = session, inputId = "tabs", selected = "coverPage")
     })
 
+    jsCode <- 'shinyjs.hidemenuItem = function(targetid) {var x = document.getElementById(targetid); x.style.display = "none"; x.classList.remove("menu-open");};
+shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targetid); x.style.display = "block"; x.classList.add("menu-open");};'
+
     #############################################
     # reactive value for reinitialisation of UIoutput
     rea.values <- reactiveValues(
@@ -50,7 +53,11 @@ rflomicsServer <- function(input, output, session) {
     output$mysidebar <- renderUI({
 
         tagList(
-            sidebarMenu(id="tabs",
+            useShinyjs(),
+            shinyjs::extendShinyjs(text = 'shinyjs.hidemenuItem = function(targetid) {var x = document.getElementById(targetid); x.style.display = "none"; x.classList.remove("menu-open");};
+                         shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targetid); x.style.display = "block"; x.classList.add("menu-open");};',
+                                   functions = c("hidemenuItem", "showmenuItem")),
+            sidebarMenu(id = "tabs",
                         menuItem(text = "Welcome", tabName = "coverPage",
                                  icon = icon('dna'), selected = TRUE),
                         # menuItem(text = "Glossary page", tabName = "GlossaryPage",
@@ -74,12 +81,77 @@ rflomicsServer <- function(input, output, session) {
             tags$br(),
             tags$br(),
             uiOutput("saveState"),
-            # tags$br(),
-            # tags$br(),
-            # uiOutput("restoreState")
 
         )
     })
+
+
+    observeEvent(rea.values$restoring,
+                 {
+                     if (rea.values$restoring)
+                         shinydashboard::updateTabItems(session, inputId = "tabs", selected = "importData")
+                 },
+                 once = TRUE, label = "restoreLoadData"
+    )
+
+    observeEvent(rea.values$loadData,
+                 {
+                     if (rea.values$restoring && rea.values$loadData && !rea.values$model)
+                         shinydashboard::updateTabItems(session, inputId = "tabs", selected = "SetUpModel")
+                 }, label = "restoreSetup",
+                 ignoreInit = TRUE, once = TRUE
+    )
+
+    observeEvent(rea.values$model,
+                 {
+                     rea.values$restoreValues <- list()
+                     rea.values$restoreValues$Processed <- gsub("-run$", "", names(rea.values$stateInput)[grep("-run$", names(rea.values$stateInput))])
+                     rea.values$restoreValues$Diff      <- gsub("-runAnaDiff$", "", names(rea.values$stateInput)[grep("-runAnaDiff$", names(rea.values$stateInput))])
+                     shinydashboard::updateTabItems(session, inputId = "tabs", selected = "omicsanalysis")
+                     rea.values$restoreValues$counter <- 1
+                 }, ignoreInit = TRUE, once = TRUE)
+
+    observeEvent(eventExpr = {
+        rea.values$analysis
+        },
+        {
+            # lapply(seq_len(length(rea.values$restoreValues$Processed)), FUN = function(i) {
+                print("Observer lapply")
+                namAnalysis <- sub("([a-zA-Z]+)([0-9]+)", "\\1Analysis\\2",  rea.values$restoreValues$Processed[rea.values$restoreValues$counter])
+                print(namAnalysis)
+                # later::later(delay = 4,
+                             # func = function()   # shinyjs::js$showmenuItem(namAnalysis)
+
+                             # {
+                                 shinydashboard::updateTabItems(session, inputId = "tabs", selected = namAnalysis)
+                                 # shinydashboard::updateTabItems(session, inputId = "tabs", selected = "proteomicsAnalysis2")
+                             # })
+                rea.values$restoreValues$counter <- rea.values$restoreValues$counter + 1
+            # })
+        }, ignoreInit = TRUE)
+
+    observeEvent(eventExpr = {
+        rea.values$datasetProcess
+        # rea.values$analysis | rea.values$datasetProcess
+    },
+    {
+        # lapply(seq_len(length(rea.values$restoreValues$Processed)), FUN = function(i) {
+        print("Observer lapply")
+        namAnalysis <- sub("([a-zA-Z]+)([0-9]+)", "\\1Analysis\\2",  rea.values$restoreValues$Processed[rea.values$restoreValues$counter])
+        print(namAnalysis)
+        # later::later(delay = 4,
+        # func = function()   # shinyjs::js$showmenuItem(namAnalysis)
+
+        # {
+        shinydashboard::updateTabItems(session, inputId = "tabs", selected = namAnalysis)
+        # shinydashboard::updateTabItems(session, inputId = "tabs", selected = "proteomicsAnalysis2")
+        # })
+        if (length(rea.values$restoreValues$Processed) > rea.values$restoreValues$counter) {
+            rea.values$restoreValues$counter <- rea.values$restoreValues$counter + 1
+        }
+        # })
+    }, ignoreInit = TRUE)
+
 
 
     #### Item for each omics #####
@@ -91,7 +163,11 @@ rflomicsServer <- function(input, output, session) {
         })
 
         menuItem(text = "Omics Analysis", tabName = "OmicsAnalysis",
+                 id = "omicsanalysis",
                  icon = icon('chart-area'),
+                 shinyjs::useShinyjs(),
+                 shinyjs::extendShinyjs(text = 'shinyjs.hidemenuItem = function(targetid) {var x = document.getElementById(targetid); x.style.display = "none"; x.classList.remove("menu-open");};
+shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targetid); x.style.display = "block"; x.classList.add("menu-open");};', functions = c("hidemenuItem", "showmenuItem")),
                  list(
                      lapply(names(rea.values$datasetList), function(omics){
 
@@ -165,24 +241,6 @@ rflomicsServer <- function(input, output, session) {
         )
     })
 
-
-    # #### Item to save state ####
-    # output$restoreState <- renderUI({
-    #     column(
-    #         width = 12,
-    #         actionButton(
-    #             inputId = "restoreState",
-    #             label =  'Restore State')
-    #     )
-    # })
-
-    # observeEvent(input$restoreState, {
-    #   selectInput # for previously store states
-    #   updateQueryString(queryString = "?_state_id_=latest")
-    #   session$reload()
-    # })
-
-
     #############################################
     # dynamic content #
     output$mycontent <- renderUI({
@@ -192,6 +250,8 @@ rflomicsServer <- function(input, output, session) {
         for(omics in c("RNAseq", "proteomics", "metabolomics")){
 
             items.list[[omics]] <-  lapply(1:10, function(i){
+                print("tabItem names")
+                print(paste0(omics, "Analysis", i))
                 tabItem(tabName = paste0(omics, "Analysis", i),
                         uiOutput(paste0(omics, "AnalysisUI", i)))
             })
@@ -268,15 +328,19 @@ rflomicsServer <- function(input, output, session) {
 
             lapply(names(rea.values$datasetList[[omics]]), function(i){
 
+                print("lapply for tabsetPanel, id of tabsetpanel")
+                print(paste0(omics, i))
+
                 switch (omics,
                         "RNAseq" = {
                             output[[paste0("RNAseqAnalysisUI", i)]] <- renderUI({
 
                                 tabsetPanel(
-
+                                    useShinyjs(),
+                                    extendShinyjs(text = jsCode, functions = c("hidemenuItem", "showmenuItem")),
                                     #### Data Exploratory & QC ####
                                     ###############################
-                                    tabPanel("Pre-processing",
+                                    tabPanel(title = "Pre-processing",
                                              tags$br(),
                                              tags$br(),
 
@@ -305,12 +369,15 @@ rflomicsServer <- function(input, output, session) {
                                              tags$br(),
                                              tags$br(),
                                              .modEnrichmentUI(paste0("RNAseq",i))
-                                    )
+                                    ),
+                                    id = paste0(omics, i)
                                 )
                             })},
                         "proteomics" = {
                             output[[paste0("proteomicsAnalysisUI", i)]] <- renderUI({
                                 tabsetPanel(
+                                    useShinyjs(),
+                                    extendShinyjs(text = jsCode, functions = c("hidemenuItem", "showmenuItem")),
 
                                     #### Data Exploratory & QC ####
                                     ###############################
@@ -340,13 +407,16 @@ rflomicsServer <- function(input, output, session) {
                                              tags$br(),
                                              tags$br(),
                                              .modEnrichmentUI(paste0("proteomics",i))
-                                    )
+                                    ),
+                                    id = paste0(omics, i)
                                 )
                             })},
                         "metabolomics" = {
                             output[[paste0("metabolomicsAnalysisUI", i)]] <- renderUI({
 
                                 tabsetPanel(
+                                    useShinyjs(),
+                                    extendShinyjs(text = jsCode, functions = c("hidemenuItem", "showmenuItem")),
 
                                     #### Data Exploratory & QC ####
                                     ###############################
@@ -375,7 +445,8 @@ rflomicsServer <- function(input, output, session) {
                                              tags$br(),
                                              tags$br(),
                                              .modEnrichmentUI(paste0("metabolomics",i))
-                                    )
+                                    ),
+                                    id = paste0(omics, i)
                                 )
                             })},
                 )
