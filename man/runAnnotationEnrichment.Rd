@@ -100,7 +100,14 @@
 
 \S4method{getEnrichSettings}{RflomicsSE}(object, from = "DiffExp", database = "GO")
 
-\S4method{getAnnotAnalysesSummary}{RflomicsMAE}(object, from = "DiffExp", matrixType = "presence", ...)
+\S4method{getAnnotAnalysesSummary}{RflomicsMAE}(
+  object,
+  from = "DiffExp",
+  listNames = NULL,
+  omicNames = NULL,
+  databaseList = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{An object of class \link{RflomicsSE} or
@@ -167,8 +174,8 @@ One of dotplot, heatplot or cnetplot.}
 
 \item{p.adj.cutoff}{pvalueCutoff to define the enrichment threshold.}
 
-\item{matrixType}{Heatmap matrix to plot, one of GeneRatio, p.adjust
-or presence.}
+\item{matrixType}{Heatmap matrix to plot, one of GeneRatio, p.adjust or
+presence.}
 
 \item{clustering}{if TRUE, a hierarchical clustering is performed on rows and
 columns and they will be ordered accordingly.
