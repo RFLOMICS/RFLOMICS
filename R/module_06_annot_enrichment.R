@@ -643,6 +643,8 @@
                                       fromSource = listSource,
                                       paramList  = paramList) == FALSE) return()
 
+            rea.values[[datasetList]] <- NULL
+            
             #---- progress bar ----#
             progress <- Progress$new()
             progress$set(message = "Run annotation enrichment", value = 0)
@@ -684,7 +686,7 @@
             #---- progress bar ----#
             progress$inc(1, detail = paste("All done", 100, "%", sep = ""))
             #----------------------#
-
+            
             rea.values[[datasetList]] <-
                 getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
                                         analyses = paste0(listSource, "EnrichAnal"))

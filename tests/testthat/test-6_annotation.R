@@ -242,11 +242,6 @@ test_that("getEnrichRes - GO - proteomics is working", {
         pvalueCutoff = 1)
 
     expect_no_error(getAnnotAnalysesSummary(MAE))
-    expect_no_error(getAnnotAnalysesSummary(MAE, matrixType = "log2FC"))
-    expect_no_error(getAnnotAnalysesSummary(MAE, matrixType = "GeneRatio"))
-    expect_no_error(getAnnotAnalysesSummary(MAE, matrixType = "p.adjust"))
-    expect_no_error(getAnnotAnalysesSummary(MAE, matrixType = "presence"))
-    expect_error(getAnnotAnalysesSummary(MAE, matrixType = "type"))
     expect_error(getAnnotAnalysesSummary(MAE, from = "from"))
 
 })

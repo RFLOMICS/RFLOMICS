@@ -338,6 +338,15 @@ RflomicsMAE <- function(experiments = ExperimentList(),
   # date <- format(Sys.time(), '%d %B %Y - %H:%M')
   # Sys.setlocale('LC_TIME') # return to default system time
 
+  # Fix the color scheme for each dataset
+  n_datasets <- length(unlist(omicList))
+  pal <- brewer.pal(min(n_datasets, brewer.pal.info["Set1", "maxcolors"]), "Set1")
+  if (n_datasets > length(pal)) {
+    pal <- colorRampPalette(pal)(n_datasets)
+  }
+  names(pal) <- unlist(omicList)
+  
+  # set metadata slot
   metadata <- list(
     "omicList"            = omicList,
     "projectName"         = projectName,
@@ -345,7 +354,8 @@ RflomicsMAE <- function(experiments = ExperimentList(),
     "IntegrationAnalysis" = IntegrationAnalysis,
     "date"                = Sys.Date(),
     "sessionInfo"         = .writeSessionInfo(),
-    "rflomicsVersion"     = packageVersion('RFLOMICS')
+    "rflomicsVersion"     = packageVersion('RFLOMICS'),
+    "color"               = pal
   )
 
   rflomicsMAE <- new("RflomicsMAE", metadata = metadata)

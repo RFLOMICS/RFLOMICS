@@ -632,7 +632,9 @@ setGeneric(
   name = "getAnnotAnalysesSummary",
   def  = function(object,
                   from       = "DiffExp",
-                  matrixType = "presence",
+                  listNames  = NULL,
+                  omicNames  = NULL,
+                  databases  = NULL,
                   ...)
     standardGeneric("getAnnotAnalysesSummary")
 )
