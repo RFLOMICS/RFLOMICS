@@ -491,7 +491,7 @@ setMethod(
       as.character(realSize),
       "TRUE"  = {
         p <- ggplot(data, aes(x=primary, y=log(nb_entities))) +
-          geom_col(aes(fill = y.axis)) +
+          geom_col(aes(fill = assay)) +
           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
                 panel.background = element_blank(), axis.ticks = element_blank(),
                 axis.text.x = element_text(angle = 90, hjust = 1), legend.position="none",
@@ -502,11 +502,12 @@ setMethod(
       },
       "FALSE" = {
         p <- ggplot(data, aes(x=primary, y=y.axis)) +
-          geom_tile(aes(fill = y.axis), colour = "grey50") +
+          geom_tile(aes(fill = assay), colour = "grey50") +
           theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
                 panel.background = element_blank(), axis.ticks = element_blank(), legend.position="none",
                 axis.text.x = element_text(angle = 90, hjust = 1)) +
-          labs(x=paste0("Samples (k=", length(unique(sampleMap(object)$primary)), ")"), y="")
+          labs(x=paste0("Samples (k=", length(unique(sampleMap(object)$primary)), ")"), y="") + 
+          scale_fill_manual(values = metadata(object)$color)
       }
     )
     return(p)

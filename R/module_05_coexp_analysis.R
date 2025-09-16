@@ -294,9 +294,8 @@ CoSeqAnalysis <- function(input, output, session, dataset, rea.values){
         # initialize MAE object
         session$userData$FlomicsMultiAssay <-
             resetRflomicsMAE(session$userData$FlomicsMultiAssay,
-                             datasetNames = dataset,
-                             singleAnalyses = c("CoExpAnal",
-                                                "CoExpEnrichAnal"))
+                             datasetNames   = dataset,
+                             singleAnalyses = c("CoExpAnal", "CoExpEnrichAnal"))
 
         #---- progress bar ----#
         progress <- shiny::Progress$new()
