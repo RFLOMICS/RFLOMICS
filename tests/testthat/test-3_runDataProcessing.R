@@ -85,9 +85,9 @@ test_that("runDataProcessing returned value", {
                                imputMethod = "MVI")
 
   ## returns a value of class RflomicsS
-  expect_true("RflomicsSE" %in% is(rna.S1))
-  expect_true("RflomicsSE" %in% is(prot.S1))
-  expect_true("RflomicsSE" %in% is(meta.S1))
+  expect_true(is(rna.S1, "RflomicsSE"))
+  expect_true(is(prot.S1, "RflomicsSE"))
+  expect_true(is(meta.S1, "RflomicsSE"))
 
   ## we get the same results
   expect_identical(rna.S1,  MAE1[["RNAtest"]])
@@ -376,8 +376,8 @@ test_that("default values of runFeatureFiltering arguments", {
   rna.S1 <- runFeatureFiltering(rna.S1)
 
   ## returns a value of class RflomicsMAE/RflomicsSE
-  expect_true("RflomicsMAE" %in% is(MAE1))
-  expect_true("RflomicsSE" %in% is(rna.S1))
+  expect_true(is(MAE1, "RflomicsMAE" ))
+  expect_true(is(rna.S1, "RflomicsSE"))
   expect_identical(rna.S1, MAE1[["RNAtest"]])
 
   ## filtering settings: features
@@ -469,9 +469,9 @@ test_that("runTransformation returned value", {
     runTransformData(transformMethod = "log2")
 
   ## returns a value of class RflomicsMAE/RflomicsSE
-  expect_true("RflomicsMAE" %in% is(MAE1))
-  expect_true("RflomicsSE" %in% is(prot.S1))
-  expect_true("RflomicsSE" %in% is(meta.S1))
+  expect_true(is(MAE1, "RflomicsMAE"))
+  expect_true(is(prot.S1, "RflomicsSE"))
+  expect_true(is(meta.S1, "RflomicsSE"))
   expect_identical(prot.S1, MAE1[["protetest"]])
   expect_identical(meta.S1, MAE1[["metatest"]])
 
@@ -608,10 +608,10 @@ test_that("runNormalization returned value", {
     runNormalization(normMethod = "median")
 
   ## returns a value of class RflomicsMAE/RflomicsSE
-  expect_true("RflomicsMAE" %in% is(MAE1))
-  expect_true("RflomicsSE" %in% is(rna.S1))
-  expect_true("RflomicsSE" %in% is(prot.S1))
-  expect_true("RflomicsSE" %in% is(meta.S1))
+  expect_true(is(MAE1, "RflomicsMAE"))
+  expect_true(is(rna.S1, "RflomicsSE"))
+  expect_true(is(prot.S1, "RflomicsSE"))
+  expect_true(is(meta.S1, "RflomicsSE"))
   expect_identical(rna.S1,  MAE1[["RNAtest"]])
   expect_identical(prot.S1, MAE1[["protetest"]])
   expect_identical(meta.S1, MAE1[["metatest"]])
@@ -744,7 +744,7 @@ test_that("Error/warning messages", {
 })
 
 test_that("Test explor plot", {
-  
+
   sampleToKeep <- colnames(MAE[["RNAtest"]])[-1]
   MAE1 <- runDataProcessing(MAE, SE.name = "RNAtest",
                             samples = sampleToKeep,
@@ -755,20 +755,20 @@ test_that("Test explor plot", {
                             transformMethod = "none",
                             normMethod = "none",
                             imputMethod = "MVI")
-  
+
   p <- plotLibrarySize(MAE1, SE.name = "RNAtest", raw = TRUE)
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   expect_error(plotLibrarySize(MAE1, SE.name = "protetest"))
-  
+
   p <- plotDataDistribution(MAE1, SE.name = "RNAtest", plot = "boxplot")
-  expect_equal(is(p), "gg")
-  
+  expect(is(p, "gg"), "This plot is not ggplot")
+
   p <- plotDataDistribution(MAE1, SE.name = "protetest", plot = "density")
-  expect_equal(is(p), "gg")
-  
+  expect(is(p, "gg"), "This plot is not ggplot")
+
   p <- plotOmicsPCA(MAE1, SE.name = "RNAtest")
-  expect_equal(is(p), "gg")
-  
+  expect(is(p, "gg"), "This plot is not ggplot")
+
   p <- plotExpDesignCompleteness(MAE1, omicName = "RNAtest")
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
 })

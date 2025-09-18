@@ -52,13 +52,13 @@
 
 
     if (length(FlomicsMultiAssay.try[["warnings"]]) > 0 || length(FlomicsMultiAssay.try[["messages"]]) > 0) {
-        warning(paste(FlomicsMultiAssay.try[["warnings"]],
-                      FlomicsMultiAssay.try[["messages"]],
-                      collapse = "\n"))
-    #     showModal(modalDialog(title = "Warning",
-    #                           HTML(paste(FlomicsMultiAssay.try[["warnings"]],
-    #                                 FlomicsMultiAssay.try[["messages"]],
-    #                                 collapse = "<br>"))))
+        # warning(paste(FlomicsMultiAssay.try[["warnings"]],
+        #               FlomicsMultiAssay.try[["messages"]],
+        #               collapse = "\n"))
+        showModal(modalDialog(title = "Warning",
+                              HTML(paste(FlomicsMultiAssay.try[["warnings"]],
+                                    FlomicsMultiAssay.try[["messages"]],
+                                    collapse = "<br>"))))
     }
 
     session$userData$FlomicsMultiAssay <- FlomicsMultiAssay.try$result
@@ -215,23 +215,22 @@
 
     # read and check design file
     design.tt <-
-      tryCatch(
-        expr = readExpDesign(file = input$Experimental.Design.file$datapath),
-        error = function(e)
-          e,
-        warning = function(w)
-          w
-      )
+    .tryCatch_rflomics(
+        readExpDesign(file = input$Experimental.Design.file$datapath)
+        )
 
-    if (!is.null(design.tt$message)) {
-      showModal(modalDialog(title = "Error message", design.tt$message))
+    if (is.null(design.tt$result)) {
+      showModal(modalDialog(title = "Error message", design.tt$error))
     }
     validate({
-      need(expr = is.null(design.tt$message),
-           message = design.tt$message)
+      need(!is.null(design.tt$result), message = design.tt$error)
     })
 
-    local.rea.values$ExpDesignOrg <- design.tt
+    if (!is.null(design.tt$warnings) && length(design.tt[["warnings"]]) != 0) {
+      showModal(modalDialog(title = "Warning message", design.tt$warnings))
+    }
+
+    local.rea.values$ExpDesignOrg <- design.tt$result
   })
 
   # ---- Add new omic data ----

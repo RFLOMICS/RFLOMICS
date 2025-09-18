@@ -74,8 +74,8 @@
   from = "DiffExp",
   database = NULL,
   domain = "no-domain",
-  matrixType = "FC",
-  nClust = NULL,
+  matrixType = "presence",
+  clustering = TRUE,
   ...
 )
 
@@ -100,7 +100,14 @@
 
 \S4method{getEnrichSettings}{RflomicsSE}(object, from = "DiffExp", database = "GO")
 
-\S4method{getAnnotAnalysesSummary}{RflomicsMAE}(object, from = "DiffExp", matrixType = "presence", ...)
+\S4method{getAnnotAnalysesSummary}{RflomicsMAE}(
+  object,
+  from = "DiffExp",
+  listNames = NULL,
+  omicNames = NULL,
+  databaseList = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{An object of class \link{RflomicsSE} or
@@ -148,7 +155,7 @@ iii) qvalueCutoff on qvalues to be reported.}
 
 \item{maxGSSize}{maximal size of genes annotated for testing}
 
-\item{...}{more arguments for ComplexHeatmap::Heatmap.}
+\item{...}{more arguments}
 
 \item{SE.name}{SE.name the name of the dataset if the input object
 is a \link{RflomicsMAE-class}}
@@ -167,14 +174,23 @@ One of dotplot, heatplot or cnetplot.}
 
 \item{p.adj.cutoff}{pvalueCutoff to define the enrichment threshold.}
 
-\item{matrixType}{Heatmap matrix to plot, one of GeneRatio, p.adjust
-or presence.}
+\item{matrixType}{Heatmap matrix to plot, one of GeneRatio, p.adjust or
+presence.}
 
-\item{nClust}{number of separate cluster to plot on the heatmap, based o
-n the clustering.}
+\item{clustering}{if TRUE, a hierarchical clustering is performed on rows and
+columns and they will be ordered accordingly.
+It will not be displayed as a dendrogram.}
 
 \item{experiment}{if the object is a RflomicsMAE, then experiment is the
 name of the RflomicsSE to look for.}
+
+\item{listNames}{List of names of differential expression feature lists 
+(from = "DiffExp") or list of names of annotated co-expression clusters 
+(from = "CoExp")}
+
+\item{omicNames}{List of dataset names}
+
+\item{databaseList}{List of used databases}
 }
 \value{
 A RflomicsMAE or a RflomicsSE, depending on the class of object
@@ -260,55 +276,50 @@ MAE <- createRflomicsMAE(
 
 # Set the statistical model and contrasts to test
 formulae <- generateModelFormulae(MAE)
-MAE <- setModelFormula(MAE, formulae[[1]])  
+MAE <- setModelFormula(MAE, formulae[[1]])
 
 # Get the contrasts List and choose the first 3 contrasts of type averaged
 contrastList <- generateExpressionContrast(MAE, "averaged")
 
 MAE <- setSelectedContrasts(MAE, contrastList = contrastList[c(1, 2, 3),])
 
-# Run the data preprocessing and perform the differential analysis 
-MAE <- runDataProcessing(MAE, SE.name = "protetest",  
+# Run the data preprocessing and perform the differential analysis
+MAE <- runDataProcessing(MAE, SE.name = "protetest",
                          transformMethod = "log2",
                          normMethod = "median")
 
-MAE <- runDiffAnalysis(MAE, 
-                       SE.name = "protetest", 
+MAE <- runDiffAnalysis(MAE,
+                       SE.name = "protetest",
                        method = "limmalmFit")
 
 # Run GO annotation (enrichGO)
 # Not run: need org.At.tair.db package
 # MAE <- runAnnotationEnrichment(MAE, SE.name = "protetest",
-#                                list_args = list(OrgDb = "org.At.tair.db",
-#                                                 keyType = "TAIR",
-#                                                 pvalueCutoff = 0.05),
+#                                OrgDb = "org.At.tair.db",
+#                                keyType = "TAIR",
+#                                pvalueCutoff = 0.05),
 #                                from = "DiffExp", database = "GO",
 #                                domain = "CC")
 
 # Run KEGG annotation (enrichKEGG)
 # need internet connection
 # MAE <- runAnnotationEnrichment(MAE, SE.name = "protetest",
-#                                list_args = list(organism = "ath",
-#                                                 keyType = "kegg",
-#                                                 pvalueCutoff = 0.05),
+#                                organism = "ath",
+#                                keyType = "kegg",
+#                                pvalueCutoff = 1,
 #                                from = "DiffExp", database = "KEGG")
 
 
 # Search for the pvalue cutoff:
 # sumORA(MAE[["protetest"]], from = "DiffExp", database = "KEGG")
 
-# need internet connection
-# pathview package
-# plotKEGG(MAE[["protetest"]], pathway_id = "ath00710", species = "ath",
-#          contrastName = "cluster.4", from = "Coexp")
-
 # From differential analysis proteins lists:
 # plotClusterProfiler(MAE[["protetest"]],
-#                     contrastName = "(temperatureElevated - temperatureMedium) in mean",
+#                     featureListName = "(temperatureElevated - temperatureMedium) in mean",
 #                     database = "KEGG", from = "DiffExp",
 #                     plotType = "heatplot", p.adj.cutoff = 0.05,
 #                     domain = "no-domain")
-# 
+#
 # plotEnrichComp(MAE[["protetest"]], from = "DiffExp",
 #                database = "KEGG", matrixType = "FC")
 
@@ -317,9 +328,9 @@ MAE <- runDiffAnalysis(MAE,
 #                         from = "diffexp", database = "KEGG")
 
 # Search for the pvalue cutoff:
-# usedPvalue <- 
+# usedPvalue <-
 #     getEnrichPvalue(MAE[["protetest"]], from = "diffexp", database = "KEGG")
-# settings <- 
+# settings <-
 #     getEnrichSettings(MAE[["protetest"]], from = "diffexp", database = "KEGG")
 
 }

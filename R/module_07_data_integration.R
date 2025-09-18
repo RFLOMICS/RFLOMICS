@@ -119,15 +119,14 @@
     })
 
     # select datasets to integrate
-    output$selectDataUI <- .integrationSelectDataUI(session, rea.values,
-                                                    input)
+    output$selectDataUI <- .integrationSelectDataUI(session, rea.values, input)
 
     # select method of variable reduction
     output$selectVariablesUI <-
         .integrationPrepareParamUI(session, input, rea.values)
 
     # over view of selected data after variable reduction
-    output$prepareDataUI <- .integrationPrepareDataUI(session, input)
+    output$prepareDataUI <- .integrationPrepareDataUI(session, input, method)
 
     # before MOFA integration
     observeEvent(input$run_prep, {
@@ -223,14 +222,14 @@
                     # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
                     #                                  raw = FALSE)
                     transformedSE <-
-                      switch (
-                        getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
-                        "RNAseq" =
-                          getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                           filter = TRUE, log = TRUE ),
-                        getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                         norm = TRUE)
-                      )
+                        switch (
+                            getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
+                            "RNAseq" =
+                                getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                                 filter = TRUE, log = TRUE ),
+                            getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                             norm = TRUE)
+                        )
                     transformedSE <- assay(transformedSE)
 
                     cv_vect <- unlist(
@@ -478,8 +477,11 @@
 
                 listTab <- list(
                     tabPanel(
-                        "Overview",
+                        "Overview - Features Table",
                         .outMOOverview(Data_res, settings)),
+                    tabPanel(
+                        "Overview - Samples Graph",
+                        .outMOOverviewDisplay(session, Data_res)),
                     tabPanel(
                         "Explained Variance",
                         .outMOexplainedVar(session, Response)
@@ -768,7 +770,7 @@
 #
 #' @noRd
 #' @keywords internal
-.integrationPrepareDataUI <- function(session, input) {
+.integrationPrepareDataUI <- function(session, input, method) {
 
     renderUI({
         if (length(input$selectData) == 0) return()
@@ -778,9 +780,9 @@
         MAE2Integrate <- subRflomicsMAE(session$userData$FlomicsMultiAssay,
                                         input$selectData)
 
-        for(set in input$selectData){
+        for (set in input$selectData){
 
-            if(input[[paste0("selectmethode", set)]] == "diff"){
+            if( input[[paste0("selectmethode", set)]] == "diff"){
 
                 variable.to.keep <- getDEList(
                     object = session$userData$FlomicsMultiAssay[[set]],
@@ -795,14 +797,14 @@
                 # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
                 #                                  raw = FALSE)
                 transformedSE <-
-                  switch (
-                    getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
-                    "RNAseq" =
-                      getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                       filter = TRUE, log = TRUE ),
-                    getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                     norm = TRUE)
-                )
+                    switch (
+                        getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
+                        "RNAseq" =
+                            getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                             filter = TRUE, log = TRUE ),
+                        getProcessedData(session$userData$FlomicsMultiAssay[[set]],
+                                         norm = TRUE)
+                    )
                 transformedSE <- assay(transformedSE)
                 cv_vect <- unlist(
                     lapply(seq_len(nrow(transformedSE)),
@@ -825,10 +827,16 @@
 
         textExp <- "This graph represents the dataset you will use in
         the integration (tables and samples).
-        Gray areas represent missing samples. "
+        White areas represent missing samples. "
+
+        if (method == "mixOmics") {
+            textExp <- paste0(textExp,
+                              "You chose mixOmics, only the complete cases will be analyzed.")
+            MAE2Integrate <- MAE2Integrate[, complete.cases(MAE2Integrate), ]
+        }
 
         box(
-            title = "Overview",
+            title = "Overview of the data to integrate",
             width = 12,
             status = "warning",
             solidHeader = FALSE,
@@ -844,7 +852,8 @@
             hr(),
             renderPlot(
                 plotDataOverview(MAE2Integrate,
-                                 omicNames = input$selectData) +
+                                 omicNames = input$selectData,
+                                 raw = FALSE) +
                     theme(axis.text.y = element_text(size = 12),
                           axis.text.x = element_text(size = 10,
                                                      angle = 45,
@@ -1059,6 +1068,33 @@
 
         }))
     )
+}
+
+#' @noRd
+#' @keywords internal
+.outMOOverviewDisplay <- function(session, Data_res) {
+
+    textExplained <- paste0("This graph shows the data, samples and feature numbers that have been used for mixOmics integration.",
+                            " As mixOmics only takes into account the complete cases,",
+                            " some samples might have been removed during the processing.")
+
+    renderUI({
+        tagList(
+            br(),
+            div(class = "explain-p", HTML(textExplained)),
+            column(12, renderPlot({
+
+                plotDataOverview(session$userData$FlomicsMultiAssay,
+                                 omicNames = names(Data_res[["X"]]),
+                                 raw = FALSE,
+                                 completeCases = TRUE) +
+                    theme(axis.text.y = element_text(size = 12),
+                          axis.text.x = element_text(size = 10,
+                                                     angle = 45,
+                                                     hjust = 1))
+            }))
+        )
+    })
 }
 
 #' @noRd
