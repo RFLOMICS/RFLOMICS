@@ -37,32 +37,32 @@ NULL
 #'                        FacBatch=c("Replicat", "laboratory"))
 #'
 .generateModelFormulae <- function(FacBio=NULL, FacBatch=NULL){
-
+  
   # Initialize
   formulae <- list()
-
+  
   # Verify that nbr of bio factors are between 1 and 3.
   if(!length(FacBio) %in% seq_len(3)) stop(".... !")
-
+  
   # Verify that nbr of batch factors are between 1 and 2.
   if(!length(FacBatch) %in% c(1,2)) stop(".... !")
-
+  
   nFac <- length(FacBio)
-
+  
   # get formulae without interation
   formulae[[1]] <- update(as.formula(paste(paste("~ ",FacBatch,collapse ="+"),"+",paste(FacBio,collapse="+"))),new=~.)
-
+  
   # get formulae with interation if nbr of FacBio > 1
   if(nFac !=1)
     formulae[[2]] <- update(as.formula(paste(paste("~ ",FacBatch,collapse ="+"),"+","(",paste(FacBio,collapse="+"),")^2")),new=~.)
-
+  
   formulae <- unlist(formulae)
   names(formulae) <- unlist(as.character(formulae))
-
+  
   # Sort formulae
-
+  
   formulae <- formulae[order(unlist(lapply(names(formulae),nchar)),decreasing=TRUE)]
-
+  
   return(formulae)
 }
 
@@ -106,47 +106,60 @@ contrastName2contrastDir <- function(contrastName){
 #' @keywords internal
 #' @noRd
 .getExpressionContrastF <- function(ExpDesign, factorBio=NULL, modelFormula=NULL){
-
+  
   # ExpDesign
-  if(is.null(ExpDesign) || nrow(ExpDesign) == 0) stop("ExpDesign argument is mandatory.")
-
+  if(is.null(ExpDesign) || nrow(ExpDesign) == 0) 
+    stop("ExpDesign argument is mandatory.")
+  
   # model formula
-  if (is.null(modelFormula)) stop("modelFormula argument is mandatory.")
-  if (is(modelFormula, "formula")) modelFormula <- paste(as.character(modelFormula), collapse = " ")
+  if (is.null(modelFormula)) 
+    stop("modelFormula argument is mandatory.")
+  
+  if (is(modelFormula, "formula")) 
+    modelFormula <- paste(as.character(modelFormula), collapse = " ")
+  
   modelFormula <- formula(modelFormula)
-
+  
   # factorBio
-  if (is.null(factorBio)) stop("factorBio argument is mandatory.")
-  if (length(intersect(factorBio, names(ExpDesign))) == 0) stop("factorBio and names(ExpDesign) don't overlap!")
-
+  if (is.null(factorBio)) 
+    stop("factorBio argument is mandatory.")
+  
+  if (length(intersect(factorBio, names(ExpDesign))) == 0) 
+    stop("factorBio and names(ExpDesign) don't overlap!")
+  
   # bio factor list in formulat
   labelsIntoDesign <- attr(terms.formula(modelFormula),"term.labels")
-
+  
   FactorBioInDesign <- intersect(labelsIntoDesign, factorBio)
-  if (length(FactorBioInDesign) == 0) stop("factorBio and attributes (attr) of modelFormula don't overlap!")
-
-  treatmentFactorsList <- lapply(FactorBioInDesign, function(x){(paste(x, levels(ExpDesign[[x]]), sep=""))})
+  if (length(FactorBioInDesign) == 0) 
+    stop("factorBio and attributes (attr) of modelFormula don't overlap!")
+  
+  treatmentFactorsList <- 
+    lapply(FactorBioInDesign, function(x){
+      paste(x, levels(ExpDesign[[x]]), sep="")
+      })
   names(treatmentFactorsList) <- FactorBioInDesign
-
+  
   interactionPresent <- any(attr(terms.formula(modelFormula),"order") > 1)
-
+  
   listOfContrastsDF <- list()
   # define all simple contrasts pairwise comparisons
-
+  
   allSimpleContrast_df <- .defineAllSimpleContrasts(treatmentFactorsList)
   # if 1 factor or more than 1 + interaction
   if(length(treatmentFactorsList) == 1 || !isFALSE(interactionPresent)){
-
+    
     listOfContrastsDF[["simple"]] <- select(allSimpleContrast_df, contrast, contrastName, groupComparison, type)
   }
-
+  
   # define all simples contrast means
   # exists("allSimpleContrast_df", inherits = FALSE)
   if(length(treatmentFactorsList) != 1){
-    allAveragedContrasts_df <- .define_averaged_contrasts(allSimpleContrast_df)
-    listOfContrastsDF[["averaged"]] <-  select(allAveragedContrasts_df, contrast, contrastName, groupComparison, type)
+    allAveragedContrasts_df <- .define_averaged_contrasts(treatmentFactorsList)
+    listOfContrastsDF[["averaged"]] <-  
+      select(allAveragedContrasts_df, contrast, contrastName, groupComparison, type)
   }
-
+  
   # define all interaction contrasts
   if(length(treatmentFactorsList) != 1){
     if(interactionPresent){
@@ -154,8 +167,9 @@ contrastName2contrastDir <- function(contrastName){
       labelOrder                  <- attr(terms.formula(modelFormula), "order")
       twoWayInteractionInDesign   <- labelsIntoDesign[which(labelOrder == 2)]
       groupInteractionToKeep      <- gsub(":", " vs ", twoWayInteractionInDesign)
-      allInteractionsContrasts_df <- .defineAllInteractionContrasts(treatmentFactorsList, groupInteractionToKeep)
-
+      allInteractionsContrasts_df <- 
+        .defineAllInteractionContrasts(treatmentFactorsList, groupInteractionToKeep)
+      
       listOfContrastsDF[["interaction"]] <- select(allInteractionsContrasts_df, contrast, contrastName, groupComparison, type)
     }
     #allInteractionsContrasts_df <- .defineAllInteractionContrasts(treatmentFactorsList)
@@ -163,16 +177,16 @@ contrastName2contrastDir <- function(contrastName){
   }
   # choose the contrasts and rbind data frames of contrasts
   #selectedContrasts <- returnSelectedContrasts(listOfContrastsDF)
-
+  
   tag <- 0
   for(C_type in names(listOfContrastsDF)){
     listOfContrastsDF[[C_type]]$tag <-
       paste0("H", (tag+1):(nrow(listOfContrastsDF[[C_type]])+tag))
     tag <- nrow(listOfContrastsDF[[C_type]])+tag
   }
-
+  
   return(listOfContrastsDF)
-
+  
 }
 
 
@@ -217,27 +231,27 @@ contrastName2contrastDir <- function(contrastName){
 #' @noRd
 #' @author Christine Paysant-Le Roux
 .define_partOfSimpleContrast_df <- function (treatmentFactorsList, i, j) {
-
+  
   contrastPart <- fixFactor <- NULL
-
+  
   comparisonPart <- treatmentFactorsList
   # combn(x,2) generate all combinations of the elements of x taken 2 at a time
   vectorFromCombn <- combn(treatmentFactorsList[[i]],2)[j,]
   comparisonPart[[i]] <- vectorFromCombn
   df_comparisonPart <- expand.grid(comparisonPart)
   setDT(df_comparisonPart)
-
+  
   # paste all the column of the data table
   df_comparisonPart <- df_comparisonPart %>%
     unite(contrastPart, sep="_", remove=FALSE)
-
+  
   #colnameFactor_i <- names(df_comparisonPart)[i]
   colnameFactor_i <- names(treatmentFactorsList)[i]
-
+  
   #df_comparisonPart[, comparisonPart := df_comparisonPart[[colnameFactor_i]]]
   df_comparisonPart <- df_comparisonPart %>%
     mutate(comparisonPart = df_comparisonPart[[colnameFactor_i]])
-
+  
   if(length(names(treatmentFactorsList)) != 1){
     colnamesToKeep <- setdiff(names(df_comparisonPart),c("contrastPart", "comparisonPart", colnameFactor_i))
     df_comparisonPart <- df_comparisonPart %>%
@@ -246,12 +260,12 @@ contrastName2contrastDir <- function(contrastName){
     df_comparisonPart <- df_comparisonPart %>%
       mutate(fixFactor= NA)
   }
-
-
+  
+  
   colnamesToDelete <- names(treatmentFactorsList)
   df_comparisonPart <- df_comparisonPart %>%
     select(-all_of(colnamesToDelete))
-
+  
   nameColumnContrast <- paste0("contrastPart", j)
   nameColumnComparison <- paste0("comparisonPart", j)
   data.table::setnames(df_comparisonPart,
@@ -269,49 +283,48 @@ contrastName2contrastDir <- function(contrastName){
 #' @importFrom tidyselect all_of
 #' @author Christine Paysant-Le Roux
 .simpleContrastForOneFactor <- function (treatmentFactorsList, i){
-
+  
   fixFactor <- groupComparison <- NULL
-
+  
   contrastPart1 <- contrastPart2 <- contrastPart3 <- contrastPart4 <-  NULL
   comparisonPart1 <- comparisonPart2 <- NULL
   fixPart1 <- fixPart3 <- fixFactor1 <- fixFactor3 <- NULL
   comparisonPart3 <- comparisonPart4 <- NULL
-
+  
   df_FirstComparisonPart <- .define_partOfSimpleContrast_df(treatmentFactorsList,i,2)
   df_FirstComparisonPart <- df_FirstComparisonPart %>% select(-fixFactor)
-
+  
   df_SecondComparisonPart <- .define_partOfSimpleContrast_df(treatmentFactorsList,i,1)
   df_simpleContrasts_factor <- cbind(df_FirstComparisonPart, df_SecondComparisonPart)
-
+  
   df_simpleContrasts_factor <- df_simpleContrasts_factor %>%
     mutate(contrast = paste0("(", contrastPart2,   " - ", contrastPart1, ")"),
            groupComparison = paste0("(", comparisonPart2, " - ", comparisonPart1, ")"))
-
-
+  
   # case where fixFactor column is empty (NA inside)
   emptycolFixFactor <- unique(is.na(df_simpleContrasts_factor$fixFactor))
   if(emptycolFixFactor){
     df_simpleContrasts_factor <- df_simpleContrasts_factor %>%
       mutate(contrastName = groupComparison)
-
+    
   } else {
     df_simpleContrasts_factor <- df_simpleContrasts_factor %>%
       mutate(contrastName = paste0(groupComparison, " in ", fixFactor ))
   }
-
+  
   df_simpleContrasts_factor <- df_simpleContrasts_factor %>%
     mutate(type = "simple")
-
+  
   colnamesToDelete <- c("contrastPart2", "comparisonPart2",
                         "contrastPart1", "comparisonPart1")
-
+  
   df_simpleContrasts_factor <- df_simpleContrasts_factor %>%
     select(-all_of(colnamesToDelete)) %>%
     select("contrast", "groupComparison", "contrastName",
            "type", "fixFactor")
-
-
-
+  
+  
+  
   return(df_simpleContrasts_factor)
 }
 
@@ -351,27 +364,127 @@ contrastName2contrastDir <- function(contrastName){
 #' @noRd
 #' @importFrom data.table data.table setcolorder
 #' @author Christine Paysant-Le Roux
-.define_averaged_contrasts <- function(allSimpleContrast_df){
-
-  groupComparison <- contrast <- n <- fixFactor <- contrastName <- NULL
-
-  allAveragedContrasts_df <- allSimpleContrast_df %>%
-    group_by(groupComparison) %>%
-    add_tally() %>%
-    mutate(contrast= paste0(paste0("(", paste(contrast, collapse=" + ")),")/", n),
-           meanIn  = paste(fixFactor, collapse=" + "),
-           type    = "mean") %>%
-    select(-contrastName, -fixFactor, -n) %>%
-    unique() %>% data.table()
-
-  allAveragedContrasts_df <- allAveragedContrasts_df %>%
-    mutate(contrastName = paste(groupComparison, "mean", sep = " in "))
-
-  setcolorder(allAveragedContrasts_df,
-              c("contrast", "groupComparison", "contrastName",
-                "type", "meanIn"))
-
+# .define_averaged_contrasts <- function(allSimpleContrast_df){
+# 
+#   groupComparison <- contrast <- n <- fixFactor <- contrastName <- NULL
+#   
+#   allAveragedContrasts_df <- allSimpleContrast_df %>%
+#     group_by(groupComparison) %>%
+#     add_tally() %>%
+#     mutate(contrast= paste0(paste0("(", paste(contrast, collapse=" + ")),")/", n),
+#            meanIn  = paste(fixFactor, collapse=" + "),
+#            type    = "mean") %>%
+#     select(-contrastName, -fixFactor, -n) %>%
+#     unique() %>% data.table()
+# 
+#   allAveragedContrasts_df <- allAveragedContrasts_df %>%
+#     mutate(contrastName = paste(groupComparison, "mean", sep = " in "))
+# 
+#   setcolorder(allAveragedContrasts_df,
+#               c("contrast", "groupComparison", "contrastName",
+#                 "type", "meanIn"))
+# 
+#   return(allAveragedContrasts_df[])
+# }
+# # define contrasts for interactions
+.define_averaged_contrasts <- function(treatmentFactorsList){
+  
+  allAveragedContrasts_df <- data.table()
+  # create each data frame and rbind it to the allSimpleContrast_df
+  for (i in seq_along(treatmentFactorsList)){
+    
+    fixFactor <- groupComparison <- NULL
+    
+    contrastPart1 <- contrastPart2 <- contrastPart3 <- contrastPart4 <-  NULL
+    comparisonPart1 <- comparisonPart2 <- NULL
+    fixPart1 <- fixPart3 <- fixFactor1 <- fixFactor3 <- NULL
+    comparisonPart3 <- comparisonPart4 <- NULL
+    
+    df_FirstComparisonPart <- .define_partOfSimpleContrast_df(treatmentFactorsList,i,2)
+    df_FirstComparisonPart <- df_FirstComparisonPart %>% select(-fixFactor)
+    
+    df_SecondComparisonPart <- .define_partOfSimpleContrast_df(treatmentFactorsList,i,1)
+    df_AveragedContrasts_factor <- cbind(df_FirstComparisonPart, df_SecondComparisonPart)
+    
+    df_AveragedContrasts_factor <- df_AveragedContrasts_factor %>%
+      mutate(contrast = paste0("(", contrastPart2,   " - ", contrastPart1, ")"),
+             groupComparison = paste0("(", comparisonPart2, " - ", comparisonPart1, ")")) 
+    
+    # case where fixFactor column is empty (NA inside)
+    emptycolFixFactor <- unique(is.na(df_AveragedContrasts_factor$fixFactor))
+    
+    # (A1 - A2) # 1 bio factor
+    if(emptycolFixFactor){
+      df_AveragedContrasts_factor <- df_AveragedContrasts_factor %>%
+        mutate(contrastName = groupComparison)
+      
+    } else {
+      
+      # (A1 - A2) in mean
+      tmp <- df_AveragedContrasts_factor %>%
+        group_by(groupComparison) %>% 
+        add_tally() %>% 
+        mutate(meanIn  = paste(fixFactor, collapse=" + "),
+               contrastName = paste0(groupComparison, " in mean"),
+               contrast = paste0(paste0("(", paste(contrast, collapse=" + ")),")/", n))
+      
+      # (A1 - A2) in B1 in mean
+      if(length(treatmentFactorsList) == 3){
+        
+        for(k in 1:2){
+          fix <- paste0("fixFactor", k)
+          tmp <- df_AveragedContrasts_factor %>%
+            separate(fixFactor, c("fixFactor1", "fixFactor2"), sep = "_", remove = FALSE) %>%
+            group_by(groupComparison, !!sym(fix)) %>% 
+            add_tally() %>% 
+            mutate(meanIn  = paste(fixFactor, collapse=" + "),
+                   contrastName = paste0(groupComparison, " in ", !!sym(fix), ", in mean"),
+                   contrast = paste0(paste0("(", paste(contrast, collapse=" + ")),")/", n),
+                   fixFactor = !!sym(fix)) %>% 
+            ungroup() %>% 
+            select(-fixFactor1, -fixFactor2) %>%
+            rbind(tmp)
+        }
+      }
+      df_AveragedContrasts_factor <- tmp
+    }
+    
+    # colnamesToDelete <- c("contrastPart2", "comparisonPart2",
+    #                       "contrastPart1", "comparisonPart1",
+    #                       "fixFactor1", "fixFactor2")
+    
+    df_AveragedContrasts_factor <- df_AveragedContrasts_factor %>%
+      mutate(type = "mean") %>%
+      #select(-all_of(colnamesToDelete)) %>%
+      select("contrast", "groupComparison", "contrastName",
+             "type", "meanIn") %>%
+      unique() %>% as.data.frame()
+    
+    #dataTableToCreate <- .simpleContrastForOneFactor(treatmentFactorsList, i)
+    allAveragedContrasts_df <- 
+      rbind(allAveragedContrasts_df, df_AveragedContrasts_factor)
+  }
   return(allAveragedContrasts_df[])
+  
+  # groupComparison <- contrast <- n <- fixFactor <- contrastName <- NULL
+  # 
+  # allAveragedContrasts_df <- allSimpleContrast_df %>%
+  #   group_by(groupComparison) %>%
+  #   add_tally() %>%
+  #   mutate(contrast= paste0(paste0("(", paste(contrast, collapse=" + ")),")/", n),
+  #          meanIn  = paste(fixFactor, collapse=" + "),
+  #          type    = "mean") %>%
+  #   select(-contrastName, -fixFactor, -n) %>%
+  #   unique() %>% data.table()
+  # 
+  # allAveragedContrasts_df <- allAveragedContrasts_df %>%
+  #   mutate(contrastName = paste(groupComparison, "mean", sep = " in "))
+  # 
+  # setcolorder(allAveragedContrasts_df,
+  #             c("contrast", "groupComparison", "contrastName",
+  #               "type", "meanIn"))
+  # 
+  # return(allAveragedContrasts_df[])
 }
 # define contrasts for interactions
 
@@ -393,9 +506,9 @@ contrastName2contrastDir <- function(contrastName){
 #' @author Christine Paysant-Le Roux
 .define_partOfInteractionContrast_df <- function(
     treatmentFactorsList, i, j, k, row_i, row_j) {
-
+  
   contrastPart_bis <- outsideGroup_bis <- fixFactor_bis <- NULL
-
+  
   comparisonPart <- treatmentFactorsList
   # combn(x,2) generate all combinations of the elements of x
   # taken 2 at a time
@@ -409,38 +522,38 @@ contrastName2contrastDir <- function(contrastName){
           sep="_", remove=FALSE) %>%
     mutate(contrastPart = contrastPart_bis) %>%
     select(-contrastPart_bis)
-
+  
   colnameFactor_i <- names(df_comparisonPart)[i]
   colnameFactor_j <- names(df_comparisonPart)[j]
-
+  
   df_comparisonPart <- df_comparisonPart %>%
     mutate(comparisonPart = df_comparisonPart[[colnameFactor_i]]) %>%
     mutate(fixPart        = df_comparisonPart[[colnameFactor_j]])
-
+  
   colnamesToKeep <- setdiff(names(treatmentFactorsList),c(colnameFactor_i, colnameFactor_j))
   if(length(colnamesToKeep)){
-
+    
     df_comparisonPart <- df_comparisonPart %>%
       unite(outsideGroup_bis, all_of(colnamesToKeep), sep="_", remove=FALSE) %>%
       mutate(outsideGroup = outsideGroup_bis) %>%
       select(-outsideGroup_bis)
   }else{
-
+    
     df_comparisonPart <- df_comparisonPart %>% mutate(outsideGroup = NA)
   }
-
+  
   colnamesToKeep <- setdiff(names(df_comparisonPart),
                             c("contrastPart", "comparisonPart", "fixPart", "outsideGroup", colnameFactor_i))
   df_comparisonPart <- df_comparisonPart %>%
     unite(fixFactor_bis, all_of(colnamesToKeep), sep="_", remove=FALSE) %>%
     mutate(fixFactor = fixFactor_bis) %>%
     select(-fixFactor_bis)
-
+  
   colnamesToDelete <- names(treatmentFactorsList)
   df_comparisonPart <- df_comparisonPart %>%
     select(-all_of(colnamesToDelete))
-
-
+  
+  
   nameColumnContrast <- paste0("contrastPart", k)
   nameColumnComparison <- paste0("comparisonPart", k)
   nameFixFactor <- paste0("fixFactor", k)
@@ -468,11 +581,11 @@ contrastName2contrastDir <- function(contrastName){
 #' @author Christine Paysant-Le Roux
 .defineInteractionConstrastForPairsOfFactors <- function(treatmentFactorsList,
                                                          i, j){
-
+  
   contrastPart1 <- contrastPart2 <- contrastPart3 <- contrastPart4 <- NULL
   comparisonPart1 <- comparisonPart2 <- comparisonPart3 <- comparisonPart4 <- NULL
   fixPart1 <- fixPart3 <- fixFactor1 <- fixFactor3 <- NULL
-
+  
   df_part1 <- .define_partOfInteractionContrast_df(treatmentFactorsList, i, j, 1, 2, 2)
   df_part2 <- .define_partOfInteractionContrast_df(treatmentFactorsList, i, j, 2, 1, 2)
   df_part3 <- .define_partOfInteractionContrast_df(treatmentFactorsList, i, j, 3, 2, 1)
@@ -485,36 +598,39 @@ contrastName2contrastDir <- function(contrastName){
                                     "(", fixPart1, " - ", fixPart3, ")"),
            contrastName  = paste0("(", comparisonPart1, " - ", comparisonPart2, ")", " in ", fixFactor1, " - ",
                                   "(", comparisonPart3, " - ", comparisonPart4, ")", " in ", fixFactor3 ),
+           contrastName3  = paste0("(", comparisonPart1, " - ", comparisonPart2, ")", " in ", fixPart1, " - ",
+                                   "(", comparisonPart3, " - ", comparisonPart4, ")", " in ", fixPart3,),
            type = "interaction")
-
+  
   colnamesToDelete <- c("contrastPart1",  "comparisonPart1", "fixFactor1", "fixPart1", "outsideGroup1",
                         "contrastPart2", "comparisonPart2", "fixFactor2", "fixPart2", "outsideGroup2",
                         "contrastPart3", "comparisonPart3", "fixFactor3", "fixPart3", "outsideGroup3",
                         "contrastPart4", "comparisonPart4", "fixFactor4", "fixPart4")
   df_interactionContrasts <- df_interactionContrasts %>%
     select(-all_of(colnamesToDelete))
-
+  
   setnames(df_interactionContrasts, "outsideGroup4", "outsideGroup")
-
+  
   df_interactionContrasts <- df_interactionContrasts %>%
     mutate(groupInteraction = paste0(names(treatmentFactorsList)[i],
                                      " vs ", names(treatmentFactorsList)[j]))
-
+  
   # if 3 factors bio / outsideGroup exist
   if(!is.null(df_interactionContrasts$outsideGroup)){
-
+    
     ## add factor name of outsideGroup modality
     if(length(names(treatmentFactorsList)[-c(i,j)]) != 0){
-
+      
       df_interactionContrasts <- df_interactionContrasts %>%
         mutate(outsideGroup = names(treatmentFactorsList)[-c(i,j)]) %>%
         group_by(outsideGroup, groupComparison) %>% add_tally() %>%
         mutate(contrast= paste0(paste0("(", paste(contrast, collapse=" + ")),")/", n),
-               contrastName=paste0(groupComparison, " in ", outsideGroup)) %>%
+               contrastName=paste0(contrastName3, ", in mean ", outsideGroup)) %>%
         select(-n) %>% unique()
     }
   }
-
+  df_interactionContrasts$contrastName3 <- NULL
+  
   return(df_interactionContrasts)
 }
 
@@ -530,16 +646,16 @@ contrastName2contrastDir <- function(contrastName){
 #' @author Christine Paysant-Le Roux
 .defineAllInteractionContrasts <- function(treatmentFactorsList,
                                            groupInteractionToKeep = NULL){
-
+  
   groupInteraction <- NULL
-
+  
   allInteractionsContrasts_df <- data.table(contrast = character(),
                                             groupComparison = factor(),
                                             groupInteraction = character(),
                                             outsideGroup = character(),
                                             contrastName = character(),
                                             type = character())
-
+  
   vecFori <- combn(length(treatmentFactorsList),2)[1,]
   vecForj <- combn(length(treatmentFactorsList),2)[2,]
   for (k in seq_along(vecFori)) {
@@ -549,6 +665,7 @@ contrastName2contrastDir <- function(contrastName){
     allInteractionsContrasts_df <- rbind(allInteractionsContrasts_df,
                                          dataTableToCreate)
   }
+  
   if(!missing(groupInteractionToKeep)){
     allInteractionsContrasts_df <- subset(allInteractionsContrasts_df,
                                           (groupInteraction %in% groupInteractionToKeep))
@@ -569,21 +686,21 @@ contrastName2contrastDir <- function(contrastName){
 #' @keywords internal
 #' @noRd
 .getContrastMatrixF <- function(ExpDesign, factorBio, modelFormula, contrastList){
-
-    modelFormula <- formula(paste(modelFormula, collapse = " "))
-
+  
+  modelFormula <- formula(paste(modelFormula, collapse = " "))
+  
   # bio factor list in formula
   labelsIntoDesign <- attr(terms.formula(modelFormula),"term.labels")
   FactorBioInDesign <- intersect(factorBio, labelsIntoDesign)
-
+  
   treatmentFactorsList <- lapply(FactorBioInDesign, function(x){paste(x, unique(ExpDesign[[x]]), sep="")})
   names(treatmentFactorsList) <- FactorBioInDesign
-
+  
   treatmentCondenv <- new.env()
-
+  
   interactionPresent <- any(attr(terms.formula(modelFormula),"order") > 1)
   isThreeOrderInteraction <- any(attr(terms.formula(modelFormula),"order") == 3)
-
+  
   # get model matrix
   modelMatrix <- stats::model.matrix(modelFormula, data = ExpDesign)
   colnames(modelMatrix)[colnames(modelMatrix) == "(Intercept)"] <- "Intercept"
@@ -595,15 +712,15 @@ contrastName2contrastDir <- function(contrastName){
                         treatmentCondenv        = treatmentCondenv)
   # get the coefficient vector associated with each selected contrast
   colnamesGLMdesign <- colnames(modelMatrix)
-
+  
   coefficientsMatrix <- sapply(contrastList, function(x)
     .returnContrastCoefficients(x, colnamesGLMdesign, treatmentCondenv = treatmentCondenv))
-
+  
   colnames(coefficientsMatrix) <- contrastList
-
+  
   rownames(coefficientsMatrix) <- colnamesGLMdesign
   contrastMatrix <- as.data.frame(t(coefficientsMatrix))
-
+  
   return(contrastMatrix)
 }
 
@@ -722,14 +839,14 @@ contrastName2contrastDir <- function(contrastName){
 #' @return data.frame contrast
 #' @keywords internal
 updateSelectedContrasts <- function(object, contrastList=NULL){
-
+  
   if (!is(object, "RflomicsSE") && !is(object, "RflomicsMAE"))
     stop("")
-
+  
   allcontrasts <-
     generateExpressionContrast(object) |>
     reduce(rbind) |>
     filter(contrast %in% contrastList$contrast)
-
+  
   return(allcontrasts)
 }
