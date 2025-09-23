@@ -470,7 +470,7 @@
                                       paramList  = paramList) == FALSE) return()
 
             rea.values[[datasetList]] <- NULL
-            
+
             #---- progress bar ----#
             progress <- Progress$new()
             progress$set(message = "Run annotation enrichment", value = 0)
@@ -509,7 +509,7 @@
             #---- progress bar ----#
             progress$inc(1, detail = paste("All done", 100, "%", sep = ""))
             #----------------------#
-            
+
             rea.values[[datasetList]] <-
                 getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
                                         analyses = paste0(listSource, "EnrichAnal"))
@@ -1181,7 +1181,7 @@
                                     selected = choices[1]
                                 )
                             ),
-                            column(2,
+                            column(3,
                                    renderUI({
                                        # number of terms
                                        dataPlot <- getEnrichRes(
@@ -1213,22 +1213,12 @@
                                    })),
 
                             column(
-                                2,
+                                3,
                                 # search term or gene
                                 textInput(ns(
                                     paste0(listname, "-grep")
                                 ),
                                 label = "Search Expression")
-                            ),
-                            column(
-                                2,
-                                # rendering option
-                                radioButtons(
-                                    ns(paste0(listname, "-render")),
-                                    label = "Rendering",
-                                    choices = c("static", "interactive"),
-                                    selected = "static"
-                                )
                             ),
                             column(1,),
                             .popoverHelp(label = "")
@@ -1367,45 +1357,25 @@
 
         if (is(outplot, "gg")) {
 
-            switch(
-                input[[paste0(listname, "-render")]],
-                "static" = {
 
-                    column(
-                        width = 12,
-                        tags$style(
-                            ".explain-p {
+            column(
+                width = 12,
+                tags$style(
+                    ".explain-p {
                     color: Gray;
                     text-justify: inter-word;
                     font-style: italic;
                   }"
-                        ),
-                        div(class = "explain-p", HTML(plotExplain)),
-                        hr(),
-                        renderPlot({
-                            outplot + labs(title = listname,
-                                           subtitle = subTitlePlot)
-                        })
-                    )},
-                "interactive" = {
-                    column(
-                        width = 12,
-                        tags$style(
-                            ".explain-p {
-                    color: Gray;
-                    text-justify: inter-word;
-                    font-style: italic;
-                  }"
-                        ),
-                        div(class = "explain-p", HTML(plotExplain)),
-                        hr(),
-                        renderPlotly({
-                            ggplotly(outplot + labs(title = listname,
-                                                    subtitle = subTitlePlot))
-                        })
-                    )
+                ),
+                div(class = "explain-p", HTML(plotExplain)),
+                hr(),
+                renderPlotly({
+                    ggplotly(outplot + labs(title = listname,
+                                   subtitle = subTitlePlot))
                 })
-        }else {
+            )
+
+        } else {
             renderText({outplot$message })
         }
     })
@@ -1491,46 +1461,24 @@
             }
 
             if (is(outdot, "gg")) {
-                switch(input[[paste0(listname, "-render")]],
-                       "static" = {
-                           column(
-                               width = 12,
-                               tags$style(
-                                   ".explain-p {
+
+                column(
+                    width = 12,
+                    tags$style(
+                        ".explain-p {
                                     color: Gray;
                                     text-justify: inter-word;
                                     font-style: italic;
                                     }"
-                               ),
-                               div(class = "explain-p", HTML(plotExplain)),
-                               hr(),
-
-                               renderPlot({
-                                   outdot +
-                                       labs(title = listname,
-                                            subtitle = subTitlePlot)
-                               }))
-                       },
-                       "interactive" = {
-                           column(
-                               width = 12,
-                               tags$style(
-                                   ".explain-p {
-                                    color: Gray;
-                                    text-justify: inter-word;
-                                    font-style: italic;
-                                    }"
-                               ),
-                               div(class = "explain-p", HTML(plotExplain)),
-                               hr(),
-                               renderPlotly({
-                                   ggplotly(outdot +
-                                                labs(title = listname,
-                                                     subtitle = subTitlePlot))
-                               })
-                           )
-                       })
-
+                    ),
+                    div(class = "explain-p", HTML(plotExplain)),
+                    hr(),
+                    renderPlotly({
+                        ggplotly(outdot +
+                                     labs(title = listname,
+                                          subtitle = subTitlePlot))
+                    })
+                )
             }else
                 renderText({
                     outdot$message
@@ -1631,56 +1579,31 @@
         }
 
         if (is(outcnet, "gg")) {
-            switch(
-                input[[paste0(listname, "-render")]],
-                "static" = {
-                    column(
-                        width = 12,
-                        tags$style(
-                            ".explain-p {
+
+            column(
+                width = 12,
+                tags$style(
+                    ".explain-p {
                     color: Gray;
                     text-justify: inter-word;
                     font-style: italic;
                   }"
-                        ),
-                        div(class = "explain-p", HTML(plotExplain)),
-                        hr(),
-
-                        renderPlot({
-                            outcnet +
-                                labs(title = listname,
-                                     subtitle = subTitlePlot)
-
-                        })
-                    )
-                },
-                "interactive" = {
-                    column(
-                        width = 12,
-                        tags$style(
-                            ".explain-p {
-                    color: Gray;
-                    text-justify: inter-word;
-                    font-style: italic;
-                  }"
-                        ),
-                        div(class = "explain-p", HTML(
-                            paste0(plotExplain, "
+                ),
+                div(class = "explain-p", HTML(
+                    paste0(plotExplain, "
                                    Interactive version of this plot is not available yet."))),
-                        hr(),
-                        renderPlot({
-                            outcnet +
-                                labs(title = listname,
-                                     subtitle = subTitlePlot)
+                hr(),
+                renderPlot({
+                    outcnet +
+                        labs(title = listname,
+                             subtitle = subTitlePlot)
 
-                        })
-                        # renderPlotly({
-                        #     ggplotly(  outcnet +
-                        #                    labs(title = listname,
-                        #                         subtitle = subTitlePlot))
-                        # })
-                    )
-                }
+                })
+                # renderPlotly({
+                #     ggplotly(  outcnet +
+                #                    labs(title = listname,
+                #                         subtitle = subTitlePlot))
+                # })
             )
         } else
             renderText({
@@ -1981,15 +1904,15 @@
                 inline = TRUE
             )
         ),
-        column(
-            4,
-            radioButtons(
-                inputId = ns(paste0(database, "-compRender")),
-                label = "Rendering",
-                choices = c("static", "interactive"),
-                selected = "static",
-                inline = TRUE
-            )),
+        # column(
+        #     4,
+        #     radioButtons(
+        #         inputId = ns(paste0(database, "-compRender")),
+        #         label = "Rendering",
+        #         choices = c("static", "interactive"),
+        #         selected = "static",
+        #         inline = TRUE
+        #     )),
         ),
         fluidRow(
             column(12,
@@ -2055,11 +1978,7 @@
                        plotHeat <- FALSE
                        textHeat <- FALSE
 
-                       if (is(outHeat, "gg") && input[[paste0(database, "-compRender")]] == "static") {
-                           plotHeat <- TRUE
-                           output[[paste0(database, "-outHeatmap")]] <-
-                               renderPlot(outHeat)
-                       } else if (is(outHeat, "gg") && input[[paste0(database, "-compRender")]] == "interactive") {
+                       if (is(outHeat, "gg")) {
                            plotHeat <- TRUE
                            output[[paste0(database, "-outHeatmap")]] <- renderPlotly(ggplotly(outHeat))
                        } else {
@@ -2068,50 +1987,20 @@
                        }
 
                        if (plotHeat) {
-                           #          column(
-                           #              width = 12,
-                           #              tags$style(
-                           #                  ".explain-p {
-                           #   color: Gray;
-                           #   text-justify: inter-word;
-                           #   font-style: italic;
-                           # }"
-                           #              ),
-                           #              div(class = "explain-p", HTML(plotExplain)),
-                           #              hr(),
-                           switch(input[[paste0(database, "-compRender")]],
-                                  "static" = {
-
-                                      column( width = 12,
-                                              tags$style(
-                                                  ".explain-p {
+                           column( width = 12,
+                                   tags$style(
+                                       ".explain-p {
                                                     color: Gray;
                                                     text-justify: inter-word;
                                                     font-style: italic;
                                                   }"
-                                              ),
-                                              div(class = "explain-p", HTML(plotExplain)),
-                                              hr(),
+                                   ),
+                                   div(class = "explain-p", HTML(plotExplain)),
+                                   hr(),
 
-                                              plotOutput(ns(paste0(database, "-outHeatmap")),
-                                                         width = "auto", height = 1000)
+                                   plotlyOutput(ns(paste0(database, "-outHeatmap")), height = 1000)
+                           )
 
-
-                                      )},
-                                  "interactive" = {
-                                      column( width = 12,
-                                              tags$style(
-                                                  ".explain-p {
-                                                    color: Gray;
-                                                    text-justify: inter-word;
-                                                    font-style: italic;
-                                                  }"
-                                              ),
-                                              div(class = "explain-p", HTML(plotExplain)),
-                                              hr(),
-
-                                              plotlyOutput(ns(paste0(database, "-outHeatmap")), height = 1000)
-                                      )})
                        } else {
                            textOutput({
                                ns(paste0(database, "-outHeatmap"))
