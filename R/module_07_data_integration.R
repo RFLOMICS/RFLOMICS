@@ -53,7 +53,7 @@
         fluidRow(
             tabsetPanel(
                 tabPanel(
-                    "Dataset and variable selection",
+                    title = "Dataset and variable selection",
                     value = "datavarsel",
                     br(),
                     box(
@@ -75,7 +75,7 @@
                     uiOutput(ns("prepareDataUI"))
                 ),
                 tabPanel(
-                    "Data Integration",
+                    title = "Data Integration",
                     value = "dataint",
                     br(),
                     column(width = 3,

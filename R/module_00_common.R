@@ -413,3 +413,220 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
         })
     })
 }
+
+# ---- Restore observer (used in server.R) ----
+#' @keywords internal
+#' @noRd
+.updateValue <- function(
+        session,
+        rea.values,
+        tabName,
+        valueToObserve,
+        nextValueToObserve,
+        nextPatternToObserve) {
+
+    rea.values$restoreValues[[nextValueToObserve]] <- .nextValues(nextPatternToObserve, rea.values$stateInput)
+    rea.values$restoreValues$counter <- 1
+    namAnalysis <- .namAnalysis(rea.values$restoreValues[[valueToObserve]], rea.values$restoreValues$counter)
+    updateTabItems(session, inputId = "tabs", selected = namAnalysis)
+    updateTabsetPanel(session, inputId = rea.values$restoreValues[[nextValueToObserve]][rea.values$restoreValues$counter], selected = tabName)
+    shinyjs::js$showmenuItem(namAnalysis)
+
+}
+
+#' @keywords internal
+#' @noRd
+.processValue <- function(
+        session,
+        rea.values,
+        valueToObserve,
+        tabName
+) {
+    namAnalysis <- .namAnalysis(rea.values$restoreValues[[valueToObserve]], rea.values$restoreValues$counter)
+    updateTabItems(session, inputId = "tabs", selected = namAnalysis)
+    updateTabsetPanel(session, inputId = rea.values$restoreValues[[valueToObserve]][rea.values$restoreValues$counter], selected = tabName)
+    shinyjs::js$showmenuItem("omicsanalysis")
+    rea.values$restoreValues$counter <- rea.values$restoreValues$counter + 1
+}
+
+#' @keywords internal
+#' @noRd
+.initValue <- function(
+        session,
+        rea.values,
+        valueToObserve,
+        tabName
+) {
+
+    rea.values$restoreValues$counter <- 1
+    namAnalysis <- .namAnalysis(rea.values$restoreValues[[valueToObserve]], rea.values$restoreValues$counter)
+    # shinyjs::js$showmenuItem("omicsanalysis")
+    updateTabItems(session, inputId = "tabs", selected = namAnalysis)
+    updateTabsetPanel(session, inputId = rea.values$restoreValues[[valueToObserve]][rea.values$restoreValues$counter], selected = tabName)
+    shinyjs::js$showmenuItem("omicsanalysis")
+    rea.values$restoreValues$counter <- 2
+}
+
+#' @keywords internal
+#' @noRd
+.nextValues <- function(pattern, searchVector) {
+    varinter <- searchVector[grep(pattern, names(searchVector))]
+    return(gsub(pattern, "", names(varinter[which(varinter > 0)])))
+}
+
+#' @keywords internal
+#' @noRd
+.namAnalysis <- function(values, counter) {
+    sub("([a-zA-Z]+)([0-9]+)", "\\1Analysis\\2", values[counter])
+}
+
+#' @keywords internal
+#' @noRd
+.observePreProcess <- function(session, rea.values){
+    destroyPreProcessObserver <- FALSE
+    observeEvent(rea.values$analysis, {# little difference here, can"t used the common observeRestore ?
+        .initValue(session, rea.values, valueToObserve = "Processed", tabName = "Pre-processing")
+    }, ignoreInit = TRUE, once = TRUE)
+
+    observeEvent(rea.values$datasetProcess, {
+        if (!rea.values$restoring) {
+            destroyPreProcessObserver <- TRUE
+        } else if (length(rea.values$restoreValues$Processed) >= rea.values$restoreValues$counter) {
+            .processValue(session, rea.values, "Processed", tabName = "Pre-processing")
+        } else if (length(rea.values$restoreValues$Processed) < rea.values$restoreValues$counter) {
+            .updateValue(session, rea.values, tabName = "Pre-processing", "Processed", "Diff", "-validContrast$")
+            destroyPreProcessObserver <- TRUE
+        }
+    }, ignoreInit = TRUE, once = destroyPreProcessObserver)
+
+}
+
+
+#' @keywords internal
+#' @noRd
+.observeRestore <- function(session, rea.values,
+                            reavalToObserve,
+                            valueToObserve, tabName,
+                            nextValueToObserve,
+                            nextPatternToObserve) {
+    destroyThisObserver <- FALSE
+
+    observeEvent(rea.values$restoreValues[[valueToObserve]], {
+        .initValue(session, rea.values, valueToObserve = valueToObserve, tabName = tabName)
+        if (length(rea.values$restoreValues[[valueToObserve]]) == 0) {
+            .updateValue(session, rea.values, tabName = tabName,
+                         valueToObserve = valueToObserve, nextValueToObserve = nextValueToObserve ,
+                         nextPatternToObserve = nextPatternToObserve)
+        }
+    }, ignoreInit = TRUE, once = TRUE)
+
+    observeEvent(rea.values[[reavalToObserve]], {
+        if (!rea.values$restoring) {
+            destroyThisObserver <- TRUE
+        } else if (length(rea.values$restoreValues[[valueToObserve]]) >= rea.values$restoreValues$counter) {
+            .processValue(session, rea.values, valueToObserve, tabName = tabName)
+        } else if (length(rea.values$restoreValues[[valueToObserve]]) < rea.values$restoreValues$counter) {
+            .updateValue(session, rea.values, tabName = tabName,
+                         valueToObserve = valueToObserve, nextValueToObserve = nextValueToObserve ,
+                         nextPatternToObserve = nextPatternToObserve)
+            destroyThisObserver <- TRUE
+        }
+    }, ignoreInit = TRUE, once = destroyThisObserver)
+}
+
+
+#' @keywords internal
+#' @noRd
+.observeRestoreInte <- function(session, rea.values) {
+
+    observeEvent(rea.values$restoreValues$mixOmics, {
+        if (is.null(rea.values$stateInput[["mixomicsSetting-run_prep"]]) ||
+            rea.values$stateInput[["mixomicsSetting-run_prep"]] < 1) {
+            print("here, mixOmics bis")
+            rea.values$restoreValues$MOFA <- "now2"
+        }
+        print(rea.values$restoreValues$mixOmics)
+        shinyjs::js$showmenuItem("omicsintegration")
+        updateTabItems(session, inputId = "tabs", selected = "Data Integration")
+        updateTabItems(session, inputId = "tabs", selected = "withMixOmics")
+        updateTabsetPanel(session, inputId = "integrationMenu-mixOmics", selected = "datavarsel")
+    }, ignoreInit = TRUE, once = TRUE)
+
+    observeEvent(rea.values$preparedfor_mixOmics, {
+        print("Im in the prepared for mixOmics")
+        shinyjs::js$showmenuItem("OmicsIntegration")
+        updateTabItems(session, inputId = "tabs", selected = "Data Integration")
+        updateTabItems(session, inputId = "tabs", selected = "withMixOmics")
+        updateTabsetPanel(session, inputId = "integrationMenu-mixOmics", selected = "dataint")
+    }, ignoreInit = TRUE, once = TRUE)
+
+    observeEvent(rea.values$with_mixOmics, {
+        rea.values$restoreValues$MOFA <- "now"
+    }, ignoreInit = TRUE, once = TRUE)
+
+    observe({
+        if ("MOFASetting-run_prep" %in% names(rea.values$stateInput) &&
+            rea.values$stateInput[["mofaSetting-run_prep"]] > 0) {
+            rea.values$restoreValues$MOFA <- "now"
+        }
+    })
+
+    observeEvent(rea.values$restoreValues$MOFA , {
+        updateTabItems(session, inputId = "tabs", selected = "Data Integration")
+        updateTabItems(session, inputId = "tabs", selected = "withMOFA")
+        updateTabsetPanel(session, inputId = "integrationMenu", selected = "datavarsel")
+    }, ignoreInit = TRUE, once = TRUE)
+
+    observeEvent(rea.values$preparedfor_MOFA, {
+        updateTabItems(session, inputId = "tabs", selected = "OmicsIntegration")
+        updateTabItems(session, inputId = "tabs", selected = "withMOFA")
+        updateTabsetPanel(session, inputId = "integrationMenu-MOFA", selected = "dataint")
+    }, ignoreInit = TRUE, once = TRUE)
+
+}
+
+#' @keywords internal
+#' @noRd
+.observeDiff <- function(session, rea.values){
+    destroyDiffObserver <- FALSE
+    observeEvent(rea.values$restoreValues$Diff, {
+        .initValue(session, rea.values, valueToObserve = "Diff", tabName = "Differential analysis")
+    }, ignoreInit = TRUE, once = TRUE)
+
+    observeEvent(rea.values$datasetDiff, {
+        if (!rea.values$restoring) {
+            destroyDiffObserver <- TRUE
+        } else if (length(rea.values$restoreValues$Diff) >= rea.values$restoreValues$counter) {
+            .processValue(session, rea.values, "Diff", tabName = "Differential analysis")
+        } else if (length(rea.values$restoreValues$Diff) < rea.values$restoreValues$counter) {
+            .updateValue(session, rea.values, tabName = "Differential analysis",
+                         valueToObserve = "Diff", nextValueToObserve = "CoEx" ,
+                         nextPatternToObserve = "-runCoSeq$")
+            destroyDiffObserver <- TRUE
+        }
+    }, ignoreInit = TRUE, once = destroyDiffObserver)
+
+}
+
+#' @keywords internal
+#' @noRd
+.observeCoex <- function(session, rea.values){
+    destroyCoExObserver <- FALSE
+    observeEvent(rea.values$restoreValues$CoEx, {
+        .initValue(session, rea.values, valueToObserve = "CoEx", tabName = "Co-expression analysis")
+    }, ignoreInit = TRUE, once = TRUE)
+
+    observeEvent(rea.values$datasetCoEx, {
+        if (!rea.values$restoring) {
+            destroyCoExObserver <- TRUE
+        } else if (length(rea.values$restoreValues$CoEx) >= rea.values$restoreValues$counter) {
+            .processValue(session, rea.values, "CoEx", tabName = "Co-expression analysis")
+        } else if (length(rea.values$restoreValues$CoEx) < rea.values$restoreValues$counter) {
+            .updateValue(session, rea.values, tabName = "Co-expression analysis",
+                         valueToObserve = "CoEx", nextValueToObserve = "CustomAnnotDiff" ,
+                         nextPatternToObserve = "-custom-DiffExpEnrichAnal-run$")
+            destroyCoExObserver <- TRUE
+        }
+    }, ignoreInit = TRUE, once = destroyCoExObserver)
+
+}

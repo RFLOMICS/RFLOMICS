@@ -45,6 +45,12 @@ shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targe
         datasetDiffAnnot= NULL,
         datasetCoExAnnot= NULL,
 
+        preparedfor_mixOmics = FALSE,
+        preparedfor_MOFA = FALSE,
+
+        with_mixOmics = FALSE,
+        with_MOFA = FALSE,
+
         restoring       = FALSE
     )
 
@@ -85,74 +91,71 @@ shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targe
         )
     })
 
+    # ---- ObserveEvent for restoring session ----
 
-    observeEvent(rea.values$restoring,
-                 {
-                     if (rea.values$restoring)
-                         shinydashboard::updateTabItems(session, inputId = "tabs", selected = "importData")
-                 },
-                 once = TRUE, label = "restoreLoadData"
-    )
+    reloadObserver <- observe({
 
-    observeEvent(rea.values$loadData,
-                 {
-                     if (rea.values$restoring && rea.values$loadData && !rea.values$model)
-                         shinydashboard::updateTabItems(session, inputId = "tabs", selected = "SetUpModel")
-                 }, label = "restoreSetup",
-                 ignoreInit = TRUE, once = TRUE
-    )
+        if (is.null(rea.values$restoring) || !rea.values$restoring) {
+            reloadObserver$destroy()
+        } else {
+            observeEvent(rea.values$restoring,{
+                if (rea.values$restoring)
+                    updateTabItems(session, inputId = "tabs", selected = "importData")
+            },
+            once = TRUE, label = "restoreLoadData"
+            )
 
-    observeEvent(rea.values$model,
-                 {
-                     rea.values$restoreValues <- list()
-                     rea.values$restoreValues$Processed <- gsub("-run$", "", names(rea.values$stateInput)[grep("-run$", names(rea.values$stateInput))])
-                     rea.values$restoreValues$Diff      <- gsub("-runAnaDiff$", "", names(rea.values$stateInput)[grep("-runAnaDiff$", names(rea.values$stateInput))])
-                     shinydashboard::updateTabItems(session, inputId = "tabs", selected = "omicsanalysis")
-                     rea.values$restoreValues$counter <- 1
-                 }, ignoreInit = TRUE, once = TRUE)
+            observeEvent(rea.values$loadData, {
+                if (rea.values$restoring && rea.values$loadData && !rea.values$model)
+                    updateTabItems(session, inputId = "tabs", selected = "SetUpModel")
+            }, label = "restoreSetup",
+            ignoreInit = TRUE, once = TRUE
+            )
 
-    observeEvent(eventExpr = {
-        rea.values$analysis
-        },
-        {
-            # lapply(seq_len(length(rea.values$restoreValues$Processed)), FUN = function(i) {
-                print("Observer lapply")
-                namAnalysis <- sub("([a-zA-Z]+)([0-9]+)", "\\1Analysis\\2",  rea.values$restoreValues$Processed[rea.values$restoreValues$counter])
-                print(namAnalysis)
-                # later::later(delay = 4,
-                             # func = function()   # shinyjs::js$showmenuItem(namAnalysis)
+            observeEvent(rea.values$model, {
+                rea.values$restoreValues <- list()
+                processed <- rea.values$stateInput[grep("([0-9]+)-run$", names(rea.values$stateInput))]
+                processed <- processed[which(processed > 0)]
+                shinyjs::js$showmenuItem("omicsanalysis")
+                rea.values$restoreValues$Processed <- gsub("-run$", "", names(processed))
+                rea.values$restoreValues$counter <- 1
+            }, ignoreInit = TRUE, once = TRUE)
 
-                             # {
-                                 shinydashboard::updateTabItems(session, inputId = "tabs", selected = namAnalysis)
-                                 # shinydashboard::updateTabItems(session, inputId = "tabs", selected = "proteomicsAnalysis2")
-                             # })
-                rea.values$restoreValues$counter <- rea.values$restoreValues$counter + 1
-            # })
-        }, ignoreInit = TRUE)
+            .observePreProcess(session, rea.values)
+            .observeRestore(session, rea.values, reavalToObserve = "datasetDiff",
+                            valueToObserve = "Diff", tabName = "Differential analysis",
+                            nextValueToObserve = "CoEx", nextPatternToObserve = "-runCoSeq$")
+            # .observeRestore(session, rea.values, reavalToObserve = "datasetCoEx",
+            #                 valueToObserve = "CoEx", tabName =  "Co-expression analysis",
+            #                 nextValueToObserve = "CustomAnnotDiff",
+            #                 nextPatternToObserve = "-custom-DiffExpEnrichAnal-run$")
 
-    observeEvent(eventExpr = {
-        rea.values$datasetProcess
-        # rea.values$analysis | rea.values$datasetProcess
-    },
-    {
-        # lapply(seq_len(length(rea.values$restoreValues$Processed)), FUN = function(i) {
-        print("Observer lapply")
-        namAnalysis <- sub("([a-zA-Z]+)([0-9]+)", "\\1Analysis\\2",  rea.values$restoreValues$Processed[rea.values$restoreValues$counter])
-        print(namAnalysis)
-        # later::later(delay = 4,
-        # func = function()   # shinyjs::js$showmenuItem(namAnalysis)
+            .observeRestore(session, rea.values, reavalToObserve = "datasetCoEx",
+                            valueToObserve = "CoEx", tabName =  "Co-expression analysis",
+                            nextValueToObserve = "mixOmics",
+                            nextPatternToObserve = "mixomicsSetting-run_prep$")
 
-        # {
-        shinydashboard::updateTabItems(session, inputId = "tabs", selected = namAnalysis)
-        # shinydashboard::updateTabItems(session, inputId = "tabs", selected = "proteomicsAnalysis2")
-        # })
-        if (length(rea.values$restoreValues$Processed) > rea.values$restoreValues$counter) {
-            rea.values$restoreValues$counter <- rea.values$restoreValues$counter + 1
+            .observeRestoreInte(session, rea.values)
+
+            # TODO :
+            # - Always go back to importData so that this can be properly loaded
+            # updateTabItems(session, inputId = "tabs", selected = "importData")
+            #
+            # - Message the user at the end of the restoration:
+            # showModal(modalDialog(title = "Restoration complete",
+            #                       "Restored session is still in test, you may have to run all annotation manually, as well as data integration.
+            #                   To do so, just click on the tabs, the restoration process will activate.
+            #                   It is not advised to change anything in the load Data panel."))
+            # - these two needs a new reactive value...
+            #
+            # Fixthis:
+            # - Not able to navigate in annotation tabsetpanel (nested ones)
+            # - Not able to make the connection between coexpression and integration
+            #   although going from mixOmics to MOFA and between data
+            #   selection and integration panels is done correctly
         }
-        # })
-    }, ignoreInit = TRUE)
 
-
+    })
 
     #### Item for each omics #####
     # display omics Item
@@ -201,6 +204,10 @@ shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targe
         })
 
         menuItem(text = "Data Integration", tabName = "OmicsIntegration",
+                 id = "omicsintegration",
+                 shinyjs::useShinyjs(),
+                 shinyjs::extendShinyjs(text = 'shinyjs.hidemenuItem = function(targetid) {var x = document.getElementById(targetid); x.style.display = "none"; x.classList.remove("menu-open");};
+shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targetid); x.style.display = "block"; x.classList.add("menu-open");};', functions = c("hidemenuItem", "showmenuItem")),
                  icon = icon('network-wired'), startExpanded = FALSE,selected = FALSE,
                  menuSubItem(text = "with MOFA", tabName = "withMOFA" ),
                  menuSubItem(text = "with MixOmics", tabName = "withMixOmics")
@@ -250,8 +257,6 @@ shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targe
         for(omics in c("RNAseq", "proteomics", "metabolomics")){
 
             items.list[[omics]] <-  lapply(1:10, function(i){
-                print("tabItem names")
-                print(paste0(omics, "Analysis", i))
                 tabItem(tabName = paste0(omics, "Analysis", i),
                         uiOutput(paste0(omics, "AnalysisUI", i)))
             })
@@ -313,7 +318,6 @@ shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targe
                 #### MixOmics ####
                 ########################
                 tabItem(tabName = "withMixOmics",
-                        # h5("in coming :)")
                         uiOutput(outputId = "withMixOmics_UI")
                 )
             )
@@ -328,16 +332,13 @@ shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targe
 
             lapply(names(rea.values$datasetList[[omics]]), function(i){
 
-                print("lapply for tabsetPanel, id of tabsetpanel")
-                print(paste0(omics, i))
-
                 switch (omics,
                         "RNAseq" = {
                             output[[paste0("RNAseqAnalysisUI", i)]] <- renderUI({
 
                                 tabsetPanel(
-                                    useShinyjs(),
-                                    extendShinyjs(text = jsCode, functions = c("hidemenuItem", "showmenuItem")),
+                                    shinyjs::useShinyjs(),
+                                    shinyjs::extendShinyjs(text = jsCode, functions = c("hidemenuItem", "showmenuItem")),
                                     #### Data Exploratory & QC ####
                                     ###############################
                                     tabPanel(title = "Pre-processing",
@@ -376,8 +377,8 @@ shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targe
                         "proteomics" = {
                             output[[paste0("proteomicsAnalysisUI", i)]] <- renderUI({
                                 tabsetPanel(
-                                    useShinyjs(),
-                                    extendShinyjs(text = jsCode, functions = c("hidemenuItem", "showmenuItem")),
+                                    shinyjs::useShinyjs(),
+                                    shinyjs::extendShinyjs(text = jsCode, functions = c("hidemenuItem", "showmenuItem")),
 
                                     #### Data Exploratory & QC ####
                                     ###############################
@@ -415,8 +416,8 @@ shinyjs.showmenuItem = function(targetid) {var x = document.getElementById(targe
                             output[[paste0("metabolomicsAnalysisUI", i)]] <- renderUI({
 
                                 tabsetPanel(
-                                    useShinyjs(),
-                                    extendShinyjs(text = jsCode, functions = c("hidemenuItem", "showmenuItem")),
+                                    shinyjs::useShinyjs(),
+                                    shinyjs::extendShinyjs(text = jsCode, functions = c("hidemenuItem", "showmenuItem")),
 
                                     #### Data Exploratory & QC ####
                                     ###############################
