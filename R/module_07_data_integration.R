@@ -54,6 +54,7 @@
             tabsetPanel(
                 tabPanel(
                     "Dataset and variable selection",
+                    value = "datavarsel",
                     br(),
                     box(
                         title = "Prepare data for integration",
@@ -75,12 +76,14 @@
                 ),
                 tabPanel(
                     "Data Integration",
+                    value = "dataint",
                     br(),
                     column(width = 3,
                            uiOutput(ns("ParamUI"))),
                     column(width = 9,
                            uiOutput(ns("ResultViewUI")))
-                )
+                ),
+                id = paste0("integrationMenu-", method)
             )
         )
     )
@@ -121,8 +124,17 @@
     })
 
     observe(
-        if (rea.values$restoring && is.null(local.rea.values$restoring))
-                local.rea.values$restoring <- TRUE
+        if (rea.values$restoring && is.null(local.rea.values$restoring)) {
+            local.rea.values$restoring <- TRUE
+
+            # Block restoration if nothing has been run before
+            if (is.null(rea.values$stateInput[[paste0(session$ns(""), "run_prep")]]) ||
+                rea.values$stateInput[[paste0(session$ns(""), "run_prep")]] < 1) {
+
+                local.rea.values$restoring <- FALSE
+            }
+        }
+
     )
 
     # select datasets to integrate
@@ -141,6 +153,8 @@
         metadata(session$userData$FlomicsMultiAssay)$IntegrationAnalysis[[method]] <- NULL
         local.rea.values$runintegration <- FALSE
         local.rea.values$preparedObject <- NULL
+        rea.values[[paste0("preparedfor_", method)]] <- FALSE
+        rea.values[[paste0("with_", method)]] <- FALSE
         MAE.red <- NULL
         variableLists <- list()
 
@@ -233,8 +247,16 @@
                                       !local.rea.values$restoring,
                                   FALSE, TRUE)
 
-            if (restoration)
-                exprswitch <- rea.values$stateInput[[paste0(session$ns(""),"selectmethode", set)]]
+
+
+            if (restoration) {
+                if (is.null(rea.values$stateInput[[paste0(session$ns(""), "run_prep")]]) ||
+                    rea.values$stateInput[[paste0(session$ns(""), "run_prep")]] < 1)
+                    local.rea.values$restoring <- FALSE
+                else {
+                    exprswitch <- rea.values$stateInput[[paste0(session$ns(""),"selectmethode", set)]]
+                }
+            }
 
             exprswitch <- paste(exprswitch, as.character(restoration), sep = "-" )
 
@@ -336,6 +358,8 @@
             cmd              = TRUE
         )
 
+
+        rea.values[[paste0("preparedfor_", method)]] <- TRUE
         message("[RFLOMICS] #   => Ready for integration")
 
         #---- progress bar ----#
@@ -357,6 +381,7 @@
         #----------------------#
 
         local.rea.values$runintegration <- FALSE
+        rea.values[[paste0("with_", method)]] <- FALSE
 
         # check: settings
         if (method == "mixOmics") {
@@ -463,6 +488,7 @@
 
         local.rea.values$runintegration <- FALSE
         local.rea.values$runintegration <- TRUE
+        rea.values[[paste0("with_", method)]] <- TRUE
     })
 
     output$ResultViewUI <- renderUI({
