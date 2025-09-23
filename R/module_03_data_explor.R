@@ -626,10 +626,6 @@ QCNormalizationTab <-
           userTransMethod = param.list[["userTransMethod"]]
         ))
 
-      print(names(rea.values))
-      reaOutData <- rea.values[[dataset]]
-      print(rea.values[[dataset]])
-
       if (!is.null(catch.res$error))
         showModal(
           modalDialog(title = "Error message", catch.res$error))
