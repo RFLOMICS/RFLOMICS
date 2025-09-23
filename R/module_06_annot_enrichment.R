@@ -54,6 +54,9 @@
              rea.values) {
         ns <- session$ns
 
+        # print("In the module .modEnrichment")
+        # print(session$ns(""))
+
         # UI
         output$tabsetPanel_DB_UI <- renderUI({
             validate(
@@ -67,21 +70,39 @@
                 getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]])
 
             tabPanel.list <- list(tabPanel(title = "Custom annotation",
+                                           value = "customAnnot",
                                            .modEnrichmentDBUI(id = ns("custom"))))
 
             if (omicsType %in% c("RNAseq", "proteomics")) {
                 tabPanel.list <- c(list(
-                    tabPanel(title = "Gene Onlology database",
+                    shinyjs::useShinyjs(),
+                    tabPanel(title = "Gene Onlology database", value = "GO_database",
                              .modEnrichmentDBUI(id = ns("GO"))),
-                    tabPanel(title = "KEGG database",
+                    tabPanel(title = "KEGG database", value = "KEGG_database",
                              .modEnrichmentDBUI(id = ns("KEGG")))
                 ),
                 tabPanel.list)
             }
-            do.call(what = tabsetPanel, args = tabPanel.list)
+            do.call(what = tabsetPanel, args = c(tabPanel.list, list(id = ns("enrichment_menu"))))
         })
 
-
+        # observeEvent(rea.values$restoreValues$tabsetChange, {
+        #     print("observer tabsetChange in module 06")
+        #     print("tabToSelect:")
+        #     print(rea.values$restoreValues$tabsetChange[[2]])
+        #     # updateTabsetPanel(session, inputId = paste0(session$ns(""), "enrichment_menu"), selected = rea.values$restoreValues$tabsetChange[[2]])
+        #     # updateTabsetPanel(session, inputId = paste0(session$ns(""), "enrichment_menu"), selected = "Custom annotation")
+        #     updateTabsetPanel(session, inputId = "enrichment_menu", selected = "Custom annotation")
+        #     # updateTabsetPanel(session, inputId = "tabsetPanel_DB_UI", selected = "Custom annotation")
+        #     # updateTabsetPanel(session, inputId = ns("tabsetPanel_DB_UI"), selected = "Custom annotation")
+        #     updateTabsetPanel(session, inputId = ns("enrichment_menu"), selected = "Custom annotation")
+        #     # updateTabsetPanel(session, inputId = ns("tabsetPanel_DB_UI"), selected = "Custom annotation")print(in)
+        #     print("without ns")
+        #     print(input$enrichment_menu)
+        #     print("with ns")
+        #     print(input[[ns("enrichment_menu")]])
+        #     inputout <<- names(input)
+        # }, ignoreInit = TRUE, once = TRUE)
 
         # SERVEUR
         callModule(
@@ -158,6 +179,7 @@
                                            CustomFilehasbeenrestored = FALSE)
     }
 
+    # print(input[["enrichment_menu"]])
 
     ### select columns
     observeEvent(input$annotationFileCPR, { # runs after the input$run if restoring :(
@@ -172,7 +194,11 @@
             local.rea.values$dataAnnotName <- input$annotationFileCPR$name
         } else  {
             if ("annotationFileCPR" %in% names(input)) {
-                local.rea.values$dataPathAnnot <- paste0(rea.values$stateDir, "/",  session$ns(""), "DiffExpEnrichAnal/", input$annotationFileCPR$name)
+                # name1 <- session$ns("")
+                # local.rea.values$dataPathAnnot <- paste0(rea.values$stateDir, "/", gsub("-$","", name1), "/", input2$annotationFileCPR$name)
+                # local.rea.values$dataPathAnnot <- gsub("-DiffExpEnrichAnal|-CoExpEnrichAnal", "", local.rea.values$dataPathAnnot)
+
+                local.rea.values$dataPathAnnot <- paste0(rea.values$stateDir, "/",  gsub("-$","",session$ns("")), "/", input$annotationFileCPR$name)
                 local.rea.values$dataAnnotName <- input$annotationFileCPR$name
                 local.rea.values$CustomFilehasbeenrestored <- TRUE
             } else {
@@ -182,6 +208,26 @@
         output$selectColumnsCustom <- .annotFileColumns(session, local.rea.values, rea.values, dataset)
 
     })
+
+    # print("Im in the module .modEnrichmentDB")
+    # print(session$ns(""))
+    # observeEvent(rea.values$restoreValues$tabsetChange, {
+    #     print("observer tabsetChange in module 06")
+    #     print("tabToSelect:")
+    #     print(rea.values$restoreValues$tabsetChange[[2]])
+    #     updateTabsetPanel(session, inputId = paste0(session$ns(""), "enrichment_menu"), selected = rea.values$restoreValues$tabsetChange[[2]])
+    #     updateTabsetPanel(session, inputId = paste0(session$ns(""), "enrichment_menu"), selected = "Custom annotation")
+    #     updateTabsetPanel(session, inputId = "enrichment_menu", selected = "Custom annotation")
+    #     updateTabsetPanel(session, inputId = "tabsetPanel_DB_UI", selected = "Custom annotation")
+    #     updateTabsetPanel(session, inputId = ns("tabsetPanel_DB_UI"), selected = "Custom annotation")
+    #     updateTabsetPanel(session, inputId = ns("enrichment_menu"), selected = "Custom annotation")
+    #     # updateTabsetPanel(session, inputId = ns("tabsetPanel_DB_UI"), selected = "Custom annotation")print(in)
+    #     print("without ns")
+    #     print(input$enrichment_menu)
+    #     print("with ns")
+    #     print(input[[ns("enrichment_menu")]])
+    #     inputout <<- reactiveValuesToList(input)
+    # }, ignoreInit = TRUE, once = TRUE)
 
     ## setting
     output$ParamDB_UI <- renderUI({
@@ -238,6 +284,28 @@
     ## custom settings
     output$AnnotParamCustom_UI <-
         .annotParamCustom(session, rea.values, dataset)
+
+    onBookmark(function(state, session = getDefaultReactiveDomain()) {
+
+        if (!is.null(local.rea.values$dataPathAnnot) && database == "custom") {
+
+            annotation <-
+                fread(
+                    file = local.rea.values$dataPathAnnot,
+                    sep = "\t",
+                    header = TRUE
+                )
+
+            write.table(annotation,
+                        file = paste(state[["dir"]], local.rea.values[["dataAnnotName"]], sep = "/"),
+                        sep = "\t",
+                        quote = FALSE,
+                        row.names = FALSE,
+                        col.names = TRUE)
+        }
+    })
+
+
 
     # SERVEUR
     callModule(
@@ -331,12 +399,15 @@
 
         # SERVER
 
+        # print(input[["enrichment_menu"]])
+        # inpoutoutinside <<- names(input)
+
         ## run enrichment
         # ---- run Annotation  ----
         observeEvent(input$run, { # 1er observer à passer, ça ne devrait pas être le premier
 
             # Local reactive variables for controling the restoration.
-            if(is.null(local.rea.values[[paste0("hasbeenrestored-", listSource)]]))
+            if (is.null(local.rea.values[[paste0("hasbeenrestored-", listSource)]]))
                 local.rea.values[[paste0("hasbeenrestored-", listSource)]] <- FALSE
 
             if (rea.values$restoring &&
@@ -446,25 +517,25 @@
             if (database == "custom") { # apres input$run (normal, il est dedans)
 
                 # --- Bookmark functions ----
-                onBookmark(function(state, session = getDefaultReactiveDomain()) {
-
-                    if (!is.null(local.rea.values$dataPathAnnot)) {
-
-                        annotation <-
-                            fread(
-                                file = local.rea.values$dataPathAnnot,
-                                sep = "\t",
-                                header = TRUE
-                            )
-
-                        write.table(annotation,
-                                    file = paste(state[["dir"]], local.rea.values[["dataAnnotName"]], sep = "/"),
-                                    sep = "\t",
-                                    quote = FALSE,
-                                    row.names = FALSE,
-                                    col.names = TRUE)
-                    }
-                })
+                # onBookmark(function(state, session = getDefaultReactiveDomain()) {
+                #
+                #     if (!is.null(local.rea.values$dataPathAnnot)) {
+                #
+                #         annotation <-
+                #             fread(
+                #                 file = local.rea.values$dataPathAnnot,
+                #                 sep = "\t",
+                #                 header = TRUE
+                #             )
+                #
+                #         write.table(annotation,
+                #                     file = paste(state[["dir"]], local.rea.values[["dataAnnotName"]], sep = "/"),
+                #                     sep = "\t",
+                #                     quote = FALSE,
+                #                     row.names = FALSE,
+                #                     col.names = TRUE)
+                #     }
+                # })
 
 
                 # check param
@@ -474,7 +545,10 @@
 
                     name1 <- session$ns("")
                     local.rea.values$dataPathAnnot <- paste0(rea.values$stateDir, "/", gsub("-$","", name1), "/", input2$annotationFileCPR$name)
+                    local.rea.values$dataPathAnnot <- gsub("-DiffExpEnrichAnal|-CoExpEnrichAnal", "", local.rea.values$dataPathAnnot)
                     local.rea.values$dataAnnotName <- input2$annotationFileCPR$name
+
+                    print(local.rea.values$dataPathAnnot)
 
                     annotation <-
                         fread(
@@ -800,11 +874,7 @@
     # N'a acces qu'aux variables locales réactives, pas aux variables globales
     # N'est pas un observeEvent, ne sera pas trigger par le restore
 
-    annotation <- fread(
-        file = local.rea.values$dataPathAnnot,
-        sep = "\t",
-        header = TRUE
-    )
+    # local.rea.values$dataPathAnnot
 
     renderUI({
         annotation <- fread(
