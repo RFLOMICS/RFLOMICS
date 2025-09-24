@@ -58,7 +58,7 @@
     }
   }
   names(detail.df) <-
-    c("K", "n", "status", "errors", "warnings", "logLike", "ICL")
+    c("K", "N", "status", "errors", "warnings", "logLike", "ICL")
 
   # stats
   jobs.tab.sum <- detail.df |>
@@ -79,36 +79,37 @@
     #
     ICL.tab <-
       filter(detail.df, status == "success") %>%
-      select(K, n, logLike, ICL) %>%
+      select(K, N, logLike, ICL) %>%
       mutate(ICL=as.numeric(ICL),
              logLike=as.numeric(logLike),
-             n=as.numeric(n))
+             N=as.numeric(N))
     ICL.list[["ICL.tab"]] <- ICL.tab
 
     # Summarize the table: by K, compute the median of the replicate's ICL.
     ICL.n <-
       group_by(ICL.tab, K) %>%
       summarize(median = median(as.numeric(ICL)),
-                min = min(as.numeric(ICL)), n=n())
+                min = min(as.numeric(ICL)), N=n())
     ICL.list[["ICL.n"]] <- ICL.n
 
     nb_cluster <- ICL.n[ICL.n$median == min(ICL.n$median),]$K
     # Search for a replicate with a ICL min corresponding to the
     # K with the min median
     min_ICL <- ICL.n[ICL.n$K == nb_cluster,]$min
-    min_ICL_rep <- filter(ICL.tab, K == nb_cluster, ICL == min_ICL)$n
+    min_ICL_rep <- filter(ICL.tab, K == nb_cluster, ICL == min_ICL)$N
     index <- paste0("K=", min(K), "-", max(K), "_", min_ICL_rep[1])
     coseq.res <- results.list[[index]]
 
     nb_cluster <- as.numeric(str_remove(string = nb_cluster, pattern = "K="))
 
-    nK_success <- sum(ICL.n$n)
+    nK_success <- sum(ICL.n$N)
 
     # list of genes per cluster
     clusters_tmp <- clusters(coseq.res)
     if(length(unique(clusters_tmp)) != nb_cluster){
       CoExpAnal[["results"]] <- FALSE
-      CoExpAnal[["error"]] <-
+      #CoExpAnal[["error"]] <-
+        CoExpAnal[["warnings"]] <-
         "The optimal number of clusters does not correspond to the minimum ICL."
       return(CoExpAnal)
     }

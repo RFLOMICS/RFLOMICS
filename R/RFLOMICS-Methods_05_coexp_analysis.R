@@ -43,7 +43,7 @@
 #' \item \code{stats:}  A tibble summarizing failed jobs: reason, proportion,
 #' if any
 #' }
-#' \item \code{errors:} error list.
+#' \item \code{errors:} 435error list.
 #' }
 #' @param object An object of class \link{RflomicsSE} or
 #' class \link{RflomicsMAE-class}
@@ -427,19 +427,25 @@ setMethod(
     ICL.list[["ICL.tab"]] <-
       merge(ICL.list[["ICL.tab"]],
             expand.grid(K = paste("K", K, sep="="),
-                        n = seq_len(replicates)), all = TRUE)
+                        N = seq_len(replicates)), all = TRUE) %>%
+      mutate(K = str_remove(K, "K="),          
+             K = as.integer(K),                 
+             K = sprintf("K=%02d", K))   
 
     ICL.list[["ICL.n"]] <-
       merge(ICL.list[["ICL.n"]],
             data.frame(K = paste("K", K, sep="=")), all = TRUE) %>%
-      mutate(n = ifelse(is.na(n), 0, n))
+      mutate(N = ifelse(is.na(N), 0, N)) %>% 
+      mutate(K = str_remove(K, "K="),          
+             K = as.integer(K),                 
+             K = sprintf("K=%02d", K)) 
 
     ICL.p <- ggplot(data = ICL.list[["ICL.tab"]]) +
       geom_boxplot(aes(x = K, y = ICL, group = K), na.rm = TRUE) +
       geom_text(data = ICL.list[["ICL.n"]],
                 aes(x = seq_len(length(K)),
                     y = max(ICL.list[["ICL.tab"]]$ICL, na.rm = TRUE),
-                    label = paste0("n=", n)),
+                    label = paste0("n=", N)),
                 col = 'red', size = 4) +
       ylim(min(ICL.list[["ICL.tab"]]$ICL, na.rm = TRUE),
            max(ICL.list[["ICL.tab"]]$ICL, na.rm = TRUE))
@@ -450,7 +456,7 @@ setMethod(
       geom_text(data = ICL.list[["ICL.n"]],
                 aes(x = seq_len(length(K)),
                     y = max(ICL.list[["ICL.tab"]]$logLike, na.rm = TRUE),
-                    label = paste0("n=", n)),
+                    label = paste0("n=", N)),
                 col = 'red', size = 4) +
       ylim(min(ICL.list[["ICL.tab"]]$logLike, na.rm = TRUE),
            max(ICL.list[["ICL.tab"]]$logLike, na.rm = TRUE))
@@ -644,13 +650,15 @@ setMethod(
     # Bind table and add prop
     tab <- rbind(tab.com,tab.spe) |>
       group_by(C) |>
-      mutate(prop=(n/sum(n))*100)
+      mutate(prop=(n/sum(n))*100) |> 
+      mutate(C = sprintf("Cluster_%02d", 
+        as.integer(str_remove(C, "Cluster_"))))
 
     p <-  ggplot(tab,  aes(x = C, y = prop, fill = H)) +
       geom_bar(stat ="identity") +
       coord_flip() +
       labs(x = "", y = paste0("Proportion of ",
-                              .omicsDic(object)$variableNamegenes)) +
+                              .omicsDic(object)$variableName)) +
       scale_fill_discrete(name = "",
                           breaks = c("common", as.vector(H)),
                           labels = c("commons to at least 2 contrasts",
