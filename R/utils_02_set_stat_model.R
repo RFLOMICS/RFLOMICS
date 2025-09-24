@@ -363,6 +363,7 @@ contrastName2contrastDir <- function(contrastName){
 #' @keywords internal
 #' @noRd
 #' @importFrom data.table data.table setcolorder
+#' @importFrom tidyr separate
 #' @author Christine Paysant-Le Roux
 # .define_averaged_contrasts <- function(allSimpleContrast_df){
 # 
@@ -599,7 +600,7 @@ contrastName2contrastDir <- function(contrastName){
            contrastName  = paste0("(", comparisonPart1, " - ", comparisonPart2, ")", " in ", fixFactor1, " - ",
                                   "(", comparisonPart3, " - ", comparisonPart4, ")", " in ", fixFactor3 ),
            contrastName3  = paste0("(", comparisonPart1, " - ", comparisonPart2, ")", " in ", fixPart1, " - ",
-                                   "(", comparisonPart3, " - ", comparisonPart4, ")", " in ", fixPart3,),
+                                   "(", comparisonPart3, " - ", comparisonPart4, ")", " in ", fixPart3),
            type = "interaction")
   
   colnamesToDelete <- c("contrastPart1",  "comparisonPart1", "fixFactor1", "fixPart1", "outsideGroup1",
