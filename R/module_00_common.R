@@ -10,7 +10,7 @@
 UpdateRadioButtonsUI <- function(id) {
   # Namespace for id
   ns <- NS(id)
-  
+
   tagList(
     # Radio buttons for first axis
     radioButtons(
@@ -23,7 +23,7 @@ UpdateRadioButtonsUI <- function(id) {
       selected = 1,
       inline = TRUE
     ),
-    
+
     # Radio buttons for second axis
     radioButtons(
       inputId = ns("Secondaxis"),
@@ -55,7 +55,7 @@ UpdateRadioButtons <- function(input, output, session) {
                        },
                        inline = TRUE)
   })
-  
+
   # Update Firstaxis when Secondaxis changes
   observeEvent(input$Secondaxis, {
     selected_second <- input$Secondaxis
@@ -78,7 +78,7 @@ UpdateRadioButtons <- function(input, output, session) {
 RadioButtonsConditionUI <- function(id) {
   #name space for id
   ns <- NS(id)
-  
+
   tagList(uiOutput(ns('condColor')),)
 }
 
@@ -90,10 +90,10 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
     factors <- getFactorTypes(session$userData$FlomicsMultiAssay)
     factors <- factors[factors %in% typeFact]
     condition <- names(factors)
-    
+
     if (!any(typeFact %in% "Meta"))
       condition <- c("groups", condition)
-    
+
     radioButtons(inputId = session$ns("condColorSelect"),
                  label = 'Levels:',
                  choices = condition,
@@ -107,7 +107,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
 #' @noRd
 .modSingleOmicAnalysesSummaryUI <- function(id) {
   ns <- NS(id)
-  
+
   tagList(fluidPage(column(
     width = 12,
     fluidRow(uiOutput(ns("overView"))),
@@ -120,19 +120,19 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
 #' @noRd
 .modSingleOmicAnalysesSummary <-
   function(input, output, session, rea.values) {
-    
+
     # over view of dataset dimensions after processing
     output$overView <- renderUI({
       if (is.null(rea.values$datasetProcess))
         return()
-      toto <<- session$userData$FlomicsMultiAssay
+
       box(title = "Dataset overview after data processing",
           width = 12,
           status = "warning",
           solidHeader = TRUE,
           collapsible = TRUE,
           collapsed = FALSE,
-          
+
           renderPlot({
             plotDataOverview(
               session$userData$FlomicsMultiAssay,
@@ -142,16 +142,16 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
           })
       )
     })
-    
+
     # summary of diff analysis on all dataset
     output$DiffSummary <- renderUI({
-      
+
       res <- getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay)
-      
+
       if (is.null(rea.values$datasetDiff))
         return()
-      
-      tabPanel.list <- 
+
+      tabPanel.list <-
         list(
           tabPanel(
             title = "DE results",
@@ -161,40 +161,40 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
             })
           )
         )
-      
+
       if (!is.null(rea.values$datasetDiffAnnot)) {
-        
+
         H_tag  <- getSelectedContrasts(session$userData$FlomicsMultiAssay)
-        
-        tabPanel_annot.list <- 
+
+        tabPanel_annot.list <-
           lapply(names(rea.values$datasetDiffAnnot), function(database) {
-            
+
             ListNames  <- vector()
             domainList <- vector()
             termNbr    <- 0
             for(dataset in rea.values$datasetDiffAnnot[[database]]){
-              
+
               tmp <-
                 getAnalysis(session$userData$FlomicsMultiAssay[[dataset]],
                             name = "DiffExpEnrichAnal",
                             subName = database)
-              
+
               tmp <- tmp$results$summary %>%
                 mutate(sum = rowSums(across(where(is.numeric)))) %>%
                 filter(sum != 0)
-              
+
               ListNames <- unique(c(ListNames, row.names(tmp)))
-              
+
               tmp <- tmp[,-1]
               tmp$sum <- NULL
-              
+
               domainList <- unique(c(domainList, names(colSums(tmp)[colSums(tmp) != 0])))
               termNbr    <- termNbr + sum(colSums(tmp))
             }
             names(ListNames) <-
               paste0("[",H_tag[H_tag$contrastName %in% ListNames,]$tag,"] ",
                      ListNames)
-            
+
             tabPanel(
               title = paste0("ORA results from ", database),
               fluidRow(
@@ -244,18 +244,18 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                       listNames = input[[paste0(database, "-contrasts.diff")]],
                       omicNames = input[[paste0(database, "-datasets.diff")]]
                     )
-                    
+
                     p.list[[database]][[input[[paste0(database, "-domain.diff")]]]]
-                  }, 
+                  },
                   height = function() {min(1200, max(200, termNbr * 20))})
                 )
               )
             )
           })
-        
+
         tabPanel.list <- c(tabPanel.list, tabPanel_annot.list)
       }
-      
+
       box(
         title = "Summary of differential expression analyses",
         width = 12,
@@ -264,18 +264,18 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
         collapsible = TRUE,
         collapsed = TRUE,
         tagList({
-          
+
           do.call(what = tabsetPanel, args = tabPanel.list)
         })
       )
     })
-    
+
     # coexpression summary
     output$CoExSummary <- renderUI({
-      
+
       if (is.null(rea.values$datasetCoEx))
         return()
-      
+
       tabPanel.list <-
         list(
           tabPanel(
@@ -286,36 +286,36 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
             })
           )
         )
-      
+
       if (!is.null(rea.values$datasetCoExAnnot)) {
-        
-        tabPanel_annot.list <- 
+
+        tabPanel_annot.list <-
           lapply(names(rea.values$datasetCoExAnnot), function(database) {
-            
+
             # list of cluster
             ListNames  <- vector()
             domainList <- vector()
             termNbr    <- 0
             for(dataset in rea.values$datasetDiffAnnot[[database]]){
-              
+
               tmp <-
                 getAnalysis(session$userData$FlomicsMultiAssay[[dataset]],
                             name = "CoExpEnrichAnal",
                             subName = database)
-              
+
               tmp <- tmp$results$summary %>%
                 mutate(sum = rowSums(across(where(is.numeric)))) %>%
                 filter(sum != 0)
-              
+
               ListNames <- unique(c(ListNames, row.names(tmp)))
-              
+
               tmp <- tmp[,-1]
               tmp$sum <- NULL
-              
+
               domainList <- unique(c(domainList, names(colSums(tmp)[colSums(tmp) != 0])))
               termNbr    <- termNbr + sum(colSums(tmp))
             }
-            
+
             tabPanel(
               title = paste0("ORA results from ", database),
               fluidRow(
@@ -356,7 +356,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                 column(
                   width = 12,
                   renderPlot({
-                    
+
                     p.list <- getAnnotAnalysesSummary(
                       session$userData$FlomicsMultiAssay,
                       from = "CoExp",
@@ -365,7 +365,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
                       omicNames = input[[paste0(database, "-datasets.coex")]]
                     )
                     p.list[[database]][[input[[paste0(database, "-domain.coex")]]]]
-                  }, 
+                  },
                   height = function() {min(1200, max(200, termNbr * 20))})
                 )
               )
@@ -373,7 +373,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
           })
         tabPanel.list <- c(tabPanel.list,tabPanel_annot.list)
       }
-      
+
       box(
         title = "Summary of Co-expression analyses",
         width = 12,
@@ -381,7 +381,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
         solidHeader = TRUE,
         collapsible = TRUE,
         collapsed = TRUE,
-        
+
         do.call(what = tabsetPanel, args = tabPanel.list)
       )
     })
@@ -401,7 +401,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
 .selectizeModuleServer <- function(id, featureType, choices) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
-    
+
     # Dynamically generate the selectizeInput in the server.
     # Initialize choices to NULL to avoid loading everything on the client side.
     # choices = NULL
@@ -414,7 +414,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
         options = list(maxOptions = 1000)
       )
     })
-    
+
     # Use server-side mode to handle large lists.
     updateSelectizeInput(
       session = session,
@@ -422,7 +422,7 @@ RadioButtonsCondition <- function(input, output, session, typeFact) {
       choices = choices,
       server = TRUE
     )
-    
+
     # Return the reactive selection directly.
     return(reactive(input$selectFeature))
   })
