@@ -184,8 +184,8 @@ It will not be displayed as a dendrogram.}
 \item{experiment}{if the object is a RflomicsMAE, then experiment is the
 name of the RflomicsSE to look for.}
 
-\item{listNames}{List of names of differential expression feature lists 
-(from = "DiffExp") or list of names of annotated co-expression clusters 
+\item{listNames}{List of names of differential expression feature lists
+(from = "DiffExp") or list of names of annotated co-expression clusters
 (from = "CoExp")}
 
 \item{omicNames}{List of dataset names}
