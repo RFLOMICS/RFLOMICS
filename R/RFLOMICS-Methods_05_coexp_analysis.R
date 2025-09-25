@@ -43,7 +43,7 @@
 #' \item \code{stats:}  A tibble summarizing failed jobs: reason, proportion,
 #' if any
 #' }
-#' \item \code{errors:} 435error list.
+#' \item \code{errors:} error list.
 #' }
 #' @param object An object of class \link{RflomicsSE} or
 #' class \link{RflomicsMAE-class}
@@ -428,17 +428,17 @@ setMethod(
       merge(ICL.list[["ICL.tab"]],
             expand.grid(K = paste("K", K, sep="="),
                         N = seq_len(replicates)), all = TRUE) %>%
-      mutate(K = str_remove(K, "K="),          
-             K = as.integer(K),                 
-             K = sprintf("K=%02d", K))   
+      mutate(K = str_remove(K, "K="),
+             K = as.integer(K),
+             K = sprintf("K=%02d", K))
 
     ICL.list[["ICL.n"]] <-
       merge(ICL.list[["ICL.n"]],
             data.frame(K = paste("K", K, sep="=")), all = TRUE) %>%
-      mutate(N = ifelse(is.na(N), 0, N)) %>% 
-      mutate(K = str_remove(K, "K="),          
-             K = as.integer(K),                 
-             K = sprintf("K=%02d", K)) 
+      mutate(N = ifelse(is.na(N), 0, N)) %>%
+      mutate(K = str_remove(K, "K="),
+             K = as.integer(K),
+             K = sprintf("K=%02d", K))
 
     ICL.p <- ggplot(data = ICL.list[["ICL.tab"]]) +
       geom_boxplot(aes(x = K, y = ICL, group = K), na.rm = TRUE) +
@@ -650,8 +650,8 @@ setMethod(
     # Bind table and add prop
     tab <- rbind(tab.com,tab.spe) |>
       group_by(C) |>
-      mutate(prop=(n/sum(n))*100) |> 
-      mutate(C = sprintf("Cluster_%02d", 
+      mutate(prop=(n/sum(n))*100) |>
+      mutate(C = sprintf("Cluster_%02d",
         as.integer(str_remove(C, "Cluster_"))))
 
     p <-  ggplot(tab,  aes(x = C, y = prop, fill = H)) +
