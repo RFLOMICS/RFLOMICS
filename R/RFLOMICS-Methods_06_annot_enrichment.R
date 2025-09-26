@@ -550,7 +550,7 @@ setMethod(
                 if (nodeLabel == "all") nodeLabel <- c("category", "gene")
                 gg <-  ggplot(net, aes(x, y, xend = xend, yend = yend, label = label)) +
                     theme_blank() +
-                    geom_edges(size = 0.5, colour = "grey55")
+                    geom_edges(linewidth = 0.5, colour = "grey55")
 
 
                 if (!is.null(log2FC_vect)) {
