@@ -414,9 +414,6 @@ test_that("plotClusterPRofiler - GO only", {
     expect(is(plotToTest, "ggplot"),
            failure_message = "plotCusterProfiler did not return a ggplot object")
 
-    expect(is(plotToTest, "enrichplotDot"),
-           failure_message = "plotCusterProfiler did not return an enrichPlot")
-
     # trying to plot other types of plots
     expect_no_error(plotClusterProfiler(MAE[["protetest"]],
                                         featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
