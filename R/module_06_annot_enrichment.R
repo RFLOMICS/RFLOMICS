@@ -1593,10 +1593,10 @@
                     paste0(plotExplain, "
                                    Interactive version of this plot is not available yet."))),
                 hr(),
-                renderPlot({
-                    outcnet +
+                renderPlotly({
+                    ggplotly(  outcnet +
                         labs(title = listname,
-                             subtitle = subTitlePlot)
+                             subtitle = subTitlePlot))
 
                 })
                 # renderPlotly({
