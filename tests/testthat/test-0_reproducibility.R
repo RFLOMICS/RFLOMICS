@@ -285,20 +285,20 @@ test_that("Test diff plot", {
     p <- plotBoxplotDE(MAE, SE.name = "protetest", 
                        featureName = "AT1G01010", 
                        groupColor="groups",  raw = FALSE))
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   
   co <- capture.output(
     p <- plotBoxplotDE(MAE, SE.name = "protetest", 
                        featureName = "", 
                        groupColor="groups",  raw = FALSE))
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
 })
 
 
 test_that("Test coseq plot", {
   
   p <- plotCoExpressionProfile(MAE, SE.name = "protetest") 
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   
   p <- plotCoExpression(MAE, SE.name = "protetest") 
   expect_equal(names(p), c("profiles","boxplots","probapost_boxplots",
@@ -306,7 +306,7 @@ test_that("Test coseq plot", {
                            "ICL", "logLike"))
   
   p <- plotCoseqContrasts(MAE, SE.name = "protetest")
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   
   expect_equal(length(getCoexpClusters(MAE, SE.name = "protetest")), 6)
   
@@ -315,10 +315,10 @@ test_that("Test coseq plot", {
 test_that("get summary analysis", {
   
   p <- getDiffAnalysesSummary(MAE, plot = TRUE)
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   
   p <- getCoExpAnalysesSummary(MAE)
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   
 })
 

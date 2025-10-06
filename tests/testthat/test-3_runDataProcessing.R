@@ -757,18 +757,18 @@ test_that("Test explor plot", {
                             imputMethod = "MVI")
   
   p <- plotLibrarySize(MAE1, SE.name = "RNAtest", raw = TRUE)
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   expect_error(plotLibrarySize(MAE1, SE.name = "protetest"))
   
   p <- plotDataDistribution(MAE1, SE.name = "RNAtest", plot = "boxplot")
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   
   p <- plotDataDistribution(MAE1, SE.name = "protetest", plot = "density")
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   
   p <- plotOmicsPCA(MAE1, SE.name = "RNAtest")
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   
   p <- plotExpDesignCompleteness(MAE1, omicName = "RNAtest")
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
 })

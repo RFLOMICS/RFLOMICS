@@ -428,11 +428,11 @@ test_that("readOmicsData", {
 test_that("Test plot", {
   
   p <- plotConditionsOverview(MAE)
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   
   p <- plotDataOverview(MAE)
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
   
   p <- plotDataOverview(MAE, realSize = TRUE)
-  expect_equal(is(p), "gg")
+  expect(is(p, "gg"), "This plot is not ggplot")
 })
