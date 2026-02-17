@@ -667,8 +667,6 @@ QCNormalizationTab <-
 
       message("[RFLOMICS] # 03- Data processing: ", dataset)
       
-      toto <<- session$userData$FlomicsMultiAssay
-
       catch.res <-
         .tryCatch_rflomics(runDataProcessing(
           object = session$userData$FlomicsMultiAssay,
