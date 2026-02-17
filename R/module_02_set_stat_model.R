@@ -59,7 +59,7 @@
   observeEvent(input$validModelFormula, {
 
     rea.values$model          <- FALSE
-    rea.values$analysis       <- FALSE
+    #rea.values$analysis       <- FALSE
     rea.values$Contrasts.Sel  <- NULL
     rea.values$datasetDiff    <- NULL
     rea.values$datasetProcess <- NULL
@@ -126,16 +126,16 @@
   # => The load data item appears
   observeEvent(input$validContrasts, {
 
-    rea.values$analysis    <- FALSE
+    #rea.values$analysis    <- FALSE
     rea.values$datasetDiff <- NULL
     rea.values$datasetProcess <- NULL
 
     # reset analysis
     lapply(unlist(rea.values$datasetList), function(dataset){
-      rea.values[[dataset]]$process   <- FALSE
+      #rea.values[[dataset]]$process   <- FALSE
       rea.values[[dataset]]$diffAnal  <- FALSE
       rea.values[[dataset]]$coExpAnal <- FALSE
-      rea.values[[dataset]]$DiffExp <- FALSE
+      rea.values[[dataset]]$DiffExp   <- FALSE
       rea.values[[dataset]]$diffValid <- FALSE
       rea.values[[dataset]]$DiffValidContrast <- NULL
     })
@@ -168,7 +168,7 @@
     session$userData$FlomicsMultiAssay <- setSelectedContrasts(session$userData$FlomicsMultiAssay, contrastList = contrast.sel.vec)
     rea.values$Contrasts.Sel <- contrast.sel.vec
 
-    rea.values$analysis <- TRUE
+    #rea.values$analysis <- TRUE
 
   }, ignoreInit = TRUE)
 

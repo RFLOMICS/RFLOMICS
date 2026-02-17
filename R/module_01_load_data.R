@@ -67,6 +67,7 @@
     rea.values$datasetList <-
       metadata(session$userData$FlomicsMultiAssay)$omicList
     rea.values$loadData    <- TRUE
+    #rea.values$analysis    <- TRUE
     local.rea.values$plots <- TRUE
 
     # data overview
@@ -293,7 +294,7 @@
 
     rea.values$loadData        <- FALSE
     rea.values$model           <- FALSE
-    rea.values$analysis        <- FALSE
+    #rea.values$analysis        <- FALSE
     rea.values$Contrasts.Sel   <- NULL
     rea.values$datasetList     <- NULL
     rea.values$datasetDiff     <- NULL
@@ -356,7 +357,7 @@
 
     rea.values$loadData        <- FALSE
     rea.values$model           <- FALSE
-    rea.values$analysis        <- FALSE
+    #rea.values$analysis        <- FALSE
     rea.values$Contrasts.Sel   <- NULL
     rea.values$datasetList     <- NULL
     rea.values$datasetDiff     <- NULL

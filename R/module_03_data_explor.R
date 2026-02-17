@@ -307,8 +307,8 @@ QCNormalizationTab <-
 
 
     #---- Exploratory of Biological and Technical variability----
-    output$tabPanelUI <- renderUI({
-      if (rea.values$model == FALSE)
+    output$tabPanelUI <- renderUI({ 
+      if (rea.values$loadData == FALSE)
         return()
 
       MAE.data <- session$userData$FlomicsMultiAssay

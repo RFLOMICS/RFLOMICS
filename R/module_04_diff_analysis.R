@@ -84,11 +84,14 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
         #we must run process before
         validate(
             need(rea.values[[dataset]]$process != FALSE,
-                 "Please run \'Data exploration and pre-processing\'")
+                 "To run the differential analysis, preprocessing must be 
+                 performed (see the Preprocessing).")
         )
         validate(
             need(!is.null(rea.values$Contrasts.Sel),
-                 "Please run \'Data exploration and pre-processing\'")
+                 "To run the differential analysis, the model as well as 
+                 the contrasts to be tested must be selected 
+                 (see Experimental Design section).")
         )
         #design must be complete
         validate(

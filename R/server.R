@@ -77,7 +77,7 @@ rflomicsServer <- function(input, output, session) {
   output$omics <- renderMenu({
 
     validate({
-      need(rea.values$analysis == TRUE, message="")
+      need(rea.values$loadData == TRUE, message="")
     })
 
     menuItem(text = "Omics Analysis", tabName = "OmicsAnalysis",
@@ -97,7 +97,7 @@ rflomicsServer <- function(input, output, session) {
   output$omicsSumUI <- renderMenu({
 
     validate(
-      need(rea.values$analysis == TRUE && length(rea.values$datasetProcess) >= 2,
+      need(rea.values$loadData == TRUE && length(rea.values$datasetProcess) >= 2,
            message = "")
     )
 
@@ -110,7 +110,8 @@ rflomicsServer <- function(input, output, session) {
   output$Integration <- renderMenu({
 
     validate({
-      need(rea.values$analysis == TRUE && length(rea.values$datasetProcess) >= 2,
+      need(rea.values$loadData == TRUE && rea.values$model == TRUE && 
+             length(rea.values$datasetProcess) >= 2,
            message = "")
     })
 
