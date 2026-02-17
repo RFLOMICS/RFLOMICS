@@ -62,7 +62,7 @@
     #rea.values$analysis       <- FALSE
     rea.values$Contrasts.Sel  <- NULL
     rea.values$datasetDiff    <- NULL
-    rea.values$datasetProcess <- NULL
+    #rea.values$datasetProcess <- NULL
 
     message("[RFLOMICS] # 02- Statistical setting...")
     message("[RFLOMICS] #    => model formula: ", input$model.formulae)
@@ -128,7 +128,7 @@
 
     #rea.values$analysis    <- FALSE
     rea.values$datasetDiff <- NULL
-    rea.values$datasetProcess <- NULL
+    #rea.values$datasetProcess <- NULL
 
     # reset analysis
     lapply(unlist(rea.values$datasetList), function(dataset){
