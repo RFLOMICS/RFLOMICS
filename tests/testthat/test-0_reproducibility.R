@@ -64,7 +64,8 @@ MAE <- setSelectedContrasts(MAE, contrastList = selectedContrasts)
 ## creates the non .raw SE inside the MAE.
 ## Interface function, mostly
 MAE <- MAE |>
-  runDataProcessing(SE.name = "RNAtest", samples = sampleToKeep,
+  runDataProcessing(SE.name = "RNAtest", samples = sampleToKeep, 
+                    filterMethod = "CPM",
                     filterStrategy = "NbReplicates",
                     cpmCutoff = 1, normMethod = "TMM") |>
   runDataProcessing(SE.name = "protetest", samples = NULL,

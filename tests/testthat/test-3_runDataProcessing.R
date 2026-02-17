@@ -43,6 +43,7 @@ test_that("runDataProcessing returned value", {
   ## method of RflomicsMAE class
   MAE1 <- runDataProcessing(MAE, SE.name = "RNAtest",
                             samples = sampleToKeep,
+                            filterMethod = "CPM",
                             filterStrategy = "NbReplicates",
                             cpmCutoff = 1,
                             normMethod = "TMM")
@@ -68,6 +69,7 @@ test_that("runDataProcessing returned value", {
   rna.S1  <- MAE[["RNAtest"]]
   rna.S1  <- runDataProcessing(rna.S1,
                                samples = sampleToKeep,
+                               filterMethod = "CPM",
                                filterStrategy = "NbReplicates",
                                cpmCutoff = 1,
                                normMethod = "TMM")
@@ -197,7 +199,7 @@ test_that("default values of runDataProcessing arguments", {
   meta.S1 <- MAE[["metatest"]]
 
   # run runDataProcessing with default value
-  rna.S1  <- runDataProcessing(rna.S1)
+  rna.S1  <- runDataProcessing(rna.S1, filterMethod = "CPM",)
   prot.S1 <- runDataProcessing(prot.S1)
   meta.S1 <- runDataProcessing(meta.S1)
 
@@ -246,11 +248,13 @@ test_that("Error/warning messages", {
   # RNAseq data
   expect_error(runDataProcessing(rna.S1,
                                  samples = sampleToKeep,
+                                 filterMethod = "CPM",
                                  filterStrategy = "toto",
                                  cpmCutoff = 1,
                                  normMethod = "TMM"))
   expect_error(runDataProcessing(rna.S1,
                                  samples = sampleToKeep,
+                                 filterMethod = "CPM",
                                  filterStrategy = "NbReplicates",
                                  cpmCutoff = "toto",
                                  normMethod = "TMM"))
@@ -383,7 +387,7 @@ test_that("default values of runFeatureFiltering arguments", {
   ## filtering settings: features
   expect_identical(
     getFilterSettings(rna.S1),
-    list(method = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 1))
+    list(method = "filterByExpr", filterStrategy = "groups", cpmCutoff = NULL))
   expect_identical(RFLOMICS:::.isFiltered(rna.S1), FALSE)
   expect(length(getAnalysis(rna.S1, "DataProcessing", "featureFiltering")) != 0,
          failure_message = "")
@@ -395,7 +399,7 @@ test_that("default values of runFeatureFiltering arguments", {
                                cpmCutoff = 1)
   expect_identical(
     getFilterSettings(rna.S1),
-    list(method = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 1))
+    list(method = "filterByExpr", filterStrategy = "groups", cpmCutoff = NULL))
 
   rna.S1 <- runFeatureFiltering(rna.S1,
                                filterMethod = "CPM",
@@ -772,3 +776,4 @@ test_that("Test explor plot", {
   p <- plotExpDesignCompleteness(MAE1, omicName = "RNAtest")
   expect(is(p, "gg"), "This plot is not ggplot")
 })
+
