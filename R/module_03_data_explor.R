@@ -97,8 +97,8 @@ QCNormalizationTab <-
                   .addBSpopify(
                     label = 'Low count filtering',
                     content = "Genes with low counts will be removed based on count per million (cpm), accounting for the library size"),
-                choices  =  list("CPM" = "CPM"),
-                selected = "CPM"
+                choices  =  list("filterByExpr (edgeR)" = "filterByExpr", "CPM" = "CPM"),
+                selected = "filterByExpr"
               ),
               conditionalPanel(
                 condition =
@@ -125,6 +125,20 @@ QCNormalizationTab <-
                   label = .addBSpopify(label = 'CPM cut-off',
                                        content = "Choose the cpm cut-off"),
                   value = 1, min = 1, max = 10, step = 1
+                ),
+                style="font-size:80%; font-family:Arial;"
+              ),
+              conditionalPanel(
+                condition =
+                  paste0("input[\'",
+                         session$ns("selectFilterMethod"),
+                         "\'] == \'filterByExpr\'"),
+                selectInput(
+                  inputId  = session$ns("Filter_groups"),
+                  label    = .addBSpopify(label = 'Conditions',
+                                          content = "It corresponds to the biological groups / experimental conditions of your samples."),
+                  choices  = c("groups" = "groups"),
+                  selected = "groups"
                 ),
                 style="font-size:80%; font-family:Arial;"
               ),
@@ -275,14 +289,14 @@ QCNormalizationTab <-
 
       tagList(
         box(
-          title = length(names(SE.data)),
+          title = length(names(getProcessedData(SE.data, filter = TRUE))),
           width = 6,
           background = "fuchsia",
           paste0("Number of filtered ",
                  .omicsDic(SE.data)$variableName)
         ),
         box(
-          title = length(colnames(SE.data)),
+          title = length(colnames(getProcessedData(SE.data, filter = TRUE))),
           width = 6,
           background = "purple",
           "Number of filtered samples"
@@ -579,8 +593,17 @@ QCNormalizationTab <-
         getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
         "RNAseq" = {
           list(
-            Filter_Strategy = input$Filter_Strategy,
-            CPM_Cutoff = input$FilterSeuil,
+            FilterMethod = input$selectFilterMethod,
+            Filter_Strategy = 
+              switch (input$selectFilterMethod,
+                      "CPM" = input$Filter_Strategy,
+                      "filterByExpr" = input$Filter_groups
+              ),
+            CPM_Cutoff = 
+              switch (input$selectFilterMethod,
+                      "CPM" = input$FilterSeuil,
+                      "filterByExpr" = NULL
+              ),
             NormMethod = input$selectNormMethod
           )
         },
@@ -612,12 +635,17 @@ QCNormalizationTab <-
       rea.values[[dataset]]$DiffValidContrast <- NULL
 
       message("[RFLOMICS] # 03- Data processing: ", dataset)
+      
+      toto <<- session$userData$FlomicsMultiAssay
 
+      params_bis <<- param.list
+      
       catch.res <-
         .tryCatch_rflomics(runDataProcessing(
           object = session$userData$FlomicsMultiAssay,
           SE.name = dataset,
           samples = input$selectSamples,
+          filterMethod = param.list[["FilterMethod"]],
           filterStrategy = param.list[["Filter_Strategy"]],
           cpmCutoff = param.list[["CPM_Cutoff"]],
           normMethod = param.list[["NormMethod"]],
@@ -637,7 +665,6 @@ QCNormalizationTab <-
       session$userData$FlomicsMultiAssay <- catch.res$result
       message(gsub("\n$", "", paste(catch.res$messages, collapse = "")))
       if (length(catch.res$warnings) > 0) message(catch.res$warnings)
-
 
       rea.values[[dataset]]$process <- TRUE
 
@@ -681,11 +708,14 @@ check_run_process_execution <-
       getOmicsTypes(SE),
       "RNAseq" = {
         # filtering setting
+        if (is.null(getFilterSettings(SE)$method) ||
+            param.list$FilterMethod != getFilterSettings(SE)$method)
+          return(TRUE)
         if (is.null(getFilterSettings(SE)$filterStrategy) ||
             param.list$Filter_Strategy != getFilterSettings(SE)$filterStrategy)
           return(TRUE)
-        if (is.null(getFilterSettings(SE)$cpmCutoff) ||
-            param.list$CPM_Cutoff != getFilterSettings(SE)$cpmCutoff)
+        if (getFilterSettings(SE)$method == "CPM" && (is.null(getFilterSettings(SE)$cpmCutoff) ||
+            param.list$CPM_Cutoff != getFilterSettings(SE)$cpmCutoff))
           return(TRUE)
       },
       {

@@ -63,6 +63,7 @@
 \S4method{runDataProcessing}{RflomicsSE}(
   object,
   samples = NULL,
+  filterMethod = NULL,
   filterStrategy = NULL,
   cpmCutoff = NULL,
   transformMethod = NULL,
@@ -76,6 +77,7 @@
   object,
   SE.name,
   samples = NULL,
+  filterMethod = NULL,
   filterStrategy = NULL,
   cpmCutoff = NULL,
   transformMethod = NULL,
@@ -216,6 +218,8 @@
 
 \item{samples}{samples to keep.}
 
+\item{filterMethod}{The filtering model ("CPM") for RNAseq data.}
+
 \item{filterStrategy}{The filtering strategy
 ("NbConditions" or "NbReplicates") for RNAseq data.}
 
@@ -236,8 +240,6 @@ metabolomics data.}
 \item{userNormMethod}{method used by user to normalize data.}
 
 \item{SE.name}{the name of the data the normalization have to be applied to.}
-
-\item{filterMethod}{The filtering model ("CPM") for RNAseq data.}
 
 \item{ncomp}{Number of components to compute. Default is 5.}
 

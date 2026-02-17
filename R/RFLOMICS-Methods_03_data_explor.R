@@ -20,10 +20,11 @@
 #' runDataProcessing() calls the following functions:
 #' @param object An object of class \link{RflomicsSE} or class \link{RflomicsSE}
 #' @param samples samples to keep.
-#' @param filterStrategy strategy of RNAseq low count filtering.
+#' @param filterMethod filtering method: CPM or filterByExpr
+#' @param filterStrategy strategy of RNAseq low count filtering when filterMethod == CPM.
 #' Mandatory for RNAseq data. Default value: "NbReplicates".
-#' @param cpmCutoff CPM cutoff for RNAseq low count filtering.
-#'  Mandatory for RNAseq data. Default value: 1.
+#' @param cpmCutoff CPM cutoff for RNAseq low count filtering when filterMethod == CPM.
+#' Mandatory for RNAseq data. Default value: 1.
 #' @param normMethod of normalization. Mandatory for RNAseq data.
 #' Default value: RNAseq = TMM.
 #' @param transformMethod method of transformation.
@@ -58,6 +59,7 @@ setMethod(
   signature  = "RflomicsSE",
   definition = function(object,
                         samples=NULL,
+                        filterMethod = NULL,
                         filterStrategy = NULL,
                         cpmCutoff = NULL,
                         transformMethod = NULL,
@@ -82,13 +84,15 @@ setMethod(
             getDatasetNames(object))
     object <- runSampleFiltering(object, samples)
 
-    # imputation
+    # feature filtering
     message("[RFLOMICS] #    => feature filtering... ",
             getDatasetNames(object))
     object <- runFeatureFiltering(object,
+                                  filterMethod = filterMethod,
                                   filterStrategy = filterStrategy,
                                   cpmCutoff = cpmCutoff,
                                   imputMethod = imputMethod)
+
 
     # Run transformation...
     if(getOmicsTypes(object) != "RNAseq"){
@@ -149,6 +153,7 @@ setMethod(
   signature  = "RflomicsMAE",
   definition = function(object, SE.name,
                         samples=NULL,
+                        filterMethod = NULL,
                         filterStrategy = NULL,
                         cpmCutoff = NULL,
                         transformMethod = NULL,
@@ -161,10 +166,11 @@ setMethod(
            getDatasetNames(object))
 
     SE.processed <-  runDataProcessing(object = object[[SE.name]],
-                                       samples = samples,
-                                       filterStrategy = filterStrategy,
-                                       cpmCutoff = cpmCutoff,
-                                       normMethod= normMethod,
+                                       samples         = samples,
+                                       filterMethod    = filterMethod,
+                                       filterStrategy  = filterStrategy,
+                                       cpmCutoff       = cpmCutoff,
+                                       normMethod      = normMethod,
                                        transformMethod = transformMethod,
                                        userTransMethod = userTransMethod,
                                        userNormMethod  = userNormMethod)
@@ -377,10 +383,10 @@ setMethod(
   f         = "runFeatureFiltering",
   signature = "RflomicsMAE",
   definition = function(object, SE.name,
-                        filterMethod = NULL,
+                        filterMethod   = NULL,
                         filterStrategy = NULL,
-                        cpmCutoff = NULL,
-                        imputMethod = NULL){
+                        cpmCutoff      = NULL,
+                        imputMethod    = NULL){
 
     if (!SE.name %in% names(object))
       stop("SE name must be part of this list of names: ",
@@ -487,15 +493,15 @@ setMethod(
 #' the count data matrix of an omicsof type "RNAseq".
 #' by applying filtering criterion described in reference.
 #' }
-#' @param filterMethod The filtering model ("CPM")
+#' @param filterMethod The filtering model ("CPM", "filterByExpr")
 #' @param filterStrategy The filtering strategy
-#' ("NbConditions" or "NbReplicates")
-#' @param cpmCutoff The CPM cutoff.
+#' ("NbConditions" or "NbReplicates") if filterMethod == "CPM"
+#' @param cpmCutoff The CPM cutoff if filterMethod == "CPM".
 #' @details
 #' filterLowAbundance(): By default, gene/transcript with 0 count
-#' are removed from the data. The function then
-#' computes the count per million or read (CPM) for each gene
-#' in each sample and gives by
+#' are removed from the data. The function then two stategies of filtering are 
+#' proposed: 1) filterByExpr implemented in egdeR 2) computes the count per 
+#' million or read (CPM) for each gene in each sample and gives by
 #' genes the number of sample(s) which are over the cpmCutoff
 #' (NbOfsample_over_cpm).
 #' Then Two filtering strategies are proposed:
@@ -513,70 +519,84 @@ setMethod(
   f         = "filterLowAbundance",
   signature = "RflomicsSE",
   definition = function(object,
-                        filterMethod = "CPM",
-                        filterStrategy = "NbReplicates",
-                        cpmCutoff = 1){
-
-    suported.strategies <- c("NbReplicates","NbConditions")
+                        filterMethod = "filterByExpr",
+                        filterStrategy = "groups",
+                        cpmCutoff = NULL){
 
     if (getOmicsTypes(object) != "RNAseq")
       stop("Can't apply filterLowAbundance to omics types other than RNAseq.")
-
+    
     if (.isFiltered(object))
       stop("Data is already filtered!")
-
-    if (is.null(filterStrategy)) filterStrategy <- suported.strategies[1]
-    if (isFALSE(filterStrategy %in% suported.strategies))
-      stop("filterStrategy argument must be one of these two options: ",
-           "NbReplicates or NbConditions")
-
-    if(is.null(filterMethod)) filterMethod <- "CPM"
-    if(filterMethod != "CPM")
-      stop("filterMethod argument must be one of these tow options: CPM")
-
-    if(is.null(cpmCutoff)) cpmCutoff <- 1
-    if(!is.numeric(cpmCutoff) || cpmCutoff < 0)
-      stop(cpmCutoff, " must be an integer value > 1")
+    
+    suported.filterMethod <- c("filterByExpr", "CPM")
+    
+    if(is.null(filterMethod)) filterMethod <- "filterByExpr"
+    if(!filterMethod %in% suported.filterMethod)
+      stop("filterMethod argument must be one of these tow options: ", 
+           suported.filterMethod)
 
     # filter outlier samples
     object2 <- getProcessedData(object)
-
+    
     assayFilt  <- assay(object2)
-
+    
     # nbr of genes with 0 count
     genes_flt0  <- object2[rowSums(assayFilt) <= 0, ]@NAMES
-
+    
     # remove 0 count
     objectFilt  <- object2[rowSums(assayFilt)  > 0, ]
     assayFilt   <- assay(objectFilt)
+    Groups      <- getDesignMat(object2)
+    
+    if(filterMethod == "filterByExpr"){
+      
+      filterStrategy <- "groups"
+      
+      dge  <- DGEList(counts = assayFilt, genes = rownames(assayFilt))
+      keep <- filterByExpr(dge, group = Groups[["groups"]])
 
-    # filter cpm
-    Groups       <- getDesignMat(object2)
-    NbReplicate  <- table(Groups$groups)
-    NbConditions <- length(unique(Groups$groups))
+      settings <- 
+        list(
+          method         = filterMethod,
+          filterStrategy = filterStrategy,
+          cpmCutoff      = NULL)
+    }
 
-    # low count filtering
-    keep <-
-      switch(filterStrategy,
-             "NbConditions" = {
-                 rowSums(cpm(assayFilt) >= cpmCutoff) >= NbConditions },
-             "NbReplicates" = {
-                 rowSums(cpm(assayFilt) >= cpmCutoff) >= min(NbReplicate)},
-             "filterByExpr" =
-               {
-                 dge <- DGEList(counts = assayFilt, genes = rownames(assayFilt))
-                 filterByExpr(dge)
-               }
+    if(filterMethod == "CPM"){
+      
+      suported.strategies <- c("NbReplicates","NbConditions")
+      
+      if (is.null(filterStrategy)) filterStrategy <- suported.strategies[1]
+      if (isFALSE(filterStrategy %in% suported.strategies))
+        stop("filterStrategy argument must be one of these two options: ",
+             "NbReplicates or NbConditions")
+      
+      if(is.null(cpmCutoff)) cpmCutoff <- 1
+      if(!is.numeric(cpmCutoff) || cpmCutoff < 0)
+        stop(cpmCutoff, " must be an integer value > 1")
+      
+      # filter cpm
+      filter_cpm <- switch (filterStrategy,
+        "NbConditions" = length(unique(Groups$groups)),
+        "NbReplicates" = min(table(Groups$groups))
       )
 
+      keep <- rowSums(cpm(assayFilt) >= cpmCutoff) >= filter_cpm
+      
+      settings <- 
+        list(
+          method         = filterMethod,
+          filterStrategy = filterStrategy,
+          cpmCutoff      = cpmCutoff)
+    }
+    
     # features to filtered
     genes_flt1  <- objectFilt[!keep]@NAMES
 
     # output
     Filtering <- list(
-      setting = list(method         = filterMethod,
-                     filterStrategy = filterStrategy,
-                     cpmCutoff      = cpmCutoff),
+      setting = settings,
       results = list(filteredFeatures = c(genes_flt0, genes_flt1)),
       filtered = FALSE
     )

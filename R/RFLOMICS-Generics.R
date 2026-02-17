@@ -198,14 +198,15 @@ setGeneric(
 setGeneric(
   name = "runDataProcessing",
   def  = function(object,
-                  samples=NULL,
-                  filterStrategy = NULL,
-                  cpmCutoff = NULL,
+                  samples         = NULL,
+                  filterMethod    = NULL,
+                  filterStrategy  = NULL,
+                  cpmCutoff       = NULL,
                   transformMethod = NULL,
-                  normMethod= NULL,
-                  imputMethod = NULL,
+                  normMethod      = NULL,
+                  imputMethod     = NULL,
                   userTransMethod = "unknown",
-                  userNormMethod = "unknown",
+                  userNormMethod  = "unknown",
                   ...)
     standardGeneric("runDataProcessing")
 )
@@ -220,9 +221,9 @@ setGeneric(
 setGeneric(
   name = "filterLowAbundance",
   def  = function(object,
-                  filterMethod = "CPM",
-                  filterStrategy = "NbReplicates",
-                  cpmCutoff = 1)
+                  filterMethod   = "filterByExpr",
+                  filterStrategy = "groups",
+                  cpmCutoff      = NULL)
     standardGeneric("filterLowAbundance")
 )
 
