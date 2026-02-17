@@ -55,6 +55,19 @@
 \alias{plotExpDesignCompleteness}
 \alias{plotExpDesignCompleteness,RflomicsSE-method}
 \alias{plotExpDesignCompleteness,RflomicsMAE-method}
+\alias{plotMissingValues}
+\alias{plotMissingValues,RflomicsSE-method}
+\alias{\itemize{}
+\alias{\item}
+\alias{plotMissingValues:}
+\alias{return}
+\alias{barplot}
+\alias{of}
+\alias{\%}
+\alias{messing}
+\alias{values.}
+\alias{}}
+\alias{plotMissingValues,RflomicsMAE-method}
 \alias{isProcessedData}
 \alias{isProcessedData,RflomicsSE-method}
 \alias{isProcessedData,RflomicsMAE-method}
@@ -196,6 +209,10 @@
 
 \S4method{plotExpDesignCompleteness}{RflomicsMAE}(object, omicName, sampleList = NULL)
 
+\S4method{plotMissingValues}{RflomicsSE}(object, raw = FALSE)
+
+\S4method{plotMissingValues}{RflomicsMAE}(object, SE.name, raw = FALSE)
+
 \S4method{isProcessedData}{RflomicsSE}(
   object,
   filter = FALSE,
@@ -243,7 +260,7 @@ metabolomics data.}
 
 \item{ncomp}{Number of components to compute. Default is 5.}
 
-\item{raw}{boolean. Does the pca have to be ran on raw data or transformed}
+\item{raw}{a boolean}
 
 \item{sampleList}{list of samples to check.}
 
@@ -508,6 +525,7 @@ MAE <- runDataProcessing(MAE, SE.name = "protetest",
 # See runDataProcessing for an example that includes plotDataDistribution
 # See runDataProcessing for an example that includes plotOmicsPCA
 # See runDataProcessing for an example that includes plotExpDesignCompleteness
+# See runDataProcessing for an example that includes plotMissingValues
 }
 \references{
 Lambert, I., Paysant-Le Roux, C., Colella, S. et al.

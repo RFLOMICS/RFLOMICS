@@ -899,6 +899,7 @@ setMethod(
     pseudo  <- assay(getProcessedData(object, norm = !raw, log = log))
 
     PCAlist <- getAnalysis(object, name = "PCAlist")
+    
     PCAlist[[ifelse(isTRUE(raw), "raw", "norm")]] <-
       PCA(t(pseudo), ncp = ncomp, graph = FALSE)
     object <- setElementToMetadata(object, name = "PCAlist", content = PCAlist)
@@ -1617,6 +1618,64 @@ setMethod(f         = "plotExpDesignCompleteness",
             SEObject <- getRflomicsSE(object, omicName)
 
             plotExpDesignCompleteness(SEObject, sampleList = sampleList)
+          })
+
+
+
+
+###==== plotMissingValues ====
+
+#' @rdname runDataProcessing
+#' @name plotMissingValues
+#' @aliases plotMissingValues,RflomicsSE-method
+#' \itemize{
+#'    \item plotMissingValues: return barplot of % of messing values.
+#' }
+#' @param raw a boolean
+#' @exportMethod plotMissingValues
+#' @importFrom reshape2 melt
+#' @examples
+#' # See runDataProcessing for an example that includes plotMissingValues
+setMethod(
+  f          = "plotMissingValues",
+  signature  = "RflomicsSE",
+  definition = function(object, raw = FALSE)
+  {
+    
+    if(isFALSE(raw))
+      object <- getProcessedData(object, norm = TRUE)
+    
+    labels <- getLabs4plot(object)
+    
+    mat <- assay(object)
+    
+    df <- 
+      melt(mat) |> 
+      mutate(missed_value = ifelse(value == 0, "yes", "no")) |>
+      group_by(Var2, missed_value) |> count(name = "nb_missed") |>
+      mutate(missed_p = nb_missed/nrow(mat)*100)
+    
+    p <- ggplot(df) + 
+      geom_col(aes(x = Var2, y = missed_p, fill = missed_value)) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+      labs(x = "", y = "% of missing values") +
+      ggtitle(labels$title)
+    
+    return(p)
+    
+  })
+
+#' @rdname runDataProcessing
+#' @name plotMissingValues
+#' @aliases plotMissingValues,RflomicsMAE-method
+#' @exportMethod plotMissingValues
+setMethod(f          = "plotMissingValues",
+          signature  = "RflomicsMAE",
+          definition = function(object, 
+                                SE.name,
+                                raw = FALSE){
+            
+            return(plotMissingValues(object[[SE.name]], raw = raw))
           })
 
 ## ---- CHECK ----

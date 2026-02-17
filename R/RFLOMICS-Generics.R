@@ -348,6 +348,12 @@ setGeneric(
 )
 
 setGeneric(
+  name = "plotMissingValues",
+  def  = function(object, raw = FALSE, ...)
+    standardGeneric("plotMissingValues")
+)
+
+setGeneric(
   name = "checkExpDesignCompleteness",
   def  = function(object, sampleList = NULL, ...)
     standardGeneric("checkExpDesignCompleteness")

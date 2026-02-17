@@ -316,6 +316,16 @@ QCNormalizationTab <-
 
       tabPanel.default.list <- list(
         tabPanel(
+          "missing Values",
+          tags$br(),
+          tags$i(
+            "blabla."
+          ),
+          tags$br(),
+          tags$hr(),
+          uiOutput(session$ns("missingValueUI"))
+        ),
+        tabPanel(
           "Distribution (boxplots)",
           tags$br(),
           tags$i(
@@ -424,6 +434,27 @@ QCNormalizationTab <-
         ), plot)
       }
 
+      return(plot)
+    })
+    
+    # value (count/intensity) distribution (boxplot/density)
+    output$missingValueUI <- renderUI({
+      plot <- renderPlot(
+        plotMissingValues(
+          session$userData$FlomicsMultiAssay[[dataset]],
+          raw = TRUE
+        )
+      )
+      
+      if (rea.values[[dataset]]$process != FALSE) {
+        plot <- list(renderPlot(
+          plotMissingValues(
+            session$userData$FlomicsMultiAssay[[dataset]],
+            raw = FALSE
+          )
+        ), plot)
+      }
+      
       return(plot)
     })
 
@@ -638,8 +669,6 @@ QCNormalizationTab <-
       
       toto <<- session$userData$FlomicsMultiAssay
 
-      params_bis <<- param.list
-      
       catch.res <-
         .tryCatch_rflomics(runDataProcessing(
           object = session$userData$FlomicsMultiAssay,
