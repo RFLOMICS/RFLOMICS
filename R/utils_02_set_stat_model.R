@@ -42,10 +42,10 @@ NULL
   formulae <- list()
   
   # Verify that nbr of bio factors are between 1 and 3.
-  if(!length(FacBio) %in% seq_len(3)) stop(".... !")
+  if(!length(FacBio) %in% seq_len(3)) stop("You need at least 1 biological factor with at least 2 levels !")
   
-  # Verify that nbr of batch factors are between 1 and 2.
-  if(!length(FacBatch) %in% c(1,2)) stop(".... !")
+  # # Verify that nbr of batch factors are between 1 and 2.
+  # if(!length(FacBatch) %in% c(1,2)) stop("You need at least 1 batch factor with at least 2 replicates !")
   
   nFac <- length(FacBio)
   

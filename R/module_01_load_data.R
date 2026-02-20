@@ -146,11 +146,11 @@
                                            title = TRUE),
                 content = .generateExample("design")
               ),
-              accept  = c(
-                "text/csv",
-                "text/comma-separated-values, text/plain",
-                ".csv"
-              )
+              # accept  = c(
+              #   "text/csv",
+              #   "text/comma-separated-values, text/plain",
+              #   ".csv"
+              # )
             )
           )
         )),
@@ -263,11 +263,11 @@
             fileInput(
               inputId = session$ns(paste0("data", addDataNum)),
               label  = "Dataset matrix (tsv)",
-              accept = c(
-                "text/csv",
-                "text/comma-separated-values,text/plain",
-                ".csv"
-              )
+              # accept = c(
+              #   "text/csv",
+              #   "text/comma-separated-values,text/plain",
+              #   ".csv"
+              # )
             )
           ),
           column(
@@ -563,11 +563,11 @@
               title   = .generateExample("matrix", title = TRUE),
               content = .generateExample("matrix")
             ),
-            accept = c(
-              "text/csv",
-              "text/comma-separated-values,text/plain",
-              ".csv"
-            )
+            # accept = c(
+            #   "text/csv",
+            #   "text/comma-separated-values,text/plain",
+            #   ".csv"
+            # )
           )
         ),
         column(
@@ -607,20 +607,19 @@
                                                           length(str_subset(dF.Type.dFac, "Bio"))))
   }
 
-  # check number of factor batch
-  if (!length(str_subset(dF.Type.dFac, "batch")) %in% c(1, 2)) {
-    showModal(modalDialog(title = "Error message",
-                          "You need at least 1 batch factor (max = 2), you currently have ",
-                                 length(str_subset(dF.Type.dFac, "batch"))))
-  }
+  # # check number of factor batch
+  # if (!length(str_subset(dF.Type.dFac, "batch")) %in% c(1, 2)) {
+  #   showModal(modalDialog(title = "Error message",
+  #                         "You need at least 1 batch factor (max = 2), you currently have ",
+  #                                length(str_subset(dF.Type.dFac, "batch"))))
+  # }
 
   validate({
-    need((length(str_subset(
-      dF.Type.dFac, "Bio"
-    )) %in% seq_len(3)) &
-      (length(
-        str_subset(dF.Type.dFac, "batch")
-      ) %in% c(1, 2)), message = "")
+    # need((length(str_subset(dF.Type.dFac, "Bio")) %in% seq_len(3)) &
+    #        (length( str_subset(dF.Type.dFac, "batch")) %in% c(1, 2)), message = "")
+    
+    need((length(str_subset(dF.Type.dFac, "Bio")) %in% seq_len(3)), 
+         message = "You need 1 to 3 biological factor(s)")
   })
 
   return(

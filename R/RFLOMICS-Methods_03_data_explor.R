@@ -455,6 +455,7 @@ setMethod(
         filteredFeatures <- setdiff(row.names(omics.df), keep.features)
         if(length(filteredFeatures) == 0) filteredFeatures <- NULL
 
+        # imputation
         list(
           setting = list(method = "MVI",
                          minValue = min.value,
@@ -965,13 +966,13 @@ setMethod(
       output[["error"]] <- TRUE
       return(output)
     }
-    # check presence of bash factors
-    if (!length(getBatchFactors(object)) %in% c(1,2)){
-      output[["messages"]] <-
-        "Error: You need at least 1 batch factor with at least 2 replicates."
-      output[["error"]] <- TRUE
-      return(output)
-    }
+    # # check presence of bash factors
+    # if (!length(getBatchFactors(object)) %in% c(1,2)){
+    #   output[["messages"]] <-
+    #     "Error: You need at least 1 batch factor with at least 2 replicates."
+    #   output[["error"]] <- TRUE
+    #   return(output)
+    # }
 
     #remplacer le code ci-dessus par celui en bas
     group_count <- .countSamplesPerCondition(ExpDesign, bio.fact)
