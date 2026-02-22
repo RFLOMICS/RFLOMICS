@@ -462,6 +462,10 @@
         }),
         uiOutput(
           session$ns("GetdFactorRef"))
+        ),
+        tags$small(
+          style = "color: black;",
+          "(*) This concerns batch effects that are not confounded with biological effects."
         )
       )
 
@@ -524,7 +528,7 @@
             inline = FALSE,
             width = 2,
             selected = radioButtons.choices[i],
-            choiceNames = c("biological", "batch", "metadata"),
+            choiceNames = c("biological", "batch(*)", "metadata"),
             choiceValues = c("Bio", "batch", "Meta")
           )
         )
