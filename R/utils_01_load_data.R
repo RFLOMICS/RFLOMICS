@@ -340,12 +340,14 @@ RflomicsMAE <- function(experiments = ExperimentList(),
 
   # Fix the color scheme for each dataset
   n_datasets <- length(unlist(omicList))
-  pal <- brewer.pal(min(n_datasets, brewer.pal.info["Set1", "maxcolors"]), "Set1")
+  # avoid warning when having less than three datatables
+  if(n_datasets < 3) pal <- brewer.pal(3, "Set1")[1:n_datasets]
+  else pal <- brewer.pal(min(n_datasets, brewer.pal.info["Set1", "maxcolors"]), "Set1")
   if (n_datasets > length(pal)) {
     pal <- colorRampPalette(pal)(n_datasets)
   }
   names(pal) <- unlist(omicList)
-  
+
   # set metadata slot
   metadata <- list(
     "omicList"            = omicList,
