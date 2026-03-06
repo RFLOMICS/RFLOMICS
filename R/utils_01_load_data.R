@@ -132,7 +132,7 @@ createRflomicsMAE <- function(projectName = NULL,
     row.names(omicsData.df[[dataName]]) <- rowNames
 
     # check negative values
-    if(omicsTypes[dataName] == "RNAseq" && any(!is.na(omicsData.df[[dataName]][omicsData.df[[dataName]] < 0])))
+    if (omicsTypes[dataName] == "RNAseq" && any(!is.na(omicsData.df[[dataName]][omicsData.df[[dataName]] < 0])))
       stop("The ",dataName, " data contains negative values")
   }
 
@@ -361,7 +361,7 @@ RflomicsMAE <- function(experiments = ExperimentList(),
   )
 
   rflomicsMAE <- new("RflomicsMAE", metadata = metadata)
-  for(slot in c("ExperimentList", "colData", "sampleMap", "drops")) {
+  for (slot in c("ExperimentList", "colData", "sampleMap", "drops")) {
     slot(rflomicsMAE, slot) <- slot(MAE, slot)
   }
 
@@ -395,10 +395,20 @@ createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
 
   # remove row with sum == 0
   matrixOmics <- as.matrix(omicData)
+  sd_vect <- apply(matrixOmics, 1, sd)
   # nbr of genes with 0 count
-  genes_flt0  <- rownames(matrixOmics[rowSums(matrixOmics) <= 0, ])
+  # rowsums is null and invariant ensure case c(-1,1,0) will not be removed
+  filt <- rowSums(matrixOmics) != 0 | sd_vect != 0 # this is to keep
+
+  # case if empty matrix
+  if (length(filt) == 0) {
+        stop("Omics matrix seems empty:
+             all row sums are equal to 0 and all rows are invariant")
+  }
+
+  genes_flt0  <- rownames(matrixOmics[which(!filt), ])
   # remove 0 count
-  matrix.filt  <- matrixOmics[rowSums(matrixOmics)  > 0, ]
+  matrix.filt  <- matrixOmics[which(filt), ]
 
   # check if transcriptomics, count matrixOmics
   if (omicType == "RNAseq" &&
@@ -408,6 +418,13 @@ createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
             Values will be rounded in this table.")
 
       matrix.filt <- round(matrix.filt)
+  }
+
+  # check if transcriptomics, positive matrix
+  if (omicType == "RNAseq" && any(matrix.filt < 0)) {
+      stop("OmicsType is RNAseq, expects positive counts.
+              It seems your data contains negative values.")
+
   }
 
   # create SE object

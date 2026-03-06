@@ -110,6 +110,9 @@
 
   assayTransform <- assay(object, withDimnames = TRUE)
 
+  if (any(assayTransform < 0) && transform_method %in% c("log1p", "log2", "log10"))
+      stop("Cannot use log transformation on negative values. Please check your data.")
+
   switch(transform_method,
          "log1p" = {
            assay(object) <- log1p(assayTransform)

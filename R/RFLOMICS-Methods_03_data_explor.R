@@ -449,7 +449,7 @@ setMethod(
           lapply(unique(design$groups), function(x){
 
             samples.g <- design[design$groups == x,]$samples
-            row.names(omics.df[Reduce(pmin, omics.df[samples.g]) > 0,])
+            row.names(omics.df[Reduce(pmin, abs(omics.df)[samples.g]) > 0,])
           }))
 
         filteredFeatures <- setdiff(row.names(omics.df), keep.features)
@@ -500,8 +500,8 @@ setMethod(
 #' @param cpmCutoff The CPM cutoff if filterMethod == "CPM".
 #' @details
 #' filterLowAbundance(): By default, gene/transcript with 0 count
-#' are removed from the data. The function then two stategies of filtering are 
-#' proposed: 1) filterByExpr implemented in egdeR 2) computes the count per 
+#' are removed from the data. The function then two stategies of filtering are
+#' proposed: 1) filterByExpr implemented in egdeR 2) computes the count per
 #' million or read (CPM) for each gene in each sample and gives by
 #' genes the number of sample(s) which are over the cpmCutoff
 #' (NbOfsample_over_cpm).
@@ -526,38 +526,38 @@ setMethod(
 
     if (getOmicsTypes(object) != "RNAseq")
       stop("Can't apply filterLowAbundance to omics types other than RNAseq.")
-    
+
     if (.isFiltered(object))
       stop("Data is already filtered!")
-    
+
     suported.filterMethod <- c("filterByExpr", "CPM")
-    
+
     if(is.null(filterMethod)) filterMethod <- "filterByExpr"
     if(!filterMethod %in% suported.filterMethod)
-      stop("filterMethod argument must be one of these tow options: ", 
+      stop("filterMethod argument must be one of these tow options: ",
            suported.filterMethod)
 
     # filter outlier samples
     object2 <- getProcessedData(object)
-    
+
     assayFilt  <- assay(object2)
-    
+
     # nbr of genes with 0 count
     genes_flt0  <- object2[rowSums(assayFilt) <= 0, ]@NAMES
-    
+
     # remove 0 count
     objectFilt  <- object2[rowSums(assayFilt)  > 0, ]
     assayFilt   <- assay(objectFilt)
     Groups      <- getDesignMat(object2)
-    
+
     if(filterMethod == "filterByExpr"){
-      
+
       filterStrategy <- "groups"
-      
+
       dge  <- DGEList(counts = assayFilt, genes = rownames(assayFilt))
       keep <- filterByExpr(dge, group = Groups[["groups"]])
 
-      settings <- 
+      settings <-
         list(
           method         = filterMethod,
           filterStrategy = filterStrategy,
@@ -565,18 +565,18 @@ setMethod(
     }
 
     if(filterMethod == "CPM"){
-      
+
       suported.strategies <- c("NbReplicates","NbConditions")
-      
+
       if (is.null(filterStrategy)) filterStrategy <- suported.strategies[1]
       if (isFALSE(filterStrategy %in% suported.strategies))
         stop("filterStrategy argument must be one of these two options: ",
              "NbReplicates or NbConditions")
-      
+
       if(is.null(cpmCutoff)) cpmCutoff <- 1
       if(!is.numeric(cpmCutoff) || cpmCutoff < 0)
         stop(cpmCutoff, " must be an integer value > 1")
-      
+
       # filter cpm
       filter_cpm <- switch (filterStrategy,
         "NbConditions" = length(unique(Groups$groups)),
@@ -584,14 +584,14 @@ setMethod(
       )
 
       keep <- rowSums(cpm(assayFilt) >= cpmCutoff) >= filter_cpm
-      
-      settings <- 
+
+      settings <-
         list(
           method         = filterMethod,
           filterStrategy = filterStrategy,
           cpmCutoff      = cpmCutoff)
     }
-    
+
     # features to filtered
     genes_flt1  <- objectFilt[!keep]@NAMES
 
@@ -900,9 +900,10 @@ setMethod(
     pseudo  <- assay(getProcessedData(object, norm = !raw, log = log))
 
     PCAlist <- getAnalysis(object, name = "PCAlist")
-    
+
     PCAlist[[ifelse(isTRUE(raw), "raw", "norm")]] <-
       PCA(t(pseudo), ncp = ncomp, graph = FALSE)
+
     object <- setElementToMetadata(object, name = "PCAlist", content = PCAlist)
 
     return(object)
@@ -1642,28 +1643,28 @@ setMethod(
   signature  = "RflomicsSE",
   definition = function(object, raw = FALSE)
   {
-    
+
     if(isFALSE(raw))
       object <- getProcessedData(object, norm = TRUE)
-    
+
     labels <- getLabs4plot(object)
-    
+
     mat <- assay(object)
-    
-    df <- 
-      melt(mat) |> 
+
+    df <-
+      melt(mat) |>
       mutate(missed_value = ifelse(value == 0, "yes", "no")) |>
       group_by(Var2, missed_value) |> count(name = "nb_missed") |>
       mutate(missed_p = nb_missed/nrow(mat)*100)
-    
-    p <- ggplot(df) + 
+
+    p <- ggplot(df) +
       geom_col(aes(x = Var2, y = missed_p, fill = missed_value)) +
       theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
       labs(x = "", y = "% of missing values") +
       ggtitle(labels$title)
-    
+
     return(p)
-    
+
   })
 
 #' @rdname runDataProcessing
@@ -1672,10 +1673,10 @@ setMethod(
 #' @exportMethod plotMissingValues
 setMethod(f          = "plotMissingValues",
           signature  = "RflomicsMAE",
-          definition = function(object, 
+          definition = function(object,
                                 SE.name,
                                 raw = FALSE){
-            
+
             return(plotMissingValues(object[[SE.name]], raw = raw))
           })
 
