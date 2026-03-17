@@ -198,24 +198,28 @@ setGeneric(
 setGeneric(
   name = "runDataProcessing",
   def  = function(object,
-                  samples         = NULL,
-                  filterMethod    = NULL,
-                  filterStrategy  = NULL,
-                  cpmCutoff       = NULL,
-                  transformMethod = NULL,
-                  normMethod      = NULL,
-                  imputMethod     = NULL,
-                  userTransMethod = "unknown",
-                  userNormMethod  = "unknown",
+                  samples = NULL,
+                  MVencoding = "NA",
+                  lowCountFilter = 
+                    list(filterMethod   = "filterByExpr",
+                         filterStrategy = "groups",
+                         cpmCutoff = NULL),
+                  missingValueFilter = 
+                    list(method      = "GlobalFiltering",
+                         globalProp  = 0.5,
+                         nbCondition = NULL,
+                         propPerCondition = NULL),
+                  transform = 
+                    list(transformMethod = "log2",
+                         userTransMethod = "unknown"),
+                  normalize = 
+                    list(normMethod     = NULL,
+                         userNormMethod = "unknown"),
+                  impute = 
+                    list(imputMethod = NULL,
+                         foctor = 0.001),
                   ...)
     standardGeneric("runDataProcessing")
-)
-
-setGeneric(
-  name = "dataImputation",
-  def  = function(object,
-                  imputMethod = "MVI")
-    standardGeneric("dataImputation")
 )
 
 setGeneric(
@@ -228,12 +232,29 @@ setGeneric(
 )
 
 setGeneric(
+  name = "filterMissingValues",
+  def  = function(object, 
+                  MVencoding  = "NA",
+                  method      = "GlobalFiltering",
+                  globalProp  = 0.5,
+                  nbCondition = NULL,
+                  propPerCondition = NULL)
+    standardGeneric("filterMissingValues")
+)
+
+setGeneric(
   name = "runFeatureFiltering",
   def  = function(object,
-                  filterMethod   = NULL,
-                  filterStrategy = NULL,
-                  cpmCutoff      = NULL,
-                  imputMethod    = NULL,
+                  lowCountFilter = 
+                    list(filterMethod = "filterByExpr",
+                         filterStrategy = "groups",
+                         cpmCutoff      = NULL),
+                  missingValueFilter = 
+                    list(MVencoding  = "NA",
+                         method      = "GlobalFiltering",
+                         globalProp  = 0.5,
+                         nbCondition = NULL,
+                         propPerCondition = NULL),
                   ...)
     standardGeneric("runFeatureFiltering")
 )
@@ -262,6 +283,15 @@ setGeneric(
                   userTransMethod = "unknown",
                   ...)
     standardGeneric("runTransformData")
+)
+
+
+setGeneric(
+  name = "runMVImputation",
+  def  = function(object,
+                  imputMethod = "minFeatureValue", 
+                  factor = 0.001,...)
+    standardGeneric("runMVImputation")
 )
 
 setGeneric(
@@ -295,6 +325,12 @@ setGeneric(
   def  = function(object, ...)
     standardGeneric("getNormSettings")
 
+)
+
+setGeneric(
+  name = "getImputSettings",
+  def  = function(object, ...)
+    standardGeneric("getImputSettings")
 )
 
 setGeneric(

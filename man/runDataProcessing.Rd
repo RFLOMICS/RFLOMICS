@@ -16,6 +16,8 @@
 \alias{runNormalization}
 \alias{runNormalization,RflomicsSE-method}
 \alias{runNormalization,RflomicsMAE-method}
+\alias{runMVImputation}
+\alias{runMVImputation,RflomicsMAE-method}
 \alias{runOmicsPCA}
 \alias{runOmicsPCA,RflomicsSE-method}
 \alias{runOmicsPCA,RflomicsMAE-method}
@@ -31,6 +33,9 @@
 \alias{getFilterSettings}
 \alias{getFilterSettings,RflomicsSE-method}
 \alias{getFilterSettings,RflomicsMAE-method}
+\alias{getImputSettings}
+\alias{getImputSettings,RflomicsSE-method}
+\alias{getImputSettings,RflomicsMAE-method}
 \alias{getFilteredFeatures}
 \alias{getFilteredFeatures,RflomicsSE-method}
 \alias{getFilteredFeatures,RflomicsMAE-method}
@@ -76,27 +81,28 @@
 \S4method{runDataProcessing}{RflomicsSE}(
   object,
   samples = NULL,
-  filterMethod = NULL,
-  filterStrategy = NULL,
-  cpmCutoff = NULL,
-  transformMethod = NULL,
-  normMethod = NULL,
-  imputMethod = NULL,
-  userTransMethod = "unknown",
-  userNormMethod = "unknown"
+  MVencoding = "NA",
+  lowCountFilter = list(filterMethod = "filterByExpr", filterStrategy = "groups",
+    cpmCutoff = NULL),
+  missingValueFilter = list(method = "GlobalFiltering", globalProp = 0.5, nbCondition =
+    NULL, propPerCondition = NULL),
+  transform = list(transformMethod = "log2", userTransMethod = "unknown"),
+  normalize = list(normMethod = NULL, userNormMethod = "unknown"),
+  impute = list(imputMethod = "minFeatureValue", factor = 0.001)
 )
 
 \S4method{runDataProcessing}{RflomicsMAE}(
   object,
   SE.name,
   samples = NULL,
-  filterMethod = NULL,
-  filterStrategy = NULL,
-  cpmCutoff = NULL,
-  transformMethod = NULL,
-  normMethod = NULL,
-  userTransMethod = "unknown",
-  userNormMethod = "unknown"
+  MVencoding = "NA",
+  lowCountFilter = list(filterMethod = "filterByExpr", filterStrategy = "groups",
+    cpmCutoff = NULL),
+  missingValueFilter = list(method = "GlobalFiltering", globalProp = 0.5, nbCondition =
+    NULL, propPerCondition = NULL),
+  transform = list(transformMethod = "log2", userTransMethod = "unknown"),
+  normalize = list(normMethod = NULL, userNormMethod = "unknown"),
+  impute = list(imputMethod = "minFeatureValue", factor = 0.001)
 )
 
 \S4method{runSampleFiltering}{RflomicsSE}(object, samples = NULL)
@@ -105,19 +111,19 @@
 
 \S4method{runFeatureFiltering}{RflomicsSE}(
   object,
-  filterMethod = NULL,
-  filterStrategy = NULL,
-  cpmCutoff = NULL,
-  imputMethod = NULL
+  lowCountFilter = list(filterMethod = "filterByExpr", filterStrategy = "groups",
+    cpmCutoff = NULL),
+  missingValueFilter = list(MVencoding = "NA", method = "GlobalFiltering", globalProp =
+    0.5, nbCondition = NULL, propPerCondition = NULL)
 )
 
 \S4method{runFeatureFiltering}{RflomicsMAE}(
   object,
   SE.name,
-  filterMethod = NULL,
-  filterStrategy = NULL,
-  cpmCutoff = NULL,
-  imputMethod = NULL
+  lowCountFilter = list(filterMethod = "filterByExpr", filterStrategy = "groups",
+    cpmCutoff = NULL),
+  missingValueFilter = list(MVencoding = "NA", globalProp = 0.5, nbCondition = NULL,
+    propPerCondition = NULL)
 )
 
 \S4method{runTransformData}{RflomicsSE}(object, transformMethod = NULL, userTransMethod = "unknown")
@@ -138,6 +144,13 @@
   userNormMethod = "unknown"
 )
 
+\S4method{runMVImputation}{RflomicsMAE}(
+  object,
+  SE.name,
+  imputMethod = "minFeatureValue",
+  factor = 0.001
+)
+
 \S4method{runOmicsPCA}{RflomicsSE}(object, ncomp = 5, raw = FALSE)
 
 \S4method{runOmicsPCA}{RflomicsMAE}(object, SE.name, ncomp = 5, raw = FALSE)
@@ -151,6 +164,7 @@
   filter = FALSE,
   trans = FALSE,
   norm = FALSE,
+  imput = FALSE,
   log = FALSE
 )
 
@@ -170,6 +184,10 @@
 \S4method{getFilterSettings}{RflomicsSE}(object)
 
 \S4method{getFilterSettings}{RflomicsMAE}(object, SE.name)
+
+\S4method{getImputSettings}{RflomicsSE}(object)
+
+\S4method{getImputSettings}{RflomicsMAE}(object, SE.name)
 
 \S4method{getFilteredFeatures}{RflomicsSE}(object)
 
@@ -235,28 +253,21 @@
 
 \item{samples}{samples to keep.}
 
-\item{filterMethod}{The filtering model ("CPM") for RNAseq data.}
-
-\item{filterStrategy}{The filtering strategy
-("NbConditions" or "NbReplicates") for RNAseq data.}
-
-\item{cpmCutoff}{The CPM cutoff for RNAseq data.}
+\item{SE.name}{the name of the data the normalization have to be applied to.}
 
 \item{transformMethod}{The transformation method to store in the metadata}
+
+\item{userTransMethod}{method used by user to transform data.}
 
 \item{normMethod}{Normalization method. Accepted values: TMM for RNAseq, and
 median, totalSum, or none for proteomics and metabolomics data.
 Default values: TMM for RNAseq data and median for proteomics and metabolomics
 data}
 
-\item{imputMethod}{The imputation method ("MVI") for proteomics and
-metabolomics data.}
-
-\item{userTransMethod}{method used by user to transform data.}
-
 \item{userNormMethod}{method used by user to normalize data.}
 
-\item{SE.name}{the name of the data the normalization have to be applied to.}
+\item{imputMethod}{The imputation method ("MVI") for proteomics and
+metabolomics data.}
 
 \item{ncomp}{Number of components to compute. Default is 5.}
 
@@ -281,6 +292,13 @@ metabolomics data.}
 factorial map}
 
 \item{groupColor}{All combination of level's factor}
+
+\item{filterMethod}{The filtering model ("CPM") for RNAseq data.}
+
+\item{filterStrategy}{The filtering strategy
+("NbConditions" or "NbReplicates") for RNAseq data.}
+
+\item{cpmCutoff}{The CPM cutoff for RNAseq data.}
 }
 \value{
 An object of class \link{RflomicsSE} or class \link{RflomicsSE}
@@ -317,7 +335,7 @@ the imputation procedure.
 \item runTransformData:
    This function applied a transformation to the dataset. The transformation
 method is chosen according to the dataset omicstype
-(RNAseq: none, metabolomics/proteomics: log2)
+(RNAseq: none, metabolomics/proteomics: log2 or log10)
 }
 
 \itemize{
@@ -390,6 +408,11 @@ filtering.
 
 \itemize{
    \item getFilterSettings: return a list the filtering settings of a given
+   omics dataset}
+
+
+\itemize{
+   \item getImputSettings: return a list the imputation settings of a given
    omics dataset}
 
 
@@ -517,6 +540,7 @@ MAE <- runDataProcessing(MAE, SE.name = "protetest",
 
 # See runDataProcessing for an example that includes getTransSettings
 # See runDataProcessing for an example that includes getFilterSettings
+# See runDataProcessing for an example that includes getImputSettings
 # See runDataProcessing for an example that includes getFilteredFeatures
 # See runDataProcessing for an example that includes getSelectedSamples
 # See runDataProcessing for an example that includes getCoeffNorm

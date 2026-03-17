@@ -57,6 +57,7 @@ QCNormalizationTab <-
 
     #---- sample list----
     output$selectSamplesUI <- renderUI({
+      
       sampleList <-
         colnames(session$userData$FlomicsMultiAssay[[dataset]])
       pickerInput(
@@ -93,11 +94,12 @@ QCNormalizationTab <-
             list(
               radioButtons(
                 inputId  = session$ns("selectFilterMethod"),
-                label    =
-                  .addBSpopify(
-                    label = 'Low count filtering',
-                    content = "Genes with low counts will be removed based on count per million (cpm), accounting for the library size"),
-                choices  =  list("filterByExpr (edgeR)" = "filterByExpr", "CPM" = "CPM"),
+                label    = .addBSpopify(
+                  label = 'Low count filtering',
+                  content = "Genes with low counts will be removed based on 
+                  count per million (cpm), accounting for the library size"),
+                choices  =  list("filterByExpr (edgeR)" = "filterByExpr", 
+                                 "CPM" = "CPM"),
                 selected = "filterByExpr"
               ),
               conditionalPanel(
@@ -107,8 +109,11 @@ QCNormalizationTab <-
                          "\'] == \'CPM\'"),
                 selectInput(
                   inputId  = session$ns("Filter_Strategy"),
-                  label    = .addBSpopify(label = 'Strategy',
-                                          content = "Choose the strategy to filter genes based on count per million (cpm). Keep genes if the NbOfsample_over_cpm >= Strategy."),
+                  label    = .addBSpopify(
+                    label = 'Strategy',
+                    content = "Choose the strategy to filter genes based 
+                    on count per million (cpm). Keep genes if the 
+                    NbOfsample_over_cpm >= Strategy."),
                   choices  = c("NbConditions" = "NbConditions",
                                "NbReplicates" = "NbReplicates"),
                   selected = "NbReplicates"
@@ -122,8 +127,9 @@ QCNormalizationTab <-
                          "\'] == \'CPM\'"),
                 numericInput(
                   inputId = session$ns("FilterSeuil"),
-                  label = .addBSpopify(label = 'CPM cut-off',
-                                       content = "Choose the cpm cut-off"),
+                  label = .addBSpopify(
+                    label = 'CPM cut-off',
+                    content = "Choose the cpm cut-off"),
                   value = 1, min = 1, max = 10, step = 1
                 ),
                 style="font-size:80%; font-family:Arial;"
@@ -135,8 +141,10 @@ QCNormalizationTab <-
                          "\'] == \'filterByExpr\'"),
                 selectInput(
                   inputId  = session$ns("Filter_groups"),
-                  label    = .addBSpopify(label = 'Conditions',
-                                          content = "It corresponds to the biological groups / experimental conditions of your samples."),
+                  label    = .addBSpopify(
+                    label = 'Conditions',
+                    content = "It corresponds to the biological groups / 
+                    experimental conditions of your samples."),
                   choices  = c("groups" = "groups"),
                   selected = "groups"
                 ),
@@ -148,15 +156,64 @@ QCNormalizationTab <-
           {
             list(
               radioButtons(
-                inputId  = session$ns("selectImputMethod"),
-                label    =
-                  .addBSpopify(
-                    label = 'Missing Value Imputation',
-                    content = paste0("Imputation method, cannot be changed for ",
-                                     getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
-                                     " data.")),
-                choices  =  list("MVI" = "MVI"),
-                selected = "MVI"
+                inputId   = session$ns("MVencoding"),
+                label     = .addBSpopify(
+                  label   = 'Missing value encoding',
+                  content = "Missing values can be represented either 
+                    as NA or 0 depending on the data processing pipeline."),
+                choices   =  list("NA" = "NA", "0" = "0"),
+                selected  = "NA", inline = TRUE
+              ),
+              hr(),
+              radioButtons(
+                inputId   = session$ns("MVFiltering"),
+                label     = .addBSpopify(
+                  label   = 'Missing value filtering',
+                  content = "..."),
+                choices   =  
+                  list("Global filtering" = "GlobalFiltering", 
+                       "Condition-based filtering" = "ConditionFiltering",
+                       "Already filtred" = "none"),
+                selected  = "GlobalFiltering"
+              ),
+              conditionalPanel(
+                condition =
+                  paste0("input[\'",
+                         session$ns("MVFiltering"),
+                         "\'] == \'GlobalFiltering\'"),
+                numericInput(
+                  inputId  = session$ns("GlobalProp"),
+                  label    = .addBSpopify(
+                    label = 'GlobalProp %',
+                    content = "..."),
+                  value = 0.5, step = 1, min = 1, max   = 1
+                ),
+                style="font-size:80%; font-family:Arial;"
+              ),
+              conditionalPanel(
+                condition =
+                  paste0("input[\'",
+                         session$ns("MVFiltering"),
+                         "\'] == \'ConditionFiltering\'"),
+                numericInput(
+                  inputId  = session$ns("nbCondition"),
+                  label    = .addBSpopify(
+                    label = 'nbCondition',
+                    content = "..."),
+                  value = 1, step  = 1, min = 1, 
+                  max   = 
+                    length(
+                      unique(
+                        getDesignMat(session$userData$FlomicsMultiAssay[[dataset]])$groups))
+                ),
+                numericInput(
+                  inputId  = session$ns("PropPerCondition"),
+                  label    = .addBSpopify(
+                    label = 'PropPerCondition %',
+                    content = "..."),
+                  value = 0.5, step  = 1, min = 1, max = 1
+                ),
+                style="font-size:80%; font-family:Arial;"
               ),
               hr()
             )
@@ -172,12 +229,13 @@ QCNormalizationTab <-
               radioButtons(
                 inputId  = session$ns("dataTransform"),
                 label    =
-                  .addBSpopify(label = 'Data Transformation',
-                               content = paste0("Choose transformation method. ",
-                                                "If the data is already transformed, ",
-                                                "please specify the method, tool, or ",
-                                                "platform used for the processing.")),
-                choices  = c("log2" = "log2",
+                  .addBSpopify(
+                    label = 'Data Transformation',
+                    content = paste0("Choose transformation method. ",
+                                     "If the data is already transformed, ",
+                                     "please specify the method, tool, or ",
+                                     "platform used for the processing.")),
+                choices  = c("log2" = "log2", "log10" = "log10",
                              "Already transformed" = "none"),
                 selected = "log2"
               ),
@@ -238,6 +296,28 @@ QCNormalizationTab <-
             )
           }
         )
+      
+      paramImputaion <-
+        switch (
+          getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
+          "RNAseq" = {},
+          {
+            list(
+              radioButtons(
+                inputId  = session$ns("selectImputMethod"),
+                label    =
+                  .addBSpopify(
+                    label = 'Missing Value Imputation',
+                    content = paste0("Imputation method, cannot be changed for ",
+                                     getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
+                                     " data.")),
+                choices  =  list("Within-feature imputation" = "minFeatureValue"),
+                selected = "minFeatureValue"
+              ),
+              hr()
+            )
+          }
+        )
 
       fluidRow(
         column(
@@ -245,6 +325,7 @@ QCNormalizationTab <-
           paramFeatureFilter,
           paramTransform,
           paramNormalization,
+          paramImputaion,
           actionButton(session$ns("run"), "Run", class = "butt")
         )
       )
@@ -609,6 +690,7 @@ QCNormalizationTab <-
 
     #---- run preprocessing - Normalization/transformation, filtering...----
     observeEvent(input$run, {
+      
       # check if input$selectSamples is empty
       if (is.null(input$selectSamples)) {
         showModal(modalDialog(title = "Error message",
@@ -640,14 +722,21 @@ QCNormalizationTab <-
         },
         {
           list(
+            MVencoding       = input$MVencoding,
+            MVFilter         = input$MVFiltering,
+            globalProp       = input$GlobalProp,
+            nbCondition      = input$nbCondition,
+            propPerCondition = input$PropPerCondition,
             transform_method = input$dataTransform,
             NormMethod       = input$selectProtMetNormMethod,
             userNormMethod   = input$userNormMethod,
-            userTransMethod  = input$userTransMethod
+            userTransMethod  = input$userTransMethod,
+            ImputMethod      = input$selectImputMethod
           )
         })
       param.list <-
         c(param.list, list(samples = input$selectSamples))
+      
 
       if (check_run_process_execution(
         session$userData$FlomicsMultiAssay,
@@ -669,18 +758,32 @@ QCNormalizationTab <-
       
       catch.res <-
         .tryCatch_rflomics(runDataProcessing(
-          object = session$userData$FlomicsMultiAssay,
-          SE.name = dataset,
-          samples = input$selectSamples,
-          filterMethod = param.list[["FilterMethod"]],
-          filterStrategy = param.list[["Filter_Strategy"]],
-          cpmCutoff = param.list[["CPM_Cutoff"]],
-          normMethod = param.list[["NormMethod"]],
-          transformMethod = param.list[["transform_method"]],
-          userNormMethod = param.list[["userNormMethod"]],
-          userTransMethod = param.list[["userTransMethod"]]
+          object                  = session$userData$FlomicsMultiAssay,
+          SE.name                 = dataset,
+          samples                 = input$selectSamples,
+          lowCountFilter = 
+            list(
+              filterMethod        = param.list[["FilterMethod"]],
+              filterStrategy      = param.list[["Filter_Strategy"]],
+              cpmCutoff           = param.list[["CPM_Cutoff"]]),
+          missingValueFilter =  
+            list(MVencoding       = param.list[["MVencoding"]],
+                 method           = param.list[["MVFilter"]],
+                 globalProp       = param.list[["globalProp"]],
+                 nbCondition      = param.list[["nbCondition"]],
+                 propPerCondition = param.list[["propPerCondition"]]),
+          transform = 
+            list(transformMethod  = param.list[["transform_method"]],
+                 userTransMethod  = param.list[["userTransMethod"]]),
+          normalize = 
+            list(normMethod       = param.list[["NormMethod"]],
+                 userNormMethod   = param.list[["userNormMethod"]]),
+          impute = 
+            list(imputMethod = param.list[["ImputMethod"]],
+                 factor = 0.001)
         ))
-
+      
+      
       if (!is.null(catch.res$error))
         showModal(
           modalDialog(title = "Error message", catch.res$error))
@@ -746,6 +849,15 @@ check_run_process_execution <-
           return(TRUE)
       },
       {
+        if (is.null(getFilterSettings(SE)))
+          return(TRUE)
+        if(!identical(
+          list(method = param.list$MVFilter,
+               globalProp = param.list$globalProp,
+               nbCondition = param.list$nbCondition,
+               propPerCondition = param.list$propPerCondition), 
+          getFilterSettings(SE)))
+            return(TRUE)
         if (is.null(getTransSettings(SE)$method) ||
             param.list$transform_method != getTransSettings(SE)$method)
           return(TRUE)

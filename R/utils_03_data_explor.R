@@ -101,7 +101,6 @@
     return(object)
   }
 
-
   transform_method <- getTransSettings(object)$method
   if (is.null(transform_method)) {
     warning("No transformation method specified, see ?runDataProcessing")
@@ -110,7 +109,8 @@
 
   assayTransform <- assay(object, withDimnames = TRUE)
 
-  if (any(assayTransform < 0) && transform_method %in% c("log1p", "log2", "log10"))
+  if (any(assayTransform < 0, na.rm = TRUE) && 
+      transform_method %in% c("log1p", "log2", "log10"))
       stop("Cannot use log transformation on negative values. Please check your data.")
 
   switch(transform_method,
@@ -213,7 +213,9 @@
 .medianNormalization <- function(object){
 
   coef <-
-    apply(assay(object), 2, function(sample_vect) {median(sample_vect)})
+    apply(assay(object), 2, function(sample_vect) {
+      median(sample_vect, na.rm = TRUE)
+      })
 
   return(coef)
 }
@@ -254,12 +256,14 @@
 .totalSumNormalization <- function(object){
 
   coef <-
-    apply(assay(object), 2, function(sample_vect) {sum(sample_vect^2)})
+    apply(assay(object), 2, function(sample_vect) 
+      {sum(sample_vect^2, na.rm = TRUE)
+      })
 
   return(coef)
 }
 
-# ---- log trasnformation - RNAseq data ----
+# ---- log transformation - RNAseq data ----
 
 #' @title .applyLog
 #'
@@ -280,6 +284,58 @@
 
   metadata(object)[["DataProcessing"]][["log"]] <- log
 
+  return(object)
+}
+
+# ---- Imputation - prot/meta data ----
+
+#' @description
+#' .applyImputation: apply the missing value imputation method stored in
+#' metadata(object) and modify the assay.
+#' @title .applyImputation
+#' @param object An object of class \link{RflomicsSE}
+#' @keywords internal
+#' @noRd
+#'
+.applyImputation <- function(object) {
+  
+  if (.isImputed(object)) {
+    warning("The data were already imputed. Method: ",
+            getImputSettings(object)$method)
+    return(object)
+  }
+  
+  imput_method <- getImputSettings(object)$method
+  if (is.null(imput_method)) {
+    warning("No imputation method specified, see ?runDataProcessing")
+    return(object)
+  }
+  
+  imput.res <- 
+    getAnalysis(
+      object, 
+      name = "DataProcessing", 
+      subName = "Imputation")$results
+  
+  omics.df <- assay(object)
+  
+  switch(imput_method,
+         "minFeatureValue" = {
+           minVals <- imput.res$minVals
+           for(i in 1:nrow(minVals)){
+             omics.df[i,is.na(omics.df[i,])] <- minVals[i,1]
+             assay(object)
+           }
+         },
+         "none" = {},
+         {
+           stop("Could not recognize the imputation method. ")
+         }
+  )
+  
+  metadata(object)[["DataProcessing"]][["Imputation"]][["imputed"]] <-
+    TRUE
+  
   return(object)
 }
 
@@ -316,6 +372,14 @@
 
   if(length(Normalization) == 0) return(FALSE)
   Normalization[["normalized"]]
+}
+
+.isImputed <- function(object) {
+  Imputation <-
+    getAnalysis(object, name = "DataProcessing", subName = "Imputation")
+  
+  if(length(Imputation) == 0) return(FALSE)
+  Imputation[["imputed"]]
 }
 
 # ---- update colData - levels ----

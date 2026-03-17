@@ -125,6 +125,8 @@
   # => The selected contrasts are saved
   # => The load data item appears
   observeEvent(input$validContrasts, {
+    
+    toto <<- session$userData$FlomicsMultiAssay
 
     #rea.values$analysis    <- FALSE
     rea.values$datasetDiff <- NULL

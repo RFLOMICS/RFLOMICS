@@ -119,23 +119,6 @@ createRflomicsMAE <- function(projectName = NULL,
 
   names(omicsTypes) <- omicsNames
 
-  ## any(!is.na(A[A < 0])) valuer negative
-
-  ## => check NA
-  for(dataName in names(omicsData.df)){
-
-    # replace NA by 0
-    omicsData.df[[dataName]][is.na(omicsData.df[[dataName]])] <- 0
-    rowNames <- row.names(omicsData.df[[dataName]])
-    omicsData.df[[dataName]] <-
-      as.data.frame(lapply(omicsData.df[[dataName]], as.numeric))
-    row.names(omicsData.df[[dataName]]) <- rowNames
-
-    # check negative values
-    if (omicsTypes[dataName] == "RNAseq" && any(!is.na(omicsData.df[[dataName]][omicsData.df[[dataName]] < 0])))
-      stop("The ",dataName, " data contains negative values")
-  }
-
   ## => ExpDesign
   if (is.null(ExpDesign)){
     ExpDesign <-
@@ -393,39 +376,72 @@ createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
   # select abundance from design table and reorder
   omicData <- select(omicData, all_of(sample.intersect))
 
-  # remove row with sum == 0
-  matrixOmics <- as.matrix(omicData)
-  sd_vect <- apply(matrixOmics, 1, sd)
-  # nbr of genes with 0 count
-  # rowsums is null and invariant ensure case c(-1,1,0) will not be removed
-  filt <- rowSums(matrixOmics) != 0 | sd_vect != 0 # this is to keep
-
-  # case if empty matrix
-  if (length(filt) == 0) {
-        stop("Omics matrix seems empty:
-             all row sums are equal to 0 and all rows are invariant")
-  }
-
-  genes_flt0  <- rownames(matrixOmics[which(!filt), ])
-  # remove 0 count
-  matrix.filt  <- matrixOmics[which(filt), ]
-
-  # check if transcriptomics, count matrixOmics
-  if (omicType == "RNAseq" &&
-      !is.integer(matrix.filt) &&
-      !identical(matrix.filt, floor(matrix.filt))) {
-    warning("OmicsType is RNAseq, expects counts. The omicData is not counts data.
-            Values will be rounded in this table.")
-
-      matrix.filt <- round(matrix.filt)
-  }
-
-  # check if transcriptomics, positive matrix
-  if (omicType == "RNAseq" && any(matrix.filt < 0)) {
+  # check value & filter null row
+  ## as.numerics
+  rowNames <- row.names(omicData)
+  omicData <- as.data.frame(lapply(omicData, as.numeric))
+  row.names(omicData) <- rowNames
+  
+  ## case of RNAseq 
+  if (omicType == "RNAseq"){
+    
+    # check if transcriptomics, positive matrix
+    if (any(omicData < 0))
       stop("OmicsType is RNAseq, expects positive counts.
               It seems your data contains negative values.")
-
+      
+    # NA value
+    if (any(is.na(omicData)))
+      stop("The ",dataName, " data contains missing values (NA).")
+    
+    # check if transcriptomics, count matrixOmics
+    if (!is.integer(omicData) &&
+        !identical(omicData, floor(omicData))) {
+      warning("OmicsType is RNAseq, expects counts. The omicData is not counts data.
+            Values will be rounded in this table.")
+      
+      omicData <- round(omicData)
+    }
+    
+    # # remove row with sum == 0
+    matrix.filt <- as.matrix(omicData)
+    matrix.filt <- matrix.filt[!(rowSums(matrix.filt == 0) == ncol(matrix.filt)),]
+    genes_flt0  <- intersect(row.names(omicData), row.names(matrix.filt))
+  } 
+  
+  if(omicType %in% c("proteomics", "metabolomics")){
+    
+    # We accept that proteomics/metabolomics data may contain NA or 0 values because:
+    # 1st scenario: missing value -> NA
+    # 2nd scenario: missing value automatically replaced by 0 by the platform
+    # 3rd scenario: missing value (NA), but the data were transformed, resulting 
+    #               in the presence of both NA and 0 values (e.g., after log transformation)
+    # 4th scenario: imputed and log-transformed data, where 0 values correspond 
+    #               to the result of the log transformation
+    
+    # filter row with only NA values
+    matrix.filt <- as.matrix(omicData)
+    matrix.filt <- matrix.filt[!(rowSums(is.na(matrix.filt)) == ncol(matrix.filt)),]
+    genes_flt0  <- setdiff(row.names(omicData), row.names(matrix.filt))
   }
+  
+  ## Audrey filtering strategy : rowSums(matrixOmics) != 0 | sd_vect != 0
+  # matrixOmics <- as.matrix(omicData)
+  # sd_vect <- apply(matrixOmics, 1, sd)
+  # # nbr of genes with 0 count
+  # # rowsums is null and invariant ensure case c(-1,1,0) will not be removed
+  # filt <- rowSums(matrixOmics) != 0 | sd_vect != 0 # this is to keep
+  # 
+  # # case if empty matrix
+  # if (length(filt) == 0) {
+  #       stop("Omics matrix seems empty:
+  #            all row sums are equal to 0 and all rows are invariant")
+  # }
+  # 
+  # genes_flt0  <- rownames(matrixOmics[which(!filt), ])
+  # # remove 0 count
+  # matrix.filt  <- matrixOmics[which(filt), ]
+  
 
   # create SE object
   colData   <- mutate(ExpDesign, samples = row.names(ExpDesign)) |>
@@ -449,6 +465,7 @@ createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
          featureFiltering = list(),
          Normalization    = list(),
          Transformation   = list(),
+         Imputation       = list(),
          log = NULL)
 
   Design <- list(

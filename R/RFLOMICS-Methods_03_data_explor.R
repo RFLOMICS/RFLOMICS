@@ -59,56 +59,83 @@ setMethod(
   signature  = "RflomicsSE",
   definition = function(object,
                         samples=NULL,
-                        filterMethod = NULL,
-                        filterStrategy = NULL,
-                        cpmCutoff = NULL,
-                        transformMethod = NULL,
-                        normMethod= NULL,
-                        imputMethod = NULL,
-                        userTransMethod = "unknown",
-                        userNormMethod = "unknown"){
-
-    # apply data processing
-    if(getOmicsTypes(object) == "RNAseq"){
-      if(!is.null(transformMethod))
-        warning(getOmicsTypes(object), " data don't need to be transformed.")
+                        MVencoding  = "NA",
+                        lowCountFilter = 
+                          list(filterMethod   = "filterByExpr",
+                               filterStrategy = "groups",
+                               cpmCutoff = NULL),
+                        missingValueFilter = 
+                          list(method      = "GlobalFiltering",
+                               globalProp  = 0.5,
+                               nbCondition = NULL,
+                               propPerCondition = NULL),
+                        transform = 
+                          list(transformMethod = "log2",
+                               userTransMethod = "unknown"),
+                        normalize = 
+                          list(normMethod     = NULL,
+                               userNormMethod = "unknown"),
+                        impute = 
+                          list(imputMethod = "minFeatureValue",
+                               factor = 0.001)
+                        ){
+    
+    if(getOmicsTypes(object) %in% c("proteomics", "metabolomics")){
+     
+      # Remplacer les 0 par NA dans la matrice assayFilt
+      if (MVencoding == "0"){
+        
+        assayFilt <- assay(object)
+        
+        if(any(is.na(assayFilt)))
+          stop("Contrary to what is indicated, the data contain missing values 
+             encoded as NA.")
+        assayFilt[assayFilt == 0] <- NA
+        assay(object) <- assayFilt
+      } 
     }
-
-    if(getOmicsTypes(object) != "RNAseq" &&
-       (!is.null(filterStrategy) || !is.null(cpmCutoff)))
-      warning(getOmicsTypes(object), " data don't need to be filtered")
-
+    
     # keep selected samples
     if(is.null(samples)) samples <- colnames(object)
-    message("[RFLOMICS] #    => select samples... ",
+    
+    message("[RFLOMICS] #    => select samples... ", 
             getDatasetNames(object))
     object <- runSampleFiltering(object, samples)
 
     # feature filtering
-    message("[RFLOMICS] #    => feature filtering... ",
+    message("[RFLOMICS] #    => feature filtering... ", 
             getDatasetNames(object))
     object <- runFeatureFiltering(object,
-                                  filterMethod = filterMethod,
-                                  filterStrategy = filterStrategy,
-                                  cpmCutoff = cpmCutoff,
-                                  imputMethod = imputMethod)
-
+                                  lowCountFilter = lowCountFilter,
+                                  missingValueFilter = missingValueFilter)
 
     # Run transformation...
-    if(getOmicsTypes(object) != "RNAseq"){
-      message("[RFLOMICS] #    => Data transformation... ",
+    if(getOmicsTypes(object) %in% c("proteomics", "metabolomics")){
+      message("[RFLOMICS] #    => Data transformation... ", 
               getDatasetNames(object))
       object <- runTransformData(object,
-                                 transformMethod = transformMethod,
-                                 userTransMethod = userTransMethod)
+                                 transformMethod = transform$transformMethod,
+                                 userTransMethod = transform$userTransMethod)
     }
 
     # Run Normalisation
-    message("[RFLOMICS] #    => Data normalization... ",
+    if(is.null(normalize$normMethod)) 
+      normalize$normMethod <- switch (getOmicsTypes(object),
+        "RNAseq" = "TMM",
+        "median"
+      )
+    message("[RFLOMICS] #    => Data normalization... ", 
             getDatasetNames(object))
-    object <- runNormalization(object,
-                               normMethod = normMethod,
-                               userNormMethod = userNormMethod)
+    object <- runNormalization(object,     
+                               normMethod = normalize$normMethod,
+                               userNormMethod = normalize$userNormMethod)
+    
+    # Run Imutation
+    message("[RFLOMICS] #    => Data imputation ", 
+            getDatasetNames(object))
+    object <- runMVImputation(object, 
+                              imputMethod = impute$imputMethod,
+                              foctor      = impute$factor)
 
     # Run PCA for filtered & normalized data
     message("[RFLOMICS] #    => Computing PCA... ", getDatasetNames(object))
@@ -153,27 +180,39 @@ setMethod(
   signature  = "RflomicsMAE",
   definition = function(object, SE.name,
                         samples=NULL,
-                        filterMethod = NULL,
-                        filterStrategy = NULL,
-                        cpmCutoff = NULL,
-                        transformMethod = NULL,
-                        normMethod= NULL,
-                        userTransMethod = "unknown",
-                        userNormMethod = "unknown"){
+                        MVencoding  = "NA",
+                        lowCountFilter = 
+                          list(filterMethod   = "filterByExpr",
+                               filterStrategy = "groups",
+                               cpmCutoff = NULL),
+                        missingValueFilter = 
+                          list(method      = "GlobalFiltering",
+                               globalProp  = 0.5,
+                               nbCondition = NULL,
+                               propPerCondition = NULL),
+                        transform = 
+                          list(transformMethod = "log2",
+                               userTransMethod = "unknown"),
+                        normalize = 
+                          list(normMethod     = NULL,
+                               userNormMethod = "unknown"),
+                        impute = 
+                          list(imputMethod = "minFeatureValue",
+                               factor = 0.001)){
 
     if (!SE.name %in% names(object))
       stop("SE name must be part of this list of names: ",
            getDatasetNames(object))
 
-    SE.processed <-  runDataProcessing(object = object[[SE.name]],
-                                       samples         = samples,
-                                       filterMethod    = filterMethod,
-                                       filterStrategy  = filterStrategy,
-                                       cpmCutoff       = cpmCutoff,
-                                       normMethod      = normMethod,
-                                       transformMethod = transformMethod,
-                                       userTransMethod = userTransMethod,
-                                       userNormMethod  = userNormMethod)
+    SE.processed <-  
+      runDataProcessing(object = object[[SE.name]],
+                        samples            = samples,
+                        MVencoding         = MVencoding,
+                        lowCountFilter     = lowCountFilter,
+                        missingValueFilter = missingValueFilter,
+                        transform          = transform,
+                        normalize          = normalize,
+                        impute             = impute)
 
     object[[SE.name]] <- SE.processed
 
@@ -322,35 +361,31 @@ setMethod(
   f         = "runFeatureFiltering",
   signature = "RflomicsSE",
   definition = function(object,
-                        filterMethod   = NULL,
-                        filterStrategy = NULL,
-                        cpmCutoff      = NULL,
-                        imputMethod    = NULL){
+                        lowCountFilter = 
+                          list(filterMethod = "filterByExpr",
+                               filterStrategy = "groups",
+                               cpmCutoff      = NULL),
+                        missingValueFilter = 
+                          list(MVencoding  = "NA",
+                               method      = "GlobalFiltering",
+                               globalProp  = 0.5,
+                               nbCondition = NULL,
+                               propPerCondition = NULL)
+                        ){
 
     # apply data processing
     object <- switch(
       getOmicsTypes(object),
       "RNAseq" = {
 
-        if(!is.null(imputMethod))
-          warning("we don't apply data imputation on ",
-                  getOmicsTypes(object), " data")
-
         # Filter low abundance
-        filterLowAbundance(object         = object,
-                           filterMethod   = filterMethod,
-                           filterStrategy = filterStrategy,
-                           cpmCutoff      = cpmCutoff)
+        do.call(filterLowAbundance, 
+                c(list(object = object), lowCountFilter))
       },
       {
-        if (!is.null(filterMethod) || !is.null(filterStrategy) ||
-           !is.null(cpmCutoff))
-          warning("we don't apply low count filtering on ",
-                  getOmicsTypes(object), " data.")
 
-        # imputation
-        dataImputation(object      = object,
-                       imputMethod = imputMethod)
+        do.call(filterMissingValues, 
+                c(list(object = object), missingValueFilter))
       }
     )
 
@@ -383,102 +418,25 @@ setMethod(
   f         = "runFeatureFiltering",
   signature = "RflomicsMAE",
   definition = function(object, SE.name,
-                        filterMethod   = NULL,
-                        filterStrategy = NULL,
-                        cpmCutoff      = NULL,
-                        imputMethod    = NULL){
+                        lowCountFilter = 
+                          list(filterMethod = "filterByExpr",
+                               filterStrategy = "groups",
+                               cpmCutoff      = NULL),
+                        missingValueFilter = 
+                          list(MVencoding  = "NA",
+                               globalProp  = 0.5,
+                               nbCondition = NULL,
+                               propPerCondition = NULL)){
 
     if (!SE.name %in% names(object))
       stop("SE name must be part of this list of names: ",
            getDatasetNames(object))
 
     SE.processed <- runFeatureFiltering(object = object[[SE.name]],
-                                        filterMethod = filterMethod,
-                                        filterStrategy = filterStrategy,
-                                        cpmCutoff = cpmCutoff,
-                                        imputMethod = imputMethod)
+                                        lowCountFilter = lowCountFilter,
+                                        missingValueFilter = missingValueFilter)
 
     object[[SE.name]] <- SE.processed
-
-    return(object)
-  })
-
-###==== dataImputation ====
-
-# METHOD to filter data
-
-#' @name dataImputation
-#' @description
-#' \itemize{
-#' \item dataImputation: Missing value imputation approach, applied to
-#' proteomics and metabolomics data, replaces missing values (0 or NA) with
-#' the minimum value among all non-zero values. Additionally, variables with
-#' at least one condition group without any missing values are retained without
-#' further filtering.
-#' }
-#' @param imputMethod The imputation method ("MVI") for proteomics and
-#' metabolomics data.
-#' @keywords internal
-#' @noRd
-setMethod(
-  f         = "dataImputation",
-  signature = "RflomicsSE",
-  definition = function(object, imputMethod = "MVI"){
-
-    if(getOmicsTypes(object) == "RNAseq")
-      stop("Can't apply data imputation on RNAseq data.")
-
-    if(imputMethod == "" || is.null(imputMethod))
-      imputMethod <- "MVI"
-
-    featureFiltering <- switch (
-      imputMethod,
-      "MVI" = {
-        object2   <- getProcessedData(object)
-        omics.df  <- assay(object2)
-        design    <- getDesignMat(object2)
-        min.value <- min(omics.df[omics.df != 0], na.rm = TRUE)
-
-        # replace NA by 0 : done by createRflomicsMAE()
-        # omics.df[is.na(omics.df)] <- 0
-        # omics.df <- as.data.frame(lapply(omics.df, as.numeric))
-
-        # filter-in variables with at leat 1 group with no 0
-        keep.features <- Reduce(
-          union,
-          lapply(unique(design$groups), function(x){
-
-            samples.g <- design[design$groups == x,]$samples
-            row.names(omics.df[Reduce(pmin, abs(omics.df)[samples.g]) > 0,])
-          }))
-
-        filteredFeatures <- setdiff(row.names(omics.df), keep.features)
-        if(length(filteredFeatures) == 0) filteredFeatures <- NULL
-
-        # imputation
-        list(
-          setting = list(method = "MVI",
-                         minValue = min.value,
-                         suppInfo = "missing value imputation"),
-          results = list(filteredFeatures = filteredFeatures),
-          filtered = FALSE)
-      },
-      {
-        stop("The ",imputMethod,
-             " method is not supported by RFLOMICS for data imputation.")
-      }
-    )
-
-    message("[RFLOMICS] #       Data Imputation...")
-    message("[RFLOMICS] #       method: ", imputMethod)
-
-    object <- setElementToMetadata(object,
-                                   name = "DataProcessing",
-                                   subName = "featureFiltering",
-                                   content = featureFiltering)
-
-    # replace 0 by min.value (applyFiltering)
-    # omics.df[omics.df == 0] <- min.value
 
     return(object)
   })
@@ -539,15 +497,7 @@ setMethod(
 
     # filter outlier samples
     object2 <- getProcessedData(object)
-
     assayFilt  <- assay(object2)
-
-    # nbr of genes with 0 count
-    genes_flt0  <- object2[rowSums(assayFilt) <= 0, ]@NAMES
-
-    # remove 0 count
-    objectFilt  <- object2[rowSums(assayFilt)  > 0, ]
-    assayFilt   <- assay(objectFilt)
     Groups      <- getDesignMat(object2)
 
     if(filterMethod == "filterByExpr"){
@@ -598,7 +548,7 @@ setMethod(
     # output
     Filtering <- list(
       setting = settings,
-      results = list(filteredFeatures = c(genes_flt0, genes_flt1)),
+      results = list(filteredFeatures = genes_flt1),
       filtered = FALSE
     )
 
@@ -616,6 +566,140 @@ setMethod(
   })
 
 
+###==== filterMissingValues ====
+
+# METHOD to filter data
+
+#' @name filterMissingValues
+#' @description
+#' \itemize{
+#' \item filterMissingValues: This function aims to identify proteins or 
+#' metabolites with a high proportion of missing values.
+#' }
+#' @param prop
+#' @param nbCondition
+#' @param propPerCondition
+#' @keywords internal
+#' @noRd
+setMethod(
+  f         = "filterMissingValues",
+  signature = "RflomicsSE",
+  definition = function(object,
+                        MVencoding  = "NA",
+                        method      = "GlobalFiltering",
+                        globalProp  = 0.5,
+                        nbCondition = NULL,
+                        propPerCondition = NULL){
+    
+    if(!getOmicsTypes(object) %in% c("proteomics", "metabolomics"))
+      stop("Missing value filtering is only applied to proteomics or metabolomics data.")
+      
+    # filter samples
+    object2       <- getProcessedData(object)
+    assayFilt     <- assay(object2)
+    groups        <- getDesignMat(object2)$groups
+    names(groups) <- getDesignMat(object2)$samples
+    
+    # no NA no filtering
+    if(!any(is.na(assayFilt)))
+      method <- "none"
+    
+    # high proportion of missing values
+    switch (
+      method,
+      "GlobalFiltering" = {
+        
+        message("[RFLOMICS] #       Step: Missing Value Filtering...")
+        message("[RFLOMICS] #       method: globalFilter",
+                "; globalProp: ", globalProp)
+        
+        if(!is.numeric(globalProp) | globalProp > 1 | globalProp < 0) 
+        stop ("globalProp must be a numeric value representing a proportion 
+              between 0 and 1.")
+      
+      # proportion de valeurs présentes par ligne
+      na_prop <- rowSums(!is.na(assayFilt)) / ncol(assayFilt)
+      
+      # Features à garder
+      keep <- na_prop >= globalProp
+      
+      # Features à retirer
+      removed_features <- rownames(assayFilt)[!keep]
+      
+      settings <- list(
+        method           = method,
+        globalProp       = globalProp,
+        nbCondition      = NULL,
+        propPerCondition = NULL
+      )
+      
+      filtered = FALSE
+    },
+    "ConditionFiltering" = {
+      
+      message("[RFLOMICS] #       Step: Missing Value Filtering...")
+      message("[RFLOMICS] #       method: ConditionFiltering",
+              ", propPerCondition: ", propPerCondition,
+              ", nbCondition: ", nbCondition)
+      
+      if(!is.integer(nbCondition) | nbCondition < 1 | 
+         nbCondition > length(unique(getDesignMat(object2)$groups)))
+        stop ("nbCondition must be an integer between 1 and number of condition : ", 
+              length(unique(getDesignMat(object2)$groups)))
+      
+      if(!is.numeric(propPerCondition) | propPerCondition > 1 | propPerCondition < 0) 
+        stop ("propPerCondition must be a numeric value representing 
+              a proportion between 0 and 1.")
+      
+      # Filtrage conditionnel
+      keep <- apply(assayFilt, 1, function(row) {
+        # proportion de non-NA par condition
+        prop_non_na <- tapply(!is.na(row), groups, mean)
+        # garder la ligne si au moins nbCondition conditions ont >= propPerCondition
+        sum(prop_non_na >= propPerCondition) >= nbCondition
+      })
+      
+      # Features à retirer
+      removed_features <- rownames(assayFilt)[!keep]
+      
+      settings <- list(
+        method           = method,
+        globalProp       = NULL,
+        nbCondition      = nbCondition,
+        propPerCondition = propPerCondition
+      )
+      
+      filtered = FALSE
+    },
+    "none" = {
+      
+      settings <- list(
+        method           = method,
+        globalProp       = NULL,
+        nbCondition      = NULL,
+        propPerCondition = NULL
+      )
+      
+      removed_features <- vector()
+      filtered = TRUE
+    })
+    
+    # output
+    Filtering <- list(
+      setting = settings,
+      results = list(filteredFeatures = removed_features),
+      filtered = filtered
+    )
+    
+    object <-
+      setElementToMetadata(object,
+                           name    = "DataProcessing",
+                           subName = "featureFiltering",
+                           content =  Filtering)
+    
+    return(object)
+  })
+
 ###==== runTransformData ====
 # METHOD to transform data
 
@@ -627,7 +711,7 @@ setMethod(
 #' \item runTransformData:
 #'    This function applied a transformation to the dataset. The transformation
 #' method is chosen according to the dataset omicstype
-#' (RNAseq: none, metabolomics/proteomics: log2)
+#' (RNAseq: none, metabolomics/proteomics: log2 or log10)
 #' }
 #' @param transformMethod The transformation method to store in the metadata
 #' @exportMethod runTransformData
@@ -637,22 +721,22 @@ setMethod(
   definition = function(object,
                         transformMethod = NULL,
                         userTransMethod = "unknown"
-  ){
+                        ){
 
-    if (getOmicsTypes(object) == "RNAseq"){
+    if (getOmicsTypes(object) == "RNAseq")
       stop("It is not recommended to transform RNAseq data.")
-    }
+    
 
-    if (.isTransformed(object)){
+    if (.isTransformed(object))
       stop("Data is already transformed!")
-    }
+    
 
     # accepted value for normMethod
     # default value : 1st element
     default.methods <-
       switch (getOmicsTypes(object),
-              "proteomics"   = c("log2", "none"),
-              "metabolomics" = c("log2", "none")
+              "proteomics"   = c("log2", "log10", "none"),
+              "metabolomics" = c("log2", "log10", "none")
       )
 
     # check normMethod param
@@ -859,6 +943,91 @@ setMethod(
     return(object)
   })
 
+
+###==== runMVImputation ====
+
+# METHOD to filter data
+
+#' @name runMVImputation
+#' @description
+#' \itemize{
+#' \item runMVImputation: Missing value imputation approach, applied to
+#' proteomics and metabolomics data, replaces missing values (0 or NA) with
+#' the minimum value among all non-zero values. Additionally, variables with
+#' at least one condition group without any missing values are retained without
+#' further filtering.
+#' }
+#' @param imputMethod The imputation method ("minFeatureValue") for proteomics and
+#' metabolomics data.
+#' @keywords internal
+#' @noRd
+setMethod(
+  f         = "runMVImputation",
+  signature = "RflomicsSE",
+  definition = function(object, 
+                        imputMethod = "minFeatureValue", 
+                        factor      = 0.001){
+    
+    if(!getOmicsTypes(object) %in% c("proteomics", "metabolomics"))
+      stop("Can't apply data imputation on RNAseq data.")
+    
+    featureFiltering <- switch (
+      imputMethod,
+      "minFeatureValue" = {
+        object2   <- 
+          getProcessedData(object, filter = TRUE, trans = TRUE, norm = TRUE)
+        omics.df  <- assay(object2)
+        
+        minVals <- matrix(data = rep(NA, nrow(omics.df)*2), ncol = 2)
+        for(i in 1:nrow(omics.df)){
+          minVals[i,1] <- min(omics.df[i,], na.rm = TRUE)*factor
+          minVals[i,2] <- sum(is.na(omics.df[i,]))
+        }
+        colnames(minVals)  <- c("minVals", "nbNA")
+        row.names(minVals) <- row.names(omics.df)
+        
+        # imputation
+        Imputation <- 
+          list(
+            setting = list(method = "minFeatureValue",
+                           factor = factor),
+            results = list(minVals = minVals),
+            imputed = FALSE)
+      },
+      {
+        stop("The ",imputMethod,
+             " method is not supported by RFLOMICS for data imputation.")
+      }
+    )
+    
+    message("[RFLOMICS] #       Data Imputation...")
+    message("[RFLOMICS] #       method: ", imputMethod)
+    
+    object <- setElementToMetadata(object,
+                                   name = "DataProcessing",
+                                   subName = "Imputation",
+                                   content = Imputation)
+    return(object)
+  })
+
+#' @rdname runDataProcessing
+#' @name runMVImputation
+#' @aliases runMVImputation,RflomicsMAE-method
+#' @exportMethod runMVImputation
+setMethod(
+  f          = "runMVImputation",
+  signature  = "RflomicsMAE",
+  definition = function(object, SE.name,
+                        imputMethod = "minFeatureValue", 
+                        factor      = 0.001){
+    
+    object[[SE.name]] <-
+      runMVImputation(object      = object[[SE.name]],
+                      imputMethod = imputMethod, 
+                      factor      = factor)
+    return(object)
+  })
+
 ### ==== runOmicsPCA ====
 
 #' @title runOmicsPCA
@@ -898,7 +1067,8 @@ setMethod(
     log <- ifelse(getOmicsTypes(object) == "RNAseq", TRUE, FALSE)
 
     pseudo  <- assay(getProcessedData(object, norm = !raw, log = log))
-
+    pseudo[is.na(pseudo)] <- 0
+    
     PCAlist <- getAnalysis(object, name = "PCAlist")
 
     PCAlist[[ifelse(isTRUE(raw), "raw", "norm")]] <-
@@ -1043,9 +1213,10 @@ setMethod(
   signature  = "RflomicsSE",
   definition = function(object,
                         filter = FALSE,
-                        trans = FALSE,
-                        norm = FALSE,
-                        log = FALSE){
+                        trans  = FALSE,
+                        norm   = FALSE,
+                        imput  = FALSE,
+                        log    = FALSE){
 
     # to apply normalization we must apply filtering and transformation
     if(norm)  filter = trans = TRUE
@@ -1066,12 +1237,15 @@ setMethod(
       object <- .applyTransformation(object)
     }
 
-
-    # transformation process
+    # Normalization process
     if(norm){
       object <- .applyNormalization(object)
     }
 
+    # Imputation process
+    if(imput){
+      object <- .applyImputation(object)
+    }
 
     # log
     if(log){
@@ -1175,6 +1349,39 @@ setMethod(f          = "getFilterSettings",
           signature  = "RflomicsMAE",
           definition = function(object, SE.name){
             getFilterSettings(object = object[[SE.name]])
+          })
+
+
+###==== getImputSettings ====
+
+# Get filtering parameters
+#' @rdname runDataProcessing
+#' @name getImputSettings
+#' @aliases getImputSettings,RflomicsSE-method
+#' @section Accessors:
+#' \itemize{
+#'    \item getImputSettings: return a list the imputation settings of a given
+#'    omics dataset}
+#' @exportMethod getImputSettings
+#' @examples
+#' # See runDataProcessing for an example that includes getImputSettings
+setMethod(f          = "getImputSettings",
+          signature  = "RflomicsSE",
+          definition = function(object){
+            
+            getAnalysis(object,
+                        name = "DataProcessing",
+                        subName = "Imputation")$setting
+          })
+
+#' @rdname runDataProcessing
+#' @name getImputSettings
+#' @aliases getImputSettings,RflomicsMAE-method
+#' @exportMethod getImputSettings
+setMethod(f          = "getImputSettings",
+          signature  = "RflomicsMAE",
+          definition = function(object, SE.name){
+            getImputSettings(object = object[[SE.name]])
           })
 
 ###==== getFilteredFeatures ====
@@ -1653,7 +1860,7 @@ setMethod(
 
     df <-
       melt(mat) |>
-      mutate(missed_value = ifelse(value == 0, "yes", "no")) |>
+      mutate(missed_value = ifelse(is.na(value) | value == 0, "yes", "no")) |>
       group_by(Var2, missed_value) |> count(name = "nb_missed") |>
       mutate(missed_p = nb_missed/nrow(mat)*100)
 
