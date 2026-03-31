@@ -12,10 +12,6 @@ contrastDir <-
 
 dir.create(path=contrastDir, recursive = TRUE, showWarnings = FALSE)
 
-opts_chunk$set(
-  fig.path=contrastDir
-)
-
 dataset.SE  <- getRflomicsSE(rflomics.MAE, data)
 DiffExpAnal <- getAnalysis(dataset.SE, name = "DiffExpAnal", subName = "results")
 evalPCA     <- dim(DiffExpAnal[["TopDEF"]][[contrast]])[1] > 1
@@ -30,28 +26,30 @@ diff.plots <- plotDiffAnalysis(dataset.SE, contrastName=contrast)
 #### Pvalues distribution
 
 ```{r pvDistrib-plot, out.width = "100%", fig.cap="*fig: Distribution of non-adjusted p-values. The most desirable shape is a peak of p-values at 0 following by a uniform distribution.*"}
+
+ggsave(diff.plots$Pvalue.hist, filename = paste0(contrastDir,data,"_pval_distr.png"), width = 6, height = 4)
+ggsave(diff.plots$MA.plot, filename = paste0(contrastDir,data,"_MA_plot.png"), width = 6, height = 4)
+
 diff.plots$Pvalue.hist
-```
 
-#### MA plot
-
-```{r MA-plot, out.width = "100%", fig.cap=paste("*fig: MAplot (log2 fold change against average log2 expression for the features of a given contrast). The red dots are the ", variableName," significantly over-expressed in the left side of the contrast's expression whereas blue dots are ", variableName," significantly under-expressed in the rigth side of the contrast's expression. Only the top 20 ", variableName," DE are labeled.*")}
-diff.plots$MA.plot
 ```
 
 #### VolcanoPlot
 
 ```{r Volcano-plot, out.width = "100%", fig.cap=paste0("*fig: VolcanoPlot (-Log10 non-adjusted pvalues against log2 fold change for the features of a given contrast). Red dots are ", variableName," of interest displaying both large magnitude log-fold-changes (x axis) and high statistical significance (y axis). Only the top 20 ",variableName," DE are labeled.*")}
+
+ggsave(diff.plots$Volcano.plot, filename = paste0(contrastDir,data,"_Volcano.png"), width = 6, height = 4)
+
 diff.plots$Volcano.plot
 ```
 
-#### Heatmap
 
 ```{r heatmap-plot, out.width = "100%", fig.cap=paste0( "*fig: Heatmap was performed on DE ", variableName," expression data table which has been transformed by: ", getTransSettings(dataset.SE)$method," method and normalized by: ", getNormSettings(dataset.SE)$method," method. Clustering was independently performed on samples (row) and centered ", variableName," (column) using euclidian distance and complete aggregation method*" )}
-plotHeatmapDesign(object = dataset.SE, contrastName = contrast)
+
+p <- plotHeatmapDesign(object = dataset.SE, contrastName = contrast)
+ggsave(p, filename = paste0(contrastDir,data,"_Heatmap.png"), width = 6, height = 4)
 ```
 
-#### PCA on DE 
 
 ```{r PCAonDE, out.width = "50%",fig.show = "hold", eval = evalPCA, fig.cap=paste0( "fig: Factorials maps formed by the axis 1,2 (left) and 1,3 (right) of the PCA performed on DE features." )}
 
@@ -59,10 +57,14 @@ resTable      <- DiffExpAnal[["TopDEF"]][[contrast]]
 newDataset.SE <- dataset.SE[rownames(dataset.SE) %in% row.names(resTable)]
 newDataset.SE <- runOmicsPCA(newDataset.SE)  
 
-plotOmicsPCA(newDataset.SE, raw = FALSE,
+p1 <- plotOmicsPCA(newDataset.SE, raw = FALSE,
              axes=c(1, 2), groupColor="groups")
-plotOmicsPCA(newDataset.SE, raw = FALSE,
+ggsave(p1, filename = paste0(contrastDir,data,"_DE_PCA_1-2.png"), width = 6, height = 4)
+
+p2 <- plotOmicsPCA(newDataset.SE, raw = FALSE,
              axes=c(1, 3), groupColor="groups")
+ggsave(p2, filename = paste0(contrastDir,data,"_DE_PCA_1-3.png"), width = 6, height = 4)
+
 ```
 
 
@@ -94,13 +96,13 @@ datatable(df, rownames = TRUE , class = 'cell-border stripe',
 
 ```{r , eval = evalExport}
 write.table(DiffExpAnal[["TopDEF"]][[contrast]],
-            file=paste0(contrastDir,"Table_of_DE_", variableName,"_pvalmax_",
-                        getDiffSettings(dataset.SE)[["p.adj.cutoff"]],"_FCmin_",
+            file=paste0(contrastDir,data,"_DE_Tab_Filt_pval_",
+                        getDiffSettings(dataset.SE)[["p.adj.cutoff"]],"_FC_",
                         getDiffSettings(dataset.SE)[["abs.logFC.cutoff"]],".txt"),
             sep="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)
 
 write.table(DiffExpAnal[["DEF"]][[contrast]],
-            file=paste0(contrastDir,"Table_of_non_filtering_", variableName,".txt"),
+            file=paste0(contrastDir,data,"_DE_Tab_no_filter.txt"),
             sep="\t",quote=FALSE,col.names=TRUE,row.names=TRUE)
 ```
 

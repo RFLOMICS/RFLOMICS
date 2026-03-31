@@ -11,7 +11,7 @@ editor_options:
 ```{r }
 
 opts_chunk$set(
-  fig.path=coexpDir[[data]]
+  fig.path=paste0(coexpDir[[data]],data,"_")
 )
 
 dataset.SE   <- getRflomicsSE(rflomics.MAE, data)
@@ -91,13 +91,13 @@ The best number of cluster (K) selected via the Integrated Completed
 Likelihood (ICL) criterion was
 `r CoExpAnal[["cluster.nb"]]`.
 
-#### Cluster profile
+#### Cluster profiles
 
 <p style="color:grey">
 *Overview of cluster's expression profiles. Boxplots are colored according to  biological conditions*.
 </p>
 
-```{r coseq-boxplots,  eval=isResults}
+```{r coseq_Boxplots,  eval=isResults}
 plot.coseq.res <- plotCoExpression(dataset.SE)
 
 par(mar = c(4, 4, .5, .1))
@@ -112,7 +112,7 @@ plot.coseq.res$boxplots + theme(axis.text.x = element_text(angle = 90, hjust = 1
 *Cluster's composition by contrasts*.
 </p>
 
-```{r coseq-clusterComposition,  eval=isResults}
+```{r coseq-ClustComp,  eval=isResults}
 par(mar = c(4, 4, .5, .1))
 plotCoseqContrasts(dataset.SE)
 ```
@@ -125,8 +125,10 @@ plotCoseqContrasts(dataset.SE)
 *Integrated Completed Likelihood (ICL) plotted versus number of clusters. The ICL is the criterion used to select the number of clusters. The number of clusters (K) that minimizes the ICL is the best number of clusters.*
 </p>
 
-```{r coseq-icl,  eval=isResults}
+```{r coseq_ICL,  eval=isResults}
+
 par(mar = c(4, 4, .5, .1))
+
 plot.coseq.res$ICL 
 ```
 
@@ -136,8 +138,10 @@ plot.coseq.res$ICL
 *Barplots giving a quality control of each cluster. In green: number of* `r variableName` *that are member of a cluster with a high confidance (Max Conditional Probability  > 0.8). In purple:  number of* `r variableName` *that are member of a cluster with a low confidance (Max Conditional Probability < 0.8). A high proportion of green observations may indicate that the clustering is not reliable and can't be exploited.*
 </p>
 
-```{r coseq-probapost,  eval=isResults}
+```{r coseq_MaxProb,  eval=isResults}
+
 par(mar = c(4, 4, .5, .1))
+
 plot.coseq.res$probapost_barplots 
 ```
 
@@ -152,7 +156,7 @@ tab.clusters[["DEF"]] <- rownames(tab.clusters)
 tab.clusters[c("DEF",colNames)]
       
 write.table(tab.clusters,
-             file=paste0(coexpDir[[data]],"Table_of_DE_", variableName,"_per_cluster",".txt"),
+             file=paste0(coexpDir[[data]],data,"_",variableName,"_Table_DExCluster",".txt"),
              sep="\t",quote=FALSE,col.names=TRUE,row.names=FALSE)
 
 ```

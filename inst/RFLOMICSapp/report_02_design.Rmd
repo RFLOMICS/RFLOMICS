@@ -3,6 +3,7 @@
 
 <br>
 
+
 * **Experimental design:**
 
 ```{r design, out.width = "70%", fig.align='left'}

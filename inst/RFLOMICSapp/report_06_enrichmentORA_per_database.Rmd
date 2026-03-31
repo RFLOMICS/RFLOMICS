@@ -106,7 +106,7 @@ for (annot in c("DiffExp", "CoExp")){
   
   write.table(sumORA.ont, 
               file = paste0(annotDir[[data]][[paste0(annot, "EnrichAnal")]][[ontology]], 
-                            "summay_stat.txt"),
+                            "summary_stat.txt"),
               sep = "\t", quote = FALSE, col.names = TRUE, row.names = FALSE)
   
   DT.child <-  

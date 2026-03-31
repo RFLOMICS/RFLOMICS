@@ -1,12 +1,9 @@
 <br>
 
+
 ## `r paste0("4.",num, " ", data)` 
 
 ```{r}
-# create export data
-opts_chunk$set(
-  fig.path=diffDir[[data]]
-)
 
 dataset.SE     <- getRflomicsSE(rflomics.MAE, data)
 validContrasts <- getValidContrasts(dataset.SE)
@@ -51,7 +48,7 @@ to the **`r getDiffSettings(dataset.SE)$p.adj.method`** procedure with a **cutof
 DEF_mat <- as.data.frame(DiffExpAnal[["mergeDEF"]])
 DEF_mat <- DEF_mat[c("DEF", validContrasts$contrastName)]
 
-write.table(DEF_mat, file=paste0(diffDir[[data]],"/","Matrice_of_DE_", variableName,"_per_Constrast.txt"), sep="\t",quote=FALSE,col.names=TRUE,row.names=FALSE)
+write.table(DEF_mat, file=paste0(diffDir[[data]],"/",data,"_DExContr.txt"), sep="\t",quote=FALSE,col.names=TRUE,row.names=FALSE)
 
 names(DEF_mat) <- 
   c(names(DEF_mat)[1], validContrasts$tag)
@@ -80,10 +77,10 @@ for (i  in  1:nrow(DiffExpAnal[["Validcontrasts"]])){
 }
 
 stat_summary <- cbind(DiffExpAnal[["Validcontrasts"]][,c("tag","contrastName")],
-                       data.frame("DE.Tot"=DE,"DE.Up"=DEup,"DE.Down"=DEdown))
+                      data.frame("DE.Tot"=DE,"DE.Up"=DEup,"DE.Down"=DEdown))
 
-write.table(stat_summary, file=paste0(diffDir[[data]],"summay_stat.txt"),
-              sep="\t", quote=FALSE, col.names=T, row.names=F)
+write.table(stat_summary, file=paste0(diffDir[[data]],data,"_Summary.txt"),
+            sep="\t", quote=FALSE, col.names=T, row.names=F)
 
 noValidContrasts <- 
   setdiff(stat_summary$contrastName, validContrasts$contrastName)

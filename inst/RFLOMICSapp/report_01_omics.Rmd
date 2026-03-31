@@ -1,5 +1,4 @@
 
-
 ```{r}
 analyzedDatasetNames <- getAnalyzedDatasetNames(rflomics.MAE)
 analysisTypes <- names(analyzedDatasetNames)
@@ -23,7 +22,7 @@ for (analysisType in names(analyzedDatasetNames)){
       
       if (analysisType == "DataProcessing"){
         explorDir[[data]] <- 
-          paste0(outDir,"/", data, "/03_data_processing/")
+          paste0(outDir,"/", data, "/01_data_processing/")
         
         dir.create(path = explorDir[[data]],
                    recursive = TRUE, showWarnings = FALSE)
@@ -31,7 +30,7 @@ for (analysisType in names(analyzedDatasetNames)){
       
       if (analysisType == "DiffExpAnal"){
         diffDir[[data]] <-
-          paste0(outDir, "/", data,"/04_differential_analysis/")
+          paste0(outDir, "/", data,"/02_differential_analysis/")
         
         dir.create(path = diffDir[[data]],
                    recursive = TRUE, showWarnings = FALSE)
@@ -39,7 +38,7 @@ for (analysisType in names(analyzedDatasetNames)){
       
       if (analysisType == "CoExpAnal"){
         coexpDir[[data]] <-
-          paste0(outDir, "/", data, "/05_coExpression_analysis/")
+          paste0(outDir, "/", data, "/03_coExpression_analysis/")
         
         dir.create(path = coexpDir[[data]],
                    recursive = TRUE, showWarnings = FALSE)
@@ -52,7 +51,7 @@ for (analysisType in names(analyzedDatasetNames)){
       for (data in analyzedDatasetNames[[analysisType]][[database]]) {
         
         annotDir[[data]][[analysisType]][[database]] <-
-          paste0(outDir, "/", data, "/06_enrichment_analysis/",
+          paste0(outDir, "/", data, "/04_enrichment_analysis/",
                  analysisType, "/", database, "/")
         
         dir.create(path = annotDir[[data]][[analysisType]][[database]],
@@ -110,14 +109,8 @@ The strategy for differential expression analysis was adapted from @Lambert2020t
 
 `r if(!"DiffExpAnal" %in% analysisTypes) {"<p style=\"color:orange\">Differential analysis has not been performed on this data or the contrast has not been validated.</p>"}`
 
-```{r, eval=("DiffExpAnal" %in% analysisTypes)}
-opts_chunk$set( 
-  fig.path=paste0(outDir, "/Analysis_summary/") 
-)
-```
 
-
-```{r diffAnalysesSummary, results='asis', eval=("DiffExpAnal" %in% analysisTypes), fig.cap=paste0("")}
+```{r diffAnalysesSummary, results='asis', eval=("DiffExpAnal" %in% analysisTypes), fig.cap=paste0(""),fig.path=paste0(outDir, "/Analysis_summary/")}
 
 cat("## 4.1 Summary\n")
 getDiffAnalysesSummary(rflomics.MAE, plot = TRUE, 
@@ -135,6 +128,7 @@ getDiffAnalysesSummary(rflomics.MAE, plot = TRUE,
 #   title = "",
 #   caption = ""
 # )
+
 cat("\n<br>\n")
 ```
 
@@ -166,14 +160,8 @@ The co-expression analysis strategy was adapted from @Lambert2020ta and tailored
 
 `r if(!"CoExpAnal" %in% analysisTypes) {"<p style=\"color:orange\">Co-expression analysis has not been performed on this data.</p>"}`
 
-```{r}
-opts_chunk$set( 
-  fig.path=paste0(outDir, "/Analysis_summary/") 
-)
-```
 
-
-```{r coExpAnalysesSummary, results='asis', eval=("CoExpAnal" %in% analysisTypes), fig.cap=paste0("")}
+```{r coExpAnalysesSummary, results='asis', eval=("CoExpAnal" %in% analysisTypes), fig.cap=paste0(""),fig.path=paste0(outDir, "/Analysis_summary/")}
 cat("## 5.1 Summary\n")
 getCoExpAnalysesSummary(rflomics.MAE)
 cat("\n")
