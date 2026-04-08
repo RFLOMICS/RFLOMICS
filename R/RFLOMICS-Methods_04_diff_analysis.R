@@ -358,15 +358,25 @@ setMethod(
     DiffExpAnal[["results"]][["mergeDEF"]] <- NULL
     DiffExpAnal[["results"]][["TopDEF"]] <- NULL
     DiffExpAnal[["results"]][["stats"]] <- NULL
+    DiffExpAnal[["results"]][["isNA"]] <- NULL
     DiffExpAnal[["errors"]] <- NULL
 
     ## TopDEF: Top differential expressed features
     stat.vec <- list()
     DEF_list <- data.frame(DEF = vector())
-    for(x in names(DiffExpAnal[["results"]][["DEF"]])){
+    for (x in names(DiffExpAnal[["results"]][["DEF"]])) {
       tab  <- DiffExpAnal[["results"]][["DEF"]][[x]]
+
+      # Changing DEF if NA are encountered
+      if (any(is.na(tab$Adj.pvalue))) {
+          DiffExpAnal[["results"]][["DEF"]][[x]] <- NULL
+          DiffExpAnal[["results"]][["DEF"]][[x]] <- tab <- tab[which(!is.na(tab$Adj.pvalue)),]
+          DiffExpAnal[["results"]][["isNA"]][[x]] <- setdiff(rownames(object), rownames(DiffExpAnal[["results"]][["DEF"]][[x]]))
+      }
+
       keep <- (tab$Adj.pvalue < p.adj.cutoff) & (abs(tab$logFC) > logFC.cutoff)
       tab  <- tab[keep,]
+
 
       if(nrow(tab) != 0){
         DiffExpAnal[["results"]][["TopDEF"]][[x]] <- tab
