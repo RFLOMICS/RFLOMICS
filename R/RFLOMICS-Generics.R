@@ -199,25 +199,25 @@ setGeneric(
   name = "runDataProcessing",
   def  = function(object,
                   samples = NULL,
-                  MVencoding = "NA",
                   lowCountFilter = 
-                    list(filterMethod   = "filterByExpr",
-                         filterStrategy = "groups",
-                         cpmCutoff = NULL),
+                    list(filterMethod     = "filterByExpr",
+                         filterStrategy   = "groups",
+                         cpmCutoff        = NULL),
                   missingValueFilter = 
-                    list(method      = "GlobalFiltering",
-                         globalProp  = 0.5,
-                         nbCondition = NULL,
+                    list(MVencoding       = "NA",
+                         method           = "none",
+                         globalProp       = NULL,
+                         nbCondition      = NULL,
                          propPerCondition = NULL),
                   transform = 
-                    list(transformMethod = "log2",
-                         userTransMethod = "unknown"),
+                    list(transformMethod  = "none",
+                         userTransMethod  = "unknown"),
                   normalize = 
-                    list(normMethod     = NULL,
-                         userNormMethod = "unknown"),
+                    list(normMethod       = "none",
+                         userNormMethod   = "unknown"),
                   impute = 
-                    list(imputMethod = NULL,
-                         foctor = 0.001),
+                    list(imputMethod      = "none",
+                         factor           = NULL),
                   ...)
     standardGeneric("runDataProcessing")
 )
@@ -290,7 +290,7 @@ setGeneric(
   name = "runMVImputation",
   def  = function(object,
                   imputMethod = "minFeatureValue", 
-                  factor = 0.001,...)
+                  factor = 0.1, ...)
     standardGeneric("runMVImputation")
 )
 
@@ -300,6 +300,7 @@ setGeneric(
                   filter = FALSE,
                   trans = FALSE,
                   norm = FALSE,
+                  imput = FALSE,
                   log = FALSE, ...)
     standardGeneric("getProcessedData")
 )

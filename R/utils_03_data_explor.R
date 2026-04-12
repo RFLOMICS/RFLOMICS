@@ -62,12 +62,6 @@
                 name = "DataProcessing",
                 subName = "featureFiltering")
 
-  if(getFilterSettings(object)$method == "MVI"){
-    omics.df  <- assay(object)
-    omics.df[omics.df == 0] <- getFilterSettings(object)$minValue
-    assay(object) <- omics.df
-  }
-
   filteredFeatures <- getFilteredFeatures(object)
   if(!is.null(filteredFeatures)){
     object <-
@@ -311,27 +305,27 @@
     return(object)
   }
   
-  imput.res <- 
-    getAnalysis(
-      object, 
-      name = "DataProcessing", 
-      subName = "Imputation")$results
-  
   omics.df <- assay(object)
   
   switch(imput_method,
          "minFeatureValue" = {
+           
+           imput.res <- 
+             getAnalysis(
+               object, 
+               name = "DataProcessing", 
+               subName = "Imputation")$results
+           
            minVals <- imput.res$minVals
-           for(i in 1:nrow(minVals)){
-             omics.df[i,is.na(omics.df[i,])] <- minVals[i,1]
-             assay(object)
-           }
+           omics.df[is.na(omics.df)] <- minVals
          },
          "none" = {},
          {
            stop("Could not recognize the imputation method. ")
          }
   )
+  
+  assay(object) <- omics.df
   
   metadata(object)[["DataProcessing"]][["Imputation"]][["imputed"]] <-
     TRUE

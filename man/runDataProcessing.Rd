@@ -76,33 +76,32 @@
 \alias{isProcessedData}
 \alias{isProcessedData,RflomicsSE-method}
 \alias{isProcessedData,RflomicsMAE-method}
-\title{Data Exploratory and processing}
+\title{Omic Data Exploratory and Preprocessing}
 \usage{
 \S4method{runDataProcessing}{RflomicsSE}(
   object,
   samples = NULL,
-  MVencoding = "NA",
   lowCountFilter = list(filterMethod = "filterByExpr", filterStrategy = "groups",
     cpmCutoff = NULL),
-  missingValueFilter = list(method = "GlobalFiltering", globalProp = 0.5, nbCondition =
-    NULL, propPerCondition = NULL),
-  transform = list(transformMethod = "log2", userTransMethod = "unknown"),
-  normalize = list(normMethod = NULL, userNormMethod = "unknown"),
-  impute = list(imputMethod = "minFeatureValue", factor = 0.001)
+  missingValueFilter = list(MVencoding = "NA", method = "none", globalProp = NULL,
+    nbCondition = NULL, propPerCondition = NULL),
+  transform = list(transformMethod = "none", userTransMethod = "unknown"),
+  normalize = list(normMethod = "none", userNormMethod = "unknown"),
+  impute = list(imputMethod = "none", factor = NULL),
+  ...
 )
 
 \S4method{runDataProcessing}{RflomicsMAE}(
   object,
   SE.name,
   samples = NULL,
-  MVencoding = "NA",
   lowCountFilter = list(filterMethod = "filterByExpr", filterStrategy = "groups",
     cpmCutoff = NULL),
-  missingValueFilter = list(method = "GlobalFiltering", globalProp = 0.5, nbCondition =
-    NULL, propPerCondition = NULL),
-  transform = list(transformMethod = "log2", userTransMethod = "unknown"),
-  normalize = list(normMethod = NULL, userNormMethod = "unknown"),
-  impute = list(imputMethod = "minFeatureValue", factor = 0.001)
+  missingValueFilter = list(MVencoding = "NA", method = "none", globalProp = NULL,
+    nbCondition = NULL, propPerCondition = NULL),
+  transform = list(transformMethod = "none", userTransMethod = "unknown"),
+  normalize = list(normMethod = "none", userNormMethod = "unknown"),
+  impute = list(imputMethod = "none", factor = NULL)
 )
 
 \S4method{runSampleFiltering}{RflomicsSE}(object, samples = NULL)
@@ -144,12 +143,7 @@
   userNormMethod = "unknown"
 )
 
-\S4method{runMVImputation}{RflomicsMAE}(
-  object,
-  SE.name,
-  imputMethod = "minFeatureValue",
-  factor = 0.001
-)
+\S4method{runMVImputation}{RflomicsMAE}(object, SE.name, imputMethod = "minFeatureValue", factor = 0.1)
 
 \S4method{runOmicsPCA}{RflomicsSE}(object, ncomp = 5, raw = FALSE)
 
@@ -174,6 +168,7 @@
   filter = FALSE,
   trans = FALSE,
   norm = FALSE,
+  imput = FALSE,
   log = FALSE
 )
 
@@ -253,6 +248,51 @@
 
 \item{samples}{samples to keep.}
 
+\item{lowCountFilter}{A list specifying parameters for \strong{RNA-seq} 
+low-count filtering.
+\code{filterMethod} defines the filtering approach and supports two options:
+\describe{
+  \item{\code{"filterByExpr"} (default)}{
+    Uses \code{edgeR::filterByExpr()}. In this case, \strong{filterStrategy} must be
+    \code{"groups"} (default and only supported value), and \strong{cpmCutoff} is not used
+    (should be \code{NULL}).
+  }
+  \item{\code{"CPM"}}{
+    Applies a CPM-based filtering approach. The \strong{filterStrategy} parameter controls
+    how features are retained: \code{"NbReplicates"} (default) keeps features expressed
+    in at least a minimum number of replicates, while \code{"NbConditions"} keeps features
+    expressed in a minimum number of conditions. The \strong{cpmCutoff} defines the CPM
+    threshold used to determine expressed features (default: \code{1}).
+  }
+  \item{\code{"none"}}{
+    ...
+  }
+}}
+
+\item{missingValueFilter}{A list specifying parameters for missing value handling
+in  \strong{proteomics and metabolomics data}.
+
+\strong{MVencoding} defines how missing values are encoded: \code{"NA"} or \code{"0"}.
+If \code{"0"} is used, zero values are converted to \code{NA} in the processed data.
+
+\strong{method} defines the filtering approach and supports two options:
+\describe{
+  \item{\code{"GlobalFiltering"}}{
+    Filters features based on the overall proportion of missing values.
+    The \strong{globalProp} parameter defines the maximum allowed proportion
+    of missing values across all samples (default: \code{0.5}).
+  }
+  \item{\code{"ConditionFiltering"}}{
+    Filters features based on missing values within conditions.
+    The \strong{nbCondition} parameter defines the minimum number of conditions
+    required (default: \code{1}), and \strong{propPerCondition} defines the maximum
+    allowed proportion of missing values per condition (default: \code{0.7}).
+  }
+  \item{\code{"none"}}{
+    ...
+  }
+}}
+
 \item{SE.name}{the name of the data the normalization have to be applied to.}
 
 \item{transformMethod}{The transformation method to store in the metadata}
@@ -265,9 +305,6 @@ Default values: TMM for RNAseq data and median for proteomics and metabolomics
 data}
 
 \item{userNormMethod}{method used by user to normalize data.}
-
-\item{imputMethod}{The imputation method ("MVI") for proteomics and
-metabolomics data.}
 
 \item{ncomp}{Number of components to compute. Default is 5.}
 
@@ -293,12 +330,13 @@ factorial map}
 
 \item{groupColor}{All combination of level's factor}
 
-\item{filterMethod}{The filtering model ("CPM") for RNAseq data.}
+\item{filterMethod}{filtering method: CPM or filterByExpr}
 
-\item{filterStrategy}{The filtering strategy
-("NbConditions" or "NbReplicates") for RNAseq data.}
+\item{filterStrategy}{strategy of RNAseq low count filtering when filterMethod == CPM.
+Mandatory for RNAseq data. Default value: "NbReplicates".}
 
-\item{cpmCutoff}{The CPM cutoff for RNAseq data.}
+\item{cpmCutoff}{CPM cutoff for RNAseq low count filtering when filterMethod == CPM.
+Mandatory for RNAseq data. Default value: 1.}
 }
 \value{
 An object of class \link{RflomicsSE} or class \link{RflomicsSE}
@@ -325,10 +363,10 @@ runDataProcessing() calls the following functions:
 }
 
 \itemize{
-\item runFeatureFiltering: This function allows filtering variables in omics
-data. In the case of RNA-seq data, it involves filtering out transcripts with
-low counts, while in the case of proteomics and metabolomics data, it applies
-the imputation procedure.
+  \item \strong{runTransformData}: Performs feature filtering depending on 
+  the omics data type. For \strong{RNA-seq data}, lowly expressed transcripts 
+  are removed based on count statistics. For \strong{proteomics and metabolomics 
+  data}, missing value filtering is applied.
 }
 
 \itemize{
@@ -372,25 +410,6 @@ method.
 \itemize{
    \item plotDataDistribution: return boxplot or density plot of expression
    or abundance distribution.}
-}
-\details{
-Low count filtering procedure: By default, transcript with 0 count
-are removed from the data. The function then computes the count per million
-or read (CPM) for each gene in each sample and gives by genes the number of
-sample(s) which are over the cpmCutoff (NbOfsample_over_cpm).
-Then Two filtering strategies are proposed:
-\itemize{
-\item NbConditions:  keep gene if the NbOfsample_over_cpm >= NbConditions
-\item NbReplicates:  keep gene if the NbOfsample_over_cpm >= min(NbReplicates)
-\item filterByExpr: the default filtering method implemented
-in the edgeR filterByExpr() function.
-}
-
-Missing value imputation: This approach, applied to proteomics and
-metabolomics data, replaces missing values (0 or NA) with the minimum value
-among all non-zero values. Additionally, variables with at least one
-condition group without any missing values are retained without further
-filtering.
 }
 \section{Accessors}{
 

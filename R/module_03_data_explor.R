@@ -173,7 +173,7 @@ QCNormalizationTab <-
                 choices   =  
                   list("Global filtering" = "GlobalFiltering", 
                        "Condition-based filtering" = "ConditionFiltering",
-                       "Already filtred" = "none"),
+                       "Already filtred/No" = "none"),
                 selected  = "GlobalFiltering"
               ),
               conditionalPanel(
@@ -311,7 +311,8 @@ QCNormalizationTab <-
                     content = paste0("Imputation method, cannot be changed for ",
                                      getOmicsTypes(session$userData$FlomicsMultiAssay[[dataset]]),
                                      " data.")),
-                choices  =  list("Within-feature imputation" = "minFeatureValue"),
+                choices  =  list("Within-feature imputation" = "minFeatureValue",
+                                 "Already imputed/No" = "none"),
                 selected = "minFeatureValue"
               ),
               hr()
@@ -400,11 +401,21 @@ QCNormalizationTab <-
           "missing Values",
           tags$br(),
           tags$i(
-            "blabla."
+            "Missing values correspond to undetected or unquantified features, 
+            often due to technical limitations or low abundance."
           ),
           tags$br(),
           tags$hr(),
-          uiOutput(session$ns("missingValueUI"))
+          if(sum(is.na(assay(session$userData$FlomicsMultiAssay[[dataset]]))) == 0){
+            tags$div(
+              tags$b("No missing values detected in the dataset."),
+              tags$br(),
+              "Missing value filtering is not required."
+            )
+          }
+          else{
+            uiOutput(session$ns("missingValueUI"))
+          }
         ),
         tabPanel(
           "Distribution (boxplots)",
@@ -520,6 +531,7 @@ QCNormalizationTab <-
     
     # value (count/intensity) distribution (boxplot/density)
     output$missingValueUI <- renderUI({
+        
       plot <- renderPlot(
         plotMissingValues(
           session$userData$FlomicsMultiAssay[[dataset]],
@@ -783,6 +795,7 @@ QCNormalizationTab <-
                  factor = 0.001)
         ))
       
+      #toto <<- session$userData$FlomicsMultiAssay
       
       if (!is.null(catch.res$error))
         showModal(
