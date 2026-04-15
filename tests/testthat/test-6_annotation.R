@@ -39,7 +39,7 @@ MAE <- MAE |>
     runDataProcessing(SE.name = "protetest",
                       normMethod = "median",
                       transformMethod = "none")  |>
-    runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")
+    runDiffAnalysis(SE.name = "protetest", method = "limmalmFit", p.adj.cutoff = 0.5)
 
 
 ########################################################

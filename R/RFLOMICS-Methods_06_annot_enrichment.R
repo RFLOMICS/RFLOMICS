@@ -48,7 +48,7 @@
 #' parameter. The enrichment results are added to the metadata slot, either
 #' in DiffExpEnrichAnal or CoExpEnrichAnal.
 #' @importFrom tidyselect all_of
-#' @importFrom clusterProfiler enrichKEGG enrichGO enricher
+#' @importFrom clusterProfiler enrichKEGG enrichGO enricher bitr setReadable
 #' @importFrom utils getFromNamespace
 #' @exportMethod runAnnotationEnrichment
 #' @rdname runAnnotationEnrichment
@@ -111,12 +111,27 @@ setMethod(
         switch(
             database,
             "GO" = {
+                # check keytype
+                accepted_keytypes <- eval(parse(text = paste0("keytypes(",
+                                                 OrgDb, "::",OrgDb,")")))
+
+                if (!keyType %in% accepted_keytypes)
+                    stop(paste("Keytype must be one of: ",
+                               paste(accepted_keytypes, collapse = ", "),
+                               sep = " "))
+
+                if (keyType != "ENTREZID") {
+                    param.list[["universe"]] <- bitr(geneID = param.list[["universe"]],
+                                                     fromType = keyType,
+                                                     toType = "ENTREZID",
+                                                     OrgDb = OrgDb)[["ENTREZID"]]
+                }
                 param.list[["OrgDb"]]   <- OrgDb
                 param.list[["keyType"]] <- keyType
 
                 func_to_use <- "enrichGO"
                 if (is.null(domain) || "ALL" %in% domain) domain <- c("MF", "BP", "CC")
-                if (any(!domain %in% c("MF", "BP", "CC")))
+                if (any(!domain %in% c("MF", "BP", "CC", "ALL")))
                     stop("The domain parameter is required, and its value must be in the following list:
                MF, CC, BP, ALL")
             },
@@ -161,19 +176,19 @@ setMethod(
                 TERM2GENE <- list()
                 TERM2NAME <- list()
                 if (setequal(unique(domain), c("no-domain"))) {
-                    TERM2GENE[["no-domain"]] <- list(
+                    TERM2GENE[["no-domain"]] <- data.frame(
                         "term" = annotation[["term"]],
                         "gene" = annotation[["gene"]])
                     TERM2NAME[["no-domain"]] <- NA
                     if ("name" %in% colnames(annotation)) {
-                        TERM2NAME[["no-domain"]] <- list(
+                        TERM2NAME[["no-domain"]] <- data.frame(
                             "term" = annotation[["term"]],
                             "name" = annotation[["name"]])
                     }
                 }else{
                     TERM2GENE <- lapply(domain, function(x){
                         annot1 <- unique(filter(annotation, domain == x)[,c("term", "gene")])
-                        list(
+                        data.frame(
                             "term" = annot1$term,
                             "gene" = annot1$gene)
                     })
@@ -183,7 +198,7 @@ setMethod(
                         TERM2NAME <- lapply(domain, function(x){
 
                             annot2 <- unique(filter(annotation, domain == x)[,c("term", "name")])
-                            list(
+                            data.frame(
                                 "term" = annot2$term,
                                 "name" = annot2$name)
                         })
@@ -246,6 +261,7 @@ setMethod(
         for (listname in names(geneLists)) {
 
             param.list$gene <- geneLists[[listname]]
+            param.list$keyType <- keyType
 
             for (dom in domain) {
 
@@ -253,6 +269,12 @@ setMethod(
                     database,
                     "GO" = {
                         param.list$ont <- dom
+                        if (param.list$keyType != "ENTREZID") {
+                            param.list$gene <- bitr(geneID = param.list[["gene"]],
+                                                    fromType = keyType, toType = "ENTREZID",
+                                                    OrgDb = OrgDb)[["ENTREZID"]]
+                            param.list$keyType <- "ENTREZID"
+                        }
                     },
                     "custom" = {
                         param.list$TERM2GENE <- TERM2GENE[[dom]]
@@ -269,11 +291,15 @@ setMethod(
                     do.call(getFromNamespace(func_to_use, ns = "clusterProfiler"),
                             param.list))
 
-
                 # delete heavy slots
                 if (!is.null(catchRes$result)) {
 
                     res1 <- catchRes$result
+
+                    if(database == "GO" && keyType != "ENTREZID") {
+                        res1 <- setReadable(res1, OrgDb, keyType = "ENTREZID", toType = keyType)
+                     }
+
                     slot(res1, name = "geneSets", check = FALSE) <- list("removed")
                     slot(res1, name = "universe", check = FALSE) <- c("removed")
 
@@ -324,6 +350,13 @@ setMethod(
             c("universe", "keyType", "pvalueCutoff",
               "qvalueCutoff", "OrgDb", "organism",
               "minGSSize", "maxGSSize")
+
+        if("GO" %in% database && keyType != "ENTREZID") {
+        param.list[["universe"]] <- bitr(geneID = param.list[["universe"]],
+                                         fromType = "ENTREZID",
+                                         toType = keyType,
+                                         OrgDb = OrgDb)[[keyType]]
+        }
 
         EnrichAnal[["settings"]] <-
             param.list[names(param.list) %in% storedParam]
