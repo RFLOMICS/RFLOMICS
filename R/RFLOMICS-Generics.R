@@ -638,10 +638,10 @@ setGeneric(
 setGeneric(
   name = "getAnnotAnalysesSummary",
   def  = function(object,
-                  from       = "DiffExp",
-                  listNames  = NULL,
-                  omicNames  = NULL,
-                  databases  = NULL,
+                  from         = "DiffExp",
+                  listNames    = NULL,
+                  omicNames    = NULL,
+                  databaseList = NULL,
                   ...)
     standardGeneric("getAnnotAnalysesSummary")
 )
