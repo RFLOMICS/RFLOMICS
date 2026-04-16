@@ -74,7 +74,7 @@ test_that("transformData and apply_transform yield expected results", {
   # --- apply transformation:
 
   MAE5b[["protetest"]] <- RFLOMICS:::.applyTransformation(MAE5[["protetest"]])
-  expect_equal( assay(MAE5b[["protetest"]]), as.matrix(log2(protMat + 10^-10)))
+  expect_equal( assay(MAE5b[["protetest"]]), as.matrix(log2(protMat + 10^-6*min(protMat[protMat != 0], na.rm = TRUE))))
   expect(RFLOMICS:::.isTransformed(MAE5b[["protetest"]]), failure_message = "It wasn't transformed, it should be.")
 
 })
@@ -177,8 +177,8 @@ test_that("Transformation and normalisation combination - proteomics", {
 
     protMattransnorm <- switch(as.character(case_vect[[1]]),
                                "none"       = protMattransnorm,
-                               "log2"       = log2(protMattransnorm + 10^-10),
-                               "log10"      = log10(protMattransnorm + 10^-10),
+                               "log2"       = log2(protMattransnorm + 10^-6*min(protMattransnorm[protMattransnorm != 0], na.rm = TRUE)),
+                               "log10"      = log10(protMattransnorm + 10^-6*min(protMattransnorm[protMattransnorm != 0], na.rm = TRUE)),
                                "log1p"      = log1p(protMattransnorm),
                                "squareroot" = sqrt(protMattransnorm)
     )
