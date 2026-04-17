@@ -111,9 +111,14 @@ if(length(noValidContrasts) !=0){
 
 *Please click on the arrows to scroll down the results and click on the figure to zoom*
 
+
 ```{r, results='asis'}
 
 out <- NULL
+
+DiffExpAnal <- getAnalysis(dataset.SE, name = "DiffExpAnal", subName = "results")
+logFC.cutoff <- getDiffSettings(dataset.SE)[["abs.logFC.cutoff"]]
+p.adj.cutoff <- getDiffSettings(dataset.SE)[["p.adj.cutoff"]]
 
 for (contrast  in  getValidContrasts(dataset.SE)$contrastName) {
 #for (contrast  in  getSelectedContrasts(dataset.SE)$contrastName) {

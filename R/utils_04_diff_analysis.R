@@ -191,17 +191,18 @@
 #' @keywords internal
 #' @noRd
 .plotPValue <- function(data, contrastName = contrastName) {
-    PValue <- NULL
-
-    p <- ggplot(data = data) +
-        geom_histogram(aes(x = pvalue), bins = 100) +
-        labs(x = expression(p - value),
-             y = "count",
-             title = contrastName) +
-        theme_bw(base_size = 10)
-
-    return(p)
+  PValue <- NULL
+  
+  p <- ggplot(data = data) +
+    geom_histogram(aes(x = pvalue), bins = 100) +
+    labs(x = expression(p - value),
+         y = "count",
+         title = contrastName) +
+    theme_bw(base_size = 10)
+  
+  return(p)
 }
+
 
 
 
@@ -245,14 +246,6 @@
                   font.legend = c(11, "plain", "black"),
                   font.main = c(11, "bold", "black"),
                   caption = bquote(log[2]*FC~cutoff~.(logFC.cutoff)~and~FDR~cutoff~.(p.adj.cutoff)),
-                  # caption = paste(
-                  #     "logFC cutoff=",
-                  #     logFC.cutoff,
-                  #     " and " ,
-                  #     "FDR cutoff=",
-                  #     p.adj.cutoff,
-                  #     sep = ""
-                  # ),
                   ggtheme = theme_linedraw()
     )
 
@@ -277,20 +270,12 @@
                              p.adj.cutoff,
                              logFC.cutoff,
                              contrastName) {
-    # Find pvalue corresponding to the FDR cutoff for the plot
-    # (mean between the last that passes the cutoff
-    # and the first that is rejected to plot the line in the middle of
-    #  the two points)
-    # if pvalcutoff is 1 (no cutoff) no need to adjust
-
     if (p.adj.cutoff > 1) {
         stop("p.adj.cutoff must be between 0 and 1")
     }
 
     data <- data[order(data[["pvalue"]], decreasing = FALSE),]
 
-    # pval1 <- data$pvalue[data$Adj.pvalue < p.adj.cutoff] %>% last()
-    # pval2 <- data$pvalue[data$Adj.pvalue > p.adj.cutoff] %>% first()
     pval1 <- data[["pvalue"]][data[["Adj.pvalue"]] < p.adj.cutoff][sum(data[["Adj.pvalue"]] < p.adj.cutoff)]
     pval2 <- data[["pvalue"]][data[["Adj.pvalue"]] > p.adj.cutoff][1]
     pvalCutoff <- (pval1 + pval2) / 2
@@ -332,11 +317,6 @@
         theme_bw() +
         xlab(bquote(~Log[2]~ "Fold Change")) +
         ylab(bquote(~-Log[10]~ "Pvalue")) +
-        # labs(caption = paste("log2FC cutoff=",
-        #                      logFC.cutoff,
-        #                      " & " , "FDR cutoff=",
-        #                      p.adj.cutoff,
-        #                      sep = ""),
         labs(caption = bquote(log[2]*FC~cutoff~.(logFC.cutoff)~and~FDR~cutoff~.(p.adj.cutoff)),
              title = contrastName) +
         theme(legend.position = "bottom",
@@ -359,3 +339,177 @@
 
 
 
+#' fast_MA.plot
+#'
+#' @param data dataframe 
+#' @param p.adj.cutoff adjusted pvalue cutoff
+#' @param logFC.cutoff |log2FC| cutoff (absolute value)
+#' @param contrastName the contrast, useful for plot title
+#' @return MA plot
+#' @keywords internal
+#' @noRd
+
+.plotMA_fast <- function(data, p.adj.cutoff, logFC.cutoff, contrastName) {
+  
+  x <- data$Abundance
+  y <- data$logFC
+  p <- data$Adj.pvalue
+  
+  fc_thr <- logFC.cutoff
+  sig <- p < p.adj.cutoff
+  
+  col <- rep("grey30", length(y))
+  col[sig & y > fc_thr] <- "forestgreen"
+  col[sig & y < -fc_thr] <- "red2"
+  
+  par(mar = c(7, 4, 4, 2) + 0.1)
+  
+  graphics::plot(
+    x, y,
+    pch = 16,
+    cex = 0.5,
+    col = col,
+    main = contrastName,
+    xlab = "Log2 mean expression",
+    ylab = "Log2 fold change"
+  )
+  
+  mtext(bquote(log[2]*FC~cutoff~.(logFC.cutoff)~and~FDR~cutoff~.(p.adj.cutoff)),
+        side = 1,  
+        line = 5,  
+        adj = 0.5, 
+        cex = 0.9)
+  
+  graphics::abline(h = c(-fc_thr, fc_thr), col = "black", lty = 2)
+  
+  ord <- order(p)
+  top_idx <- ord[1:20]
+  
+  graphics::text(
+    x[top_idx],
+    y[top_idx],
+    labels = rownames(data)[top_idx],
+    cex = 0.5,
+    pos = 3
+  )
+}
+
+
+
+#' plotVolcano_fast
+#'
+#' @param data dataframe 
+#' @param p.adj.cutoff adjusted pvalue cutoff
+#' @param logFC.cutoff log2FC cutoff (absolute value)
+#' @param contrastName the contrast, useful for plot title
+#' @return a volcano plot
+#' @keywords internal
+#' @noRd
+#'
+.plotVolcano_fast <- function(data,
+                              p.adj.cutoff = 0.05,
+                              logFC.cutoff = 1,
+                              contrastName = "",
+                              n_label = 20) {
+  
+  
+  x <- data$logFC
+  p <- data$pvalue
+  padj <- data$Adj.pvalue
+  
+  ok <- is.finite(x) & is.finite(p) & is.finite(padj)
+  
+  x <- x[ok]
+  p <- p[ok]
+  padj <- padj[ok]
+  rn <- rownames(data)[ok]
+  
+  # If too low pvalues, unable to plot (error in if(d>0)...)
+  p[p == 0] <- min(p[p > 0], na.rm = TRUE) * 0.1
+  
+  y <- -log10(p)
+  
+  
+  # significance (padj-based)
+  sig <- padj < p.adj.cutoff
+  
+  col <- rep("grey80", length(x))
+  col[sig & x > logFC.cutoff] <- "forestgreen"
+  col[sig & x < -logFC.cutoff] <- "red2"
+  
+  # derive p-value cutoff equivalent to significant set
+  pvalCutoff <- max(p[sig], na.rm = TRUE)
+  
+  hline <- -log10(pvalCutoff)
+  
+  
+  # labels
+  score <- y * abs(x)
+  top <- order(score, decreasing = TRUE)
+  top <- head(top, n_label)
+  
+  par(mar = c(7, 4, 4, 2) + 0.1)
+  
+  # PLOT
+  graphics::plot(
+    x, y,
+    col = col,
+    pch = 16,
+    cex = 0.5,
+    main = contrastName,
+    xlab = "Log2 Fold Change",
+    ylab = "-Log10 p-value"
+  )
+  
+  mtext(bquote(log[2]*FC~cutoff~.(logFC.cutoff)~and~FDR~cutoff~.(p.adj.cutoff)),
+        side = 1,   # marge du bas
+        line = 5,   # ajuste la distance sous l’axe X
+        adj = 0.5,  # centre
+        cex = 0.9)
+  
+  # lines
+  graphics::abline(
+    v = c(-logFC.cutoff, logFC.cutoff),
+    lty = 2,
+    col = "grey50"
+  )
+  
+  graphics::abline(
+    h = hline,
+    lty = 2,
+    col = "grey50"
+  )
+  
+  # labels
+  if (length(top) > 0) {
+    graphics::text(
+      x[top],
+      y[top],
+      labels = rn[top],
+      pos = ifelse(x[top] > 0, 4, 2),
+      cex = 0.5,
+      offset = 0.3
+    )
+  }
+  invisible(NULL)
+}
+
+#'.plotPValue
+#'
+#' @param data dataframe 
+#' @param contrastName the contrast, useful for plot title
+#' @return plot
+#' @keywords internal
+#' @noRd
+.plotPValue_fast <- function(data, contrastName = contrastName) {
+  PValue <- NULL
+  
+  graphics::hist(
+    data$pvalue,
+    breaks = 100,
+    col = "grey70",
+    border = "white",
+    main = contrastName,
+    xlab = "p-value"
+  )
+}

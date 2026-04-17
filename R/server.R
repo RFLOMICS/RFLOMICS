@@ -61,9 +61,9 @@ rflomicsServer <- function(input, output, session) {
                   menuItemOutput(outputId = "Integration")
       ),
 
-      tags$br(),
-      tags$br(),
-      uiOutput("runReport"),
+      #tags$br(),
+      #tags$br(),
+      #uiOutput("runReport"),
       tags$br(),
       tags$br(),
       uiOutput("downloadResults")
@@ -126,9 +126,10 @@ rflomicsServer <- function(input, output, session) {
   output$runReport <- renderUI({
     if(is.null(rea.values$datasetProcess)) return()
 
-    # if(is.null(rea.values$datasetProcess) ||
-    #    length(rea.values$datasetProcess) !=
-    #    length(unlist(rea.values$datasetList))) return()
+    ## if(is.null(rea.values$datasetProcess) ||
+    ##    length(rea.values$datasetProcess) !=
+
+    ##    length(unlist(rea.values$datasetList))) return()
 
     column(
       width = 12,
@@ -143,7 +144,7 @@ rflomicsServer <- function(input, output, session) {
     column(
       width = 12,
       downloadButton(outputId = "download",
-                     label = "Download results", class = "butt")
+                     label = "Report and Results", class = "butt")
     )
   })
 
@@ -551,7 +552,7 @@ rflomicsServer <- function(input, output, session) {
     content = function(file) {
       withProgress(
         message = 'Download in progress',
-        detail = 'This may take a while...', value = 0, {
+        detail = 'This may take minute(s)...', value = 0, {
 
           incProgress(0.2)
           projectName  <- getProjectName(session$userData$FlomicsMultiAssay)

@@ -12,42 +12,52 @@ contrastDir <-
 
 dir.create(path=contrastDir, recursive = TRUE, showWarnings = FALSE)
 
-dataset.SE  <- getRflomicsSE(rflomics.MAE, data)
-DiffExpAnal <- getAnalysis(dataset.SE, name = "DiffExpAnal", subName = "results")
+opts_chunk$set(
+  fig.path=paste0(contrastDir,data,"_")
+)
+
 evalPCA     <- dim(DiffExpAnal[["TopDEF"]][[contrast]])[1] > 1
 evalExport  <- dim(DiffExpAnal[["TopDEF"]][[contrast]])[1] > 0
 ```
 
 
-```{r , out.width = "50%"}
-diff.plots <- plotDiffAnalysis(dataset.SE, contrastName=contrast)
-```
-
 #### Pvalues distribution
 
 ```{r pvDistrib-plot, out.width = "100%", fig.cap="*fig: Distribution of non-adjusted p-values. The most desirable shape is a peak of p-values at 0 following by a uniform distribution.*"}
 
-ggsave(diff.plots$Pvalue.hist, filename = paste0(contrastDir,data,"_pval_distr.png"), width = 6, height = 4)
-ggsave(diff.plots$MA.plot, filename = paste0(contrastDir,data,"_MA_plot.png"), width = 6, height = 4)
-
-diff.plots$Pvalue.hist
+RFLOMICS:::.plotPValue_fast(DiffExpAnal[["DEF"]][[contrast]], 
+                            contrastName = contrast)
 
 ```
+
+#### MAplot
+
+```{r MA-plot, out.width = "100%", fig.cap=paste0("*fig: MA plot (log2 fold change against mean expression/abundance for the features of a given contrast). Red dots are ", variableName," of interest displaying both large magnitude log-fold-changes (y axis) and high mean expression/abundance (x axis). Only the top 20 ",variableName," DE are labeled.*")}
+
+RFLOMICS:::.plotMA_fast(DiffExpAnal[["DEF"]][[contrast]], 
+                   contrastName = contrast, 
+                   p.adj.cutoff = p.adj.cutoff,
+                   logFC.cutoff = logFC.cutoff)
+```
+
+
 
 #### VolcanoPlot
 
 ```{r Volcano-plot, out.width = "100%", fig.cap=paste0("*fig: VolcanoPlot (-Log10 non-adjusted pvalues against log2 fold change for the features of a given contrast). Red dots are ", variableName," of interest displaying both large magnitude log-fold-changes (x axis) and high statistical significance (y axis). Only the top 20 ",variableName," DE are labeled.*")}
 
-ggsave(diff.plots$Volcano.plot, filename = paste0(contrastDir,data,"_Volcano.png"), width = 6, height = 4)
+RFLOMICS:::.plotVolcano_fast(DiffExpAnal[["DEF"]][[contrast]],
+                        contrastName = contrast,
+                        p.adj.cutoff = p.adj.cutoff,
+                        logFC.cutoff = logFC.cutoff)
 
-diff.plots$Volcano.plot
 ```
 
 
-```{r heatmap-plot, out.width = "100%", fig.cap=paste0( "*fig: Heatmap was performed on DE ", variableName," expression data table which has been transformed by: ", getTransSettings(dataset.SE)$method," method and normalized by: ", getNormSettings(dataset.SE)$method," method. Clustering was independently performed on samples (row) and centered ", variableName," (column) using euclidian distance and complete aggregation method*" )}
-
-p <- plotHeatmapDesign(object = dataset.SE, contrastName = contrast)
-ggsave(p, filename = paste0(contrastDir,data,"_Heatmap.png"), width = 6, height = 4)
+```{r heatmap-plot, out.width = "100%", fig.cap=paste0( "*fig: Heatmap was performed on DE ", variableName," expression data table which has been transformed by: ", getTransSettings(dataset.SE)$method," method and normalized by: ", getNormSettings(dataset.SE)$method," method. Clustering was independently performed on samples (row) and centered ", variableName," (column) using euclidian distance and complete aggregation method*"),eval=FALSE }
+ 
+ p <- plotHeatmapDesign(object = dataset.SE, contrastName = contrast)
+ ggsave(p, filename = paste0(contrastDir,data,"_Heatmap.png"), width = 6, height = 4)
 ```
 
 
@@ -57,13 +67,13 @@ resTable      <- DiffExpAnal[["TopDEF"]][[contrast]]
 newDataset.SE <- dataset.SE[rownames(dataset.SE) %in% row.names(resTable)]
 newDataset.SE <- runOmicsPCA(newDataset.SE)  
 
-p1 <- plotOmicsPCA(newDataset.SE, raw = FALSE,
-             axes=c(1, 2), groupColor="groups")
-ggsave(p1, filename = paste0(contrastDir,data,"_DE_PCA_1-2.png"), width = 6, height = 4)
+# p1 <- plotOmicsPCA(newDataset.SE, raw = FALSE,
+#             axes=c(1, 2), groupColor="groups")
+# ggsave(p1, filename = paste0(contrastDir,data,"_DE_PCA_1-2.png"), width = 6, height = 4)
 
-p2 <- plotOmicsPCA(newDataset.SE, raw = FALSE,
-             axes=c(1, 3), groupColor="groups")
-ggsave(p2, filename = paste0(contrastDir,data,"_DE_PCA_1-3.png"), width = 6, height = 4)
+# p2 <- plotOmicsPCA(newDataset.SE, raw = FALSE,
+#             axes=c(1, 3), groupColor="groups")
+# ggsave(p2, filename = paste0(contrastDir,data,"_DE_PCA_1-3.png"), width = 6, height = 4)
 
 ```
 
