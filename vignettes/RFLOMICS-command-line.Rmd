@@ -252,17 +252,18 @@ MAE <- runDataProcessing(
   object = MAE,
   SE.name = "RNAtest",
   samples = colnames(MAE[["RNAtest"]])[-1],
-  filterStrategy = "NbReplicates",
-  cpmCutoff = 1,
-  normMethod = "TMM"
+  lowCountFilter = list(filterMethod = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 1),
+  normalize = list(normMethod = "TMM")
 ) |>
   runDataProcessing(
-    SE.name = "metatest", normMethod = "median",
-    transformMethod = "log2"
+    SE.name = "metatest", 
+    normalize = list(normMethod = "median"),
+    transform = list(transformMethod = "log2")
   ) |>
   runDataProcessing(
-    SE.name = "protetest", normMethod = "none",
-    transformMethod = "log2"
+    SE.name = "protetest", 
+    normalize = list(normMethod = "none"),
+    transform = list(transformMethod = "log2")
   ) |>
   runOmicsPCA(SE.name = "metatest")
 

@@ -17,6 +17,7 @@
 \alias{runNormalization,RflomicsSE-method}
 \alias{runNormalization,RflomicsMAE-method}
 \alias{runMVImputation}
+\alias{runMVImputation,RflomicsSE-method}
 \alias{runMVImputation,RflomicsMAE-method}
 \alias{runOmicsPCA}
 \alias{runOmicsPCA,RflomicsSE-method}
@@ -142,6 +143,8 @@
   normMethod = NULL,
   userNormMethod = "unknown"
 )
+
+\S4method{runMVImputation}{RflomicsSE}(object, imputMethod = "minFeatureValue", factor = 1.8)
 
 \S4method{runMVImputation}{RflomicsMAE}(object, SE.name, imputMethod = "minFeatureValue", factor = 0.1)
 
@@ -293,18 +296,31 @@ If \code{"0"} is used, zero values are converted to \code{NA} in the processed d
   }
 }}
 
+\item{transform}{transformation list of arguments.}
+
+\item{normalize}{normalization list of arguments.}
+
+\item{impute}{imputation list of arguments.}
+
+\item{...}{additional arguments}
+
 \item{SE.name}{the name of the data the normalization have to be applied to.}
 
 \item{transformMethod}{The transformation method to store in the metadata}
 
-\item{userTransMethod}{method used by user to transform data.}
+\item{userTransMethod}{to rm}
 
 \item{normMethod}{Normalization method. Accepted values: TMM for RNAseq, and
 median, totalSum, or none for proteomics and metabolomics data.
 Default values: TMM for RNAseq data and median for proteomics and metabolomics
 data}
 
-\item{userNormMethod}{method used by user to normalize data.}
+\item{userNormMethod}{to rm}
+
+\item{imputMethod}{The imputation method ("minFeatureValue") for proteomics and
+metabolomics data.}
+
+\item{factor}{factor}
 
 \item{ncomp}{Number of components to compute. Default is 5.}
 
@@ -320,6 +336,8 @@ data}
 
 \item{norm}{boolean. If TRUE, check if data is normalized}
 
+\item{imput}{boolean. If TRUE, returned imputed data}
+
 \item{log}{boolean. If TRUE, check if the data has been log-transformed
 (RNAseq).}
 
@@ -329,14 +347,6 @@ data}
 factorial map}
 
 \item{groupColor}{All combination of level's factor}
-
-\item{filterMethod}{filtering method: CPM or filterByExpr}
-
-\item{filterStrategy}{strategy of RNAseq low count filtering when filterMethod == CPM.
-Mandatory for RNAseq data. Default value: "NbReplicates".}
-
-\item{cpmCutoff}{CPM cutoff for RNAseq low count filtering when filterMethod == CPM.
-Mandatory for RNAseq data. Default value: 1.}
 }
 \value{
 An object of class \link{RflomicsSE} or class \link{RflomicsSE}
@@ -381,6 +391,14 @@ method is chosen according to the dataset omicstype
  This function applied a normalization on a dataset.
 The normalization method is chosen according to the dataset omics type
 (RNAseq: TMM, metabolomics/proteomics: median)
+}
+
+\itemize{
+\item runMVImputation: Missing value imputation approach, applied to
+proteomics and metabolomics data, replaces missing values (0 or NA) with
+the minimum value among all non-zero values. Additionally, variables with
+at least one condition group without any missing values are retained without
+further filtering.
 }
 
 \itemize{
@@ -525,9 +543,11 @@ MAE <- setSelectedContrasts(MAE, contrastList = contrastList[c(1, 2, 3),])
 ## use runDataProcessing function that combines the previous three functions
 MAE <- runDataProcessing(MAE, SE.name = "RNAtest",
                          samples = colnames(MAE[["RNAtest"]])[-1], 
-                         filterStrategy = "NbReplicates", 
-                         cpmCutoff = 1, 
-                         normMethod = "TMM") 
+                         lowCountFilter = 
+                           list(filterMethod = "CPM",
+                                filterStrategy = "NbReplicates", 
+                                cpmCutoff = 1), 
+                         normalize = list(normMethod = "TMM"))
 
 ## check completness of RNAtest data
 checkExpDesignCompleteness(MAE, omicName = "RNAtest")$messages
@@ -540,8 +560,8 @@ checkExpDesignCompleteness(MAE, omicName = "RNAtest")$messages
 
 ## use runDataProcessing function
 MAE <- runDataProcessing(MAE, SE.name = "protetest", 
-                         normMethod = "median", 
-                         transformMethod = "log2")
+                         normalize = list(normMethod = "median"), 
+                         transform = list(transformMethod = "log2"))
 
 # plotExpDesignCompleteness(MAE[["RNAtest"]])
 

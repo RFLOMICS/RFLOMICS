@@ -38,9 +38,11 @@ MAE <- setSelectedContrasts(MAE, contrastList = contrastList[c(1, 2, 3),])
 ## use runDataProcessing function that combines the previous three functions
 MAE <- runDataProcessing(MAE, SE.name = "RNAtest",
                          samples = colnames(MAE[["RNAtest"]])[-1], 
-                         filterStrategy = "NbReplicates", 
-                         cpmCutoff = 1, 
-                         normMethod = "TMM") 
+                         lowCountFilter = 
+                           list(filterMethod = "CPM",
+                                filterStrategy = "NbReplicates", 
+                                cpmCutoff = 1), 
+                         normalize = list(normMethod = "TMM"))
 
 ## check completness of RNAtest data
 checkExpDesignCompleteness(MAE, omicName = "RNAtest")$messages
@@ -53,8 +55,8 @@ checkExpDesignCompleteness(MAE, omicName = "RNAtest")$messages
 
 ## use runDataProcessing function
 MAE <- runDataProcessing(MAE, SE.name = "protetest", 
-                         normMethod = "median", 
-                         transformMethod = "log2")
+                         normalize = list(normMethod = "median"), 
+                         transform = list(transformMethod = "log2"))
 
 # plotExpDesignCompleteness(MAE[["RNAtest"]])
 

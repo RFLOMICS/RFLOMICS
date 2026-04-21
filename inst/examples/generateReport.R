@@ -27,8 +27,8 @@ MAE <- runDataProcessing(
   object = MAE,
   SE.name = "protetest",
   samples=NULL,
-  normMethod="none",
-  transformMethod="none")
+  normalize = list(normMethod="none"),
+  transform = list(transformMethod="none"))
 
 ## diff analysis
 MAE <- runDiffAnalysis(

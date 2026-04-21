@@ -65,13 +65,16 @@ MAE <- setSelectedContrasts(MAE, contrastList = selectedContrasts)
 ## Interface function, mostly
 MAE <- MAE |>
   runDataProcessing(SE.name = "RNAtest", samples = sampleToKeep, 
-                    filterMethod = "CPM",
-                    filterStrategy = "NbReplicates",
-                    cpmCutoff = 1, normMethod = "TMM") |>
+                    lowCountFilter = list(filterMethod = "CPM", 
+                                          filterStrategy = "NbReplicates", 
+                                          cpmCutoff = 1),
+                    normalize = list(normMethod = "TMM")) |>
   runDataProcessing(SE.name = "protetest", samples = NULL,
-                    normMethod = "none", transformMethod = "none") |>
+                    normalize = list(normMethod = "none"), 
+                    transform = list(transformMethod = "none")) |>
   runDataProcessing(SE.name = "metatest", samples = NULL,
-                    normMethod = NULL, transformMethod = "log2")
+                    normalize = list(normMethod = NULL), 
+                    transform = list(transformMethod = "log2"))
 
 
 test_that("Test generateReport", {
@@ -200,8 +203,8 @@ test_that("data processing", {
   # remplacer par le bon getter
   nb_lowGene <- length(getFilteredFeatures(MAE[["RNAtest"]]))
   expect_equal(nb_lowGene, 6725)
-  expect_equal(getFilteredFeatures(MAE[["protetest"]]), NULL)
-  expect_equal(getFilteredFeatures(MAE[["metatest"]]), NULL)
+  expect_equal(getFilteredFeatures(MAE[["protetest"]]), logical(0))
+  expect_equal(getFilteredFeatures(MAE[["metatest"]]), logical(0))
 
   ## sample filtering
   expect_equal(getSelectedSamples(MAE[["RNAtest"]]), sampleToKeep)

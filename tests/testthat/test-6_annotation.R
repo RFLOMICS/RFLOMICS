@@ -37,8 +37,8 @@ contrastList <- generateExpressionContrast(object = MAE) |>
 MAE <- MAE |>
     setSelectedContrasts(contrastList = contrastList) |>
     runDataProcessing(SE.name = "protetest",
-                      normMethod = "median",
-                      transformMethod = "none")  |>
+                      normalize = list(normMethod = "median"),
+                      transform = list(transformMethod = "none"))  |>
     runDiffAnalysis(SE.name = "protetest", method = "limmalmFit", p.adj.cutoff = 0.5)
 
 
@@ -438,8 +438,8 @@ test_that("plotEnrichComp - KEGG only", {
     MAE <- MAE |>
         setSelectedContrasts(contrastList = contrastList) |>
         runDataProcessing(SE.name = "protetest",
-                          normMethod = "median",
-                          transformMethod = "none")  |>
+                          normalize = list(normMethod = "median"),
+                          transform = list(transformMethod = "none"))  |>
         runDiffAnalysis(SE.name = "protetest", method = "limmalmFit",
                         p.adj.cutoff = 0.05) |>
         runAnnotationEnrichment(
@@ -459,7 +459,6 @@ test_that("plotEnrichComp - KEGG only", {
     expect_error(plotEnrichComp(MAE[["protetest"]]))
     expect_error(plotEnrichComp(MAE[["protetest"]], database = "KEGG", matrixType = "type"))
     expect_error(plotEnrichComp(MAE[["protetest"]], database = "data", matrixType = "type"))
-
 })
 
 

@@ -141,7 +141,7 @@ test_that("test SE metadtata", {
              failure_message = "This value should not be 0.")
     }
     else{
-      expect_equal(MAE[[SE]]@metadata$DataProcessing$rowSumsZero, NULL)
+      expect_equal(MAE[[SE]]@metadata$DataProcessing$rowSumsZero, character(0))
     }
     expect_equal(as.vector(getSelectedSamples(MAE[[SE]])), colnames(MAE[[SE]]))
     expect_equal(getAnalysis(object  = MAE[[SE]],
@@ -354,7 +354,7 @@ test_that("Test check of NA in data", {
     metatest = ecoseed.df$metatest,
     protetest = ecoseed.df$protetest)
 
-  omicsData[[1]][6,7] <- NA
+  omicsData[[2]][6,7] <- NA
 
   expect_no_error(RFLOMICS::createRflomicsMAE(
     projectName = "Tests",

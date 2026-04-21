@@ -20,16 +20,12 @@
 #' runDataProcessing() calls the following functions:
 #' @param object An object of class \link{RflomicsSE} or class \link{RflomicsSE}
 #' @param samples samples to keep.
-#' @param filterMethod filtering method: CPM or filterByExpr
-#' @param filterStrategy strategy of RNAseq low count filtering when filterMethod == CPM.
-#' Mandatory for RNAseq data. Default value: "NbReplicates".
-#' @param cpmCutoff CPM cutoff for RNAseq low count filtering when filterMethod == CPM.
-#' Mandatory for RNAseq data. Default value: 1.
-#' @param normMethod of normalization. Mandatory for RNAseq data.
-#' Default value: RNAseq = TMM.
-#' @param transformMethod method of transformation.
-#' @param userNormMethod method used by user to normalize data.
-#' @param userTransMethod method used by user to transform data.
+#' @param lowCountFilter low count filtering list of arguments.
+#' @param missingValueFilter missed value filtering list of arguments
+#' @param transform transformation list of arguments.
+#' @param normalize normalization list of arguments.
+#' @param impute imputation list of arguments.
+#' @param ... additional arguments
 #' @return An object of class \link{RflomicsSE} or class \link{RflomicsSE}
 #' @exportMethod runDataProcessing
 #' @seealso
@@ -519,10 +515,8 @@ setMethod(
 
       suported.strategies <- c("NbReplicates", "NbConditions")
 
-      if (is.null(filterStrategy)) filterStrategy <- suported.strategies[1]
-      if (isFALSE(filterStrategy %in% suported.strategies))
-        stop("filterStrategy argument must be one of these two options: ",
-             "NbReplicates or NbConditions")
+      if (is.null(filterStrategy) || isFALSE(filterStrategy %in% suported.strategies)) 
+        filterStrategy <- suported.strategies[1]
 
       if(is.null(cpmCutoff)) cpmCutoff <- 1
       if(!is.numeric(cpmCutoff) || cpmCutoff < 0)
@@ -740,6 +734,7 @@ setMethod(
 #' (RNAseq: none, metabolomics/proteomics: log2 or log10)
 #' }
 #' @param transformMethod The transformation method to store in the metadata
+#' @param userTransMethod to rm
 #' @exportMethod runTransformData
 setMethod(
   f          = "runTransformData",
@@ -861,6 +856,7 @@ setMethod(
 #' median, totalSum, or none for proteomics and metabolomics data.
 #' Default values: TMM for RNAseq data and median for proteomics and metabolomics
 #' data
+#' @param userNormMethod to rm
 #' @return An object of class \link{RflomicsSE}
 #' The applied normalization method and computed scaling factors
 #' (by samples) are stored as a named list
@@ -881,7 +877,7 @@ setMethod(
     # default value : 1st element
     default.methods <-
       switch (getOmicsTypes(object),
-              "RNAseq"       = c("TMM"),
+              "RNAseq"       = c("TMM", "none"),
               "proteomics"   = c("median", "totalSum", "none"),
               "metabolomics" = c("median", "totalSum", "none")
       )
@@ -890,6 +886,8 @@ setMethod(
 
     # check normMethod param
     if(is.null(normMethod)) normMethod <- default.methods[1]
+    if(normMethod == "none" && getOmicsTypes(object) == "RNAseq")
+      normMethod <- default.methods[1]
     if(!normMethod %in% default.methods)
       stop(normMethod,
            " is not an allowed value for the parameter normMethod.",
@@ -974,7 +972,9 @@ setMethod(
 
 # METHOD to filter data
 
+#' @rdname runDataProcessing
 #' @name runMVImputation
+#' @aliases runMVImputation,RflomicsSE-method
 #' @description
 #' \itemize{
 #' \item runMVImputation: Missing value imputation approach, applied to
@@ -985,9 +985,8 @@ setMethod(
 #' }
 #' @param imputMethod The imputation method ("minFeatureValue") for proteomics and
 #' metabolomics data.
-#' @param factor 
-#' @keywords internal
-#' @noRd
+#' @param factor factor
+#' @exportMethod runMVImputation
 setMethod(
   f         = "runMVImputation",
   signature = "RflomicsSE",
@@ -1013,7 +1012,7 @@ setMethod(
         # imputation
         Imputation <- 
           list(
-            setting = list(method = "minFeatureValue",
+            setting = list(method = imputMethod,
                            factor = factor),
             results = list(minVals = minVals, 
                            stat = colSums(is.na(omics.df))),
@@ -1232,7 +1231,8 @@ setMethod(f         = "checkExpDesignCompleteness",
 #' @param filter boolean. If TRUE, returned filtered (samples/features)
 #' normalized data
 #' @param trans boolean. If TRUE, returned transformed data
-#' @param norm boolean. If TRUE, returned normalization data
+#' @param norm boolean. If TRUE, returned normalized data
+#' @param imput boolean. If TRUE, returned imputed data
 #' @param log boolean. If TRUE, returned log10 matrix data. Only for RNAseq
 #' @aliases getProcessedData,RflomicsSE-method
 #' @section Accessors:

@@ -21,11 +21,11 @@ contrastList <- Reduce(rbind, generateExpressionContrast(MAE))
 MAE <- MAE |>
   setSelectedContrasts(contrastList[c(3,6,25)]) |>
   runDataProcessing(SE.name = "metatest", 
-                    transformMethod = "log2",
-                    normMethod = "median") |>
+                    transform = list(transformMethod = "log2"),
+                    normalize = list(normMethod = "median")) |>
   runDataProcessing(SE.name = "protetest", 
-                    transformMethod = "none",
-                    normMethod = "median")   |>
+                    transform = list(transformMethod = "none"),
+                    normalize = list(normMethod = "median"))   |>
   runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")     |>
   runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")    
 

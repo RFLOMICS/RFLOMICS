@@ -35,14 +35,14 @@ contrastList <- generateExpressionContrast(object = MAE) |>
                                   "((temperatureLow_imbibitionEI - temperatureLow_imbibitionDS) + (temperatureMedium_imbibitionEI - temperatureMedium_imbibitionDS) + (temperatureElevated_imbibitionEI - temperatureElevated_imbibitionDS))/3",
                                   "((temperatureElevated_imbibitionEI - temperatureLow_imbibitionEI) - (temperatureElevated_imbibitionDS - temperatureLow_imbibitionDS))" ))
 MAE <- MAE |>
-    setSelectedContrasts(contrastList)       |>
-    runDataProcessing(SE.name = "metatest", transformMethod = "log2",
-                      normMethod = "median") |>
+    setSelectedContrasts(contrastList) |>
+    runDataProcessing(SE.name = "metatest", transform = list(transformMethod = "log2"),
+                      normalize = list(normMethod = "median")) |>
     runDiffAnalysis(SE.name = "metatest",  method = "limmalmFit",
                     p.adj.cutoff = 0.2)   |>
-    runDataProcessing(SE.name = "protetest", transformMethod = "none",
-                      normMethod = "median") |>
-    runDataProcessing(SE.name = "RNAtest", normMethod = "TMM")    |>
+    runDataProcessing(SE.name = "protetest", transform = list(transformMethod = "none"),
+                      normalize = list(normMethod = "median")) |>
+    runDataProcessing(SE.name = "RNAtest", normalize = list(normMethod = "TMM"))    |>
     runDiffAnalysis(SE.name = "RNAtest", method = "edgeRglmfit",
                     p.adj.cutoff = 0.2)
 

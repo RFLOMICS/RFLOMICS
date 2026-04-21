@@ -26,8 +26,8 @@ MAE <- setSelectedContrasts(MAE, contrastList = contrastList[c(1, 2, 3),])
 
 # Run the data preprocessing and perform the differential analysis
 MAE <- runDataProcessing(MAE, SE.name = "protetest",
-                         transformMethod = "log2",
-                         normMethod = "median")
+                         transform = list(transformMethod = "log2"),
+                         normalize = list(normMethod = "median"))
 
 MAE <- runDiffAnalysis(MAE,
                        SE.name = "protetest",

@@ -82,8 +82,9 @@ test_that("Diff Analysis on metabolomics returns the same result within and outs
     ### RFLOMICS
 
     MAE <- MAE |>
-        runDataProcessing(SE.name = "metatest", transformMethod = "log2",
-                          normMethod = "totalSum")   |>
+        runDataProcessing(SE.name = "metatest", 
+                          transform = list(transformMethod = "log2"),
+                          normalize = list(normMethod = "totalSum"))   |>
         runDiffAnalysis(SE.name = "metatest", method = "limmalmFit")
 
     ########################-
@@ -132,8 +133,9 @@ test_that("Diff Analysis on proteomics returns the same result within and outsid
 
 
     MAE <- MAE |>
-        runDataProcessing(SE.name = "protetest", transformMethod = "none",
-                         normMethod = "median")    |>
+        runDataProcessing(SE.name = "protetest", 
+                          transform = list(transformMethod = "none"),
+                         normalize = list(normMethod = "median"))   |>
         runDiffAnalysis(SE.name = "protetest", method = "limmalmFit")
 
 
@@ -195,7 +197,7 @@ test_that("Differential analysis on RNAseq (counts) returns the same result with
     MAE[["RNAtest"]]@metadata$DiffExpAnal <- NULL
 
     MAE <- MAE |>
-        runDataProcessing(SE.name = "RNAtest", normMethod = "TMM") |>
+        runDataProcessing(SE.name = "RNAtest", normalize = list(normMethod = "TMM")) |>
         runDiffAnalysis(SE.name = "RNAtest", method = "edgeRglmfit")
 
     ########################-
