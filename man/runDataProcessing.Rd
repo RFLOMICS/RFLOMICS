@@ -63,16 +63,6 @@
 \alias{plotExpDesignCompleteness,RflomicsMAE-method}
 \alias{plotMissingValues}
 \alias{plotMissingValues,RflomicsSE-method}
-\alias{\itemize{}
-\alias{\item}
-\alias{plotMissingValues:}
-\alias{return}
-\alias{barplot}
-\alias{of}
-\alias{\%}
-\alias{messing}
-\alias{values.}
-\alias{}}
 \alias{plotMissingValues,RflomicsMAE-method}
 \alias{isProcessedData}
 \alias{isProcessedData,RflomicsSE-method}
@@ -428,6 +418,10 @@ method.
 \itemize{
    \item plotDataDistribution: return boxplot or density plot of expression
    or abundance distribution.}
+
+\itemize{
+   \item plotMissingValues: return barplot of % of messing values.
+}
 }
 \section{Accessors}{
 
