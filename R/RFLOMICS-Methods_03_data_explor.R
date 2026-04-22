@@ -1873,6 +1873,7 @@ setMethod(f         = "plotExpDesignCompleteness",
 #' @rdname runDataProcessing
 #' @name plotMissingValues
 #' @aliases plotMissingValues,RflomicsSE-method
+#' @description
 #' \itemize{
 #'    \item plotMissingValues: return barplot of % of messing values.
 #' }
