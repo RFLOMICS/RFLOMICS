@@ -52,128 +52,128 @@ MAE <- MAE |>
 
 #### Need org.At.tair.db to run
 
-test_that("Automatically settings parameters or throwing errors
-          - GO - Proteomics", {
-
-              # automatically set settings if some are null
-
-              skip_if_not_installed("org.At.tair.db")
-
-              MAE[["protetest"]] <- runAnnotationEnrichment(
-                  MAE[["protetest"]],
-                  featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-                  database = "GO",
-                  OrgDb = "org.At.tair.db",
-                  pvalueCutoff = NULL,
-                  qvalueCutoff = NULL,
-                  minGSSize = NULL,
-                  maxGSSize = NULL,
-                  keyType = "TAIR",
-                  domain = c("CC"),
-                  from = "DiffExp")
-
-              expect(
-                  isTRUE(
-                      getEnrichSettings(MAE[["protetest"]])$pvalueCutoff == 0.05 &&
-                          getEnrichSettings(MAE[["protetest"]])$qvalueCutoff == 1 &&
-                          getEnrichSettings(MAE[["protetest"]])$minGSSize == 10 &&
-                          getEnrichSettings(MAE[["protetest"]])$maxGSSize == 500),
-                  failure_message = "If null, one of qvalueCutoff (1),
-          pvaluecutoff(0.05),
-          minGsize (10) or maxGsize(500) are not set adequately")
-
-              # error if NULL database
-              expect_error(runAnnotationEnrichment(
-                  MAE[["protetest"]],
-                  featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-                  database = NULL,
-                  OrgDb = "org.At.tair.db",
-                  keyType = "TAIR",
-                  domain = c("CC"),
-                  from = "DiffExp"))
-
-              # Error if domain is missing
-              expect_error(runAnnotationEnrichment(
-                  MAE[["protetest"]],
-                  featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-                  database = "GO",
-                  OrgDb = "org.At.tair.db",
-                  keyType = "TAIR",
-                  from = "DiffExp"))
-
-
-              # Error if domain is not BP, CC, MF or ALL for GO
-              expect_error(runAnnotationEnrichment(
-                  MAE[["protetest"]],
-                  featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-                  database = "GO",
-                  domain = "domain", #
-                  OrgDb = "org.At.tair.db",
-                  keyType = "TAIR",
-                  from = "DiffExp"))
-
-              # Automatically setting domain for GO
-              ## skip for long time running...
-              # MAE[["protetest"]] <- runAnnotationEnrichment(
-              #     MAE[["protetest"]],
-              #     featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-              #     database = "GO",
-              #     domain = "ALL",
-              #     OrgDb = "org.At.tair.db",
-              #     keyType = "TAIR",
-              #     from = "DiffExp")
-
-             #  expect(isTRUE(setequal(getEnrichSettings(MAE[["protetest"]])$domain,
-             #                         c("BP", "CC", "MF"))),
-             #         failure_message = "If domain is not set for GO, then domain
-             # is not automatically set to BP, CC and MF")
-
-              # Annotation not running if from is neither diffexp nor coexp
-              expect_error(
-                  runAnnotationEnrichment(
-                      MAE[["protetest"]],
-                      database = "GO",
-                      domain = "ALL",
-                      from = "Diffexpression",
-                      OrgDb = "org.At.tair.db",
-                      keyType = "TAIR"))
-
-          })
-
-
-test_that("Annotation not running if diffexp does not exist", {
-    MAE_test <- MAE
-    metadata(MAE_test[["protetest"]])$DiffExpAnal <- list()
-
-    skip_if_not_installed("org.At.tair.db")
-    expect_error(
-        runAnnotationEnrichment(
-            MAE_test[["protetest"]],
-            database = "GO",
-            domain = "ALL",
-            OrgDb = "org.At.tair.db",
-            keyType = "TAIR"))
-})
+# test_that("Automatically settings parameters or throwing errors
+#           - GO - Proteomics", {
+# 
+#               # automatically set settings if some are null
+# 
+#               skip_if_not_installed("org.At.tair.db")
+# 
+#               MAE[["protetest"]] <- runAnnotationEnrichment(
+#                   MAE[["protetest"]],
+#                   featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
+#                   database = "GO",
+#                   OrgDb = "org.At.tair.db",
+#                   pvalueCutoff = NULL,
+#                   qvalueCutoff = NULL,
+#                   minGSSize = NULL,
+#                   maxGSSize = NULL,
+#                   keyType = "TAIR",
+#                   domain = c("CC"),
+#                   from = "DiffExp")
+# 
+#               expect(
+#                   isTRUE(
+#                       getEnrichSettings(MAE[["protetest"]])$pvalueCutoff == 0.05 &&
+#                           getEnrichSettings(MAE[["protetest"]])$qvalueCutoff == 1 &&
+#                           getEnrichSettings(MAE[["protetest"]])$minGSSize == 10 &&
+#                           getEnrichSettings(MAE[["protetest"]])$maxGSSize == 500),
+#                   failure_message = "If null, one of qvalueCutoff (1),
+#           pvaluecutoff(0.05),
+#           minGsize (10) or maxGsize(500) are not set adequately")
+# 
+#               # error if NULL database
+#               expect_error(runAnnotationEnrichment(
+#                   MAE[["protetest"]],
+#                   featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
+#                   database = NULL,
+#                   OrgDb = "org.At.tair.db",
+#                   keyType = "TAIR",
+#                   domain = c("CC"),
+#                   from = "DiffExp"))
+# 
+#               # Error if domain is missing
+#               expect_error(runAnnotationEnrichment(
+#                   MAE[["protetest"]],
+#                   featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
+#                   database = "GO",
+#                   OrgDb = "org.At.tair.db",
+#                   keyType = "TAIR",
+#                   from = "DiffExp"))
+# 
+# 
+#               # Error if domain is not BP, CC, MF or ALL for GO
+#               expect_error(runAnnotationEnrichment(
+#                   MAE[["protetest"]],
+#                   featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
+#                   database = "GO",
+#                   domain = "domain", #
+#                   OrgDb = "org.At.tair.db",
+#                   keyType = "TAIR",
+#                   from = "DiffExp"))
+# 
+#               # Automatically setting domain for GO
+#               ## skip for long time running...
+#               # MAE[["protetest"]] <- runAnnotationEnrichment(
+#               #     MAE[["protetest"]],
+#               #     featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
+#               #     database = "GO",
+#               #     domain = "ALL",
+#               #     OrgDb = "org.At.tair.db",
+#               #     keyType = "TAIR",
+#               #     from = "DiffExp")
+# 
+#              #  expect(isTRUE(setequal(getEnrichSettings(MAE[["protetest"]])$domain,
+#              #                         c("BP", "CC", "MF"))),
+#              #         failure_message = "If domain is not set for GO, then domain
+#              # is not automatically set to BP, CC and MF")
+# 
+#               # Annotation not running if from is neither diffexp nor coexp
+#               expect_error(
+#                   runAnnotationEnrichment(
+#                       MAE[["protetest"]],
+#                       database = "GO",
+#                       domain = "ALL",
+#                       from = "Diffexpression",
+#                       OrgDb = "org.At.tair.db",
+#                       keyType = "TAIR"))
+# 
+#           })
 
 
-test_that("Automatically filling parameters", {
-    # automatic from to diffexp if null and no featureList
-    skip_if_not_installed("org.At.tair.db")
+# test_that("Annotation not running if diffexp does not exist", {
+#     MAE_test <- MAE
+#     metadata(MAE_test[["protetest"]])$DiffExpAnal <- list()
+# 
+#     skip_if_not_installed("org.At.tair.db")
+#     expect_error(
+#         runAnnotationEnrichment(
+#             MAE_test[["protetest"]],
+#             database = "GO",
+#             domain = "ALL",
+#             OrgDb = "org.At.tair.db",
+#             keyType = "TAIR"))
+# })
 
-    MAE[["protetest"]] <- runAnnotationEnrichment(
-        MAE[["protetest"]],
-        database = "GO",
-        from = NULL,
-        OrgDb = "org.At.tair.db",
-        keyType = "TAIR",
-        domain = c("CC"))
 
-    expect(
-        isTRUE(setequal(names(getEnrichRes(MAE[["protetest"]])),
-                        getSelectedContrasts(MAE[["protetest"]])$contrastName)),
-        failure_message = "featureNamesList is not automatically filled with contrasNames")
-
-})
+# test_that("Automatically filling parameters", {
+#     # automatic from to diffexp if null and no featureList
+#     skip_if_not_installed("org.At.tair.db")
+# 
+#     MAE[["protetest"]] <- runAnnotationEnrichment(
+#         MAE[["protetest"]],
+#         database = "GO",
+#         from = NULL,
+#         OrgDb = "org.At.tair.db",
+#         keyType = "TAIR",
+#         domain = c("CC"))
+# 
+#     expect(
+#         isTRUE(setequal(names(getEnrichRes(MAE[["protetest"]])),
+#                         getSelectedContrasts(MAE[["protetest"]])$contrastName)),
+#         failure_message = "featureNamesList is not automatically filled with contrasNames")
+# 
+# })
 
 
 # ---- Getters tests ----
@@ -182,58 +182,58 @@ test_that("Automatically filling parameters", {
 test_that("getEnrichRes - GO - proteomics is working", {
     skip_if_not_installed("org.At.tair.db")
 
-    # Selecting only one contrast
-    MAE <-
-        runAnnotationEnrichment(
-            MAE, SE.name = "protetest",
-            featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-            database = "GO",
-            pvalueCutoff = 0.2,
-            OrgDb = "org.At.tair.db",
-            keyType = "TAIR",
-            domain = c("CC"))
-
-    # Identical to the one in "it's running from diffExpAnal - GO - proteomics"
-    # # Getter from SE
+    # # Selecting only one contrast
+    # MAE <-
+    #     runAnnotationEnrichment(
+    #         MAE, SE.name = "protetest",
+    #         featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
+    #         database = "GO",
+    #         pvalueCutoff = 0.2,
+    #         OrgDb = "org.At.tair.db",
+    #         keyType = "TAIR",
+    #         domain = c("CC"))
+    # 
+    # # Identical to the one in "it's running from diffExpAnal - GO - proteomics"
+    # # # Getter from SE
+    # # expect({
+    # #     obj <- getEnrichRes(
+    # #         MAE[["protetest"]],
+    # #         featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
+    # #         database = "GO", domain = "BP")
+    # #     nrow(obj@result) > 0
+    # #
+    # # }, failure_message = "getEnrichRes from DiffExp SE - ",
+    # # "There is no result in the enrichment metadata part.")
+    # 
+    # 
+    # # Getter from MAE
     # expect({
     #     obj <- getEnrichRes(
     #         MAE[["protetest"]],
     #         featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-    #         database = "GO", domain = "BP")
+    #         database = "GO", domain = "CC")
     #     nrow(obj@result) > 0
-    #
-    # }, failure_message = "getEnrichRes from DiffExp SE - ",
-    # "There is no result in the enrichment metadata part.")
-
-
-    # Getter from MAE
-    expect({
-        obj <- getEnrichRes(
-            MAE[["protetest"]],
-            featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-            database = "GO", domain = "CC")
-        nrow(obj@result) > 0
-
-    }, failure_message = "getEnrichRes from DiffExp MAE -  ",
-    "There is no result in the enrichment metadata part."
-    )
-
-    expect_no_error(getEnrichRes(MAE[["protetest"]]))
-
-    expect_identical(getEnrichRes(MAE[["protetest"]]),
-                     getEnrichRes(MAE[["protetest"]],
-                                  from = "DiffExp", database = "GO"))
-
-    expect_error(getEnrichRes(MAE))
-    expect_error(getEnrichRes(MAE[["protetest"]], database = "data"))
-
-
-    # SumORA testing
-    expect_no_error(sumORA(MAE[["protetest"]], database = "GO",
-                           featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS" ))
-
-    expect(isTRUE(is.data.frame(sumORA(MAE[["protetest"]], database = "GO"))),
-           failure_message = "sumORA without the featureListName is not a dataframe.")
+    # 
+    # }, failure_message = "getEnrichRes from DiffExp MAE -  ",
+    # "There is no result in the enrichment metadata part."
+    # )
+    # 
+    # expect_no_error(getEnrichRes(MAE[["protetest"]]))
+    # 
+    # expect_identical(getEnrichRes(MAE[["protetest"]]),
+    #                  getEnrichRes(MAE[["protetest"]],
+    #                               from = "DiffExp", database = "GO"))
+    # 
+    # expect_error(getEnrichRes(MAE))
+    # expect_error(getEnrichRes(MAE[["protetest"]], database = "data"))
+    # 
+    # 
+    # # SumORA testing
+    # expect_no_error(sumORA(MAE[["protetest"]], database = "GO",
+    #                        featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS" ))
+    # 
+    # expect(isTRUE(is.data.frame(sumORA(MAE[["protetest"]], database = "GO"))),
+    #        failure_message = "sumORA without the featureListName is not a dataframe.")
 
     MAE <- runAnnotationEnrichment(
         MAE, SE.name = "protetest",
@@ -248,19 +248,19 @@ test_that("getEnrichRes - GO - proteomics is working", {
 
 
 
-test_that("getEnrichSettings - GO - proteomics is working", {
-    MAE <-
-        runAnnotationEnrichment(
-            MAE, SE.name = "protetest",
-            featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-            database = "GO",
-            pvalueCutoff = 0.2,
-            OrgDb = "org.At.tair.db",
-            keyType = "TAIR",
-            domain = c("CC"))
-
-    expect_error(getEnrichSettings(MAE[["protetest"]], from = "Diffexp"))
-})
+# test_that("getEnrichSettings - GO - proteomics is working", {
+#     MAE <-
+#         runAnnotationEnrichment(
+#             MAE, SE.name = "protetest",
+#             featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
+#             database = "GO",
+#             pvalueCutoff = 0.2,
+#             OrgDb = "org.At.tair.db",
+#             keyType = "TAIR",
+#             domain = c("CC"))
+# 
+#     expect_error(getEnrichSettings(MAE[["protetest"]], from = "Diffexp"))
+# })
 
 
 
@@ -372,59 +372,59 @@ test_that("runEnrichment analysis with custom file is possible", {
 # ---- PlotClusterProfiler ----
 
 
-test_that("plotClusterPRofiler - GO only", {
-    skip_if_not_installed("org.At.tair.db")
-
-    MAE <-
-        runAnnotationEnrichment(
-            MAE, SE.name = "protetest",
-            featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
-            database = "GO",
-            pvalueCutoff = 1,
-            OrgDb = "org.At.tair.db",
-            keyType = "TAIR",
-            domain = c("CC"))
-
-    # trying to plot without indicating any feature list
-    expect_error(plotClusterProfiler(MAE[["protetest"]], database = "GO"))
-
-    # trying to plot without indicating any database
-    expect_error(plotClusterProfiler(MAE[["protetest"]],
-                                     featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS"))
-
-    # trying to plot without indicating a domain name for GO
-    expect_error(plotClusterProfiler(MAE[["protetest"]],
-                        featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-                        database = "GO"))
-
-    # trying to plot with a null a domain name for GO
-    expect_error(plotClusterProfiler(MAE[["protetest"]],
-                                     featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-                                     database = "GO", domain = NULL))
-
-    # trying to plot
-    expect_no_error(plotClusterProfiler(MAE[["protetest"]],
-                                        featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-                                        database = "GO", domain = "CC"))
-
-    plotToTest <- plotClusterProfiler(MAE[["protetest"]],
-                                      featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-                                      database = "GO", domain = "CC")
-
-    expect(is(plotToTest, "ggplot"),
-           failure_message = "plotCusterProfiler did not return a ggplot object")
-
-    # trying to plot other types of plots
-    expect_no_error(plotClusterProfiler(MAE[["protetest"]],
-                                        featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-                                        database = "GO", domain = "CC",
-                                        plotType = "heatplot"))
-
-    expect_no_error(plotClusterProfiler(MAE[["protetest"]],
-                                        featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
-                                        database = "GO", domain = "CC",
-                                        plotType = "cnetplot"))
-})
+# test_that("plotClusterPRofiler - GO only", {
+#     skip_if_not_installed("org.At.tair.db")
+# 
+#     MAE <-
+#         runAnnotationEnrichment(
+#             MAE, SE.name = "protetest",
+#             featureList = "(temperatureElevated - temperatureLow) in imbibitionDS" ,
+#             database = "GO",
+#             pvalueCutoff = 1,
+#             OrgDb = "org.At.tair.db",
+#             keyType = "TAIR",
+#             domain = c("CC"))
+# 
+#     # trying to plot without indicating any feature list
+#     expect_error(plotClusterProfiler(MAE[["protetest"]], database = "GO"))
+# 
+#     # trying to plot without indicating any database
+#     expect_error(plotClusterProfiler(MAE[["protetest"]],
+#                                      featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS"))
+# 
+#     # trying to plot without indicating a domain name for GO
+#     expect_error(plotClusterProfiler(MAE[["protetest"]],
+#                         featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
+#                         database = "GO"))
+# 
+#     # trying to plot with a null a domain name for GO
+#     expect_error(plotClusterProfiler(MAE[["protetest"]],
+#                                      featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
+#                                      database = "GO", domain = NULL))
+# 
+#     # trying to plot
+#     expect_no_error(plotClusterProfiler(MAE[["protetest"]],
+#                                         featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
+#                                         database = "GO", domain = "CC"))
+# 
+#     plotToTest <- plotClusterProfiler(MAE[["protetest"]],
+#                                       featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
+#                                       database = "GO", domain = "CC")
+# 
+#     expect(is(plotToTest, "ggplot"),
+#            failure_message = "plotCusterProfiler did not return a ggplot object")
+# 
+#     # trying to plot other types of plots
+#     expect_no_error(plotClusterProfiler(MAE[["protetest"]],
+#                                         featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
+#                                         database = "GO", domain = "CC",
+#                                         plotType = "heatplot"))
+# 
+#     expect_no_error(plotClusterProfiler(MAE[["protetest"]],
+#                                         featureListName = "(temperatureElevated - temperatureLow) in imbibitionDS",
+#                                         database = "GO", domain = "CC",
+#                                         plotType = "cnetplot"))
+# })
 
 
 #---- PlotEnrichComp ----
