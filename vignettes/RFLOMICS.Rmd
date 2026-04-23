@@ -161,20 +161,47 @@ and the number of datasets per combination of biological factors.
 
 ## Set the statistical framework
 
- The interface provides models written from the simplest one to the most complete
- one. Only the second order interaction terms between the biological factors appear. 
- Batch factors never appear in interaction terms. In our example, the complete model 
- is chosen.
+Choice of model formula: RFLOMICS uses the biological and batch factors 
+specified in the Load Data module to automatically generate relevant statistical models, 
+with or without interactions. Only interactions between experimental factors are considered.
+This step is common to all datasets and is essential for both differential analysis and multi-omics integration.
 
-All 'a priori' hypotheses (contrasts) are then calculated from the chosen model 
+Users have to choose their model formula, which will be applied to all datasets.
+
+Models are in the general form of : 
+\[ [1] \sim BioFactor1 + BioFactor2 + batchFactor\]
+\[ [2] \sim 1 + BioFactor1 + BioFactor2 + BioFactor1:BioFactor2 + batchFactor\]
+
+Interactions represent effects that cannot be explained by the main effects alone. 
+The first model includes only main effects, assuming that factors act independently, 
+while the second model also incorporates interactions between experimental factors. 
+Batch factors are never included in interaction terms, as they represent technical 
+rather than biological variation. Their role is solely to correct for technical 
+effects without affecting interactions between biological factors.
+
+Based on the selected model, all 'a priori' hypotheses (contrasts) are then calculated 
 and displayed. The user must select those that correspond to the biological questions.
 Contrasts are numbered. These labels will follow for all analysis.
 
-In our example we are studying the effect of temperature on seed germination 
-(transition from the state of dormancy to the state of germination vigor). 
-For that we select 3 average contrasts (see image):
+Three types of contrasts can be computed:
 
-This statistical framework will be applied on all loaded datasets.  
+Simple contrasts: Comparison between two levels of a factor while keeping the other factors fixed.
+Example: Contrast $$|(temperatureHigh – temperatureLow)| in |ImbibitionDS|$$
+Corresponding hypothesis: Is there an effect of temperature (low vs. high) on seed 
+production in dry seeds, within a model including the interaction between temperature and imbibition.
+
+Mean contrasts: Comparison between two levels of a factor while averaging other factor levels.
+Example: Contrast $$|(temperatureHigh – temperatureLow)| in |mean|$$
+Corresponding hypothesis: difference in gene expression between low and high temperature 
+regardless of the level of imbibition.
+
+For models without interaction terms, simple contrasts are equivalent to mean contrasts. 
+this reflects the effect of a single factor on the response variable, averaged over all 
+levels of the other factors, and no interaction contrasts are defined.
+
+Users can select contrasts that precisely reflect their biological questions and 
+experimental design. This statistical framework is applied to all loaded datasets.
+
 
 ![ ](Images/02_setModel.png){width=80%}
 
@@ -189,7 +216,13 @@ between datasets.
 However, you cannot perform a new task until the previous one is completed. 
 A progress bar is displayed indicating the progress status.
 
-### Data processing and quality check
+### Pre-processing and quality control:
+
+This step evaluates data quality and explores the structure of each dataset. 
+It allows users to quickly assess data quality 
+through diagnostic plots displayed before and after preprocessing, and to evaluate
+the experimental design by exploring and quantifying the main sources of biological
+and technical variation (PCA)
 
 In this tab panel we access a data quality control screen and we perform the 
 appropriate data filtering and processing according to the type of omics.
@@ -218,7 +251,7 @@ many QC graphs. For each QC, a graph is built on each raw data and filtered data
 to allow the comparison.
 
 
-#### Transcriptomics data
+#### Transcriptomics data (count data)
 
 For RNAseq data, low expressed genes are filtered so that only genes whose cpm 
 expression is greater than **"CPM cutoff"** in x samples are kept. The value of 
@@ -244,14 +277,26 @@ factor of the design to decode the main sources of variation in the data.
 
 ![ ](Images/03_DataProcess.png){width=80%}
 
+#### Proteomics and metabolomics data (intensity-based data)
+
+- Filtering of variables with a high proportion of missing values % 
+- Log2 or log10 transformation
+- Median normalization, commonly recommended in the literature [ref] 
+- totalsum (no recommended when a small number of feature account for a large 
+proportion of the total signal) 
+- Imputation of missing values using a simply approaches:
+replacing missing values with the minimum observed value in the table.
+
 
 ### Differential expression analysis
 
 In this tab panel, we can run the differential expression analysis. The analysis
 is run by contrast.  
-For RNAseq data, the **glmFit()** function from the **edgeR** package is used 
-whereas for proteomics and metabolomics data, the **lmFit()** function from **limma**
-packages is used.
+
+For RNAseq data,  a generalized linear model (GLM) with a negative binomial distribution
+is applied: the **glmFit()** function from the **edgeR** package is used.  
+For proteomics and metabolomics data, differential analysis relies on linear models
+moderated by an empirical Bayesian approach, the **lmFit()** function from **limma** packages is used.
 
 
 Results will appear in two components: a scrolling menu will give the results of 
@@ -281,12 +326,15 @@ enrichment step.
  
 ### Coexpression analysis
 
+This step aims to identify groups of variables with similar expression, abundance, or 
+accumulation patterns across different experimental conditions.
+
 * In this tab panel, choice is given to merge (**union**) or intersect  
 (**intersection**) the lists of differentially expressed genes/proteins/metabolites 
 associated to contrasts.
 
-* Co-expression analysis is done using to the **coseq** package with a set of 
-optimal parameters.
+* Co-expression analysis is done using to the **coseq** package which relies on mixture models
+with a set of  adapted parameters 
 
   - For **RNAseq**, data transformation method is set to the **arcsin** function 
   and normalization method to **TMM**. No scaling is done for these data. 
@@ -310,13 +358,24 @@ put to a minimum of 20 replicates per K.
   The ICL graph has been slightly modified to show all the range of the ICL 
   values for a given K. 
    
-  - A table of jobs summary is also given. It groups error messages by K.  
+  -  A warning table is also provided, summarizing the number 
+of replicates that successfully produced results for each tested number of clusters, 
+enabling users to identify potential issues with convergence or insufficient data.
+
 
 ![ ](Images/05_coExpAnal.png){width=80%}
 
 ### Annotation and Enrichment analysis using clusterProfiler
 
- We select the lists of DE genes or clusters to annotate. All available lists 
+Enrichment analysis is performed using Over-Representation Analysis (ORA) which 
+employs a hypergeometric test and can be done on differentially expressed variables 
+for each contrast or on each clusters of co-expressed variables. 
+
+ORA can be performed using the KEGG or Gene Ontology (GO) databases, subject to
+gene nomenclature and coverage. Users can also provide a custom database, for 
+example a BioMart extract for a non-model species.
+
+ User have to select the lists of DE genes or clusters to annotate. All available lists 
  are selected by default. 
 
  The enrichment analysis is performed using the [clusterProfiler R-package](https://www.sciencedirect.com/science/article/pii/S2666675821000667).
@@ -342,23 +401,39 @@ and the keytype of the entities. It requires to have an online connection.
 Once everything is set and the analysis is conducted, several panels are displayed 
 to show the results. 
 
+
 ![Results of the analysis for multiple lists](Images/06_ORAAnal.png){width=80%}
 
-### Dataset analysis summary 
 
+### Compare analysis:
+
+ A summary of single-omics analyses is generated once at least two datasets have 
+ been analyzed. 
+ 
  This panel summarizes the effects of the filtering steps on the selected datasets
  and the results of the differential analyses. The first row shows how many 
- samples and entities are left in each table. The integration will be performed 
- on these datasets. The second row shows the number of DE entities for each 
- selected contrast and for each table, with the distinction between up-regulated 
- and down-regulated entities.  
+ samples and entities are left in each table. 
+ 
+ If differential analyses have been performed, the distribution of
+ up- and down-regulated variables can be compared across contrasts (rows) and 
+ between datasets (columns). When co-expression analyses are available, cluster 
+ profiles can be compared across datasets, although no statistical tests are applied.
+
+If ORA has been performed on the differential analysis results, enriched biological 
+terms can be compared between contrasts and, within a contrast, across datasets. 
+
+This comparison is displayed as a presence/absence heatmap, allowing rapid identification 
+of convergent and divergent biological signals across hypothesis tests and datasets, 
+depending on the selected database or ontology.
 
 
 
 ## Integration
 
  Once at least two tables have passed the pre-processing step, the Integration 
- tab will appear in the side bar menu. Two sub menus are available. For each of 
+ tab will appear in the side bar menu. 
+ 
+ Two sub menus are available. For each of 
  them, you will have to run a preprocessing before accessing to the integration 
  panel: select the datasets you want to integrate together and the filtering 
  strategy for each data. A filtering is strongly advised when having large data 
@@ -382,8 +457,8 @@ to show the results.
 
 ### MOFA
 
- This integration analysis is performed using the **MOFA2** R-package. It is an 
- unsupervised method that searches for latent factors to decompose the variance 
+ This integration analysis is performed using the **MOFA2** \citep{Argelaguet2020MOFA2}
+ R-package. It is an unsupervised method that searches for latent factors to decompose the variance 
  of the data, similarly to a PCA, but applied to a multi-dataset situation. The 
  interpretation of the results is also very similar to those of a PCA: the most
  interesting factors are the one explaining more variance, whether it's on 
@@ -403,9 +478,9 @@ to show the results.
  
 Several figure are provided by the interface once the analysis is done.
 
-### MixOmics
+### DIABLO
 
- This integration analysis is performed using the **MixOmics** R-package. 
+ This integration analysis is performed using the **MixOmics**  \citep{Rohart2017MixOmics} R-package. 
  In RFLOMICS, we focused on the supervised analyses using the functions 
  block.(s)plda (also called DIABLO) from the package. Only complete cases 
  will be used for the analysis. The user can select all biological factors 

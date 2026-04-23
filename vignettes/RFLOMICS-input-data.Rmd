@@ -104,3 +104,9 @@ domain of annotation (ex. biological_process).
 | AT1G18745      | GO:0005730        | nucleolus                                 | cellular_component |
 | AT3G00980      | GO:0006396        | RNA processing                            | biological_process |
 | AT3G00980      | GO:0005730        | nucleolus                                 | cellular_component |
+
+# Session Info
+
+```{r}
+sessionInfo()
+```
