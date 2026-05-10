@@ -294,7 +294,7 @@
   results <- metadata(object)[[name]]
 
   if(!is.null(subName)){
-    if(!subName %in% names(results))
+    if(!subName %in% names(results) && subName != 1)
       return(NULL)
 
     results <- results[[subName]]

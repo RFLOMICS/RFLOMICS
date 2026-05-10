@@ -41,10 +41,12 @@
 \S4method{runDiffAnalysis}{RflomicsSE}(
   object,
   contrastList = NULL,
+  modelFormula = NULL,
   method = NULL,
   p.adj.method = "BH",
   p.adj.cutoff = 0.05,
   logFC.cutoff = 0,
+  selectedModality = NULL,
   cmd = FALSE,
   ...
 )
@@ -53,25 +55,44 @@
   object,
   SE.name,
   contrastList = NULL,
+  modelFormula = NULL,
   method = NULL,
   p.adj.method = "BH",
   p.adj.cutoff = 0.05,
   logFC.cutoff = 0,
+  selectedModality = NULL,
   cmd = FALSE,
   ...
 )
 
-\S4method{filterDiffAnalysis}{RflomicsSE}(object, p.adj.cutoff = 0.05, logFC.cutoff = 0)
+\S4method{filterDiffAnalysis}{RflomicsSE}(
+  object,
+  analysisName = "all",
+  p.adj.cutoff = 0.05,
+  logFC.cutoff = 0
+)
 
-\S4method{filterDiffAnalysis}{RflomicsMAE}(object, SE.name, p.adj.cutoff = 0.05, logFC.cutoff = 0)
+\S4method{filterDiffAnalysis}{RflomicsMAE}(
+  object,
+  SE.name,
+  analysisNames = NULL,
+  p.adj.cutoff = 0.05,
+  logFC.cutoff = 0
+)
 
-\S4method{setValidContrasts}{RflomicsSE}(object, contrastList = NULL)
+\S4method{setValidContrasts}{RflomicsSE}(object, analysisName = "all", contrastList = NULL)
 
-\S4method{setValidContrasts}{RflomicsMAE}(object, omicName = NULL, contrastList = NULL)
+\S4method{setValidContrasts}{RflomicsMAE}(
+  object,
+  omicName = NULL,
+  analysisName = "all",
+  contrastList = NULL
+)
 
 \S4method{plotDiffAnalysis}{RflomicsSE}(
   object,
   contrastName,
+  analysisName = "all",
   typeofplots = c("MA.plot", "volcano", "histogram")
 )
 
@@ -79,12 +100,14 @@
   object,
   SE.name,
   contrastName,
+  analysisName = "all",
   typeofplots = c("MA.plot", "volcano", "histogram")
 )
 
 \S4method{plotHeatmapDesign}{RflomicsSE}(
   object,
   contrastName,
+  analysisName = "all",
   splitFactor = "none",
   title = "",
   annotNames = NULL,
@@ -97,6 +120,7 @@
   object,
   SE.name,
   contrastName,
+  analysisName = "all",
   splitFactor = "none",
   title = "",
   annotNames = NULL,
@@ -115,28 +139,35 @@
   raw = FALSE
 )
 
-\S4method{getDEMatrix}{RflomicsSE}(object)
+\S4method{getDEMatrix}{RflomicsSE}(object, analysisName = "all")
 
-\S4method{getDEMatrix}{RflomicsMAE}(object, SE.name)
+\S4method{getDEMatrix}{RflomicsMAE}(object, SE.name, analysisName = "all")
 
-\S4method{getDEList}{RflomicsSE}(object, contrasts = NULL, operation = "union")
+\S4method{getDEList}{RflomicsSE}(object, contrasts = NULL, operation = "union", analysisName = "all")
 
-\S4method{getDEList}{RflomicsMAE}(object, SE.name, contrasts = NULL, operation = "union")
+\S4method{getDEList}{RflomicsMAE}(
+  object,
+  SE.name,
+  contrasts = NULL,
+  operation = "union",
+  analysisName = "all"
+)
 
-\S4method{getDiffSettings}{RflomicsSE}(object)
+\S4method{getDiffSettings}{RflomicsSE}(object, analysisName = "all")
 
-\S4method{getDiffSettings}{RflomicsMAE}(object, SE.name)
+\S4method{getDiffSettings}{RflomicsMAE}(object, SE.name, analysisName = "all")
 
-\S4method{getValidContrasts}{RflomicsSE}(object)
+\S4method{getValidContrasts}{RflomicsSE}(object, analysisName = "all")
 
-\S4method{getValidContrasts}{RflomicsMAE}(object, omicName)
+\S4method{getValidContrasts}{RflomicsMAE}(object, omicName, analysisName = "all")
 
-\S4method{getDiffStat}{RflomicsSE}(object)
+\S4method{getDiffStat}{RflomicsSE}(object, analysisName = "all")
 
-\S4method{getDiffStat}{RflomicsMAE}(object, SE.name = NULL)
+\S4method{getDiffStat}{RflomicsMAE}(object, SE.name = NULL, analysisName = "all")
 
 \S4method{getDiffAnalysesSummary}{RflomicsMAE}(
   object,
+  analysisNames = "all",
   plot = FALSE,
   ylabelLength = 30,
   nbMaxLabel = 20,
@@ -161,12 +192,18 @@ the differential analysis.}
 \item{logFC.cutoff}{cutoff for absolute value of log2FC. Default is the
 parameter from the differential analysis.}
 
+\item{selectedModality}{apply differential analysis only on this modality.}
+
 \item{cmd}{Boolean. Used in the interface. If TRUE, print cmd for the user.}
 
 \item{...}{Additional arguments.}
 
 \item{SE.name}{SE.name the name of the dataset if the input object
 is a \link{RflomicsMAE-class}}
+
+\item{analysisName}{differiential analysis name}
+
+\item{analysisNames}{differential analysis names to plot}
 
 \item{omicName}{a dataset name}
 

@@ -35,7 +35,7 @@ DiffExpAnalysisUI <- function(id){
                    uiOutput(ns("ResultsMerge")),
                    uiOutput(ns("validateUI"))
             ),
-            column(12,uiOutput(ns("ContrastsResults")))
+            column(12,uiOutput(ns("ContrastsResults_all")))
         )
     )
 }
@@ -43,13 +43,29 @@ DiffExpAnalysisUI <- function(id){
 ## ---- SERVER function ----
 DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
 
-    local.rea.values <-
+    local.rea.values <- 
         reactiveValues(
             p.adj.cutoff      = 0.05,
             abs.logFC.cutoff  = 0,
             selectedContrasts = NULL,
-            DiffExpAnal = NULL)
-
+            generalModel      = NULL,
+            #DiffExpAnal       = NULL,
+            split_modality    = "all"
+            )
+    
+    # initialize dataset.se() once processing done
+    dataset.se <- reactiveVal(NULL)
+    observe({
+      
+      req(rea.values[[dataset]]$process)
+      
+      req(is.null(dataset.se()))
+      
+      dataset.se(
+        session$userData$FlomicsMultiAssay[[dataset]]
+      )
+    })
+    
     # list of tools for diff analysis
     MethodList <- c("glmfit (edgeR)"="edgeRglmfit", "lmFit (limma)"="limmalmFit")
 
@@ -98,21 +114,11 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
             need(rea.values[[dataset]]$compCheck != FALSE,
                  metadata(session$userData$FlomicsMultiAssay)$completeCheck[["error"]])
         )
-        local.rea.values$selectedContrasts <-
-            getSelectedContrasts(
-                getProcessedData(session$userData$FlomicsMultiAssay[[dataset]],
-                                 filter = TRUE)
-            )
 
-        validate(
-            need(nrow(local.rea.values$selectedContrasts) != 0,
-                 message = "No contrast matches the sample selection")
-        )
-
-        contrastList <- local.rea.values$selectedContrasts$contrastName
-        names(contrastList) <-
-            paste0("[",local.rea.values$selectedContrasts$tag, "] ",
-                   local.rea.values$selectedContrasts$contrastName)
+        # validate(
+        #     need(nrow(local.rea.values$selectedContrasts) != 0,
+        #          message = "No contrast matches the sample selection")
+        # )
 
         ## getcontrast
         box(
@@ -123,31 +129,52 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
             fluidRow(
                 column(
                     12,
+                    ## split per factor
+                    selectInput(
+                      inputId  = session$ns("split_factor"),
+                      label = .addBSpopify(label = 'Split dataset:', content = info1),
+                      choices  = c("all" = "all", 
+                                   getBioFactors(session$userData$FlomicsMultiAssay[[dataset]])),
+                      selected = "all", selectize =  FALSE),
+                    
+                    ## glm model
+                    pickerInput(
+                      inputId  = session$ns("LMmodel"),
+                      label    = .addBSpopify(label = 'Stat Model:', content = info2),
+                      choices  = NULL, selected = NULL, multiple = TRUE,
+                      options = list( `actions-box` = TRUE )
+                      ),
+                    
                     ## list of contrasts to test
                     pickerInput(
                         inputId  = session$ns("contrastList"),
-                        label    = .addBSpopify(label = 'Selected contrasts:',
-                                                content = "Contrasts/hypotheses on which to run the differential analysis. If you want to test all contrasts, select 'All'"),
-                        choices  = contrastList),
-
+                        label    = .addBSpopify(label = 'Contrasts:', content = info3),
+                        choices  = NULL, selected = NULL, multiple = TRUE,
+                        options = list( `actions-box` = TRUE )
+                        ),
+                    
                     # method for Diff analysis
                     selectInput(
                         inputId  = session$ns("AnaDiffMethod"),
-                        label = .addBSpopify(label = 'Method:',
-                                             content = "Differential analysis method. Fixed parameter according to omics type."),
-                        choices  = method,
-                        selected = method, selectize =  FALSE),
-
+                        label = .addBSpopify(label = 'Method:', content = info4),
+                        choices  = method, 
+                        selected = method, 
+                        selectize =  FALSE
+                        ),
+                    # Adjusted pvalue cutoff:
                     numericInput(
                         inputId = session$ns("p.adj.cutoff"),
                         label = .addBSpopify(label = 'Adjusted pvalue cutoff:',
-                                             content = "The adjusted p-value cut-off. Pvalues are adjusted using Benjamini-Hochberg method."),
-                        value=local.rea.values$p.adj.cutoff, min=0, max=1, 0.01),
+                                             content = info5),
+                        value=local.rea.values$p.adj.cutoff, min=0, max=1, 0.01
+                        ),
+                    # abs.logFC.cutoff
                     numericInput(
                         inputId = session$ns("abs.logFC.cutoff"),
                         label=.addBSpopify(label = HTML("|log<sub>2</sub>FC| cutoff:"),
                                            content = "The absolute log2 FC cut-off"),
-                        value=local.rea.values$abs.logFC.cutoff, min=0, max=100, 0.01),
+                        value=local.rea.values$abs.logFC.cutoff, min=0, max=100, 0.01
+                        ),
 
                     # use of cluster. need setting step
                     # materialSwitch(
@@ -156,19 +183,96 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                     #                      content = "send calculation to the cluster"),
                     #   value = FALSE, status = "success"),
 
-                    actionButton(inputId = session$ns("runAnaDiff"),
-                                 label = "Run", class = "butt")#,
+                    actionButton(
+                      inputId = session$ns("runAnaDiff"),
+                      label = "Run", class = "butt"
+                      )
                 )
-            ))
-
+            )
+        )
+        
     })
+    observeEvent(input$split_factor, {
+      
+      dataset.SE <-  session$userData$FlomicsMultiAssay[[dataset]]
 
+      # get common selected contrasts
+      contrastList.df <- rea.values$Contrasts.Sel
+        # getSelectedContrasts(
+        #   getProcessedData(dataset.SE, filter = TRUE)
+        # )
+      contrastList        <- contrastList.df$contrastName
+      names(contrastList) <- paste0("[",contrastList.df$tag, "] ", 
+                                    contrastList.df$contrastName)
+      
+      # get common selected model
+      model_LM <- getModelFormula(session$userData$FlomicsMultiAssay)
+      names(model_LM) <- model_LM
+      
+      if(input$split_factor != "all"){
+        
+        # update model
+        model_f     <- as.formula(model_LM)
+        terms_obj   <- terms(model_f)
+        term_labels <- attr(terms_obj, "term.labels")
+        keep        <- term_labels[!grepl(input$split_factor, term_labels)]
+        model_LM    <- reformulate(keep)
+        model_LM    <- deparse(model_LM)
+        names(model_LM) <- model_LM
+        
+        # update contrasts
+        dataset.SE <- 
+          setModelFormula(dataset.SE, modelFormula = model_LM)
+        
+        contrastList.df <- Reduce(rbind, generateExpressionContrast(dataset.SE))
+        contrastList    <- contrastList.df$contrastName
+        names(contrastList) <- paste0("[",contrastList.df$tag, "] ", 
+                                      contrastList.df$contrastName)
+      }
+      
+      shinyWidgets::updatePickerInput(
+        session  = session,
+        inputId  = "LMmodel",
+        choices  = model_LM,
+        selected = model_LM
+      )
+      
+      shinyWidgets::updatePickerInput(
+        session  = session,
+        inputId  = "contrastList",
+        choices  = contrastList,
+        selected = contrastList
+      )
+      
+      local.rea.values$selectedContrasts[[input$split_factor]] <- contrastList.df
+    })
+    
     # filter param
     output$validateUI <- renderUI({
 
         if (rea.values[[dataset]]$diffAnal == FALSE) return()
-        if (is.null(rea.values[[dataset]]$DiffValidContrast) ||
-            dim(rea.values[[dataset]]$DiffValidContrast)[1] == 0) return()
+      
+        # if (is.null(rea.values[[dataset]]$DiffValidContrast) ||
+        #     dim(rea.values[[dataset]]$DiffValidContrast)[1] == 0) return()
+
+        req(dataset.se())
+        diffExpAnals <- getAnalysis(dataset.se(), name = "DiffExpAnal")
+  
+        if(length(diffExpAnals) == 0) return()
+  
+        analysisNames <-
+          switch(
+            input$split_factor,
+            "all" = "all",
+            {
+              FactorModalities <- getFactorModalities(dataset.se(), factorName = input$split_factor)
+              paste0(input$split_factor, FactorModalities)
+            }
+          )
+  
+        analysisNames <- analysisNames[analysisNames %in% names(diffExpAnals)]
+  
+        if(length(analysisNames) == 0) return()
 
         fluidRow(
             column(width = 9),
@@ -190,7 +294,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     #         - Table of the DE genes
     #   -> combine data : union or intersection
     observeEvent(input$runAnaDiff, {
-
+      
         # list of chosen parameters
         param.list <- list(method        = input$AnaDiffMethod,
                            # clustermq   = input$clustermq,
@@ -206,9 +310,8 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
         rea.values[[dataset]]$diffAnal   <- FALSE
         rea.values[[dataset]]$diffValid  <- FALSE
         rea.values[[dataset]]$coExpAnal  <- FALSE
-        rea.values[[dataset]]$DiffExp  <- FALSE
-        rea.values[[dataset]]$CoExp <- FALSE
-        rea.values[[dataset]]$DiffValidContrast <- NULL
+        rea.values[[dataset]]$DiffExp    <- FALSE
+        rea.values[[dataset]]$CoExp      <- FALSE
 
         #---- progress bar ----#
         progress <- shiny::Progress$new()
@@ -217,52 +320,64 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
         progress$inc(1/10, detail = "in progress...")
         #----------------------#
 
-        dataset.SE <- session$userData$FlomicsMultiAssay[[dataset]]
-
-        # Run the analysis only if the 'diff' object is empty
-        if (length(metadata(dataset.SE)$DiffExpAnal) == 0) {
-
-            message("[RFLOMICS] # 04- Differential Analysis... ", dataset)
-            # run diff analysis with selected method
-            dataset.SE <-
-                runDiffAnalysis(
-                    object        = dataset.SE,
-                    p.adj.method  = "BH",
-                    method        = input$AnaDiffMethod,
-                    # clustermq   = input$clustermq,
-                    p.adj.cutoff  = input$p.adj.cutoff,
-                    logFC.cutoff  = input$abs.logFC.cutoff,
-                    cmd           = TRUE)
-
-        }else{
-            # If the differential analysis has already run, do not run it again
-            message("[RFLOMICS] # 04 => Filtering differential analysis... ", dataset)
-            ### adj_pvalue filtering by calling the RundDiffAnalysis method without filtering
-
-            dataset.SE <-
-                filterDiffAnalysis(
-                    object        = dataset.SE,
-                    p.adj.cutoff  = input$p.adj.cutoff,
-                    logFC.cutoff  = input$abs.logFC.cutoff)
+        #dataset.SE <- 
+        req(dataset.se())
+        
+        analysisNames <- "all"
+        if(input$split_factor != "all"){
+          analysisNames <- 
+            paste0(input$split_factor, 
+                   getFactorModalities(dataset.se(), input$split_factor))
         }
-
-        session$userData$FlomicsMultiAssay[[dataset]] <- dataset.SE
-
+        
+        DiffExpAnals <- getAnalysis(dataset.se(), name = "DiffExpAnal")
+        
+        contrastList <- local.rea.values$selectedContrasts[[input$split_factor]]
+        contrastList <- contrastList[contrastList$contrastName %in% input$contrastList,]
+        
+        for(analysisName in analysisNames){
+          
+          # Run the analysis only if the 'diff' object is empty
+          if (!analysisName %in% names(DiffExpAnals)) {
+            
+            message("[RFLOMICS] # 04- Differential Analysis... ", 
+                    dataset, "-",analysisName)
+            
+            # run diff analysis with selected method
+            new.dataset.SE <-
+              runDiffAnalysis(
+                object           = dataset.se(),
+                p.adj.method     = "BH", 
+                method           = input$AnaDiffMethod,
+                # clustermq      = input$clustermq,
+                p.adj.cutoff     = input$p.adj.cutoff,
+                logFC.cutoff     = input$abs.logFC.cutoff,
+                selectedModality = analysisName,
+                modelFormula     = input$LMmodel,
+                contrastList     = contrastList,
+                cmd              = TRUE)
+            dataset.se(new.dataset.SE)
+          }
+          else{
+            
+            # If the differential analysis has already run, do not run it again
+            message("[RFLOMICS] # 04 => Filtering differential analysis... ", 
+                    dataset, "-",analysisName)
+            ### adj_pvalue filtering by calling the RundDiffAnalysis method without filtering
+            new.dataset.SE <-
+              filterDiffAnalysis(
+                object        = dataset.se(),
+                analysisName  = analysisName,
+                p.adj.cutoff  = input$p.adj.cutoff,
+                logFC.cutoff  = input$abs.logFC.cutoff)
+            dataset.se(new.dataset.SE)
+          }
+        }
+        
+        #session$userData$FlomicsMultiAssay[[dataset]] <- dataset.SE
+        
         rea.values[[dataset]]$diffAnal <- TRUE
-
-        rea.values$datasetDiff <-
-            getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
-                                    analyses = "DiffExpAnal")
-        rea.values$datasetDiffAnnot <-
-            getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
-                                    analyses = "DiffExpEnrichAnal")
-        rea.values$datasetCoEx <-
-            getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
-                                    analyses = "CoExpAnal")
-        rea.values$datasetCoExAnnot <-
-            getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
-                                    analyses = "CoExpEnrichAnal")
-
+        
         #---- progress bar ----#
         progress$inc(1, detail = paste("Doing part ", 100,"%", sep=""))
         #----------------------#
@@ -279,6 +394,9 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
         rea.values[[dataset]]$CoExp <- FALSE
         rea.values$datasetDiff <- NULL
 
+        req(dataset.se())
+        
+        # Remove analyses dependent on the differential analysis.
         session$userData$FlomicsMultiAssay <-
             resetRflomicsMAE(session$userData$FlomicsMultiAssay,
                              datasetNames = dataset,
@@ -287,12 +405,56 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                                                 "CoExpEnrichAnal"),
                              multiAnalyses = c("IntegrationAnalysis"))
 
-        session$userData$FlomicsMultiAssay[[dataset]] <-
-            setValidContrasts(session$userData$FlomicsMultiAssay[[dataset]],
-                              contrastList = rea.values[[dataset]]$DiffValidContrast)
-
-        rea.values[[dataset]]$diffValid <- TRUE
-
+        # stock validated analysis
+        analysisNames <- 
+          switch(
+            input$split_factor,
+            "all" = "all",
+            { 
+              FactorModalities <- 
+                getFactorModalities(dataset.se(), factorName = input$split_factor)
+              paste0(input$split_factor, FactorModalities)
+            }
+          )
+        
+        DiffExpAnals <- getAnalysis(dataset.se(), name = "DiffExpAnal")
+        
+        # get validated contrast
+        contrastNames <- vector()
+        for(analysisName in analysisNames){
+          
+          index <- sapply(input$contrastList, function(x){
+            input[[paste0("DiffResults-", analysisName, "-checkbox_", x)]]
+          }) |> unlist()
+          
+          contrastNames <- c(contrastNames, names(index)[index])
+          
+          contrastList <- DiffExpAnals[[analysisName]]$settings$Contrasts.Sel
+          
+          DiffExpAnals[[analysisName]]$settings$Validcontrasts <- 
+            contrastList[index,]
+          
+          DiffExpAnals[[analysisName]]$results$mergeDEF <- 
+            DiffExpAnals[[analysisName]]$results$mergeDEF[,c("DEF", input$contrastList[index])]
+          DiffExpAnals[[analysisName]]$results$RawDEFres <- 
+            DiffExpAnals[[analysisName]]$results$RawDEFres[input$contrastList[index]]
+          DiffExpAnals[[analysisName]]$results$DEF <- 
+            DiffExpAnals[[analysisName]]$results$DEF[input$contrastList[index]]
+          DiffExpAnals[[analysisName]]$results$TopDEF <- 
+            DiffExpAnals[[analysisName]]$results$TopDEF[input$contrastList[index]]
+        }
+        
+        contrastNames <- unique(contrastNames)
+        contrastList <- local.rea.values$selectedContrasts[[input$split_factor]]
+        
+        rea.values[[dataset]]$DiffValidContrast <- 
+          contrastList[contrastList$contrastName %in% contrastNames,]
+        
+        dataset.se.n <- setElementToMetadata(dataset.se(),
+                                             name = "DiffExpAnal", 
+                                             content = DiffExpAnals) 
+        session$userData$FlomicsMultiAssay[[dataset]] <- dataset.se.n
+        
         # reset reactive values
         rea.values$datasetDiff <-
             getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
@@ -306,6 +468,8 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
         rea.values$datasetCoExAnnot <-
             getAnalyzedDatasetNames(session$userData$FlomicsMultiAssay,
                                     analyses = "CoExpEnrichAnal")
+        
+        rea.values[[dataset]]$diffValid <- TRUE
 
     }, ignoreInit = TRUE)
 
@@ -313,252 +477,105 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
 
     ### ---- display results ----
     # display results per contrast
-    output$ContrastsResults <- renderUI({
-
-        dataset.SE  <- session$userData$FlomicsMultiAssay[[dataset]]
-        diffExpAnal <- getAnalysis(dataset.SE, name = "DiffExpAnal")
-
-        if (rea.values[[dataset]]$diffAnal == FALSE ||
-            is.null(diffExpAnal[["results"]][["DEF"]])) return()
-
-        list(
-            lapply(seq_len(nrow(local.rea.values$selectedContrasts)), function(i) {
-
-                vect     <- unlist(local.rea.values$selectedContrasts[i,])
-                stats    <- getDiffStat(dataset.SE)[vect["contrastName"],]
-                DEList   <- getDEList(dataset.SE, contrasts = vect["contrastName"])
-
-                diff.plots <-
-                    plotDiffAnalysis(dataset.SE, contrastName = vect["contrastName"])
-                stat <- paste0("[#DE: ", stats[["All"]], "]")
-
-                # panel list
-                # default panels (no DE)
-                tabPanel.list <- list(
-
-                    #### ---- pvalue plot ----
-                    tabPanel(
-                        title = "Pvalue's distribution",
-                        tags$br(),
-                        tags$i("You must have a look at the distribution of non-adjusted
-            p-values to validate your analysis.
-            The most desirable shape is a peak of p-values at 0 followed
-            by a uniform (flat) distribution. If there is a peak in 1, consider
-                   increasing the filtering threshold in the pre-processing
-                   step."),
-                        tags$br(),tags$hr(),tags$br(),
-                        renderPlot({ diff.plots$Pvalue.hist })
-                    ),
-
-                    #### ---- MA plot ----
-                    tabPanel(
-                        title = "MA plot",
-                        tags$br(),
-                        tags$i(
-                            paste0("It is expected that a majority of ",
-                                   .omicsDic(dataset.SE)$variableName,
-                                   " gather around 0. The red dots are the ",
-                                   .omicsDic(dataset.SE)$variableName,
-                                   " significantly over-expressed in the left factor's
-                          level(s) in the contrast expression whereas ",
-                                   "blue dots are ",
-                                   .omicsDic(dataset.SE)$variableName,
-                                   " significantly under-expressed in the rigth factor's
-                          level(s) in the contrast expression.
-                              Only the top 20 ",
-                                   .omicsDic(dataset.SE)$variableName,
-                                   " DE are labeled.")),
-                        tags$br(),tags$hr(),tags$br(),
-                        renderPlot({ diff.plots$MA.plot })
-                    ),
-
-                    #### ---- Volcano plot ----
-                    tabPanel(
-                        title = "Volcano plot",
-                        tags$br(),
-                        tags$i(
-                            paste0("Red dots are ",
-                                   .omicsDic(dataset.SE)$variableName," of interest: ",
-                                   "displaying both large magnitude log2-fold-changes
-                          (x axis) and high statistical significance (y axis)",
-                                   "Only the top 20 ",
-                                   .omicsDic(dataset.SE)$variableName,
-                                   " DE are labeled.")),
-                        tags$br(), tags$hr(), tags$br(),
-                        renderPlot({ diff.plots$Volcano.plot }, height = 600))
-                )
-
-                # if DE
-                ## PCA only if nbr of variables > 3
-                if (length(DEList) > 3)
-                    tabPanel.list <-
-                    c(tabPanel.list,
-                      list(
-                          #### ---- PCA plot ----
-                          tabPanel(
-                              title = paste0("PCA on DE ", .omicsDic(dataset.SE)$variableName),
-                              tags$br(),
-                              .modVariablePCAUI(
-                                  session$ns(paste0(vect["contrastName"],"-DE")))
-                          )
-                      )
-
-                    )
-                ## headmap, boxplot and table of DE only if DE nb > 0
-                if (length(DEList) > 0){
-
-                    tabPanel.list <-
-                        c(tabPanel.list,
-                          list(
-                              #### ---- DEF table ----
-                              tabPanel(
-                                  title = "Table",
-                                  tags$br(),
-                                  .modDEtableUI(
-                                      session$ns(paste0(vect["contrastName"],"-DE")))
-                              ),
-
-                              #### ---- Heatmap plot ----
-                              tabPanel(
-                                  title = "Heatmap",
-                                  tags$br(),
-                                  .modDEheatmapUI(
-                                      session$ns(paste0(vect["contrastName"],"-DE")))
-                              ),
-
-                              #### ---- DE boxplot plot ----
-                              tabPanel(
-                                  title = "boxplots",
-                                  tags$br(),
-                                  .modVariableBoxplotUI(
-                                      session$ns(paste0(vect["contrastName"],"-DE")))
-                              )
-                          )
-                        )
-
-                    stat <- paste0(
-                        "[#DE: ", stats[["All"]], " ; ",
-                        "Up: ",stats[["Up"]],
-                        " (",round(stats[["Up"]]/stats[["All"]],2)*100," %)",
-                        " ; ", "Down: ", stats[["Down"]],
-                        " (",round(stats[["Down"]]/stats[["All"]],2)*100,"%)]"
-                    )
-                }
-
-                #### ---- display panels ----
-                # if error message specific to current contrast
-                if(!is.null(
-                    diffExpAnal[["results"]][["runErrors"]][[vect["contrastName"]]])){
-                    fluidRow(
-                        column(
-                            width = 10,
-                            box(
-                                width=14,
-                                status = "danger",
-                                title =
-                                    diffExpAnal[["results"]][["runErrors"]][[vect["contrastName"]]]
-                            )
-                        )
-                    )
-                }else{
-                    # if no error
-                    fluidRow(
-                        column(
-                            width = 10,
-                            box(
-                                width=14,
-                                solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
-                                status = ifelse(length(DEList) != 0, "success", "danger"),
-                                title = tags$h5(
-                                    paste0("[",vect["tag"], "] ", vect["contrastName"], " ", stat)),
-
-                                do.call(what = tabsetPanel, args = tabPanel.list)
-                            )
-                        ),
-                        column(
-                            width = 2,
-                            if (length(DEList) != 0){
-                                checkboxInput(
-                                    session$ns(paste0("checkbox_", vect[["contrastName"]])), "OK", value = TRUE)
-                            }
-                        )
-                    )
-                }
-            })
-        )
-    })
-    observe({
-
-        dataset.SE  <- session$userData$FlomicsMultiAssay[[dataset]]
-        diffExpAnal <- getAnalysis(dataset.SE, name = "DiffExpAnal")
-
-        if(rea.values[[dataset]]$diffAnal == FALSE) return()
-        if(is.null(diffExpAnal[["results"]][["TopDEF"]])) return()
-
-        lapply(seq_len(length(rea.values$Contrasts.Sel$contrast)), function(i) {
-
-            vect     <- unlist(rea.values$Contrasts.Sel[i,])
-
-            # PCA axis for plot
-            # update/adapt PCA axis
-            callModule(UpdateRadioButtons, paste0(vect["contrastName"],"-diff"))
-
-            DEList <- getDEList(dataset.SE, contrasts = vect["contrastName"])
-            callModule(module = .modVariablePCA,
-                       id = paste0(vect["contrastName"],"-DE"),
-                       dataset.SE = dataset.SE,
-                       id2 = vect["contrastName"],
-                       variableList = DEList)
-
-            callModule(module = .modDEtable,
-                       id = paste0(vect["contrastName"],"-DE"),
-                       dataset.SE = dataset.SE,
-                       contrastName = vect["contrastName"])
-
-            callModule(module = .modDEheatmap,
-                       id = paste0(vect["contrastName"],"-DE"),
-                       dataset.SE = dataset.SE,
-                       contrastName = vect["contrastName"])
-
-            callModule(module = .modVariableBoxplot,
-                       id = paste0(vect["contrastName"],"-DE"),
-                       dataset.SE = dataset.SE,
-                       contrastName = vect["contrastName"],
-                       variableList = DEList)
-
-            # # update SelectizeInput for boxplot DE
-            # DEList  <- rownames(diffExpAnal[["TopDEF"]][[vect["contrastName"]]])
-            #
-            # updateSelectizeInput(
-            #   session = session,
-            #   inputId = paste0(vect["contrastName"],"-DE"),
-            #   choices = DEList,
-            #   server = TRUE
-            # )
+    output$ContrastsResults_all <- renderUI({
+      
+      if (rea.values[[dataset]]$diffAnal == FALSE) return()
+      req(dataset.se())
+      diffExpAnals  <- getAnalysis(dataset.se(), name = "DiffExpAnal")
+      analysisNames <- names(diffExpAnals)
+      analysisNames <- analysisNames[grep(input$split_factor, analysisNames)]
+      
+      if (length(analysisNames) == 0) return()
+      
+      tabPanel.list <- 
+        lapply(analysisNames, function(analysisName){
+          
+          tabPanel(
+            title = analysisName,
+            tags$br(),
+            .modDiffResultsUI(session$ns(paste0("DiffResults-", analysisName)))
+            #uiOutput(session$ns("ContrastsResults"))
+          )
         })
+      
+      box(
+        width=14,
+        solidHeader = TRUE,
+        status = "warning",
+        
+        title = "results by split !!!!",
+        
+        do.call(what = tabsetPanel, args = tabPanel.list)
+      )
+    })
+    
+    observe({
+      if (rea.values[[dataset]]$diffAnal == FALSE) return()
+      
+      req(dataset.se())
+      diffExpAnals  <- getAnalysis(dataset.se(), name = "DiffExpAnal")
+      analysisNames <- names(diffExpAnals)
+      analysisNames <- analysisNames[grep(input$split_factor, analysisNames)]
+      
+      if (length(analysisNames) == 0) return()
+      
+      lapply(analysisNames, function(analysisName){
+        
+        callModule(module = .modDiffResults,
+                   id = paste0("DiffResults-", analysisName),
+                   dataset = dataset,
+                   dataset.se = dataset.se,
+                   rea.values = rea.values, 
+                   local.rea.values = local.rea.values,
+                   modality = analysisName)
+      })
     })
 
     ### ---- summary ----
     # merge results on upset plot
     output$ResultsMerge <- renderUI({
-
-        dataset.SE <- session$userData$FlomicsMultiAssay[[dataset]]
-        diffExpAnal <- getAnalysis(dataset.SE, name = "DiffExpAnal")
-
+      
         if (rea.values[[dataset]]$diffAnal == FALSE) return()
+        
+        req(dataset.se())
+        diffExpAnals <- getAnalysis(dataset.se(), name = "DiffExpAnal")
 
-        if (!is.null(diffExpAnal[["errors"]])) {
+        if(length(diffExpAnals) == 0) return()
+        
+        analysisNames <- 
+          switch(
+            input$split_factor,
+            "all" = "all",
+            { 
+              FactorModalities <- getFactorModalities(dataset.se(), factorName = input$split_factor)
+              paste0(input$split_factor, FactorModalities)
+            }
+          )
+        
+        analysisNames <- analysisNames[analysisNames %in% names(diffExpAnals)]
+        
+        if(length(analysisNames) == 0) return()
+        
+        diffExpAnals <- diffExpAnals[analysisNames]
+        
+        ## get errors if exist
+        errors.list <- list()
+        for(i in analysisNames){
+          if (!is.null(diffExpAnals[[i]][["errors"]]))
+            errors.list[[i]] <- diffExpAnals[[i]][["errors"]]
+        }
 
+        if (length(errors.list) != 0) {
             tagList(
                 box(
                     width=14,
                     status = "danger",
                     solidHeader = TRUE,
-                    title = diffExpAnal[["errors"]]
+                    title = paste(errors.list, collapse = "; ")
                 )
             )
 
-        } else if (!is.null(diffExpAnal[["results"]][["mergeDEF"]])){
+        } else {
 
             ### ---- barplot ----
             # 1rst panel
@@ -567,18 +584,20 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                     title = "Summary",
                     renderPlot({
                         # get rflomicsMAE object with only 1
-                        subMAE <-
-                            subRflomicsMAE(session$userData$FlomicsMultiAssay, dataset)
+                      
+                        MAE_tmp <- session$userData$FlomicsMultiAssay
+                        MAE_tmp[[dataset]] <- dataset.se()
+                        subMAE <- subRflomicsMAE(MAE_tmp, dataset)
 
-                        contrasts <- getSelectedContrasts(subMAE[[dataset]])
+                        contrasts <- local.rea.values$selectedContrasts[[input$split_factor]]
+                        # subMAE <-
+                        #     setValidContrasts(
+                        #         object       = subMAE,
+                        #         omicName     = dataset,
+                        #         contrastList = getSelectedContrasts(subMAE[[dataset]]))
 
-                        subMAE <-
-                            setValidContrasts(
-                                object       = subMAE,
-                                omicName     = dataset,
-                                contrastList = getSelectedContrasts(subMAE[[dataset]]))
-
-                        getDiffAnalysesSummary(subMAE, plot = TRUE, interface = TRUE)  +
+                        getDiffAnalysesSummary(subMAE, analysisNames = analysisNames, 
+                                               plot = TRUE, interface = TRUE)  +
                             theme(legend.text = element_text(size = 14),
                                   axis.text.x = element_text(size = 14),
                                   strip.text.x = element_text(size = 14),
@@ -586,55 +605,312 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                     })
                 )
             )
-
-            ### ---- upset ----
-            # 2nd panel (upset) if 2 validated contrasts or more
-            DEF_mat <- diffExpAnal[["results"]][["mergeDEF"]]
-
-            index <- sapply(names(DEF_mat)[-1], function(x){(
-                input[[paste0("checkbox_",x)]])
-            }) |> unlist()
-
-            H_selected   <- names(index)[index]
-            DEF_selected <- select(DEF_mat,any_of(H_selected))
-
-            rea.values[[dataset]]$DiffValidContrast <-
-                filter(local.rea.values$selectedContrasts, contrastName %in% H_selected)
-
-            colnames(DEF_selected) <-
-                rea.values[[dataset]]$DiffValidContrast$tag
-
-            if (length(H_selected) > 1){
-
-                tabPanel.list <- c(list(
-                    tabPanel(
-                        title = "Intersection between DE lists",
-                        renderPlot({
-                            upset(data = DEF_selected,
-                                  sets = colnames(DEF_selected),
-                                  order.by = "freq")})
-                    )
-                ),
-                tabPanel.list)
-            }
-
+            # if(length(analysisNames) == 1){
+            #   ### ---- upset ----
+            #   # 2nd panel (upset) if 2 validated contrasts or more
+            #   DEF_mat <- diffExpAnals[[1]][["results"]][["mergeDEF"]]
+            #   
+            #   index <- sapply(names(DEF_mat)[-1], function(x){(
+            #     input[[paste0("checkbox_",x)]])
+            #   }) |> unlist()
+            #   
+            #   H_selected   <- names(index)[index]
+            #   DEF_selected <- select(DEF_mat,any_of(H_selected))
+            #   
+            #   # rea.values[[dataset]]$DiffValidContrast <-
+            #   #   filter(input$contrastList, contrastName %in% H_selected)
+            #   
+            #   rea.values[[dataset]]$DiffValidContrast <-
+            #     filter(local.rea.values$selectedContrasts[[input$split_factor]], 
+            #            contrastName %in% H_selected)
+            #   
+            #   colnames(DEF_selected) <-
+            #     rea.values[[dataset]]$DiffValidContrast$tag
+            #   
+            #   if (length(H_selected) > 1){
+            #     
+            #     tabPanel.list <- c(list(
+            #       tabPanel(
+            #         title = "Intersection between DE lists",
+            #         renderPlot({
+            #           upset(data = DEF_selected,
+            #                 sets = colnames(DEF_selected),
+            #                 order.by = "freq")})
+            #       )
+            #     ),
+            #     tabPanel.list)
+            #   }
+            # }
             tagList(
-                box(
-                    width=14,
-                    status = "warning",
-                    solidHeader = FALSE,
-
-                    do.call(what = tabsetPanel, args = tabPanel.list)
-                )
+              box(
+                width=14,
+                status = "warning",
+                solidHeader = FALSE,
+                
+                do.call(what = tabsetPanel, args = tabPanel.list)
+              )
             )
+            
         }
     })
 
     return(input)
 }
 
-
 # ---- sub modules ----
+
+## ---- display results by subData
+.modDiffResultsUI <- function(id){
+  
+  #name space for id
+  ns <- NS(id)
+  uiOutput(ns("ContrastsResults"))
+}
+
+.modDiffResults <- function(input, output, session, dataset, dataset.se, rea.values, local.rea.values, modality){
+  
+  output$ContrastsResults <- renderUI({
+    
+    #req(dataset.se())
+    selectedContrasts <- getSelectedContrasts(dataset.se(), analysisName = modality)
+    diffExpAnal       <- getAnalysis(dataset.se(), name = "DiffExpAnal", subName = modality)
+    
+    if (rea.values[[dataset]]$diffAnal == FALSE ||
+        is.null(diffExpAnal[["results"]][["DEF"]])) return()
+    
+    list(
+      lapply(seq_len(nrow(selectedContrasts)), function(i) {
+        
+        vect     <- unlist(selectedContrasts[i,])
+        stats    <- getDiffStat(dataset.se(), analysisName = modality)[vect["contrastName"],]
+        DEList   <- getDEList(dataset.se(), contrasts = vect["contrastName"], analysisName = modality)
+        
+        diff.plots <-
+          plotDiffAnalysis(dataset.se(), contrastName = vect["contrastName"], analysisName = modality)
+        stat <- paste0("[#DE: ", stats[["All"]], "]")
+        
+        # panel list
+        # default panels (no DE)
+        tabPanel.list <- list(
+          
+          #### ---- pvalue plot ----
+          tabPanel(
+            title = "Pvalue's distribution",
+            tags$br(),
+            tags$i("You must have a look at the distribution of non-adjusted
+            p-values to validate your analysis.
+            The most desirable shape is a peak of p-values at 0 followed
+            by a uniform (flat) distribution. If there is a peak in 1, consider
+                   increasing the filtering threshold in the pre-processing
+                   step."),
+            tags$br(),tags$hr(),tags$br(),
+            renderPlot({ diff.plots$Pvalue.hist })
+          ),
+          
+          #### ---- MA plot ----
+          tabPanel(
+            title = "MA plot",
+            tags$br(),
+            tags$i(
+              paste0("It is expected that a majority of ",
+                     .omicsDic(dataset.se())$variableName,
+                     " gather around 0. The red dots are the ",
+                     .omicsDic(dataset.se())$variableName,
+                     " significantly over-expressed in the left factor's
+                          level(s) in the contrast expression whereas ",
+                     "blue dots are ",
+                     .omicsDic(dataset.se())$variableName,
+                     " significantly under-expressed in the rigth factor's
+                          level(s) in the contrast expression.
+                              Only the top 20 ",
+                     .omicsDic(dataset.se())$variableName,
+                     " DE are labeled.")),
+            tags$br(),tags$hr(),tags$br(),
+            renderPlot({ diff.plots$MA.plot })
+          ),
+          
+          #### ---- Volcano plot ----
+          tabPanel(
+            title = "Volcano plot",
+            tags$br(),
+            tags$i(
+              paste0("Red dots are ",
+                     .omicsDic(dataset.se())$variableName," of interest: ",
+                     "displaying both large magnitude log2-fold-changes
+                          (x axis) and high statistical significance (y axis)",
+                     "Only the top 20 ",
+                     .omicsDic(dataset.se())$variableName,
+                     " DE are labeled.")),
+            tags$br(), tags$hr(), tags$br(),
+            renderPlot({ diff.plots$Volcano.plot }, height = 600))
+        )
+        
+        # if DE
+        ## PCA only if nbr of variables > 3
+        if (length(DEList) > 3)
+          tabPanel.list <-
+          c(tabPanel.list,
+            list(
+              #### ---- PCA plot ----
+              tabPanel(
+                title = paste0("PCA on DE ", .omicsDic(dataset.se())$variableName),
+                tags$br(),
+                .modVariablePCAUI(
+                  session$ns(paste0(vect["contrastName"],"-DE-", modality)))
+              )
+            )
+            
+          )
+        ## headmap, boxplot and table of DE only if DE nb > 0
+        if (length(DEList) > 0){
+          
+          tabPanel.list <-
+            c(tabPanel.list,
+              list(
+                #### ---- DEF table ----
+                tabPanel(
+                  title = "Table",
+                  tags$br(),
+                  .modDEtableUI(
+                    session$ns(paste0(vect["contrastName"],"-DE-", modality)))
+                ),
+                
+                #### ---- Heatmap plot ----
+                tabPanel(
+                  title = "Heatmap",
+                  tags$br(),
+                  .modDEheatmapUI(
+                    session$ns(paste0(vect["contrastName"],"-DE-", modality)))
+                ),
+                
+                #### ---- DE boxplot plot ----
+                tabPanel(
+                  title = "boxplots",
+                  tags$br(),
+                  .modVariableBoxplotUI(
+                    session$ns(paste0(vect["contrastName"],"-DE-", modality)))
+                )
+              )
+            )
+          
+          stat <- paste0(
+            "[#DE: ", stats[["All"]], " ; ",
+            "Up: ",stats[["Up"]],
+            " (",round(stats[["Up"]]/stats[["All"]],2)*100," %)",
+            " ; ", "Down: ", stats[["Down"]],
+            " (",round(stats[["Down"]]/stats[["All"]],2)*100,"%)]"
+          )
+        }
+        
+        #### ---- display panels ----
+        # if error message specific to current contrast
+        if(!is.null(
+          diffExpAnal[["results"]][["runErrors"]][[vect["contrastName"]]])){
+          fluidRow(
+            column(
+              width = 10,
+              box(
+                width=14,
+                status = "danger",
+                title =
+                  diffExpAnal[["results"]][["runErrors"]][[vect["contrastName"]]]
+              )
+            )
+          )
+        }else{
+          # if no error
+          fluidRow(
+            column(
+              width = 10,
+              box(
+                width=14,
+                solidHeader = TRUE, collapsible = TRUE, collapsed = TRUE,
+                status = ifelse(length(DEList) != 0, "success", "danger"),
+                title = tags$h5(
+                  paste0("[",vect["tag"], "] ", vect["contrastName"], " ", stat)),
+                
+                do.call(what = tabsetPanel, args = tabPanel.list)
+              )
+            ),
+            column(
+              width = 2,
+              if (length(DEList) != 0){
+                checkboxInput(
+                  session$ns(paste0("checkbox_", vect[["contrastName"]])), 
+                  label = "OK", value = TRUE
+                )
+              }
+            )
+          )
+        }
+      })
+    )
+  })
+  
+  observe({
+    
+    req(dataset.se())
+    selectedContrasts <- getSelectedContrasts(dataset.se(), analysisName = modality)
+    diffExpAnal       <- getAnalysis(dataset.se(), name = "DiffExpAnal", subName = modality)
+    
+    if (rea.values[[dataset]]$diffAnal == FALSE ||
+        is.null(diffExpAnal[["results"]][["DEF"]])) return()
+    
+    lapply(seq_len(nrow(selectedContrasts)), function(i) {
+      
+      vect     <- unlist(selectedContrasts[i,])
+      
+      # PCA axis for plot
+      # update/adapt PCA axis
+      callModule(UpdateRadioButtons, paste0(vect["contrastName"],"-diff"))
+      
+      DEList <- 
+        getDEList(dataset.se(), analysisName = modality ,contrasts = vect["contrastName"])
+      
+      newDataset.SE <- dataset.se()
+      if(modality != "all"){
+        newDataset.SE <- 
+          miniRflomicsSE(newDataset.SE, selectedModality = modality)
+      }
+      
+      callModule(module       = .modVariablePCA,
+                 id           = paste0(vect["contrastName"],"-DE-", modality),
+                 dataset.SE   = newDataset.SE,
+                 id2          = vect["contrastName"],
+                 variableList = DEList,
+                 modality     = modality)
+      
+      callModule(module       = .modDEtable,
+                 id           = paste0(vect["contrastName"],"-DE-", modality),
+                 dataset.SE   = newDataset.SE,
+                 contrastName = vect["contrastName"],
+                 modality     = modality)
+      
+      callModule(module       = .modDEheatmap,
+                 id           = paste0(vect["contrastName"],"-DE-", modality),
+                 dataset.SE   = newDataset.SE,
+                 contrastName = vect["contrastName"],
+                 modality     = modality)
+      
+      callModule(module       = .modVariableBoxplot,
+                 id           = paste0(vect["contrastName"],"-DE-", modality),
+                 dataset.SE   = newDataset.SE,
+                 contrastName = vect["contrastName"],
+                 variableList = DEList,
+                 modality     = modality)
+      
+      # # update SelectizeInput for boxplot DE
+      # DEList  <- rownames(diffExpAnal[["TopDEF"]][[vect["contrastName"]]])
+      #
+      # updateSelectizeInput(
+      #   session = session,
+      #   inputId = paste0(vect["contrastName"],"-DE"),
+      #   choices = DEList,
+      #   server = TRUE
+      # )
+    })
+  })
+}
 
 ## ---- DE boxplot ----
 .modVariableBoxplotUI <- function(id){
@@ -645,7 +921,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
 
 }
 
-.modVariableBoxplot <- function(input, output, session, dataset.SE, contrastName, variableList){
+.modVariableBoxplot <- function(input, output, session, dataset.SE, contrastName, variableList, modality){
 
     output$boxplotDEUI <- renderUI(
 
@@ -704,7 +980,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
 
 }
 
-.modDEheatmap <- function(input, output, session, dataset.SE, contrastName){
+.modDEheatmap <- function(input, output, session, dataset.SE, contrastName, modality){
 
     output$heatmapDEUI <- renderUI(
 
@@ -735,6 +1011,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
 
                 plotHeatmapDesign(
                     object       = dataset.SE,
+                    analysisName = modality,
                     contrastName = contrastName,
                     splitFactor  = input[[paste0(contrastName, "-heat.condColorSelect")]],
                     annotNames   =  annot_arg)
@@ -776,7 +1053,6 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     )
 }
 
-
 ## ---- diff table ----
 .modDEtableUI <- function(id){
 
@@ -786,7 +1062,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
 
 }
 
-.modDEtable <- function(input, output, session, dataset.SE, contrastName){
+.modDEtable <- function(input, output, session, dataset.SE, contrastName, modality){
 
     output$tableDEUI <- renderUI(
 
@@ -804,10 +1080,12 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                 tags$li(tags$i("Regulation: Up (green) or Down (red) regulated"))
             ),
             tags$hr(), tags$br(),
+            
             ### DEF result table ###
             DT::renderDataTable({
-                resTable <-
-                    metadata(dataset.SE)$DiffExpAnal[["results"]][["TopDEF"]][[contrastName]]
+                DiffExpAnal <- getAnalysis(dataset.SE, name = "DiffExpAnal", subName = modality)
+                resTable <- DiffExpAnal[["results"]][["TopDEF"]][[contrastName]]
+                
                 resTable$Regulation <- ifelse(resTable$logFC > 0, "Up", "Down")
                 resTable <- rename(resTable, log2FC = logFC)
                 resTable %>% DT::datatable(
@@ -828,7 +1106,6 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     )
 }
 
-
 ## ---- variable PCA ----
 .modVariablePCAUI <- function(id){
 
@@ -838,10 +1115,13 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
 
 }
 
-.modVariablePCA <- function(input, output, session, dataset.SE, id2, variableList){
+.modVariablePCA <- function(input, output, session, dataset.SE, id2, variableList, modality){
 
-    output$pcaUI <- renderUI(
-
+    output$pcaUI <- renderUI({
+      
+        newDataset.SE <- dataset.SE[variableList]
+        newDataset.SE <- runOmicsPCA(newDataset.SE, ncomp = 5, raw = FALSE)
+        
         tagList(
             tags$i(paste0("PCA plot of the differentially expressed  ",
                           .omicsDic(dataset.SE)$variableName,
@@ -854,8 +1134,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                     renderPlot({
                         # in case of data exploratory variableList: all features
                         # in case on diff analysis variableList: DE list
-                        newDataset.SE <- runOmicsPCA(dataset.SE[variableList], ncomp = 5, raw = FALSE)
-
+                        
                         PC1.value <- as.numeric(
                             input[[paste0(id2,"-diff-Firstaxis")]][1])
                         PC2.value <- as.numeric(
@@ -876,16 +1155,15 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                     radioButtons(
                         inputId = session$ns(paste0(id2, "-pca.DE.condColorSelect")),
                         label = 'Levels:',
-                        choices = c("groups",getBioFactors(dataset.SE)),
+                        choices = c("groups", getBioFactors(newDataset.SE)),
                         selected = "groups")),
                 column(
                     width = 6,
                     UpdateRadioButtonsUI(session$ns(paste0(id2, "-diff"))))
             )
         )
-    )
+    })
 }
-
 
 # ---- functions ----
 
@@ -903,3 +1181,15 @@ check_run_diff_execution <- function(object.SE, param.list = NULL){
 
     return(FALSE)
 }
+
+## ----- Info messages -----
+
+info1 <- "If the exploratory analysis reveals strong variability between modalities 
+of the same biological factor (e.g. tissues), it is not recommended to perform the 
+differential analysis on all samples together. Modality-specific effects may mask 
+the biological effect of interest. In this case, it is recommended to split the 
+analysis by modality."
+info2 <- "Statistical model formula adapted to the dataset content."
+info3 <- "Contrasts/hypotheses on which to run the differential analysis."
+info4 <- "Differential analysis method. Fixed parameter according to omics type."
+info5 <- "The adjusted p-value cut-off. Pvalues are adjusted using Benjamini-Hochberg method."

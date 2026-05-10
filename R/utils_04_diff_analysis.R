@@ -21,11 +21,14 @@
 #' @noRd
 #'
 .edgeRAnaDiff <- function(object,
+                          modelFormula = NULL, 
                           Contrasts.Coeff,
                           FDR = 1,
                           cmd = FALSE){
 
-    modelFormula <- getModelFormula(object)
+    if(is.null(modelFormula))
+      modelFormula <- getModelFormula(object)
+  
     if(length(modelFormula) == 0)
         stop("No model defined in the ", getDatasetNames(object), " object.")
 
@@ -33,10 +36,16 @@
     model_matrix <- model.matrix(as.formula(paste(modelFormula, collapse = " ")),
                                  data = getDesignMat(object))
     model_matrix <- model_matrix[colnames(object),]
-    group        <- getCoeffNorm(object)$group
-    lib.size     <- getCoeffNorm(object)$lib.size
-    norm.factors <- getCoeffNorm(object)$norm.factors
+    #group        <- getCoeffNorm(object)$group
+    #lib.size     <- getCoeffNorm(object)$lib.size
+    #norm.factors <- getCoeffNorm(object)$norm.factors
 
+    target       <- getDesignMat(object)
+    coeffNorm    <- getCoeffNorm(object)
+    group        <- target$groups
+    lib.size     <- coeffNorm[coeffNorm$group %in% group,]$lib.size
+    norm.factors <- coeffNorm[coeffNorm$group %in% group,]$norm.factors
+    
     z <- y <- NULL
 
     ListRes <- list()
@@ -114,13 +123,17 @@
 #' @noRd
 #'
 .limmaAnaDiff <- function(object,
+                          modelFormula = NULL, 
                           Contrasts.Coeff,
                           p.adj.cutoff = 1,
                           p.adj.method = "BH",
                           cmd = FALSE){
 
+    if(is.null(modelFormula))
+      modelFormula <- getModelFormula(object)
+  
     count_matrix <- assay(object)
-    modelFormula <- getModelFormula(object)
+    
     if(length(modelFormula) == 0)
         stop("No model defined in the ", getDatasetNames(object), " object.")
     model_matrix <- model.matrix(as.formula(paste(modelFormula, collapse = " ")),

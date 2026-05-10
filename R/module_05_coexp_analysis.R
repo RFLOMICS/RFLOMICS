@@ -49,11 +49,12 @@ CoSeqAnalysis <- function(input, output, session, dataset, rea.values){
         SE.filtered <- MAE.data[[dataset]]
 
         ##-> retrieve DEG lists and DEG valid lists
-        ListNames.diff        <- getValidContrasts(SE.filtered)$contrastName
+        
+        ListNames.diff <- rea.values[[dataset]]$DiffValidContrast$contrastName
         names(ListNames.diff) <-
-            paste0("[",getValidContrasts(SE.filtered)$tag, "] ",
-                   getValidContrasts(SE.filtered)$contrastName)
-
+          paste0("[",rea.values[[dataset]]$DiffValidContrast$tag, "] ",
+                 rea.values[[dataset]]$DiffValidContrast$contrastName)
+        
         ##-> option
         switch(
             getOmicsTypes(SE.filtered),
@@ -111,8 +112,7 @@ CoSeqAnalysis <- function(input, output, session, dataset, rea.values){
                         pickerInput(
                             inputId  = session$ns("select"),
                             label    = .addBSpopify(label = 'Validated DE lists:',
-                                                    content = paste0("Choose between the union or intersection ",
-                                                                     "of your contrasts lists according to your biological question.")),
+                                                    content = info1),
                             choices  = ListNames.diff,
                             options  = list(`actions-box` = TRUE, size = 10, `selected-text-format` = "count > 3"),
                             multiple = TRUE,
@@ -207,19 +207,31 @@ CoSeqAnalysis <- function(input, output, session, dataset, rea.values){
 
     #get list of DGE to process
     DEG_list <- reactive({
-        getDEList(object = session$userData$FlomicsMultiAssay[[dataset]],
-                  contrasts = input$select, operation = input$unionInter)})
+      
+        dataset.SE <- session$userData$FlomicsMultiAssay[[dataset]]
+        diffExpAnals <- getAnalysis(dataset.SE, name = "DiffExpAnal")
+        DEList <- vector()
+        for(analysisName in names(diffExpAnals)){
+          
+          DEList <- 
+            c(DEList, 
+              getDEList(object       = dataset.SE,
+                        analysisName = analysisName,
+                        contrasts    = input$select,
+                        operation    = input$unionInter)
+            )
+        }
+        DEList
+      })
 
     # display nbr of selected genes
     output$mergeValue <- renderText({
-
+      
         if(rea.values[[dataset]]$diffValid == FALSE) return()
-
+        req(DEG_list())
         dataset.SE <- session$userData$FlomicsMultiAssay[[dataset]]
-        paste(length(getDEList(object    = dataset.SE,
-                               contrasts = input$select,
-                               operation = input$unionInter)),
-              .omicsDic(dataset.SE)$variableName)
+        
+        paste(length(DEG_list()), .omicsDic(dataset.SE)$variableName)
     })
 
     # update K value (min max)
@@ -239,6 +251,7 @@ CoSeqAnalysis <- function(input, output, session, dataset, rea.values){
     # coseq
     observeEvent(input$runCoSeq, {
 
+        dataset.SE <- session$userData$FlomicsMultiAssay[[dataset]]
         # check if no selected DGE list
         if(length(input$select) == 0){
 
@@ -256,13 +269,13 @@ CoSeqAnalysis <- function(input, output, session, dataset, rea.values){
                 modalDialog(
                     title = "Error message",
                     paste0("Need at least 100 ",
-                           .omicsDic(session$userData$FlomicsMultiAssay[[dataset]])$variableName, ".")))
+                           .omicsDic(dataset.SE)$variableName, ".")))
         }
         validate({
             need(
                 length(DEG_list()) >= 100,
                 message=paste0("Need 100 at least ",
-                               .omicsDic(session$userData$FlomicsMultiAssay[[dataset]])$variableName, "."))
+                               .omicsDic(dataset.SE)$variableName, "."))
         })
 
 
@@ -279,11 +292,7 @@ CoSeqAnalysis <- function(input, output, session, dataset, rea.values){
                            # clustermq    = input$clustermqCoseq,
                            scale          = input$scale)
 
-        if(
-            check_run_coseq_execution(
-                session$userData$FlomicsMultiAssay[[dataset]],
-                param.list)
-            == FALSE)
+        if(check_run_coseq_execution(dataset.SE, param.list) == FALSE)
             return()
 
         # initialize reactive value
@@ -306,16 +315,12 @@ CoSeqAnalysis <- function(input, output, session, dataset, rea.values){
 
         # run coseq
         message("[RFLOMICS] # 05- CoExpression analysis... ", dataset )
-
-        session$userData$FlomicsMultiAssay <-
-            do.call("runCoExpression",
-                    c(list(object  = session$userData$FlomicsMultiAssay,
-                           SE.name = dataset),
-                      param.list))
+        
+        dataset.SE <-
+            do.call("runCoExpression", c(list(dataset.SE), param.list))
 
         CoExpAnal <-
-            getAnalysis(object = session$userData$FlomicsMultiAssay[[dataset]],
-                        name = "CoExpAnal")
+            getAnalysis(object = dataset.SE, name = "CoExpAnal")
 
         # If an error occured
         if(!is.null(CoExpAnal[["errors"]])){
@@ -336,6 +341,8 @@ CoSeqAnalysis <- function(input, output, session, dataset, rea.values){
         progress$inc(1, detail = paste("Doing part ", 100,"%", sep=""))
         #----------------------#
 
+        session$userData$FlomicsMultiAssay[[dataset]] <- dataset.SE
+        
         rea.values[[dataset]]$coExpAnal  <- TRUE
         rea.values[[dataset]]$CoExpClusterNames <-
             names(CoExpAnal[["results"]]$clusters)
@@ -531,4 +538,6 @@ check_run_coseq_execution <- function(object.SE, param.list = NULL){
     return(FALSE)
 }
 
-
+# ----- info messages -----
+info1 <- "Choose between the union or intersection of your contrasts lists 
+according to your biological question."

@@ -37,6 +37,7 @@
 #' @param p.adj.cutoff The adjusted pvalue cut-off
 #' @param logFC.cutoff The lof2FC cutoff
 #' @param cmd Boolean. Used in the interface. If TRUE, print cmd for the user.
+#' @param selectedModality apply differential analysis only on this modality.
 #' @param ... Additional arguments.
 #' @details
 #' Functions and parameters used for RNAseq are those recommended in DiCoExpress
@@ -90,14 +91,16 @@ setMethod(
   f         = "runDiffAnalysis",
   signature = "RflomicsSE",
   definition = function(object,
-                        contrastList = NULL,
-                        method = NULL,
-                        p.adj.method="BH",
-                        p.adj.cutoff=0.05,
-                        logFC.cutoff=0,
+                        contrastList     = NULL,
+                        modelFormula     = NULL,
+                        method           = NULL,
+                        p.adj.method     = "BH",
+                        p.adj.cutoff     = 0.05,
+                        logFC.cutoff     = 0,
+                        selectedModality = NULL,
                         cmd = FALSE,
                         ...){
-
+    
     # define result output
     DiffExpAnal <- list(
       settings = list(),
@@ -126,19 +129,24 @@ setMethod(
              "normalized before performing the differential analysis.")
     }
 
+    # check modelFormula
+    if(is.null(modelFormula))
+      modelFormula <- getModelFormula(object.p)
+    
     # check contrasts
     contrast.sel <- getSelectedContrasts(object.p)
     if(nrow(contrast.sel) == 0 || is.null(contrast.sel))
       stop("No contrasts defined in the ", getDatasetNames(object.p), " object.")
 
+    # get contrast
     if(is.null(contrastList))
       contrastList <- getSelectedContrasts(object.p)
     else {
         # contrastList <- intersect(contrastList, contrast.sel)
-        contrastList <- merge(contrastList, contrast.sel,
-                              all = FALSE)
+        # contrastList <- merge(contrastList, contrast.sel,
+        #                       all = FALSE)
     }
-
+    
     if(length(contrastList) == 0)
       stop("The specified contrasts do not match the selected contrasts")
 
@@ -150,11 +158,39 @@ setMethod(
            "' for '",getOmicsTypes(object.p), "' data")
 
     # set settings
-    DiffExpAnal[["settings"]][["method"]]       <- method
-    DiffExpAnal[["settings"]][["p.adj.method"]] <- p.adj.method
-    DiffExpAnal[["settings"]][["p.adj.cutoff"]] <- p.adj.cutoff
+    DiffExpAnal[["settings"]][["method"]]           <- method
+    DiffExpAnal[["settings"]][["p.adj.method"]]     <- p.adj.method
+    DiffExpAnal[["settings"]][["p.adj.cutoff"]]     <- p.adj.cutoff
     DiffExpAnal[["settings"]][["abs.logFC.cutoff"]] <- logFC.cutoff
+    DiffExpAnal[["settings"]][["Contrasts.Sel"]]    <- contrastList
+    DiffExpAnal[["settings"]][["Model.formula"]]    <- modelFormula
 
+    # split data
+    if(is.null(selectedModality) || selectedModality == "all"){
+      selectedModality <- "all"
+    }
+    else{
+      #check_arg(selectedModality)
+      target <- getDesignMat(object.p)
+      
+      FactorNames <- getFactorNames(object.p)
+      FactorName <- 
+        FactorNames[sapply(FactorNames, function(x) 
+          grepl(paste0("^", x), selectedModality))]
+      
+      FactorModalities <- 
+        getFactorModalities(object.p, factorName = FactorName)
+
+      FactorModalitie <- 
+        FactorModalities[sapply(FactorModalities, function(x) 
+          grepl(paste0( x, "$"), selectedModality))]
+      
+      sample_to_keep <- 
+        target[target[[FactorName]] == FactorModalitie,"samples"]
+      
+      object.p <- object.p[, sample_to_keep]
+    }
+    
     ## check completness
     Completeness <- checkExpDesignCompleteness(object.p)
     if (isTRUE(Completeness[["error"]])){
@@ -164,7 +200,9 @@ setMethod(
 
       ## getcontrast
       DiffExpAnal[["settings"]][["contrastCoef"]] <-
-        generateContrastMatrix(object.p, contrastList = contrastList)
+        generateContrastMatrix(object.p, 
+                               modelFormula = modelFormula, 
+                               contrastList = contrastList)
 
       ListRes <-
         switch(
@@ -173,6 +211,7 @@ setMethod(
             .tryRflomics(
               .edgeRAnaDiff(
                 object          = object.p,
+                modelFormula    = modelFormula, 
                 Contrasts.Coeff = DiffExpAnal[["settings"]][["contrastCoef"]],
                 FDR             = 1,
                 cmd             = cmd)
@@ -181,6 +220,7 @@ setMethod(
             .tryRflomics(
               .limmaAnaDiff(
                 object          = object.p,
+                modelFormula    = modelFormula, 
                 Contrasts.Coeff = DiffExpAnal[["settings"]][["contrastCoef"]],
                 p.adj.cutoff    = 1,
                 p.adj.method    = p.adj.method,
@@ -211,13 +251,15 @@ setMethod(
     object <-
       setElementToMetadata(object  = object,
                            name    = "DiffExpAnal",
+                           subName = selectedModality,
                            content = DiffExpAnal)
-
+    
     ## filtering
     object <-
-      filterDiffAnalysis(object       = object,
-                         p.adj.cutoff = p.adj.cutoff,
-                         logFC.cutoff = logFC.cutoff)
+      filterDiffAnalysis(object        = object,
+                         analysisName  = selectedModality,
+                         p.adj.cutoff  = p.adj.cutoff,
+                         logFC.cutoff  = logFC.cutoff)
 
     # initiate analysis results
     object <-
@@ -244,24 +286,27 @@ setMethod(
   f          = "runDiffAnalysis",
   signature  = "RflomicsMAE",
   definition = function(object, SE.name,
-                        contrastList = NULL,
-                        method = NULL,
-                        p.adj.method="BH",
-                        p.adj.cutoff=0.05,
-                        logFC.cutoff=0,
-                        cmd = FALSE,
+                        contrastList     = NULL,
+                        modelFormula     = NULL,
+                        method           = NULL,
+                        p.adj.method     = "BH",
+                        p.adj.cutoff     = 0.05,
+                        logFC.cutoff     = 0,
+                        selectedModality = NULL,
+                        cmd              = FALSE,
                         ...){
 
     # all verifications are done in this method
     object[[SE.name]] <-
-      runDiffAnalysis(object = object[[SE.name]],
-                      contrastList = contrastList,
-                      p.adj.method = p.adj.method,
-                      method = method,
-                      p.adj.cutoff = p.adj.cutoff,
-                      logFC.cutoff = logFC.cutoff,
-                      cmd = cmd
-      )
+      runDiffAnalysis(object           = object[[SE.name]],
+                      contrastList     = contrastList,
+                      modelFormula     = modelFormula,
+                      p.adj.method     = p.adj.method,
+                      method           = method,
+                      p.adj.cutoff     = p.adj.cutoff,
+                      logFC.cutoff     = logFC.cutoff,
+                      selectedModality = selectedModality,
+                      cmd = cmd)
 
     object <-
       setElementToMetadata(object,
@@ -291,8 +336,11 @@ setMethod(
 setMethod(
   f          = "generateContrastMatrix",
   signature  = "RflomicsSE",
-  definition = function(object, contrastList=NULL){
+  definition = function(object, modelFormula = NULL, contrastList=NULL){
 
+    if(is.null(modelFormula))
+      modelFormula <- getModelFormula(object)
+      
     if(is.null(contrastList))
       contrastList <- getSelectedContrasts(object)
 
@@ -303,13 +351,11 @@ setMethod(
 
     factorBio <- getBioFactors(object)
 
-    modelFormula <- getModelFormula(object)
-
     Contrasts.Coeff <-
-      .getContrastMatrixF(ExpDesign = ExpDesign,
-                          factorBio = factorBio,
-                          contrastList = contrastList$contrast,
-                          modelFormula)
+      .getContrastMatrixF(ExpDesign    = ExpDesign,
+                          factorBio    = factorBio,
+                          modelFormula = modelFormula,
+                          contrastList = contrastList$contrast)
 
     rownames(Contrasts.Coeff) <- contrastList$contrastName
 
@@ -330,6 +376,7 @@ setMethod(
 #' the differential analysis.
 #' @param logFC.cutoff cutoff for absolute value of log2FC. Default is the
 #' parameter from the differential analysis.
+#' @param analysisName names of differential analyses.
 #' @exportMethod filterDiffAnalysis
 #' @importFrom data.table data.table
 #' @importFrom purrr reduce
@@ -337,21 +384,25 @@ setMethod(
   f          = "filterDiffAnalysis",
   signature  = "RflomicsSE",
   definition = function(object,
+                        analysisName = "all",
                         p.adj.cutoff = 0.05,
                         logFC.cutoff = 0){
-
-    if (is.null(p.adj.cutoff))
-      p.adj.cutoff <- getDiffSettings(object[[SE.name]])$p.adj.cutoff
-
-    if (is.null(logFC.cutoff))
-      logFC.cutoff <- getDiffSettings(object[[SE.name]])$abs.logFC.cutoff
-
-    DiffExpAnal <- getAnalysis(object, name = "DiffExpAnal")
-
-    if (is.null(DiffExpAnal[["results"]][["DEF"]])) {
+    
+    DiffExpAnal <- 
+      getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
+    
+    if (length(DiffExpAnal) == 0)
       stop("can't filter the DiffExpAnal object because it doesn't exist")
-    }
-
+    
+    if (is.null(p.adj.cutoff))
+      p.adj.cutoff <- getDiffSettings(object[[SE.name]], analysisName = analysisName)$p.adj.cutoff
+    
+    if (is.null(logFC.cutoff))
+      logFC.cutoff <- getDiffSettings(object[[SE.name]], analysisName = analysisName)$abs.logFC.cutoff
+    
+    if (is.null(DiffExpAnal[["results"]][["DEF"]]))
+      stop("can't filter the DiffExpAnal object because it doesn't exist")
+    
     # remplacera à terme les lignes ci-dessus
     DiffExpAnal[["settings"]][["p.adj.cutoff"]]      <- p.adj.cutoff
     DiffExpAnal[["settings"]][["abs.logFC.cutoff"]]  <- logFC.cutoff
@@ -360,40 +411,39 @@ setMethod(
     DiffExpAnal[["results"]][["stats"]] <- NULL
     DiffExpAnal[["results"]][["isNA"]] <- NULL
     DiffExpAnal[["errors"]] <- NULL
-
+    
     ## TopDEF: Top differential expressed features
     stat.vec <- list()
     DEF_list <- data.frame(DEF = vector())
     for (x in names(DiffExpAnal[["results"]][["DEF"]])) {
       tab  <- DiffExpAnal[["results"]][["DEF"]][[x]]
-
+      
       # Changing DEF if NA are encountered
       if (any(is.na(tab$Adj.pvalue))) {
-          DiffExpAnal[["results"]][["DEF"]][[x]] <- NULL
-          DiffExpAnal[["results"]][["DEF"]][[x]] <- tab <- tab[which(!is.na(tab$Adj.pvalue)),]
-          DiffExpAnal[["results"]][["isNA"]][[x]] <- setdiff(rownames(object), rownames(DiffExpAnal[["results"]][["DEF"]][[x]]))
+        DiffExpAnal[["results"]][["DEF"]][[x]]  <- NULL
+        DiffExpAnal[["results"]][["DEF"]][[x]]  <- tab <- tab[which(!is.na(tab$Adj.pvalue)),]
+        DiffExpAnal[["results"]][["isNA"]][[x]] <- setdiff(rownames(object), rownames(DiffExpAnal[["results"]][["DEF"]][[x]]))
       }
-
+      
       keep <- (tab$Adj.pvalue < p.adj.cutoff) & (abs(tab$logFC) > logFC.cutoff)
       tab  <- tab[keep,]
 
-
       if(nrow(tab) != 0){
         DiffExpAnal[["results"]][["TopDEF"]][[x]] <- tab
-
+        
         # prepare to merge
         tmp      <- data.frame(DEF = rownames(tab))
         tmp[[x]] <- rep(1, length(rownames(tab)))
         DEF_list <- merge(DEF_list, tmp, by = "DEF", all = TRUE)
       }
-
+      
       stat.vec[[x]] <- c("All"  = nrow(tab),
                          "Up"   = nrow(tab[tab$logFC >= 0,]),
                          "Down" = nrow(tab[tab$logFC <  0,])
       )
     }
     DEF_list[is.na(DEF_list)] <- 0
-
+    
     if(nrow(DEF_list) != 0){
       DiffExpAnal[["results"]][["mergeDEF"]] <- DEF_list
     }else{
@@ -401,14 +451,15 @@ setMethod(
         paste0("None of the contrasts yield any results.",
                " No differentially expressed features!")
     }
-
+    
     DiffExpAnal[["results"]][["stats"]] <- do.call("rbind", stat.vec)
-
+    
     object <-
       setElementToMetadata(object,
-                           name = "DiffExpAnal",
+                           name    = "DiffExpAnal",
+                           subName = analysisName,
                            content = DiffExpAnal)
-
+    
     return(object)
   })
 
@@ -420,6 +471,7 @@ setMethod(
   f          = "filterDiffAnalysis",
   signature  = "RflomicsMAE",
   definition = function(object, SE.name,
+                        analysisNames = NULL,
                         p.adj.cutoff = 0.05,
                         logFC.cutoff = 0){
 
@@ -427,12 +479,11 @@ setMethod(
       stop(SE.name, " isn't the name of an experiment in ", object)
 
     object[[SE.name]] <-  filterDiffAnalysis(object = object[[SE.name]],
-                                             p.adj.cutoff = p.adj.cutoff,
-                                             logFC.cutoff = logFC.cutoff)
+                                             analysisNames = analysisNames,
+                                             p.adj.cutoff  = p.adj.cutoff,
+                                             logFC.cutoff  = logFC.cutoff)
 
     return(object)
-
-
   })
 
 ###==== Set Valid Contrasts : (after differential analysis) ====
@@ -449,6 +500,7 @@ setMethod(
   f          = "setValidContrasts",
   signature  = "RflomicsSE",
   definition = function(object,
+                        analysisName = "all",
                         contrastList=NULL){
 
     unselectedContrasts <-
@@ -476,13 +528,16 @@ setMethod(
   signature  = "RflomicsMAE",
   definition <- function(object,
                          omicName=NULL,
+                         analysisName = "all",
                          contrastList=NULL){
 
     if(!omicName %in% names(object))
       stop("This data name, ", omicName, ", does not exist in the your object")
 
     object[[omicName]] <-
-      setValidContrasts(object[[omicName]], contrastList = contrastList)
+      setValidContrasts(object[[omicName]], 
+                        analysisName = analysisName,
+                        contrastList = contrastList)
 
     return(object)
   })
@@ -501,6 +556,7 @@ setMethod(
 #' @param contrastName The contrastName for which the plots has to be drawn
 #' @param typeofplots The plots you want to return. Default is all possible
 #' plots: MA plot, Volcano plot and non adjusted pvalues histogram.
+#' @param analysisName differiential analysis name
 #' @exportMethod plotDiffAnalysis
 #' @export
 #' @examples
@@ -510,16 +566,17 @@ setMethod(
   signature="RflomicsSE",
   definition <- function(object,
                          contrastName,
+                         analysisName = "all",
                          typeofplots = c("MA.plot", "volcano", "histogram")){
 
     plots <- list()
     DiffExpAnal <-
-      getAnalysis(object, name = "DiffExpAnal")
+      getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
 
     resTable <- DiffExpAnal[["results"]][["DEF"]][[contrastName]]
 
-    logFC.cutoff <- getDiffSettings(object)[["abs.logFC.cutoff"]]
-    p.adj.cutoff <- getDiffSettings(object)[["p.adj.cutoff"]]
+    logFC.cutoff <- getDiffSettings(object, analysisName = analysisName)[["abs.logFC.cutoff"]]
+    p.adj.cutoff <- getDiffSettings(object, analysisName = analysisName)[["p.adj.cutoff"]]
 
     if ("MA.plot" %in% typeofplots)
       plots[["MA.plot"]] <-
@@ -550,10 +607,12 @@ setMethod(
   definition = function(object,
                         SE.name,
                         contrastName,
+                        analysisName = "all",
                         typeofplots = c("MA.plot", "volcano", "histogram")){
 
     return(plotDiffAnalysis(object = object[[SE.name]],
                             contrastName = contrastName,
+                            analysisName = analysisName,
                             typeofplots = typeofplots))
   })
 
@@ -594,6 +653,7 @@ setMethod(
   signature  = "RflomicsSE",
   definition = function(object,
                         contrastName,
+                        analysisName = "all",
                         splitFactor="none",
                         title = "",
                         annotNames = NULL,
@@ -607,9 +667,9 @@ setMethod(
                        log  = ifelse(getOmicsTypes(object) == "RNAseq",
                                      TRUE, FALSE))
 
-    Groups     <- getDesignMat(object)
-    DiffExpAnal <-
-      getAnalysis(object, name = "DiffExpAnal")
+    Groups      <- getDesignMat(object)
+    DiffExpAnal <- 
+      getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
 
     if (is.null(DiffExpAnal[["results"]][["TopDEF"]][[contrastName]])) {
       stop("There are no differentially expressed features")
@@ -747,6 +807,7 @@ setMethod(
   signature  = "RflomicsMAE",
   definition = function(object, SE.name,
                         contrastName,
+                        analysisName = "all",
                         splitFactor="none",
                         title = "", annotNames = NULL,
                         modalities = NULL,
@@ -754,10 +815,11 @@ setMethod(
                         heatmapArgs = list()){
 
     return(plotHeatmapDesign(object        = object[[SE.name]],
-                             contrastName    = contrastName,
-                             splitFactor     = splitFactor,
+                             contrastName  = contrastName,
+                             analysisName  = analysisName,
+                             splitFactor   = splitFactor,
                              title         = title,
-                             annotNames = annotNames,
+                             annotNames   = annotNames,
                              modalities   = modalities,
                              drawArgs     = drawArgs,
                              heatmapArgs  = heatmapArgs))
@@ -885,11 +947,11 @@ setMethod(
 setMethod(
   f          = "getDEMatrix",
   signature  = "RflomicsSE",
-  definition = function(object){
+  definition = function(object, analysisName = "all"){
 
     DiffRes <- getAnalysis(object,
                            name = "DiffExpAnal",
-                           subName = "results")
+                           subName = analysisName)$results
 
     if (!is.null(DiffRes$mergeDEF))
       return(DiffRes$mergeDEF)
@@ -906,13 +968,13 @@ setMethod(
 setMethod(
   f          = "getDEMatrix",
   signature  = "RflomicsMAE",
-  definition = function(object, SE.name){
+  definition = function(object, SE.name, analysisName = "all"){
 
     if(!omicName %in% names(object))
       stop("This data name, ", omicName,
            ", does not exist in the your object")
 
-    getDEMatrix(object = object[[SE.name]])
+    getDEMatrix(object = object[[SE.name]], analysisName = analysisName)
   })
 
 ### ---- Get union or intersection from list of contrasts ----
@@ -938,12 +1000,15 @@ setMethod(
 setMethod(
   f          = "getDEList",
   signature  = "RflomicsSE",
-  definition = function(object, contrasts = NULL, operation = "union"){
+  definition = function(object, 
+                        contrasts = NULL, 
+                        operation = "union", 
+                        analysisName = "all"){
 
     validContrasts <- getValidContrasts(object)[["contrastName"]]
 
     if (is.null(validContrasts) || length(validContrasts) == 0){
-      validContrasts <- names(getDEMatrix(object))[-1]
+      validContrasts <- names(getDEMatrix(object, analysisName = analysisName))[-1]
 
       if (is.null(validContrasts) || length(validContrasts) == 0)
         return(NULL)
@@ -958,9 +1023,9 @@ setMethod(
         return(NULL)
     }
 
-    if(is.null(getDEMatrix(object))) return(NULL)
+    if(is.null(getDEMatrix(object, analysisName = analysisName))) return(NULL)
 
-    df_DE <- getDEMatrix(object) |>
+    df_DE <- getDEMatrix(object, analysisName = analysisName) |>
       select(c("DEF", any_of(contrasts)))
 
     # if (is.null(df_DE) || nrow(df_DE) == 0 || ncol(df_DE) < 2)
@@ -989,7 +1054,8 @@ setMethod(
   signature  = "RflomicsMAE",
   definition = function(object, SE.name,
                         contrasts = NULL,
-                        operation = "union"){
+                        operation = "union",
+                        analysisName = "all"){
 
     if(!SE.name %in% names(object))
       stop("This data name, ", SE.name,
@@ -997,7 +1063,8 @@ setMethod(
 
     getDEList(object = object[[SE.name]],
               contrasts = contrasts,
-              operation = operation)
+              operation = operation,
+              analysisName = analysisName)
   })
 
 ### ---- Get diff setting ----
@@ -1014,9 +1081,10 @@ setMethod(
 setMethod(
   f          = "getDiffSettings",
   signature  = "RflomicsSE",
-
-  definition = function(object){
-    return(metadata(object)$DiffExpAnal$settings)
+  definition = function(object, analysisName = "all"){
+    DiffExpAnal <- 
+      getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
+    return(DiffExpAnal[["settings"]])
   })
 
 #' @rdname runDiffAnalysis
@@ -1026,8 +1094,8 @@ setMethod(
 setMethod(
   f          = "getDiffSettings",
   signature  = "RflomicsMAE",
-  definition = function(object, SE.name){
-    getDiffSettings(object = object[[SE.name]])
+  definition = function(object, SE.name, analysisName = "all"){
+    getDiffSettings(object = object[[SE.name]], analysisName = analysisName)
   })
 
 
@@ -1043,9 +1111,12 @@ setMethod(
 setMethod(
   f          = "getValidContrasts",
   signature  = "RflomicsSE",
-  definition = function(object){
+  definition = function(object, analysisName = "all"){
 
-    metadata(object)[["DiffExpAnal"]][["results"]][["Validcontrasts"]]
+    DiffExpAnal <- 
+      getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
+    
+    DiffExpAnal[["results"]][["Validcontrasts"]]
   })
 
 #' @rdname runDiffAnalysis
@@ -1056,13 +1127,13 @@ setMethod(
 setMethod(
   f          = "getValidContrasts",
   signature  = "RflomicsMAE",
-  definition = function(object, omicName){
+  definition = function(object, omicName, analysisName = "all"){
 
     if(!omicName %in% names(object))
       stop("This data name, ", omicName,
            ", does not exist in the object")
 
-    getValidContrasts(object[[omicName]])
+    getValidContrasts(object[[omicName]], analysisName = analysisName)
 
   })
 
@@ -1080,10 +1151,10 @@ setMethod(
 setMethod(
   f          = "getDiffStat",
   signature  = "RflomicsSE",
-  definition = function(object){
+  definition = function(object, analysisName = "all"){
 
     DiffExpAnal <-
-      getAnalysis(object, name = "DiffExpAnal")
+      getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
 
     if(length(DiffExpAnal) == 0) return(NULL)
 
@@ -1099,13 +1170,14 @@ setMethod(
 setMethod(
   f          = "getDiffStat",
   signature  = "RflomicsMAE",
-  definition = function(object, SE.name = NULL){
+  definition = function(object, SE.name = NULL, 
+                        analysisName = "all"){
 
     if(!SE.name %in% names(object))
       stop("This data name, ", SE.name,
            ", does not exist in the object")
 
-      getDiffStat(object[[SE.name]])
+      getDiffStat(object[[SE.name]], analysisName = analysisName)
   })
 
 ### ---- getDiffAnalysesSummary ----
@@ -1118,7 +1190,7 @@ setMethod(
 #' @param ylabelLength max length of the labels (characters)
 #' @param nbMaxLabel number of labels to print
 #' @param interface Boolean. Is this plot for the interface or commandline?
-#' @importFrom purrr reduce
+#' @param analysisNames differential analysis names to plot
 #' @importFrom reshape2 melt
 #' @importFrom stringr str_sub str_length
 #' @exportMethod getDiffAnalysesSummary
@@ -1127,38 +1199,49 @@ setMethod(
 setMethod(
   f          = "getDiffAnalysesSummary",
   signature  = "RflomicsMAE",
-  definition = function(object, plot = FALSE,
+  definition = function(object, analysisNames = "all", plot = FALSE,
                         ylabelLength = 30,
                         nbMaxLabel = 20,
                         interface = FALSE){
 
     # DataProcessing
-    omicNames <- getAnalyzedDatasetNames(object, analyses = "DiffExpAnal")
+    omicNames <- 
+      getAnalyzedDatasetNames(object, analyses = "DiffExpAnal")
 
     df.list <- list()
     for (dataset in omicNames) {
-
-      DiffExpAnal <- getAnalysis(object[[dataset]], name = "DiffExpAnal")
-
-      Validcontrasts <- getValidContrasts(object[[dataset]])$contrastName
-      if (is.null(Validcontrasts) || length(Validcontrasts) == 0)
-        next
-
-      p.adj <- getDiffSettings(object[[dataset]])[["p.adj.cutoff"]]
-      logFC <- getDiffSettings(object[[dataset]])[["abs.logFC.cutoff"]]
-
-      df.list[[dataset]] <-
-        as.data.frame(DiffExpAnal[["results"]][["stats"]])[Validcontrasts,] %>%
-        mutate(dataset = dataset, contrasts = rownames(.),
-               settings = paste0("(p.adj: ", p.adj, " & log2FC: ", logFC, ")"))
+      for(analysisName in analysisNames){
+        DiffExpAnal <- 
+          getAnalysis(object[[dataset]], name = "DiffExpAnal", subName = analysisName)
+  
+        Validcontrasts <- getValidContrasts(object[[dataset]])
+        if (is.null(Validcontrasts) || length(Validcontrasts) == 0)
+          Validcontrasts <- 
+          getSelectedContrasts(object[[dataset]], analysisName = analysisName)
+  
+        ValidcontrastsNames <- Validcontrasts[,c("contrastName", "tag")]
+        
+        p.adj <- getDiffSettings(object[[dataset]], analysisName = analysisName)[["p.adj.cutoff"]]
+        logFC <- getDiffSettings(object[[dataset]], analysisName = analysisName)[["abs.logFC.cutoff"]]
+  
+        df.list[[dataset]][[analysisName]] <-
+          as.data.frame(DiffExpAnal[["results"]][["stats"]])[ValidcontrastsNames$contrastName,] %>%
+          mutate(dataset = dataset, 
+                 contrastNames = ValidcontrastsNames$contrastName, 
+                 contrastTag   = ValidcontrastsNames$tag, 
+                 analysisName  = analysisName, 
+                 settings = paste0("(p.adj: ", p.adj, " & log2FC: ", logFC, ")"))
+      }
     }
 
     if (length(df.list) == 0)
       return(NULL)
 
 
-    df <- reduce(df.list, rbind) |>
-      melt(id.vars = c("dataset", "settings", "contrasts", "All"),
+    df.list.flat <- unlist(df.list, recursive = FALSE)
+    df <- Reduce(rbind, df.list.flat) |>
+      melt(id.vars = c("dataset", "settings", "contrastNames", "contrastTag", 
+                       "All", "analysisName"),
            value.name = "Up_Down") |>
       filter(All != 0, !is.na(All)) |>
       mutate(percent = Up_Down / All * 100)
@@ -1169,30 +1252,34 @@ setMethod(
     # For the interface, the labels (contrastNames) were replaced
     # by tags if they exceed nbMaxLabel to simplify the figures.
     if (isTRUE(interface) && length(unique(df$contrasts)) > nbMaxLabel) {
-
-      contrast.df <- getSelectedContrasts(object)
-      df$tabel <- unlist(lapply(df$contrasts, function(x){
-        contrast.df[contrastName == x,]$tag
-      }) )
-
+      
+      df$tabel <- df$contrastTag
     }else{
 
       df$tabel <-
-          unlist(lapply(df$contrasts, function(x){
-          vec <- seq(1, str_length(x), ylabelLength)
-          paste(str_sub(x, vec, vec+ylabelLength-1) , collapse = "\n")
+          unlist(lapply(df$contrastNames, function(x){
+          vec <- seq(1, nchar(x), ylabelLength)
+          paste(substring(x, vec, vec + ylabelLength - 1) , collapse = "\n")
         }))
     }
-
+    
     df$tabel <- factor(df$tabel, levels = unique(df$tabel))
 
+    
     p <- ggplot(data = df, aes(y = tabel, x = percent, fill = variable)) +
       geom_col() +
       geom_text(aes(label = Up_Down), position = position_stack(vjust = 0.5)) +
-      facet_wrap(.~ dataset+settings, ncol = 4) +
       scale_x_continuous(breaks = seq(0, 100, 25),
                          labels = paste0(seq(0, 100, 25), "%")) +
       labs(fill = NULL, x = "", y="")
+    
+    if(length(unique(df$dataset)) == 1 && length(unique(df$analysisName)) > 1){
+      
+      p <- p + facet_wrap(~ analysisName, ncol = 4)
+    }
+    else{
+      p <- p + facet_wrap(analysisName~ dataset+settings, ncol = 4)
+    }
 
     return(p)
   }

@@ -165,35 +165,41 @@ setGeneric(
 
 setGeneric(
   name = "setModelFormula",
-  def  = function(object, modelFormula = NULL)
+  def  = function(object, modelFormula = NULL, ...)
     standardGeneric("setModelFormula")
 
 )
 setGeneric(
   name = "getModelFormula",
-  def  = function(object)
+  def  = function(object, ...)
     standardGeneric("getModelFormula")
 )
 
 setGeneric(
   name = "generateExpressionContrast",
-  def  = function(object, contrastType=NULL)
+  def  = function(object, contrastType = NULL, ...)
     standardGeneric("generateExpressionContrast")
 )
 
 setGeneric(
   name = "setSelectedContrasts",
-  def  = function(object, contrastList = NULL)
+  def  = function(object, contrastList = NULL, ...)
     standardGeneric("setSelectedContrasts")
 )
 
 setGeneric(
   name = "getSelectedContrasts",
-  def  = function(object, contrastList = NULL)
+  def  = function(object, ...)
     standardGeneric("getSelectedContrasts")
 )
 
 #---- 03 data processing ----
+
+setGeneric(
+  name = "miniRflomicsSE",
+  def  = function(object, selectedModality = NULL)
+    standardGeneric("miniRflomicsSE")
+)
 
 setGeneric(
   name = "runDataProcessing",
@@ -414,11 +420,13 @@ setGeneric(
 setGeneric(
   name = "runDiffAnalysis",
   def  = function(object,
-                  contrastList = NULL,
-                  method = NULL,
-                  p.adj.method="BH",
-                  p.adj.cutoff=0.05,
-                  logFC.cutoff=0,
+                  contrastList     = NULL,
+                  modelFormula     = NULL,
+                  method           = NULL,
+                  p.adj.method     = "BH",
+                  p.adj.cutoff     = 0.05,
+                  logFC.cutoff     = 0,
+                  selectedModality = "all",
                   cmd = FALSE,
                   ...)
     standardGeneric("runDiffAnalysis")
@@ -426,13 +434,14 @@ setGeneric(
 
 setGeneric(
   name = "generateContrastMatrix",
-  def  = function(object, contrastList=NULL, ...)
+  def  = function(object, modelFormula = NULL, contrastList=NULL, ...)
     standardGeneric("generateContrastMatrix")
 )
 
 setGeneric(
   name = "filterDiffAnalysis",
   def  = function(object,
+                  analysisName = "all",
                   p.adj.cutoff = 0.05,
                   logFC.cutoff = 0,
                   ...)
@@ -443,6 +452,7 @@ setGeneric(
 setGeneric(
   name = "getDiffAnalysesSummary",
   def  = function(object,
+                  analysisNames = "all",
                   plot = FALSE,
                   ylabelLength = 30,
                   nbMaxLabel = 20,
@@ -454,7 +464,7 @@ setGeneric(
 
 setGeneric(
   name = "getDiffStat",
-  def  = function(object, ...)
+  def  = function(object, analysisName = "all",...)
     standardGeneric("getDiffStat")
 )
 
@@ -463,19 +473,20 @@ setGeneric(
   def  = function(object,
                   contrasts = NULL,
                   operation = "union",
+                  analysisName = "all",
                   ...)
     standardGeneric("getDEList")
 )
 
 setGeneric(
   name = "getDEMatrix",
-  def  = function(object, ...)
+  def  = function(object, analysisName = "all", ...)
     standardGeneric("getDEMatrix")
 )
 
 setGeneric(
   name = "getDiffSettings",
-  def  = function(object, ...)
+  def  = function(object, analysisName = "all", ...)
     standardGeneric("getDiffSettings")
 )
 
@@ -486,6 +497,7 @@ setGeneric(
   name = "plotDiffAnalysis",
   def  = function(object,
                   contrastName,
+                  analysisName = "all",
                   typeofplots = c("MA.plot", "volcano", "histogram"),
                   ...)
     standardGeneric("plotDiffAnalysis")
@@ -495,6 +507,7 @@ setGeneric(
   name = "plotHeatmapDesign",
   def  = function(object,
                   contrastName,
+                  analysisName = "all",
                   splitFactor="none",
                   title = "",
                   annotNames = NULL,
@@ -509,6 +522,7 @@ setGeneric(
 setGeneric(
   name = "plotBoxplotDE",
   def  = function(object,
+                  analysisName = "all",
                   featureName = NULL,
                   groupColor="groups",
                   raw = FALSE,
@@ -520,6 +534,7 @@ setGeneric(
 setGeneric(
   name = "setValidContrasts",
   def  = function(object,
+                  analysisName = "all",
                   contrastList = NULL,
                   ...)
     standardGeneric("setValidContrasts")
@@ -527,7 +542,9 @@ setGeneric(
 
 setGeneric(
   name = "getValidContrasts",
-  def  = function(object, contrastList = NULL, ...)
+  def  = function(object, 
+                  analysisName = "all",
+                  contrastList = NULL, ...)
     standardGeneric("getValidContrasts")
 )
 

@@ -213,11 +213,23 @@
         variableLists <- lapply(input$selectData, function(set) {
             switch(
                 input[[paste0("selectmethode", set)]],
-                "diff"  = getDEList(
-                    object = session$userData$FlomicsMultiAssay[[set]],
-                    contrasts = input[[paste0("selectContrast", set)]],
-                    operation = input[[paste0("unionORintersect", set)]]
-                ),
+                "diff"  = {
+                  dataset.SE   <- session$userData$FlomicsMultiAssay[[set]]
+                  DiffExpAnals <- getAnalysis(dataset.SE, name = "DiffExpAnal")
+                  DEList <- vector()
+                  for(analysisName in names(DiffExpAnals)){
+                    
+                    DEList <- 
+                      c(DEList,
+                        getDEList(
+                          object       = dataset.SE,
+                          analysisName = analysisName,
+                          contrasts    = input[[paste0("selectContrast", set)]],
+                          operation    = input[[paste0("unionORintersect", set)]])
+                      )
+                  }
+                  DEList
+                } ,
                 "CV" = {
                     # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
                     #                                  raw = FALSE)
@@ -251,6 +263,8 @@
         # check: table with nb of variables less then 5
         lowNbVarTab <- names(variableLists)[lengths(variableLists) < 5]
 
+        variableLists <<- variableLists
+        
         condition <- length(lowNbVarTab) == 0
         messCond <-  paste0("number of variables is lower than 5 in
                         this(these) table(s): ",
@@ -664,8 +678,7 @@
         lapply(input$selectData, function(set) {
 
             if (set %in% rea.values$datasetDiff) {
-                ValidContrasts <-
-                    getValidContrasts(session$userData$FlomicsMultiAssay[[set]])
+                ValidContrasts <-  rea.values[[set]]$DiffValidContrast
                 ListNames.diff <- ValidContrasts$contrastName
                 names(ListNames.diff) <- ValidContrasts$contrastName
 
@@ -784,12 +797,27 @@
 
             if( input[[paste0("selectmethode", set)]] == "diff"){
 
-                variable.to.keep <- getDEList(
-                    object = session$userData$FlomicsMultiAssay[[set]],
-                    contrasts = input[[paste0("selectContrast", set)]],
-                    operation = input[[paste0("unionORintersect", set)]]
-                )
+              DiffExpAnals <- 
+                getAnalysis(session$userData$FlomicsMultiAssay[[set]], 
+                            name = "DiffExpAnal")
+              
+              variable.to.keep <- vector()
+              for(analysisName in names(DiffExpAnals)){
+                
+                variable.to.keep <- 
+                  c(variable.to.keep,
+                    getDEList(
+                      object = session$userData$FlomicsMultiAssay[[set]],
+                      analysisName = analysisName,
+                      contrasts = input[[paste0("selectContrast", set)]],
+                      operation = input[[paste0("unionORintersect", set)]]
+                    )
+                  )
+              }
+              variable.to.keep <- unique(variable.to.keep)
 
+              variable.to.keep <<- variable.to.keep
+              
                 MAE2Integrate[[set]] <-
                     session$userData$FlomicsMultiAssay[[set]][variable.to.keep]
 
@@ -824,7 +852,7 @@
                     session$userData$FlomicsMultiAssay[[set]]
             }
         }
-
+        
         textExp <- "This graph represents the dataset you will use in
         the integration (tables and samples).
         White areas represent missing samples. "

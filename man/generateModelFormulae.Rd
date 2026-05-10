@@ -15,11 +15,11 @@
 
 \S4method{setModelFormula}{RflomicsMAE}(object, modelFormula = NULL)
 
-\S4method{setModelFormula}{RflomicsSE}(object, modelFormula = NULL)
+\S4method{setModelFormula}{RflomicsSE}(object, modelFormula = NULL, analysisName = NULL)
 
 \S4method{getModelFormula}{RflomicsMAE}(object)
 
-\S4method{getModelFormula}{RflomicsSE}(object)
+\S4method{getModelFormula}{RflomicsSE}(object, analysisName = NULL)
 }
 \arguments{
 \item{object}{an object of class \link{RflomicsSE} or 

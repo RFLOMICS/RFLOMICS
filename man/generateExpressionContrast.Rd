@@ -18,11 +18,11 @@
 
 \S4method{setSelectedContrasts}{RflomicsMAE}(object, contrastList = NULL)
 
-\S4method{setSelectedContrasts}{RflomicsSE}(object, contrastList = NULL)
+\S4method{setSelectedContrasts}{RflomicsSE}(object, contrastList = NULL, analysisName = NULL)
 
 \S4method{getSelectedContrasts}{RflomicsMAE}(object)
 
-\S4method{getSelectedContrasts}{RflomicsSE}(object)
+\S4method{getSelectedContrasts}{RflomicsSE}(object, analysisName = NULL)
 }
 \arguments{
 \item{object}{an object of class \link{RflomicsSE} or 

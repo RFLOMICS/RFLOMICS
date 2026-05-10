@@ -55,12 +55,18 @@ setMethod(f          = "setModelFormula",
           signature  = "RflomicsMAE",
           definition = function(object, modelFormula=NULL){
             
-            metadata(object)$design$Model.formula <- 
-              paste(modelFormula, collapse = " ")
-            
-            for(name in names(object)){
-              object[[name]] <- 
-                setModelFormula(object[[name]], modelFormula)
+            if(is.null(modelFormula)){
+              warning("You forgot to specify 'modelFormula'.")
+            } 
+            else{
+              
+              metadata(object)$design$Model.formula <- 
+                paste(modelFormula, collapse = " ")
+              
+              for(name in names(object)){
+                object[[name]] <- 
+                  setModelFormula(object[[name]], modelFormula = modelFormula)
+              }
             }
             return(object)
           })
@@ -71,11 +77,37 @@ setMethod(f          = "setModelFormula",
 #' @exportMethod setModelFormula
 setMethod(f          = "setModelFormula",
           signature  = "RflomicsSE",
-          definition = function(object, modelFormula=NULL){
+          definition = function(object, modelFormula=NULL, analysisName = NULL){
             
-            metadata(object)$design$Model.formula <- 
-              paste(modelFormula, collapse = " ")
-            
+            if(is.null(modelFormula)){
+              warning("You forgot to specify 'modelFormula'.")
+            } 
+            else{
+              
+              if(is.null(analysisName)){
+                metadata(object)$design$Model.formula <- 
+                  paste(modelFormula, collapse = " ")
+              }
+              else{
+                DiffExpAnal <- 
+                  getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
+                
+                if(is.null(DiffExpAnal)){
+                  warning("No differential analysis named ",analysisName, " found.")
+                }else{
+                  # DiffExpAnal[[analysisName]]$settings$Contrasts.Sel <-
+                  #   updateSelectedContrasts(object, contrastList)
+                  
+                  DiffExpAnal$settings$Model.formula <-
+                    paste(modelFormula, collapse = " ")
+                  
+                  object <- 
+                    setElementToMetadata(object, 
+                                         name = DiffExpAnal, 
+                                         subName = analysisName) 
+                }
+              }
+            }
             return(object)
           })
 
@@ -195,16 +227,20 @@ setMethod(
   signature  = "RflomicsMAE",
   definition = function(object, contrastList=NULL){
     
-    metadata(object)$design$Contrasts.Sel <- 
-      updateSelectedContrasts(object, contrastList)
-    
-    # for each dataset
-    for(SE.name in names(object)){
-      
-      object[[SE.name]] <- 
-        setSelectedContrasts(object[[SE.name]], contrastList)
+    if(is.null(contrastList)){
+      warning("You forgot to specify 'contrastList'.")
     }
-    
+    else{
+      metadata(object)$design$Contrasts.Sel <- 
+        updateSelectedContrasts(object, contrastList)
+      
+      # for each dataset
+      for(SE.name in names(object)){
+        
+        object[[SE.name]] <- 
+          setSelectedContrasts(object[[SE.name]], contrastList)
+      }
+    }
     return(object)
   })
 
@@ -215,11 +251,35 @@ setMethod(
 #' @aliases setSelectedContrasts,RflomicsSE-method
 setMethod(f          = "setSelectedContrasts",
           signature  = "RflomicsSE",
-          definition = function(object, contrastList=NULL){
+          definition = function(object, contrastList=NULL, analysisName=NULL){
             
-            metadata(object)$design$Contrasts.Sel <- 
-              updateSelectedContrasts(object, contrastList)
-            
+            if(is.null(contrastList)){
+              warning("You forgot to specify 'contrastList'.")
+            }
+            else{
+              
+              if(is.null(analysisName)){
+                metadata(object)$design$Contrasts.Sel <- 
+                  updateSelectedContrasts(object, contrastList)
+              }
+              else{
+                DiffExpAnal <- 
+                  getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
+                
+                if(is.null(DiffExpAnal)){
+                  warning("No differential analysis named ",analysisName, " found.")
+                  
+                }else{
+                  # DiffExpAnal[[analysisName]]$settings$Contrasts.Sel <-
+                  #   updateSelectedContrasts(object, contrastList)
+                  
+                  DiffExpAnal$settings$Contrasts.Sel <-
+                    updateSelectedContrasts(object, contrastList)
+                  object <- 
+                    setElementToMetadata(object, name = DiffExpAnal, subName = analysisName) 
+                }
+              }
+            }
             return(object)
           })
 
@@ -245,9 +305,16 @@ setMethod(f          = "getModelFormula",
 #' @aliases getModelFormula,RflomicsSE-method
 setMethod(f          = "getModelFormula",
           signature  = "RflomicsSE",
-          definition = function(object){
+          definition = function(object, analysisName = NULL){
             
-            return(metadata(object)$design$Model.formula)
+            if(is.null(analysisName))
+              return(metadata(object)$design$Model.formula)
+            
+            DiffExpAnal <- 
+              getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
+            if(is.null(DiffExpAnal)) return(NULL)
+            
+            return(DiffExpAnal$settings$Model.formula)
           })
 
 
@@ -274,9 +341,17 @@ setMethod(f          = "getSelectedContrasts",
 #' @aliases getSelectedContrasts,RflomicsSE-method
 setMethod(f          = "getSelectedContrasts",
           signature  = "RflomicsSE",
-          definition = function(object){
+          definition = function(object, analysisName = NULL){
             
-            return(metadata(object)$design$Contrasts.Sel)
+            if(is.null(analysisName))
+              return(metadata(object)$design$Contrasts.Sel)
+            
+            DiffExpAnal <- 
+              getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
+            
+            if(is.null(DiffExpAnal)) return(NULL)
+            
+            return(DiffExpAnal$settings$Contrasts.Sel)
           })
 
 # ---- getContrastMatrix ----

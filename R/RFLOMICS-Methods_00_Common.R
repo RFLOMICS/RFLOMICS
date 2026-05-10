@@ -327,7 +327,7 @@ setMethod(
               df.list[[analysis]] <- c(df.list[[analysis]], dataset)
           },
           "DiffExpAnal" = {
-            if(!is.null(getValidContrasts(object[[dataset]])))
+            #if(!is.null(getValidContrasts(object[[dataset]])))
               df.list[[analysis]] <- c(df.list[[analysis]], dataset)
           },
           "CoExpAnal" = {

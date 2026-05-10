@@ -145,32 +145,38 @@ setMethod(
         )
       )
 
-    if (is.null(getDEMatrix(object))) {
-      stop("Please run a differential analysis.
-                       runCoExpression uses these results.")
-    }
-
-    validContrasts <- getValidContrasts(object)
-    if(is.null(validContrasts) || nrow(validContrasts) == 0){
-      validContrasts <- getSelectedContrasts(object)
-
-      if(is.null(validContrasts) || nrow(validContrasts) == 0)
-        stop("No defined contrasts")
-    }
-
-    if (is.null(contrastNames)){
-      contrastNames <- validContrasts$contrastName
+    DiffExpAnals <- getAnalysis(object, name = "DiffExpAnal")
+    
+    if(is.null(contrastNames)){
+      
+      geneList <- rownames(object)
     }
     else{
-      contrastNames <- intersect(contrastNames, validContrasts$contrastName)
-      if(length(contrastNames) == 0)
-        stop("No defined contrasts")
+      if(length(DiffExpAnals) == 0)
+        stop("Please run a differential analysis. runCoExpression uses these results.")
+      
+      if(!merge %in% default.methods[["merge"]])
+        stop("Invalid value for argument 'merge'. The allowed values are ",
+             paste(default.methods[["merge"]], collapse = " or "))
+      
+      geneList <- vector()
+      for(analysisName in names(DiffExpAnals)){
+        
+        geneList <- c(geneList, 
+                      getDEList(object       = object,
+                                analysisName = analysisName,
+                                contrasts    = contrastNames,
+                                operation    = merge)
+        )
+      }
+      
+      geneList <- unique(geneList)
+      if(length(geneList) == 0)
+        stop("no DEG...!")
     }
 
     # check param
-    if(!merge %in% default.methods[["merge"]])
-      stop("Invalid value for argument 'merge'. The allowed values are ",
-           paste(default.methods[["merge"]], collapse = " or "))
+
     if(!model %in% default.methods[["model"]])
       stop("Invalid value for argument 'model'. The allowed values are ",
            paste(default.methods[["model"]], collapse = " or "))
@@ -212,17 +218,13 @@ setMethod(
       "transformation"   = transformation,
       "normFactors"      = normFactors,
       "meanFilterCutoff" = meanFilterCutoff,
-      "contrastNames"  = contrastNames,
-      "merge"       = merge,
+      "contrastNames"    = contrastNames,
+      "merge"            = merge,
       "replicates"       = replicates,
-      "K"          = K,
+      "K"                = K,
       "scale"            = scale
     )
     names(CoExpAnal[["settings"]][["contrastNames"]]) <- contrastNames
-
-    geneList <- getDEList(object = object,
-                          contrasts = contrastNames,
-                          operation = merge)
 
     if(length(geneList) < min.data.size)
       stop("The number of ", .omicsDic(object)$variableName,

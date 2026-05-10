@@ -1129,6 +1129,48 @@ setMethod(f          = "runOmicsPCA",
             return(object)
           })
 
+### ==== miniRflomicsSE ====
+#' @name miniRflomicsSE
+#' @description
+#' \itemize{
+#'    \item miniRflomicsSE...}
+#' @param name description
+#' @keywords internal
+#' @noRd
+setMethod(
+  f         = "miniRflomicsSE",
+  signature = "RflomicsSE",
+  definition <- function(object, selectedModality = NULL){
+    
+    Target     <- getDesignMat(object)
+    BioFactors <- getBioFactors(object)
+    BioFactor  <- 
+      BioFactors[unlist(lapply(BioFactors, function(x){grepl(x, selectedModality)}))]
+    
+    Modalities <- getFactorModalities(object, factorName = BioFactor)
+    Modalitie  <- 
+      Modalities[unlist(lapply(Modalities, function(x){grepl(x, selectedModality)}))]
+    
+    Ssamples   <- Target[Target[[BioFactor]] == Modalitie,]$samples
+    
+    object.f <- object[, Ssamples]
+    object.f@colData[[BioFactor]] <- NULL
+    for(i in colnames(object.f@colData)){
+     object.f@colData[[i]] <- 
+       factor(object.f@colData[[i]], 
+              levels = unique(object.f@colData[[i]]))
+    }
+    
+    object.f@metadata$DataProcessing$selectedSamples <- as.vector(Ssamples)
+    object.f@metadata$design$factorType <- 
+      object.f@metadata$design$factorType[names(object.f@metadata$design$factorType) != BioFactor]
+    
+    object.f@metadata$DataProcessing$Normalization$results$coefNorm <-
+      object.f@metadata$DataProcessing$Normalization$results$coefNorm[as.vector(Ssamples),]
+    
+    return(object.f)
+  })
+
 ## ---- checkExpDesignCompleteness ----
 
 #' @name checkExpDesignCompleteness
