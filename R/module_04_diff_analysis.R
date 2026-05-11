@@ -301,6 +301,8 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                            p.adj.method  = "BH",
                            p.adj.cutoff  = input$p.adj.cutoff,
                            abs.logFC.cutoff = input$abs.logFC.cutoff)
+        
+        go.map <- metadata(session$userData$FlomicsMultiAssay)$annotation
 
         # Prevent multiple executions
         if(check_run_diff_execution(session$userData$FlomicsMultiAssay[[dataset]],
@@ -357,6 +359,44 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                 contrastList     = contrastList,
                 cmd              = TRUE)
             dataset.se(new.dataset.SE)
+            
+            # -----  run ORA ----- !!! brouillon à changer
+            message("[RFLOMICS] # 04- GO ORA Analysis... ", 
+                    dataset, "-",analysisName)
+            DiffExpAnal <- 
+              getAnalysis(dataset.se(), 
+                          name = "DiffExpAnal", 
+                          subName = analysisName)
+            
+            # for each contrast
+            for(contrastName in contrastList$contrastName){
+              # get DEG list
+              DEG <- 
+                getDEList(dataset.se(), 
+                          contrasts = contrastName, 
+                          analysisName = analysisName)             
+              
+              # run ORA
+              ego <- list()
+              for(domain in names(go.map)){
+                
+                ego[[domain]] <- enricher(
+                  gene = DEG,
+                  TERM2GENE = go.map[[domain]],
+                  pAdjustMethod = "BH",
+                  pvalueCutoff = 0.10
+                )
+              }
+              
+              DiffExpAnal[["results"]][["ORA"]][[contrastName]] <- ego
+            }
+            dataset.se(
+              setElementToMetadata(dataset.se(), 
+                                   name = "DiffExpAnal",
+                                   subName = analysisName,
+                                   content = DiffExpAnal)
+            )
+            # --------------------- !!! brouillon à changer
           }
           else{
             
@@ -371,6 +411,45 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                 p.adj.cutoff  = input$p.adj.cutoff,
                 logFC.cutoff  = input$abs.logFC.cutoff)
             dataset.se(new.dataset.SE)
+            
+            # -----  run ORA ----- !!! brouillon à changer
+            message("[RFLOMICS] # 04- GO ORA Analysis... ", 
+                    dataset, "-",analysisName)
+            DiffExpAnal <- 
+              getAnalysis(dataset.se(), 
+                          name = "DiffExpAnal", 
+                          subName = analysisName)
+            
+            # for each contrast
+            for(contrastName in contrastList$contrastName){
+              # get DEG list
+              DEG <- 
+                getDEList(dataset.se(), 
+                          contrasts = contrastName, 
+                          analysisName = analysisName)             
+              
+              # run ORA
+              ego <- list()
+              for(domain in names(go.map)){
+                
+                ego[[domain]] <- enricher(
+                  gene = DEG,
+                  TERM2GENE = go.map[[domain]],
+                  pAdjustMethod = "BH",
+                  pvalueCutoff = 0.10
+                )
+              }
+              
+              DiffExpAnal[["results"]][["ORA"]][[contrastName]] <- ego
+            }
+            dataset.se(
+              setElementToMetadata(dataset.se(), 
+                                   name = "DiffExpAnal",
+                                   subName = analysisName,
+                                   content = DiffExpAnal)
+            )
+            # --------------------- !!! brouillon à changer
+            
           }
         }
         
@@ -419,7 +498,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
         
         DiffExpAnals <- getAnalysis(dataset.se(), name = "DiffExpAnal")
         
-        # get validated contrast
+        # get validated contrast !!!! brouillon à metter au propre 
         contrastNames <- vector()
         for(analysisName in analysisNames){
           
@@ -605,6 +684,83 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                     })
                 )
             )
+            
+            # ---------- brouillon à adapter
+            if(!is.null(metadata(session$userData$FlomicsMultiAssay)$annotation)){
+              
+              ego.lt <- list()
+              for(analysisName in names(diffExpAnals)){
+                
+                ORA <- diffExpAnals[[analysisName]][["results"]][["ORA"]]
+                for(contrastName in names(ORA)){
+                  
+                  for(domain in names(ORA[[contrastName]])){
+                    ego.lt[[domain]][[paste0(contrastName, "-",analysisName)]] <- 
+                      ORA[[contrastName]][[domain]]
+                  }
+                }
+              }
+              
+              tabPanel.list <- c(
+                tabPanel.list,
+                list(
+                  tabPanel(
+                    title = "ORA",
+                    fluidRow(
+                      column(width = 4,
+                             radioButtons(
+                               inputId  = session$ns("ora_domain"),
+                               label    = "GO domain",
+                               choices  = names(ego.lt),
+                               selected = names(ego.lt)[1]
+                             )
+                      ),
+                      column(width = 4,
+                             numericInput(
+                               inputId = session$ns("pvalS"),
+                               label = "Adjusted p-value cutoff",
+                               value = 0.05,
+                               min = 0,
+                               max = 1,
+                               step = 0.01
+                             )
+                      ),
+                      column(width = 4,
+                             numericInput(
+                               inputId = session$ns("showCategory"),
+                               label = "showCategory",
+                               value = 10,
+                               min = 5,
+                               max = 30,
+                               step = 1
+                             )
+                      )
+                    ),
+                    plotOutput(session$ns("ora_plot"))
+                  )
+                )
+              )
+              
+              output$ora_plot <- renderPlot({
+                
+                req(input$ora_domain)
+                
+                ego.domain <- ego.lt[[input$ora_domain]]
+                
+                for(i in names(ego.domain)){
+                  ego.domain[[i]]@result <-
+                    subset(
+                      ego.domain[[i]]@result,
+                      p.adjust <= input$pvalS
+                    )
+                }
+
+                dotplot(merge_result(ego.domain), showCategory = input$showCategory) +
+                  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+              })
+              
+            }
+            
             # if(length(analysisNames) == 1){
             #   ### ---- upset ----
             #   # 2nd panel (upset) if 2 validated contrasts or more
@@ -641,6 +797,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
             #     tabPanel.list)
             #   }
             # }
+            ### display ----
             tagList(
               box(
                 width=14,
@@ -802,6 +959,23 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
           )
         }
         
+        
+        if (!is.null(diffExpAnal[["results"]][["ORA"]][[vect["contrastName"]]]) > 0){
+          
+          tabPanel.list <-
+            c(tabPanel.list,
+              list(
+                #### ---- ORA results ----
+                tabPanel(
+                  title = "ORA GO",
+                  tags$br(),
+                  .modAnnotationORA_UI(
+                    session$ns(paste0(vect["contrastName"],"-DE-", modality)))
+                )
+              )
+            )
+        }
+        
         #### ---- display panels ----
         # if error message specific to current contrast
         if(!is.null(
@@ -898,6 +1072,13 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                  contrastName = vect["contrastName"],
                  variableList = DEList,
                  modality     = modality)
+      
+      callModule(module       = .modAnnotationORA,
+                 id           = paste0(vect["contrastName"],"-DE-", modality),
+                 dataset.SE   = dataset.se(),
+                 contrastName = vect["contrastName"],
+                 modality     = modality)
+      
       
       # # update SelectizeInput for boxplot DE
       # DEList  <- rownames(diffExpAnal[["TopDEF"]][[vect["contrastName"]]])
@@ -1165,6 +1346,101 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     })
 }
 
+## ---- annotation -----
+
+.modAnnotationORA_UI <- function(id){
+  
+  #name space for id
+  ns <- NS(id)
+  uiOutput(ns("ORAUI"))
+}
+
+.modAnnotationORA <- function(input, output, session,
+                              dataset.SE,
+                              contrastName,
+                              modality){
+  ns <- session$ns
+  
+  ego <- reactive({
+    
+    DiffExpAnal <- getAnalysis(
+      dataset.SE,
+      name = "DiffExpAnal",
+      subName = modality
+    )
+
+    DiffExpAnal[["results"]][["ORA"]][[contrastName]]
+  })
+  
+  # ---- UI ----
+  output$ORAUI <- renderUI({
+    
+    req(ego())
+    
+    domains <- names(ego())
+    
+    tagList(
+      
+      tags$i("GO ORA results"),
+      tags$br(),
+      tags$hr(),
+      tags$br(),
+      
+      fluidRow(
+        
+        column(
+          width = 4,
+          
+          radioButtons(
+            inputId = ns("go_domain"),
+            label = "GO domain",
+            choices = domains,
+            selected = domains[1]
+          ),
+          
+          numericInput(
+            inputId = ns("pval"),
+            label = "Adjusted p-value cutoff",
+            value = 0.05,
+            min = 0,
+            max = 1,
+            step = 0.01
+          )
+        ),
+        
+        column(
+          width = 8,
+          
+          plotOutput(ns("oraPlot"))
+        )
+      )
+    )
+  })
+  
+  # ---- Plot ----
+  output$oraPlot <- renderPlot({
+    
+    req(input$go_domain)
+    req(ego())
+    
+    domain <- input$go_domain
+    
+    enrich.res <- ego()[[domain]]
+    
+    req(enrich.res)
+    
+    # filter
+    enrich.res@result <-
+      subset(
+        enrich.res@result,
+        p.adjust <= input$pval
+      )
+    
+    req(nrow(enrich.res@result) > 0)
+    
+    barplot(enrich.res)
+  })
+}
 # ---- functions ----
 
 ## ----- check run diff execution ------

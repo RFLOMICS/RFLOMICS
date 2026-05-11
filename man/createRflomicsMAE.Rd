@@ -10,7 +10,8 @@ createRflomicsMAE(
   omicsNames = NULL,
   omicsTypes = NULL,
   ExpDesign = NULL,
-  factorInfo = NULL
+  factorInfo = NULL,
+  species = NULL
 )
 }
 \arguments{

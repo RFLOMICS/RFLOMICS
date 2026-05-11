@@ -38,7 +38,8 @@
           factorName = names(local.rea.values$dF.List.ref),
           factorRef  = local.rea.values$dF.List.ref,
           factorType = local.rea.values$dF.Type.dFac
-        )
+        ),
+        species      = local.rea.values$species
       )})
 
     if (is.null(FlomicsMultiAssay.try$result)) {
@@ -118,7 +119,14 @@
 # ---- modLoadOmicsData UI ----
 .modLoadDataUI <- function(id) {
   ns <- NS(id)
-
+  
+  mart     <- useEnsemblGenomes(biomart = "plants_mart")
+  datasets <- listDatasets(mart)
+  species_choices <- setNames(
+    datasets$dataset,
+    datasets$description
+  )
+  
   tagList(
     fluidRow(
       # load exp design
@@ -160,7 +168,30 @@
       )
     ),
     fluidRow(uiOutput(outputId = ns("LoadDataUI"))),
-    fluidRow(column(
+    fluidRow(
+      box(
+        width = 12,
+        title = "Annotation",
+        status = "warning",
+        height = NULL,
+        solidHeader = TRUE,
+        fluidRow(
+          column(
+            8,
+            # omic type
+            selectInput(
+              inputId = ns('species'),
+              label = .addBSpopify(label = 'Select a species',
+                                   content = "..."),
+              choices = c("None" = "", species_choices),
+              selected = ""
+            )
+          )
+        )
+      )
+    ),
+    fluidRow(
+      column(
       width = 12,
       actionButton(inputId = ns("loadData"), "Load Data", class = "butt"),
       popify(
@@ -181,7 +212,8 @@
         placement = "top",
         trigger = "hover"
       )
-    )),
+    )
+    ),
     br(),
 
     fluidRow(.modLoadOmicDataUI(id = ns("MAE")))
@@ -343,6 +375,9 @@
     local.rea.values$omicsNames   <- checkData$omicsNames
     local.rea.values$omicsTypes   <- checkData$omicsTypes
 
+    # species
+    local.rea.values$species <- if (nzchar(input$species)) input$species else NULL
+    
     # create Rflomics object and plot data over view
     callModule(module = .modLoadOmicData,
                id = "MAE",
@@ -378,6 +413,7 @@
     local.rea.values$omicsNames   <- exampleData$omicsNames
     local.rea.values$omicsTypes   <- exampleData$omicsTypes
     local.rea.values$omicsData    <- exampleData$omicsData
+    local.rea.values$species      <- "athaliana_eg_gene"
 
     updateTextInput(session,
                     inputId = "projectName",

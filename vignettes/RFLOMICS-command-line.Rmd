@@ -379,7 +379,7 @@ The results can be viewed using the `getEnrichRes` method, a summary of the
 number of enriched terms by the `sumORA` function and plotted, by example, 
 using the `plotEnrichComp` method.
 
-```{r enrich, fig.width=12, fig.height=5}
+```{r enrich, fig.width=12, fig.height=5, eval=FALSE}
 MAE <- runAnnotationEnrichment(MAE,
   SE.name = "protetest",
   OrgDb = "org.At.tair.db",

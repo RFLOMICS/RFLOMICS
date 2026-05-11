@@ -45,7 +45,8 @@ createRflomicsMAE <- function(projectName = NULL,
                               omicsNames  = NULL,
                               omicsTypes  = NULL,
                               ExpDesign   = NULL,
-                              factorInfo  = NULL){
+                              factorInfo  = NULL,
+                              species     = NULL){
 
   # check arg
   ## => projectName
@@ -263,7 +264,8 @@ createRflomicsMAE <- function(projectName = NULL,
                        sampleMap   = listmap,
                        omicList    = omicList,
                        projectName = projectName,
-                       design      = Design)
+                       design      = Design, 
+                       species     = species)
 
   # tag as raw data (le temps de trouver une solution pour
   # ne pas faire co-exister les raw et les process)
@@ -305,6 +307,7 @@ RflomicsMAE <- function(experiments = ExperimentList(),
                         omicList       = list(),
                         projectName    = character(),
                         design         = list(),
+                        species        = NULL,
                         IntegrationAnalysis = list()){
 
   MAE <- NULL
@@ -331,11 +334,50 @@ RflomicsMAE <- function(experiments = ExperimentList(),
   }
   names(pal) <- unlist(omicList)
 
+  # annotation !!!!! brouillon à ameliorer 
+  if(!is.null(species)){
+    
+    mart <- 
+      useEnsemblGenomes(
+        biomart = "plants_mart",
+        dataset = species
+      )
+    
+    annot <- getBM(
+      attributes = c(
+        "ensembl_gene_id",
+        "go_id",
+        "name_1006",
+        "definition_1006",
+        "namespace_1003"
+      ),
+      mart = mart
+    )
+    annot <- annot[annot$namespace_1003 != "",]
+    names(annot) <- 
+      c("gene_id", "go_id", "go_name", "go_definition", "go_domain")
+      
+    go.map <- list()
+    go.map <-
+      lapply(unique(annot$go_domain), function(x){
+        data.frame(
+          term = annot[annot$go_domain == x,]$go_name,
+          gene = annot[annot$go_domain == x,]$gene_id
+        )
+      })
+    names(go.map) <- unique(annot$go_domain)
+    
+  }else{
+    go.map <- NULL
+  }
+
   # set metadata slot
   metadata <- list(
     "omicList"            = omicList,
     "projectName"         = projectName,
     "design"              = design,
+    "annotation"          = go.map,
+    "species"             = species,
     "IntegrationAnalysis" = IntegrationAnalysis,
     "date"                = Sys.Date(),
     "sessionInfo"         = .writeSessionInfo(),
