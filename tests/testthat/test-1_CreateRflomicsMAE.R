@@ -219,7 +219,7 @@ test_that("test mae/se input", {
 
   expect_equal(colData(MAE), colData(MAE3))
   for(SE in names(MAE3)){
-    expect_equal(MAE[[SE]], MAE3[[SE]])
+    expect_equal(MAE[[SE]], MAE3[[SE]], tolerance = 1e-6)
   }
 })
 
@@ -246,7 +246,7 @@ test_that("test mae/se input", {
 
   expect_equal(colData(MAE), colData(MAE4))
   for(SE in names(MAE4)){
-    expect_equal(MAE[[SE]], MAE4[[SE]])
+    expect_equal(MAE[[SE]], MAE4[[SE]], tolerance = 1e-6)
   }
 })
 

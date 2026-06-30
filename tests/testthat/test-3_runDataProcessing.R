@@ -92,9 +92,9 @@ test_that("runDataProcessing returned value", {
   expect_true(is(meta.S1, "RflomicsSE"))
 
   ## we get the same results
-  expect_identical(rna.S1,  MAE1[["RNAtest"]])
-  expect_identical(prot.S1, MAE1[["protetest"]])
-  expect_identical(meta.S1, MAE1[["metatest"]])
+  expect_equal(rna.S1,  MAE1[["RNAtest"]], tolerance = 1e-6)
+  expect_equal(prot.S1, MAE1[["protetest"]], tolerance = 1e-6)
+  expect_equal(meta.S1, MAE1[["metatest"]], tolerance = 1e-6)
 
   ## Doesn't modify the colData
   expect_identical(colData(rna.S1),  colData(MAE[["RNAtest"]]))

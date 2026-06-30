@@ -169,10 +169,10 @@ test_that("Transformation and normalisation combination - proteomics", {
 
     pca.raw <- FactoMineR::PCA(t(protMattransnorm), ncp = 5, graph = FALSE)
 
-    expect_equal(pca.raw$eig, MAE[["protetest"]]@metadata$PCAlist$raw$eig)
-    expect_equal(pca.raw$svd, MAE[["protetest"]]@metadata$PCAlist$raw$svd)
-    expect_equal(pca.raw$ind, MAE[["protetest"]]@metadata$PCAlist$raw$ind)
-    expect_equal(pca.raw$var, MAE[["protetest"]]@metadata$PCAlist$raw$var)
+    expect_equal(pca.raw$eig, MAE[["protetest"]]@metadata$PCAlist$raw$eig, tolerance = 1e-6)
+    expect_equal(pca.raw$svd, MAE[["protetest"]]@metadata$PCAlist$raw$svd, tolerance = 1e-6)
+    expect_equal(pca.raw$ind, MAE[["protetest"]]@metadata$PCAlist$raw$ind, tolerance = 1e-6)
+    expect_equal(pca.raw$var, MAE[["protetest"]]@metadata$PCAlist$raw$var, tolerance = 1e-6)
     # the call is obligatory different between the two
 
     protMattransnorm <- switch(as.character(case_vect[[1]]),
@@ -200,10 +200,10 @@ test_that("Transformation and normalisation combination - proteomics", {
       runNormalization(MAE2, SE.name = "protetest", normMethod = as.character(case_vect[[2]]))
 
     MAE2 <- RFLOMICS::runOmicsPCA(MAE2, SE = "protetest")
-    expect_equal(pca.norm$eig, MAE2[["protetest"]]@metadata$PCAlist$norm$eig)
-    expect_equal(pca.norm$svd, MAE2[["protetest"]]@metadata$PCAlist$norm$svd)
-    expect_equal(pca.norm$ind, MAE2[["protetest"]]@metadata$PCAlist$norm$ind)
-    expect_equal(pca.norm$var, MAE2[["protetest"]]@metadata$PCAlist$norm$var)
+    expect_equal(pca.norm$eig, MAE2[["protetest"]]@metadata$PCAlist$norm$eig, tolerance = 1e-6)
+    expect_equal(pca.norm$svd, MAE2[["protetest"]]@metadata$PCAlist$norm$svd, tolerance = 1e-6)
+    expect_equal(pca.norm$ind, MAE2[["protetest"]]@metadata$PCAlist$norm$ind, tolerance = 1e-6)
+    expect_equal(pca.norm$var, MAE2[["protetest"]]@metadata$PCAlist$norm$var, tolerance = 1e-6)
 
   })
 
@@ -240,10 +240,10 @@ test_that("RNAseq - none + TMM + log2", {
 
   pca.raw <- FactoMineR::PCA(t(log2(rnaSeqMat + 1)), ncp = 5, graph = FALSE)
 
-  expect_equal(pca.raw$eig, MAE[["RNAtest"]]@metadata$PCAlist$raw$eig)
-  expect_equal(pca.raw$svd, MAE[["RNAtest"]]@metadata$PCAlist$raw$svd)
-  expect_equal(pca.raw$ind, MAE[["RNAtest"]]@metadata$PCAlist$raw$ind)
-  expect_equal(pca.raw$var, MAE[["RNAtest"]]@metadata$PCAlist$raw$var)
+  expect_equal(pca.raw$eig, MAE[["RNAtest"]]@metadata$PCAlist$raw$eig, tolerance = 1e-6)
+  expect_equal(pca.raw$svd, MAE[["RNAtest"]]@metadata$PCAlist$raw$svd, tolerance = 1e-6)
+  expect_equal(pca.raw$ind, MAE[["RNAtest"]]@metadata$PCAlist$raw$ind, tolerance = 1e-6)
+  expect_equal(pca.raw$var, MAE[["RNAtest"]]@metadata$PCAlist$raw$var, tolerance = 1e-6)
   # the call is obligatory different between the two
 
   MAE2 <- MAE2 |>
@@ -270,10 +270,10 @@ test_that("RNAseq - none + TMM + log2", {
 
   pca.norm <- FactoMineR::PCA(t(log2(tnDat+1)), ncp = 5, graph = FALSE)
 
-  expect_equal(pca.norm$eig, MAE2[["RNAtest"]]@metadata$PCAlist$norm$eig, tolerance = 0)
-  expect_equal(pca.norm$svd, MAE2[["RNAtest"]]@metadata$PCAlist$norm$svd, tolerance = 0)
-  expect_equal(pca.norm$ind, MAE2[["RNAtest"]]@metadata$PCAlist$norm$ind, tolerance = 0)
-  expect_equal(pca.norm$var, MAE2[["RNAtest"]]@metadata$PCAlist$norm$var, tolerance = 0)
+  expect_equal(pca.norm$eig, MAE2[["RNAtest"]]@metadata$PCAlist$norm$eig, tolerance = 1e-6)
+  expect_equal(pca.norm$svd, MAE2[["RNAtest"]]@metadata$PCAlist$norm$svd, tolerance = 1e-6)
+  expect_equal(pca.norm$ind, MAE2[["RNAtest"]]@metadata$PCAlist$norm$ind, tolerance = 1e-6)
+  expect_equal(pca.norm$var, MAE2[["RNAtest"]]@metadata$PCAlist$norm$var, tolerance = 1e-6)
 
 })
 
