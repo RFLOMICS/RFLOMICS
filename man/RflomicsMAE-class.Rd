@@ -26,6 +26,8 @@
 \alias{getRflomicsSE,RflomicsMAE-method}
 \alias{getFactorModalities}
 \alias{getFactorModalities,RflomicsMAE-method}
+\alias{initRawRflomicsSE}
+\alias{initRawRflomicsSE,RflomicsMAE-method}
 \alias{subRflomicsMAE}
 \alias{subRflomicsMAE,RflomicsMAE-method}
 \alias{plotDataOverview}
@@ -56,6 +58,8 @@
 
 \S4method{getFactorModalities}{RflomicsMAE}(object, factorName)
 
+\S4method{initRawRflomicsSE}{RflomicsMAE}(object, datasetName)
+
 \S4method{subRflomicsMAE}{RflomicsMAE}(object, omicNames = NULL)
 
 \S4method{plotDataOverview}{RflomicsMAE}(
@@ -71,7 +75,7 @@
 \arguments{
 \item{object}{An object of class \link{RflomicsMAE-class}}
 
-\item{datasetName}{the name of the RflomicsSE to retrieve}
+\item{datasetName}{dataset names}
 
 \item{factorName}{factor name}
 
@@ -175,6 +179,10 @@ and results of a multi-omics integration analysis.
 \itemize{
    \item getFactorModalities: return a vector with the modality names of
    selected factor.}
+
+
+\itemize{
+   \item initRawRflomicsSE: Return an RflomicsSE-initialized object.}
 
 
 \itemize{

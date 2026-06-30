@@ -343,7 +343,7 @@ QCNormalizationTab <-
     #---- dataset filtering summary----
     output$filtSummary1UI <- renderUI({
       SE.data  <-
-        session$userData$FlomicsMultiAssay[[dataset]]
+        initRawRflomicsSE(session$userData$FlomicsMultiAssay[[dataset]])
 
       tagList(
         box(
@@ -359,7 +359,6 @@ QCNormalizationTab <-
           "Initial number of samples"
         )
       )
-
     })
 
     #---- Summary UI----
@@ -371,20 +370,19 @@ QCNormalizationTab <-
 
       tagList(
         box(
-          title = length(names(getProcessedData(SE.data, filter = TRUE))),
+          title = length(names(SE.data)),
           width = 6,
           background = "fuchsia",
           paste0("Number of filtered ",
                  .omicsDic(SE.data)$variableName)
         ),
         box(
-          title = length(colnames(getProcessedData(SE.data, filter = TRUE))),
+          title = length(colnames(SE.data)),
           width = 6,
           background = "purple",
           "Number of filtered samples"
         )
       )
-
     })
 
 
@@ -773,26 +771,19 @@ QCNormalizationTab <-
           object                  = session$userData$FlomicsMultiAssay,
           SE.name                 = dataset,
           samples                 = input$selectSamples,
+          MVencoding              = param.list[["MVencoding"]],
           lowCountFilter = 
             list(
-              filterMethod        = param.list[["FilterMethod"]],
-              filterStrategy      = param.list[["Filter_Strategy"]],
+              method              = param.list[["FilterMethod"]],
+              strategy            = param.list[["Filter_Strategy"]],
               cpmCutoff           = param.list[["CPM_Cutoff"]]),
           missingValueFilter =  
-            list(MVencoding       = param.list[["MVencoding"]],
-                 method           = param.list[["MVFilter"]],
-                 globalProp       = param.list[["globalProp"]],
-                 nbCondition      = param.list[["nbCondition"]],
-                 propPerCondition = param.list[["propPerCondition"]]),
-          transform = 
-            list(transformMethod  = param.list[["transform_method"]],
-                 userTransMethod  = param.list[["userTransMethod"]]),
-          normalize = 
-            list(normMethod       = param.list[["NormMethod"]],
-                 userNormMethod   = param.list[["userNormMethod"]]),
-          impute = 
-            list(imputMethod = param.list[["ImputMethod"]],
-                 factor = 0.001)
+            list(method           = param.list[["MVFilter"]],
+                 proportion       = param.list[["globalProp"]],
+                 nbCondition      = param.list[["nbCondition"]]),
+          transform = list(method = param.list[["transform_method"]]),
+          normalize = list(method = param.list[["NormMethod"]]),
+          impute    = list(method = param.list[["ImputMethod"]], factor = 0.001)
         ))
       
       #toto <<- session$userData$FlomicsMultiAssay

@@ -5,132 +5,101 @@
 # D. Charif
 # A. Hulot
 
+# ---- transformation ----
 
-# ---- sample filtering ----
-
-# .applySampleFiltering
-#' @title .applySampleFiltering
+# .applyTrans_intensities: apply the transformation method.
+#' @title applyTrans_intensities
 #'
 #' @param object An object of class \link{RflomicsSE}
-#' @description apply the filtering to the assay. Usually.
+#' @param method tranformation method
 #' @keywords internal
 #' @noRd
 #'
-
-.applySampleFiltering <- function(object) {
-
-  selectedSamples <- getSelectedSamples(object)
-  if(setequal(selectedSamples, colnames(object))) return(object)
-
-  object <- object[, selectedSamples]
-  object <- .updateColData(object)
-  # update contrast list
-  selectedContrasts  <- getSelectedContrasts(object)
-  selectedContrasts2 <- updateSelectedContrasts(object, selectedContrasts)
-
-  object <- setSelectedContrasts(object, selectedContrasts2)
-
+.applyTrans_intensities <- function(object, 
+                                   method = c("log10", "log1p", "log2", "squareroot", "none")) {
+  
+  method <- match.arg(method)
+  
+  assayRaw <- assay(object, withDimnames = TRUE)
+  
+  if (any(assayRaw < 0, na.rm = TRUE) &&
+      method %in% c("log1p", "log2", "log10"))
+    stop("Cannot use log transformation on negative values. Please check your data.")
+  
+  assay(object) <- 
+    switch(
+      method,
+      "log2"       = log2(assayRaw + 10^-6*min(assayRaw[assayRaw != 0])),
+      "log10"      = log10(assayRaw + 10^-6*min(assayRaw[assayRaw != 0])),
+      #"squareroot" = assay(object) <- sqrt(assayRaw),
+      "none"       = assay(object) <- assayRaw,
+      {
+        stop("Could not recognize the transformation method. ",
+             "No transformation applied. Please check your parameters.")
+      } # default is none
+    )
+  
+  # output
+  transformation <-
+    list(
+      setting = list(method = method),
+      transformed = TRUE
+    )
+  
+  message("[RFLOMICS] #       method: ", method)
+  
+  object <-
+    setElementToMetadata(object,
+                         name    = "DataProcessing",
+                         subName = "Transformation",
+                         content = transformation)
   return(object)
 }
 
 
-# ---- features filtering - RNAseq data - low count - CMP ----
-
-# .applyFeatureFiltering
-#' @title .applyFeatureFiltering
-#'
-#' @param object An object of class \link{RflomicsSE}
-#' @description apply the filtering to the assay. Usually.
-#' @keywords internal
-#' @noRd
-#'
-.applyFeatureFiltering <- function(object) {
-
-  if (.isFiltered(object)) {
-    warning("The data were already filterd beforehand! method: ",
-            getFilterSettings(object)$method)
-    return(object)
-  }
-
-  if(is.null(getFilterSettings(object)$method)){
-    warning("No filtering method specified, see ?runDataProcessing")
-    return(object)
-  }
-
-  filtering.res <-
-    getAnalysis(object,
-                name = "DataProcessing",
-                subName = "featureFiltering")
-
-  filteredFeatures <- getFilteredFeatures(object)
-  if(!is.null(filteredFeatures)){
-    object <-
-      object[setdiff(names(object), filteredFeatures)]
-
-    filtering.res[["filtered"]] <- TRUE
-  }
-
-  object <- setElementToMetadata(object,
-                                 name    = "DataProcessing",
-                                 subName = "featureFiltering",
-                                 content = filtering.res)
-  return(object)
-}
-
-# ---- transformation - prot/meta data ----
-
-# .applyTransformation: apply the transformation method stored in
-# metadata(object)[["transform_method"]] and modify the assay.
+# .applyTrans_readcounts: apply the transformation method.
 #' @title apply_transformation
-#'
 #' @param object An object of class \link{RflomicsSE}
+#' @param method tranformation method
 #' @keywords internal
 #' @noRd
 #'
-.applyTransformation <- function(object) {
-
-  if (.isTransformed(object)) {
-    warning("The data were already transformed beforehand! method: ",
-            getTransSettings(object)$method)
-    return(object)
-  }
-
-  transform_method <- getTransSettings(object)$method
-  if (is.null(transform_method)) {
-    warning("No transformation method specified, see ?runDataProcessing")
-    return(object)
-  }
-
-  assayTransform <- assay(object, withDimnames = TRUE)
-
-  if (any(assayTransform < 0, na.rm = TRUE) && 
-      transform_method %in% c("log1p", "log2", "log10"))
+.applyTrans_readcounts <- function(object, 
+                                   method = c("log2", "none")) {
+  
+  method <- match.arg(method)
+  
+  assayRaw <- assay(object, withDimnames = TRUE)
+  
+  if (any(assayRaw < 0, na.rm = TRUE) &&
+      method %in% c("log1p", "log2", "log10"))
       stop("Cannot use log transformation on negative values. Please check your data.")
 
-  switch(transform_method,
-         "log1p" = {
-           assay(object) <- log1p(assayTransform)
-         },
-         "log2" = {
-           assay(object) <- log2(assayTransform + 10^-6*min(assayTransform[assayTransform != 0]))
-         },
-         "log10" = {
-           assay(object) <- log10(assayTransform + 10^-6*min(assayTransform[assayTransform != 0]))
-         },
-         "squareroot" = {
-           assay(object) <- sqrt(assayTransform)
-         },
-         "none" = {
-           assay(object) <- assayTransform
-         },
-         {
-           stop("Could not recognize the transformation method. ",
-                "No transformation applied. Please check your parameters.")
-         } # default is none
-  )
+  assay(object) <- 
+    switch(
+      method,
+      "log2" = log2(assayRaw + 1),
+      "none" = assayRaw,
+      {
+        stop("Could not recognize the transformation method. ",
+             "No transformation applied. Please check your parameters.")
+      } # default is none
+    )
 
-  metadata(object)[["DataProcessing"]][["Transformation"]][["transformed"]] <-
-    TRUE
+  # output
+  transformation <-
+    list(
+      setting = list(method = method),
+      transformed = TRUE
+    )
+  
+  message("[RFLOMICS] #       method: ", method)
+  
+  object <-
+    setElementToMetadata(object,
+                         name    = "DataProcessing",
+                         subName = "Transformation",
+                         content = transformation)
 
   return(object)
 }
@@ -138,60 +107,93 @@
 # ---- normalization - RNAseq/prot/meta data ----
 
 #' @description
-#' .applyNormalization: apply the normalization method stored in
-#' metadata(object)[["Normalization"]] and modify the assay.
+#' .applyNorm_readcounts: apply the normalization method
 #' @title .applyNorm
 #' @param object An object of class \link{RflomicsSE}
-#' @description apply the normalization to the assay. Usually, after the transformation,
-#' unless in the case of counts RNASeq data (TMM), where log2 is the second step.
+#' @description apply the normalization to the assay .
 #' @keywords internal
 #' @noRd
 #'
-.applyNormalization <- function(object) {
-
-  if (.isNormalized(object)) {
-    warning("The data were already normalized beforehand. Method: ",
-            getNormSettings(object)$method)
-    return(object)
+.applyNorm_readcounts <- function(object, method = c("TMM", "none")) {
+  
+  method <- match.arg(method)
+  
+  assayRaw <- assay(object)
+  
+  if(method == "TMM"){
+    coefNorm       <- .tmmNormalization(object)
+    scales_factors <- coefNorm$norm.factors * coefNorm$lib.size
+    scales_factors <- scales_factors / mean(scales_factors)
+    assay(object)  <- scale(assayRaw, center = FALSE, scale = scales_factors)
+  }
+  else if(method == "none"){
+    coefNorm <- rep(1, ncol(object))
   }
 
-  norm_method <- getNormSettings(object)$method
-  if (is.null(norm_method)) {
-    warning("No normalization method specified, see ?runDataProcessing")
-    return(object)
-  }
-
-  coefNorm <- getCoeffNorm(object)
-  assayTransform <- assay(object)
-
-  switch(norm_method,
-         "median" = {
-           assay(object) <- sweep(assayTransform, 2, coefNorm, "-")
-         },
-         "totalSum" = {
-           assay(object) <- sweep(assayTransform, 2, coefNorm, "/")
-         },
-         "TMM" = {
-           scales_factors <-
-             (coefNorm$norm.factors * coefNorm$lib.size) / mean(coefNorm$norm.factors * coefNorm$lib.size)
-           assay(object) <- scale(assayTransform,
-                                  center = FALSE,
-                                  scale = scales_factors)
-         },
-         "none" = {
-           assay(object) <- assayTransform
-         },
-         {
-           stop("Could not recognize the normalization method. ",
-                "No normalization applied. Please check your parameters.")
-         }
+  # output
+  Normalization <- list(
+    setting = list(method = method),
+    results = list(coefNorm = coefNorm),
+    normalized = TRUE
   )
-
-  metadata(object)[["DataProcessing"]][["Normalization"]][["normalized"]] <-
-    TRUE
+  
+  message("[RFLOMICS] #       method: ", method)
+  
+  object <-
+    setElementToMetadata(object,
+                         name    = "DataProcessing",
+                         subName = "Normalization",
+                         content =  Normalization)
 
   return(object)
 }
+
+#' @description
+#' .applyNorm_intensities: apply the normalization method
+#' @title .applyNorm
+#' @param object An object of class \link{RflomicsSE}
+#' @description apply the normalization to the assay .
+#' @keywords internal
+#' @noRd
+#'
+.applyNorm_intensities <- function(object, method = c("median", "totalSum", "none")) {
+  
+  method <- match.arg(method)
+  
+  assayRaw <- assay(object)
+  
+  if(method == "median"){
+    coefNorm <- .medianNormalization(object)
+    assay(object) <- sweep(assayRaw, 2, coefNorm, "-")
+    
+  }
+  else if(method == "totalSum"){
+    coefNorm <- .totalSumNormalization(object)
+    assay(object) <- sweep(assayRaw, 2, coefNorm, "/")
+  }
+  else if(method == "none"){
+    coefNorm <- rep(1, ncol(assayRaw))
+    assay(object) <- assayRaw
+  }
+  
+  # output
+  Normalization <- list(
+    setting = list(method = method),
+    results = list(coefNorm = coefNorm),
+    normalized = TRUE
+  )
+  
+  message("[RFLOMICS] #       method: ", method)
+  
+  object <-
+    setElementToMetadata(object,
+                         name    = "DataProcessing",
+                         subName = "Normalization",
+                         content =  Normalization)
+  
+  return(object)
+}
+
 
 #' @title .medianNormalization
 #' Interface to calculate the median normalization coefficient
@@ -223,7 +225,7 @@
 #' factors. Other columns can be optionally added to give more detailed sample
 #' information.
 #' @keywords internal
-#' @importFrom edgeR DGEList calcNormFactors
+#' @importFrom edgeR DGEList normLibSizes
 #' @noRd
 
 .tmmNormalization <- function(object){
@@ -232,7 +234,7 @@
   counts <- assay(object)
 
   dge <- DGEList(counts=counts, group=groups$groups)
-  dge <- calcNormFactors(dge,method="TMM")
+  dge <- edgeR::normLibSizes(dge,method="TMM")
   nf  <- dge$samples
   return(nf)
 }
@@ -255,82 +257,6 @@
       })
 
   return(coef)
-}
-
-# ---- log transformation - RNAseq data ----
-
-#' @title .applyLog
-#'
-#' @param object An object of class \link{RflomicsSE}
-#' @param log log type
-#' @description apply the log to the assay. Usually.
-#' @keywords internal
-#' @noRd
-#'
-.applyLog <- function(object, log = "log2") {
-
-  if(getOmicsTypes(object) != "RNAseq") return(object)
-
-  assay(object) <-
-    switch(log,
-           "log2" = log2(assay(object) + 1)
-    )
-
-  metadata(object)[["DataProcessing"]][["log"]] <- log
-
-  return(object)
-}
-
-# ---- Imputation - prot/meta data ----
-
-#' @description
-#' .applyImputation: apply the missing value imputation method stored in
-#' metadata(object) and modify the assay.
-#' @title .applyImputation
-#' @param object An object of class \link{RflomicsSE}
-#' @keywords internal
-#' @noRd
-#'
-.applyImputation <- function(object) {
-  
-  if (.isImputed(object)) {
-    warning("The data were already imputed. Method: ",
-            getImputSettings(object)$method)
-    return(object)
-  }
-  
-  imput_method <- getImputSettings(object)$method
-  if (is.null(imput_method)) {
-    warning("No imputation method specified, see ?runDataProcessing")
-    return(object)
-  }
-  
-  omics.df <- assay(object)
-  
-  switch(imput_method,
-         "minFeatureValue" = {
-           
-           imput.res <- 
-             getAnalysis(
-               object, 
-               name = "DataProcessing", 
-               subName = "Imputation")$results
-           
-           minVals <- imput.res$minVals
-           omics.df[is.na(omics.df)] <- minVals
-         },
-         "none" = {},
-         {
-           stop("Could not recognize the imputation method. ")
-         }
-  )
-  
-  assay(object) <- omics.df
-  
-  metadata(object)[["DataProcessing"]][["Imputation"]][["imputed"]] <-
-    TRUE
-  
-  return(object)
 }
 
 # ---- check data processing level ----

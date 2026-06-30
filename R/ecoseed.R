@@ -75,3 +75,38 @@ NULL
 #' @examples
 #' data("ecoseed.mae")
 NULL
+
+
+# ---- mini MAE for unit tests ----
+
+#' @title Ecoseed project data
+#' @name ecoseed.mini.mae
+#' @rdname ecoseed.mini.mae
+#' @usage data("ecoseed.mini.mae")    
+#' @docType data
+#' @keywords datasets
+#' @description 
+#' This dataset is provided by the EcoSeed project (FP7-KBBE; Impacts of 
+#' Environmental Conditions on Seed Quality). that investigates the 
+#' effect of seed production temperature on the germination potential of 
+#' Arabidopsis thaliana.
+#' 
+#' This dataset is a multi-omics dataset composed of three data matrices:
+#' transcriptomics (raw RNAseq read count data matrix) and metabolomics
+#' (relative abundance matrix as XIC).
+#' 
+#' @format ecoseed.mae: a \link{MultiAssayExperiment} object, of RNAtest and 
+#' metatest data in \link{SummarizedExperiment}
+#'    \itemize{
+#'      \item ExperimentList class object of length 3: 
+#'      \itemize{
+#'        \item RNAtest: a \link{SummarizedExperiment} object with RNAseq data,
+#'        \item metatest: a \link{SummarizedExperiment} object with metabolomics data
+#'      }
+#'      \item DataFrame with experiment design
+#'      \item ...
+#'    }
+#' @references FP7-KBBE; Impacts of Environmental Conditions on Seed Quality
+#' @examples
+#' data("ecoseed.mae")
+NULL

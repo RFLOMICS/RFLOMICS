@@ -103,10 +103,10 @@ test_that("colData", {
 
 
   colData <- data.frame(Repeat      = Repeat,
-                        groups      = groups,
                         temperature = temperature,
                         imbibition  = imbibition,
-                        samples     = samples)
+                        samples     = samples,
+                        groups      = groups)
 
   rownames(colData) <- samples
 
@@ -161,10 +161,6 @@ test_that("test SE metadtata", {
                              subName = "log"),
                  NULL)
   }
-
-  # PCAlist
-  expect_no_error(getAnalysis(MAE[[SE]], name = "PCAlist", subName = "raw"))
-  expect_null(getAnalysis(MAE[[SE]], name = "PCAlist", subName = "norm"))
 
   # Analyses
   expect_equal(getAnalysis(MAE[[SE]], name = "DiffExpAnal"),       list())

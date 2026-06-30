@@ -76,16 +76,21 @@ setGeneric(
 )
 
 setGeneric(
+  name = "initRawRflomicsSE",
+  def  = function(object, ...)
+    standardGeneric("initRawRflomicsSE")
+)
+
+setGeneric(
   name = "getProjectName",
   def  = function(object)
     standardGeneric("getProjectName")
-
 )
+
 setGeneric(
   name = "subRflomicsMAE",
   def  = function(object, omicNames = NULL)
     standardGeneric("subRflomicsMAE")
-
 )
 
 setGeneric(
@@ -142,7 +147,6 @@ setGeneric(
     standardGeneric("getRflomicsSE")
 )
 
-
 setGeneric(
   name = "getFactorModalities",
   def  = function(object, factorName)
@@ -159,7 +163,7 @@ setGeneric(
 
 setGeneric(
   name = "generateModelFormulae",
-  def  = function(object)
+  def  = function(object, updateModelFormula = NULL)
     standardGeneric("generateModelFormulae")
 )
 
@@ -167,12 +171,18 @@ setGeneric(
   name = "setModelFormula",
   def  = function(object, modelFormula = NULL, ...)
     standardGeneric("setModelFormula")
-
 )
+
 setGeneric(
   name = "getModelFormula",
   def  = function(object, ...)
     standardGeneric("getModelFormula")
+)
+
+setGeneric(
+  name = "updateModelFormula",
+  def  = function(object, ...)
+    standardGeneric("updateModelFormula")
 )
 
 setGeneric(
@@ -183,85 +193,80 @@ setGeneric(
 
 setGeneric(
   name = "setSelectedContrasts",
-  def  = function(object, contrastList = NULL, ...)
+  def  = function(object, contrastNames = NULL, ...)
     standardGeneric("setSelectedContrasts")
 )
 
 setGeneric(
   name = "getSelectedContrasts",
-  def  = function(object, ...)
+  def  = function(object, all = FALSE, ...)
     standardGeneric("getSelectedContrasts")
 )
 
 #---- 03 data processing ----
 
 setGeneric(
-  name = "miniRflomicsSE",
+  name = "splitRflomicsSE",
   def  = function(object, selectedModality = NULL)
-    standardGeneric("miniRflomicsSE")
+    standardGeneric("splitRflomicsSE")
 )
 
 setGeneric(
   name = "runDataProcessing",
-  def  = function(object,
-                  samples = NULL,
-                  lowCountFilter = 
-                    list(filterMethod     = "filterByExpr",
-                         filterStrategy   = "groups",
-                         cpmCutoff        = NULL),
-                  missingValueFilter = 
-                    list(MVencoding       = "NA",
-                         method           = "none",
-                         globalProp       = NULL,
-                         nbCondition      = NULL,
-                         propPerCondition = NULL),
-                  transform = 
-                    list(transformMethod  = "none",
-                         userTransMethod  = "unknown"),
-                  normalize = 
-                    list(normMethod       = "none",
-                         userNormMethod   = "unknown"),
-                  impute = 
-                    list(imputMethod      = "none",
-                         factor           = NULL),
-                  ...)
-    standardGeneric("runDataProcessing")
+  def  = function(
+    object,
+    samples                 = NULL,
+    MVencoding              = "NA",
+    lowCountFilter = 
+      list(method           = NULL,
+           strategy         = NULL,
+           cpmCutoff        = NULL),
+    missingValueFilter = 
+      list(
+        method              = NULL,
+        proportion          = NULL,
+        nbCondition         = NULL),
+    transform = list(method = NULL),
+    normalize = list(method = NULL),
+    impute    = list(method = NULL,
+                     factor = NULL),
+    ...)
+  standardGeneric("runDataProcessing")
 )
 
 setGeneric(
   name = "filterLowAbundance",
-  def  = function(object,
-                  filterMethod   = "filterByExpr",
-                  filterStrategy = "groups",
-                  cpmCutoff      = NULL)
+  def  = function(
+    object,
+    method    = c("filterByExpr", "CPM", "none"),
+    strategy  = NULL,
+    cpmCutoff = 1)
     standardGeneric("filterLowAbundance")
 )
 
 setGeneric(
   name = "filterMissingValues",
-  def  = function(object, 
-                  MVencoding  = "NA",
-                  method      = "GlobalFiltering",
-                  globalProp  = 0.5,
-                  nbCondition = NULL,
-                  propPerCondition = NULL)
+  def  = function(
+    object,
+    method      = c("GlobalFiltering", "ConditionFiltering", "none"),
+    proportion  = 0.5,
+    nbCondition = 1)
     standardGeneric("filterMissingValues")
 )
 
 setGeneric(
   name = "runFeatureFiltering",
-  def  = function(object,
-                  lowCountFilter = 
-                    list(filterMethod = "filterByExpr",
-                         filterStrategy = "groups",
-                         cpmCutoff      = NULL),
-                  missingValueFilter = 
-                    list(MVencoding  = "NA",
-                         method      = "GlobalFiltering",
-                         globalProp  = 0.5,
-                         nbCondition = NULL,
-                         propPerCondition = NULL),
-                  ...)
+  def  = function(
+    object,
+    lowCountFilter = 
+      list(method    = c("filterByExpr", "CPM", "none"),
+           strategy  = NULL,
+           cpmCutoff = 1),
+    missingValueFilter    = 
+      list(method      = c("GlobalFiltering", "ConditionFiltering", "none"),
+           proportion  = 0.5,
+           nbCondition = 1),
+    ...)
     standardGeneric("runFeatureFiltering")
 )
 
@@ -276,8 +281,7 @@ setGeneric(
 setGeneric(
   name = "runNormalization",
   def  = function(object,
-                  normMethod = NULL,
-                  userNormMethod = "unknown",
+                  method = NULL,
                   ...)
     standardGeneric("runNormalization")
 )
@@ -285,8 +289,7 @@ setGeneric(
 setGeneric(
   name = "runTransformData",
   def  = function(object,
-                  transformMethod = NULL,
-                  userTransMethod = "unknown",
+                  method = NULL,
                   ...)
     standardGeneric("runTransformData")
 )
@@ -295,20 +298,9 @@ setGeneric(
 setGeneric(
   name = "runMVImputation",
   def  = function(object,
-                  imputMethod = "minFeatureValue", 
+                  method = "minFeatureValue", 
                   factor = 0.1, ...)
     standardGeneric("runMVImputation")
-)
-
-setGeneric(
-  name = "getProcessedData",
-  def  = function(object,
-                  filter = FALSE,
-                  trans = FALSE,
-                  norm = FALSE,
-                  imput = FALSE,
-                  log = FALSE, ...)
-    standardGeneric("getProcessedData")
 )
 
 setGeneric(
@@ -372,7 +364,6 @@ setGeneric(
   name = "runOmicsPCA",
   def  = function(object,
                   ncomp = 5,
-                  raw = FALSE ,
                   ...)
     standardGeneric("runOmicsPCA")
 )

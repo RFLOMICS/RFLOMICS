@@ -4,7 +4,6 @@
 # N. Bessoltane,
 # D. Charif,
 
-#' @importFrom purrr reduce
 #' @importFrom shinyBS popify bsButton addPopover bsTooltip
 
 .modGLMmodelUI <- function(id){
@@ -28,9 +27,6 @@
 
 
 .modGLMmodel <- function(input, output, session, rea.values){
-
-  # reactive value for reinitialisation of UIoutput
-  local.rea.values <- reactiveValues(contrast = NULL)
 
   # Construct the form to select the model
   output$SetModelFormula <- renderUI({
@@ -72,8 +68,8 @@
       setModelFormula(session$userData$FlomicsMultiAssay, input$model.formulae)
 
     # => get list of expression contrast (hypothesis)
-    local.rea.values$contrast <-
-      generateExpressionContrast(session$userData$FlomicsMultiAssay)
+    # session$userData$FlomicsMultiAssay <- 
+    #   generateExpressionContrast(session$userData$FlomicsMultiAssay)
 
     rea.values$model <- TRUE
 
@@ -85,6 +81,9 @@
   output$SetContrasts <- renderUI({
 
     if (rea.values$model == FALSE) return()
+    
+    contrastList <-
+      getSelectedContrasts(session$userData$FlomicsMultiAssay, all = TRUE)
 
     box(width=12, status = "warning", solidHeader = TRUE,
         title = "Select contrasts",
@@ -97,13 +96,13 @@
         br(),
         column(
           width = 12,
-          lapply(names(local.rea.values$contrast), function(contrastType) {
+          lapply(unique(contrastList$type), function(contrastType) {
 
-            vect <-
-              as.vector(local.rea.values$contrast[[contrastType]]$contrast)
+            contrastList_bis <- contrastList[contrastList$type == contrastType,]
+            vect <- as.vector(contrastList_bis$contrast)
             names(vect) <-
-              paste0("[",local.rea.values$contrast[[contrastType]]$tag, "] ",
-                     as.vector(local.rea.values$contrast[[contrastType]]$contrastName))
+              paste0("[",contrastList_bis$tag, "] ", 
+                     as.vector(contrastList_bis$contrastName))
 
             pickerInput(
               inputId  = session$ns(paste0("ContrastType",contrastType)),
@@ -139,15 +138,18 @@
       rea.values[[dataset]]$diffValid <- FALSE
       rea.values[[dataset]]$DiffValidContrast <- NULL
     })
-
+    
     #get list of selected contrast data frames with expression, name and type
+    contrastList <- 
+      getSelectedContrasts(session$userData$FlomicsMultiAssay, all = TRUE)
+    
+    contrast.sel.vec <- lapply(unique(contrastList$type), function(contrastType) {
+      
+      contrastList_bis <- contrastList[contrastList$type == contrastType,]
+      contrastList_bis[contrastList_bis$contrast %in% 
+                         input[[paste0("ContrastType",contrastType)]],]
 
-    contrast.sel.vec <- lapply(names(local.rea.values$contrast), function(contrastType) {
-
-      filter(local.rea.values$contrast[[contrastType]],
-             contrast %in% input[[paste0("ContrastType",contrastType)]])
-
-    }) %>% reduce(rbind)
+    }) |> do.call(what = rbind)
 
     message("[RFLOMICS] #    => selected contrasts: ", nrow(contrast.sel.vec))
 
@@ -165,7 +167,10 @@
 
     # define all the coefficients of selected contrasts and return a
     # contrast matrix with contrast sample name and associated coefficients
-    session$userData$FlomicsMultiAssay <- setSelectedContrasts(session$userData$FlomicsMultiAssay, contrastList = contrast.sel.vec)
+    session$userData$FlomicsMultiAssay <- 
+      setSelectedContrasts(
+        session$userData$FlomicsMultiAssay, 
+        contrastNames = contrast.sel.vec$contrastName)
     rea.values$Contrasts.Sel <- contrast.sel.vec
 
     #rea.values$analysis <- TRUE

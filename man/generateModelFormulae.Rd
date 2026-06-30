@@ -9,17 +9,23 @@
 \alias{getModelFormula}
 \alias{getModelFormula,RflomicsMAE-method}
 \alias{getModelFormula,RflomicsSE-method}
+\alias{updateModelFormula}
+\alias{updateModelFormula,RflomicsMAE-method}
 \title{Statistical model formulae}
 \usage{
 \S4method{generateModelFormulae}{RflomicsMAE}(object)
 
 \S4method{setModelFormula}{RflomicsMAE}(object, modelFormula = NULL)
 
-\S4method{setModelFormula}{RflomicsSE}(object, modelFormula = NULL, analysisName = NULL)
+\S4method{setModelFormula}{RflomicsSE}(object, modelFormula = NULL)
 
 \S4method{getModelFormula}{RflomicsMAE}(object)
 
 \S4method{getModelFormula}{RflomicsSE}(object, analysisName = NULL)
+
+\S4method{updateModelFormula}{RflomicsMAE}(object, SE.name = NULL)
+
+\S4method{updateModelFormula}{RflomicsSE}(object)
 }
 \arguments{
 \item{object}{an object of class \link{RflomicsSE} or 
@@ -52,6 +58,9 @@ the statistical method.
 \itemize{
    \item getModelFormula:
  Access to the model formula of the statistical analysis}
+
+\itemize{
+   \item Update model formula according to the subset design}
 }
 \examples{
 library(RFLOMICS)

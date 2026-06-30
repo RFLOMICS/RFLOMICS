@@ -385,6 +385,47 @@ setMethod(
     return(levels(getDesignMat(object)[[factorName]]))
   })
 
+
+## ---- getRawRflomicsSE: ----
+
+#' @name initRawRflomicsSE
+#' @aliases initRawRflomicsSE,RflomicsMAE-method
+#' @exportMethod initRawRflomicsSE
+#' @rdname RflomicsMAE-class
+#' @param datasetName dataset names
+#' @section Accessors:
+#' \itemize{
+#'    \item initRawRflomicsSE: Return an RflomicsSE-initialized object.}
+setMethod(
+  f          = "initRawRflomicsSE",
+  signature  = "RflomicsMAE",
+  definition <- function(object, datasetName){
+    
+    if(is.null(datasetName)) return(NULL)
+    if(!datasetName %in% names(object)) return(NULL)
+    
+    return(initRawRflomicsSE(object[[datasetName]]))
+  })
+
+#' @name initRawRflomicsSE,RflomicsSE-method
+#' @aliases initRawRflomicsSE,RflomicsSE-method
+#' @exportMethod initRawRflomicsSE
+#' @rdname RflomicsSE-class
+#' @section Accessors:
+#' \itemize{
+#'    \item initRawRflomicsSE: Return an RflomicsSE-initialized object.}
+setMethod(
+  f          = "initRawRflomicsSE",
+  signature  = "RflomicsSE",
+  definition <- function(object){
+    
+    newobject <- metadata(object)[["rawRflomicsSE"]]
+    metadata(newobject)[["rawRflomicsSE"]] <- newobject
+    
+    return(newobject)
+  })
+
+
 ## ---- subRflomicsMAE:  subset a RflomicsMAE from ----
 
 #' @name subRflomicsMAE

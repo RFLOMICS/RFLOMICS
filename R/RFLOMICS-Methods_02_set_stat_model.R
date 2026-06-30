@@ -51,25 +51,60 @@ setMethod(f          = "generateModelFormulae",
 #' \itemize{
 #'    \item setModelFormula():
 #'    Set the model formula stored in \code{metadata} slot}
-setMethod(f          = "setModelFormula",
-          signature  = "RflomicsMAE",
-          definition = function(object, modelFormula=NULL){
-            
-            if(is.null(modelFormula)){
-              warning("You forgot to specify 'modelFormula'.")
-            } 
-            else{
-              
-              metadata(object)$design$Model.formula <- 
-                paste(modelFormula, collapse = " ")
-              
-              for(name in names(object)){
-                object[[name]] <- 
-                  setModelFormula(object[[name]], modelFormula = modelFormula)
-              }
-            }
-            return(object)
-          })
+setMethod(
+  f          = "setModelFormula",
+  signature  = "RflomicsMAE",
+  definition = function(object, modelFormula=NULL){
+    
+    if(is.null(modelFormula)){
+      warning("You forgot to specify 'modelFormula'.")
+      return(object)
+    } 
+    modelFormula <- deparse(as.formula(modelFormula))
+    
+    # check model formula validity
+    possibleFormula <- 
+      .generateModelFormulae(getBioFactors(object), getBatchFactors(object))
+    
+    if(isFALSE(modelFormula %in% sapply(possibleFormula, function(x) deparse(x)))){
+      warning("Invalid formula. See generateModelFormulae() 
+              for the list of available formulas.")
+      return(object)
+    }
+      
+    metadata(object)$design$Model.formula <- modelFormula
+    
+    metadata(object)$design$Contrasts.Sel <- 
+      generateExpressionContrast(object, modelFormula = modelFormula)
+    
+    for(name in names(object)){
+      # current SE
+      modelFormula2 <- 
+        .updateModelFormula(
+          object[[name]], 
+          modelFormula = modelFormula
+        )
+      object[[name]] <- 
+        setModelFormula(
+          object[[name]], 
+          modelFormula = modelFormula2
+        )
+      
+      # raw SE
+      modelFormula3 <- 
+        .updateModelFormula(
+          metadata(object[[name]])[["rawRflomicsSE"]], 
+          modelFormula = modelFormula
+        )
+      metadata(object[[name]])[["rawRflomicsSE"]] <-
+        setModelFormula(
+          metadata(object[[name]])[["rawRflomicsSE"]], 
+          modelFormula = modelFormula3
+        )
+    }
+    
+    return(object)
+  })
 
 #' @name setModelFormula
 #' @aliases setModelFormula,RflomicsSE-method
@@ -77,209 +112,30 @@ setMethod(f          = "setModelFormula",
 #' @exportMethod setModelFormula
 setMethod(f          = "setModelFormula",
           signature  = "RflomicsSE",
-          definition = function(object, modelFormula=NULL, analysisName = NULL){
+          definition = function(object, modelFormula=NULL){
             
             if(is.null(modelFormula)){
               warning("You forgot to specify 'modelFormula'.")
+              return(object)
             } 
-            else{
-              
-              if(is.null(analysisName)){
-                metadata(object)$design$Model.formula <- 
-                  paste(modelFormula, collapse = " ")
-              }
-              else{
-                DiffExpAnal <- 
-                  getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
-                
-                if(is.null(DiffExpAnal)){
-                  warning("No differential analysis named ",analysisName, " found.")
-                }else{
-                  # DiffExpAnal[[analysisName]]$settings$Contrasts.Sel <-
-                  #   updateSelectedContrasts(object, contrastList)
-                  
-                  DiffExpAnal$settings$Model.formula <-
-                    paste(modelFormula, collapse = " ")
-                  
-                  object <- 
-                    setElementToMetadata(object, 
-                                         name = DiffExpAnal, 
-                                         subName = analysisName) 
-                }
-              }
+            
+            modelFormula <- deparse(as.formula(modelFormula))
+            
+            # check model formula validity
+            possibleFormula <- 
+              .generateModelFormulae(getBioFactors(object), getBatchFactors(object))
+            
+            if(isFALSE(modelFormula %in% sapply(possibleFormula, function(x) deparse(x)))){
+              warning("Invalid formula. See generateModelFormulae() 
+              for the list of available formulas.")
+              return(object)
             }
-            return(object)
-          })
-
-# ---- generateExpressionContrast ----
-#' @title Contrast expressions
-#' @name generateExpressionContrast
-#' @aliases generateExpressionContrast,RflomicsSE-method
-#' @rdname generateExpressionContrast
-#' @description
-#' Generate expression of contrasts based on chosed model formula.
-#' \itemize{
-#'    \item generateExpressionContrast:
-#'  This function allows, from a model formulae, to give the 
-#'  expression contrast data frames.
-#'  Three types of contrasts are expressed:
-#'  \itemize{
-#'  \item pairwise comparison 
-#'  \item averaged expression 
-#'  \item interaction expression 
-#' }}
-#' @param object an object of class \link{RflomicsSE} or 
-#' class \link{RflomicsMAE-class}
-#' @param contrastType type of contrasts from which the possible 
-#' contrasts are extracted ("average", "simple", "interaction"). 
-#' Default is all contrasts types.
-#' @return list of 1 or 3 data.frames of contrast expression
-#' @exportMethod generateExpressionContrast
-#' @author Christine Paysant-Le Roux, adapted by Nadia Bessoltane
-#' @example inst/examples/statSetting.R
-setMethod(f          = "generateExpressionContrast",
-          signature  = "RflomicsSE",
-          definition = function(object, contrastType=NULL){
             
-            contrastTypes <- c("simple", "averaged", "interaction")
+            metadata(object)$design$Model.formula <- modelFormula
             
-            modelFormula <- getModelFormula(object)
-            # check
-            if (is.null(modelFormula)) 
-              stop("model formula is mandatory.")
+            metadata(object)$design$Contrasts.Sel <- 
+              generateExpressionContrast(object, modelFormula = modelFormula)
             
-            if (is(modelFormula, "formula"))
-              modelFormula <- 
-              paste(as.character(modelFormula), collapse = " ")
-            
-            # args for getExpressionContrastF()
-            factorBio <- getBioFactors(object)
-            ExpDesign <- getDesignMat(object)
-            
-            Contrasts.List  <-  
-              .getExpressionContrastF(ExpDesign,  
-                                      factorBio,
-                                      modelFormula=modelFormula)
-            
-            if(is.null(contrastType))
-              return(Contrasts.List)
-            
-            if(!contrastType %in% contrastTypes)
-              stop("The contrastType argument must be one of the following values: ", 
-                   contrastTypes)
-            
-            return(Contrasts.List[[contrastType]])
-          })
-
-#' @rdname generateExpressionContrast
-#' @name generateExpressionContrast
-#' @aliases generateExpressionContrast,RflomicsMAE-method
-#' @exportMethod generateExpressionContrast
-setMethod(f          = "generateExpressionContrast",
-          signature  = "RflomicsMAE",
-          definition = function(object, contrastType=NULL){
-            
-            contrastTypes <- c("simple", "averaged", "interaction")
-            
-            modelFormula <- getModelFormula(object)
-            # check
-            if (is.null(modelFormula)) 
-              stop("model formula is mandatory.")
-            
-            if (is(modelFormula, "formula"))
-              modelFormula <- 
-              paste(as.character(modelFormula), collapse = " ")
-            
-            # args for getExpressionContrastF()
-            factorBio <- getBioFactors(object)
-            ExpDesign <- getDesignMat(object)
-            
-            Contrasts.List  <- 
-              .getExpressionContrastF(ExpDesign, factorBio, modelFormula)
-            
-            if(is.null(contrastType))
-              return(Contrasts.List)
-            
-            if(!contrastType %in% contrastTypes)
-              stop("The contrastType argument must be one of the following values: ", 
-                   contrastTypes)
-            
-            
-            return(Contrasts.List[[contrastType]])
-          })
-
-
-# ---- setSelectedContrasts ----
-#' @rdname generateExpressionContrast
-#' @description
-#' \itemize{
-#'    \item setSelectedContrasts: 
-#'  Set the selected contrasts stored in \code{metadata} slot}
-#' @param contrastList a data.frame of contrasts generated by 
-#' \link{generateExpressionContrast}
-#' @return an object of \link{RflomicsSE} class or \link{RflomicsMAE-class}
-#'  class
-#' @exportMethod setSelectedContrasts
-#' @name setSelectedContrasts
-#' @aliases setSelectedContrasts,RflomicsMAE-method
-setMethod(
-  f          = "setSelectedContrasts",
-  signature  = "RflomicsMAE",
-  definition = function(object, contrastList=NULL){
-    
-    if(is.null(contrastList)){
-      warning("You forgot to specify 'contrastList'.")
-    }
-    else{
-      metadata(object)$design$Contrasts.Sel <- 
-        updateSelectedContrasts(object, contrastList)
-      
-      # for each dataset
-      for(SE.name in names(object)){
-        
-        object[[SE.name]] <- 
-          setSelectedContrasts(object[[SE.name]], contrastList)
-      }
-    }
-    return(object)
-  })
-
-
-#' @rdname generateExpressionContrast
-#' @exportMethod setSelectedContrasts
-#' @name setSelectedContrasts
-#' @aliases setSelectedContrasts,RflomicsSE-method
-setMethod(f          = "setSelectedContrasts",
-          signature  = "RflomicsSE",
-          definition = function(object, contrastList=NULL, analysisName=NULL){
-            
-            if(is.null(contrastList)){
-              warning("You forgot to specify 'contrastList'.")
-            }
-            else{
-              
-              if(is.null(analysisName)){
-                metadata(object)$design$Contrasts.Sel <- 
-                  updateSelectedContrasts(object, contrastList)
-              }
-              else{
-                DiffExpAnal <- 
-                  getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
-                
-                if(is.null(DiffExpAnal)){
-                  warning("No differential analysis named ",analysisName, " found.")
-                  
-                }else{
-                  # DiffExpAnal[[analysisName]]$settings$Contrasts.Sel <-
-                  #   updateSelectedContrasts(object, contrastList)
-                  
-                  DiffExpAnal$settings$Contrasts.Sel <-
-                    updateSelectedContrasts(object, contrastList)
-                  object <- 
-                    setElementToMetadata(object, name = DiffExpAnal, subName = analysisName) 
-                }
-              }
-            }
             return(object)
           })
 
@@ -307,21 +163,254 @@ setMethod(f          = "getModelFormula",
           signature  = "RflomicsSE",
           definition = function(object, analysisName = NULL){
             
-            if(is.null(analysisName))
-              return(metadata(object)$design$Model.formula)
-            
-            DiffExpAnal <- 
-              getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
-            if(is.null(DiffExpAnal)) return(NULL)
-            
-            return(DiffExpAnal$settings$Model.formula)
+            return(metadata(object)$design$Model.formula)
           })
+
+
+# ---- update modelFormula ----
+#' @rdname generateModelFormulae
+#' @name updateModelFormula
+#' @aliases updateModelFormula,RflomicsMAE-method
+#' @description
+#' \itemize{
+#'    \item Update model formula according to the subset design}
+#' @exportMethod updateModelFormula
+setMethod(f          = "updateModelFormula",
+          signature  = "RflomicsMAE",
+          definition = function(object, SE.name = NULL){
+            
+            updateModelFormula(object[[SE.name]])
+          })
+
+
+#' @rdname generateModelFormulae
+#' @name updateModelFormula
+#' @aliases updateModelFormula,RflomicsMAE-method
+#' @exportMethod updateModelFormula
+setMethod(f          = "updateModelFormula",
+          signature  = "RflomicsSE",
+          definition = function(object){
+            
+            model_LM  <- getModelFormula(object)
+            model_LM2 <- .updateModelFormula(object, model_LM)
+            
+            if(deparse(model_LM2) == model_LM)
+              return(object)
+            # set model and update contrast exps
+            setModelFormula(object, modelFormula = model_LM2)
+          })
+
+# ---- generateExpressionContrast ----
+#' @title Contrast expressions
+#' @name generateExpressionContrast
+#' @aliases generateExpressionContrast,RflomicsSE-method
+#' @rdname generateExpressionContrast
+#' @description
+#' Generate expression of contrasts based on chosed model formula.
+#' \itemize{
+#'    \item generateExpressionContrast:
+#'  This function allows, from a model formulae, to give the 
+#'  expression contrast data frames.
+#'  Three types of contrasts are expressed:
+#'  \itemize{
+#'  \item pairwise comparison 
+#'  \item averaged expression 
+#'  \item interaction expression 
+#' }}
+#' @param object an object of class \link{RflomicsSE} or 
+#' class \link{RflomicsMAE-class}
+#' @param modelFormula modelFormula
+#' @param contrastType type of contrasts from which the possible 
+#' contrasts are extracted ("average", "simple", "interaction"). 
+#' Default is all contrasts types.
+#' @exportMethod generateExpressionContrast
+#' @author Christine Paysant-Le Roux, adapted by Nadia Bessoltane
+#' @example inst/examples/statSetting.R
+setMethod(f          = "generateExpressionContrast",
+          signature  = "RflomicsSE",
+          definition = function(object, 
+                                modelFormula = NULL,
+                                contrastType = NULL){
+            
+            contrastTypes <- c("simple", "averaged", "interaction")
+            
+            # check model
+            if (is.null(modelFormula)) 
+                modelFormula <- getModelFormula(object)
+            
+            if (is.null(modelFormula)) 
+              stop("model formula is mandatory.")
+            
+            if (is(modelFormula, "formula"))
+              modelFormula <- 
+              paste(as.character(modelFormula), collapse = " ")
+            
+            # check contarst type
+            if(is.null(contrastType))
+              contrastType <- contrastTypes
+            
+            if(any(!contrastType %in% contrastTypes))
+              stop("The contrastType argument must be one of the following values: ", 
+                   contrastTypes)
+            
+            # args for getExpressionContrastF()
+            factorBio <- getBioFactors(object)
+            ExpDesign <- getDesignMat(object)
+            
+            Contrasts.List <- 
+              .getExpressionContrastF(ExpDesign, factorBio, modelFormula)
+            
+            allcontrast <- Reduce("rbind", Contrasts.List[contrastType])
+            allcontrast <- as.data.frame(allcontrast)
+            allcontrast$selected <- rep("no", nrow(allcontrast))
+            
+            #metadata(object)$design$Contrasts.Sel <- allcontrast
+            
+            return(allcontrast)
+          })
+
+#' @rdname generateExpressionContrast
+#' @name generateExpressionContrast
+#' @aliases generateExpressionContrast,RflomicsMAE-method
+#' @exportMethod generateExpressionContrast
+setMethod(f          = "generateExpressionContrast",
+          signature  = "RflomicsMAE",
+          definition = function(object, 
+                                modelFormula = NULL,
+                                contrastType = NULL){
+            
+            contrastTypes <- c("simple", "averaged", "interaction")
+            
+            # check model
+            if (is.null(modelFormula)) 
+              modelFormula <- getModelFormula(object)
+            
+            if (is.null(modelFormula)) 
+              stop("model formula is mandatory.")
+            
+            if (is(modelFormula, "formula"))
+              modelFormula <- 
+                paste(as.character(modelFormula), collapse = " ")
+            
+            # check contarst type
+            if(is.null(contrastType))
+              contrastType <- contrastTypes
+            
+            if(any(!contrastType %in% contrastTypes))
+              stop("The contrastType argument must be one of the following values: ", 
+                   contrastTypes)
+            
+            # args for getExpressionContrastF()
+            factorBio <- getBioFactors(object)
+            ExpDesign <- getDesignMat(object)
+            
+            Contrasts.List <- 
+              .getExpressionContrastF(ExpDesign, factorBio, modelFormula)
+            
+            allcontrast <- Reduce("rbind", Contrasts.List[contrastType])
+            allcontrast <- as.data.frame(allcontrast)
+            allcontrast$selected <- rep("no", nrow(allcontrast))
+            
+            #metadata(object)$design$Contrasts.Sel <- allcontrast
+            
+            return(allcontrast)
+          })
+
+
+# ---- setSelectedContrasts ----
+#' @rdname generateExpressionContrast
+#' @description
+#' \itemize{
+#'    \item setSelectedContrasts: 
+#'  Set the selected contrasts stored in \code{metadata} slot}
+#' @param contrastList a data.frame of contrasts generated by 
+#' \link{generateExpressionContrast}
+#' @return an object of \link{RflomicsSE} class or \link{RflomicsMAE-class}
+#'  class
+#' @exportMethod setSelectedContrasts
+#' @name setSelectedContrasts
+#' @aliases setSelectedContrasts,RflomicsMAE-method
+setMethod(
+  f          = "setSelectedContrasts",
+  signature  = "RflomicsMAE",
+  definition = function(object, contrastNames=NULL){
+    
+    if(is.null(contrastNames)){
+      warning("You forgot to specify 'contrastNames'.")
+      return(object)
+    }
+    
+    all.contrast <- metadata(object)$design$Contrasts.Sel
+    
+    contrastNames <- 
+      intersect(
+        all.contrast$contrastName,
+        contrastNames
+      )
+    
+    if(is.null(contrastNames)){
+      stop("pas d'intersection")
+    }
+    
+    all.contrast[all.contrast$contrastName %in% contrastNames,"selected"] <- 
+      "yes"
+      
+    metadata(object)$design$Contrasts.Sel <- all.contrast
+    
+    for(name in names(object)){
+      #current SE
+      metadata(object[[name]])$design$Contrasts.Sel <- all.contrast
+      
+      #raw SE
+      rawRflomicsSE <- metadata(object[[name]])[["rawRflomicsSE"]]
+      metadata(rawRflomicsSE)$design$Contrasts.Sel <- all.contrast
+      metadata(object[[name]])[["rawRflomicsSE"]] <- rawRflomicsSE
+    }
+    
+    return(object)
+  })
+
+
+#' @rdname generateExpressionContrast
+#' @exportMethod setSelectedContrasts
+#' @name setSelectedContrasts
+#' @aliases setSelectedContrasts,RflomicsSE-method
+setMethod(
+  f          = "setSelectedContrasts",
+  signature  = "RflomicsSE",
+  definition = function(object, contrastNames=NULL){
+    
+    if(is.null(contrastNames)){
+      warning("You forgot to specify 'contrastNames'.")
+      return(object)
+    }
+    
+    all.contrast <- metadata(object)$design$Contrasts.Sel
+    
+    contrastNames <- 
+      intersect(
+        all.contrast$contrastName,
+        contrastNames
+      )
+    
+    if(is.null(contrastNames)){
+      stop("pas d'intersection")
+    }
+    
+    all.contrast[all.contrast$contrastName %in% contrastNames,"selected"] <- 
+      "yes"
+    
+    metadata(object)$design$Contrasts.Sel <- all.contrast
+    
+    return(object)
+  })
 
 
 # ---- getSelectedContrasts : ----
 #' @rdname generateExpressionContrast
 #' @exportMethod getSelectedContrasts
 #' @name getSelectedContrasts
+#' @param all TRUE: all contrasts; FALSE: user selected contrasts
 #' @aliases getSelectedContrasts,RflomicsMAE-method
 #' @description
 #' \itemize{
@@ -329,11 +418,15 @@ setMethod(f          = "getModelFormula",
 #'  List the selected contrasts}
 setMethod(f          = "getSelectedContrasts",
           signature  = "RflomicsMAE",
-          definition = function(object){
+          definition = function(object, all = FALSE){
             
-            return(metadata(object)$design$Contrasts.Sel)
+            contrastList <- metadata(object)$design$Contrasts.Sel
+            
+            if(!all)
+              contrastList <- contrastList[contrastList$selected == "yes",]
+              
+            return(contrastList)
           })
-
 
 #' @rdname generateExpressionContrast
 #' @exportMethod getSelectedContrasts
@@ -341,17 +434,14 @@ setMethod(f          = "getSelectedContrasts",
 #' @aliases getSelectedContrasts,RflomicsSE-method
 setMethod(f          = "getSelectedContrasts",
           signature  = "RflomicsSE",
-          definition = function(object, analysisName = NULL){
+          definition = function(object, all = FALSE){
             
-            if(is.null(analysisName))
-              return(metadata(object)$design$Contrasts.Sel)
+            contrastList <- metadata(object)$design$Contrasts.Sel
             
-            DiffExpAnal <- 
-              getAnalysis(object, name = "DiffExpAnal", subName = analysisName)
+            if(!all)
+              contrastList <- contrastList[contrastList$selected == "yes",]
             
-            if(is.null(DiffExpAnal)) return(NULL)
-            
-            return(DiffExpAnal$settings$Contrasts.Sel)
+            return(contrastList)
           })
 
 # ---- getContrastMatrix ----

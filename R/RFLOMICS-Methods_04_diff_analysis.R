@@ -90,16 +90,17 @@
 setMethod(
   f         = "runDiffAnalysis",
   signature = "RflomicsSE",
-  definition = function(object,
-                        contrastList     = NULL,
-                        modelFormula     = NULL,
-                        method           = NULL,
-                        p.adj.method     = "BH",
-                        p.adj.cutoff     = 0.05,
-                        logFC.cutoff     = 0,
-                        selectedModality = NULL,
-                        cmd = FALSE,
-                        ...){
+  definition = function(
+    object,
+    contrastList     = NULL,
+    modelFormula     = NULL,
+    method           = NULL,
+    p.adj.method     = "BH",
+    p.adj.cutoff     = 0.05,
+    logFC.cutoff     = 0,
+    selectedModality = NULL,
+    cmd = FALSE,
+    ...){
     
     # define result output
     DiffExpAnal <- list(
@@ -108,6 +109,27 @@ setMethod(
       errors   = NULL
     )
 
+    # check modelFormula
+    if(is.null(modelFormula))
+      modelFormula <- getModelFormula(object)
+    
+    # check contrasts
+    contrast.sel <- getSelectedContrasts(object, all = FALSE)
+    if(nrow(contrast.sel) == 0 || is.null(contrast.sel))
+      stop("No contrasts defined in the ", getDatasetNames(object), " object.")
+
+    # get contrast
+    if(is.null(contrastList))
+      contrastList <- getSelectedContrasts(object)
+    else {
+      # contrastList <- intersect(contrastList, contrast.sel)
+      # contrastList <- merge(contrastList, contrast.sel, all = FALSE)
+    }
+    
+    if(length(contrastList) == 0)
+      stop("The specified contrasts do not match the selected contrasts")
+
+    # check method
     # default methods
     default.methods <-
       switch (
@@ -115,47 +137,11 @@ setMethod(
         "RNAseq" = "edgeRglmfit",
         "limmalmFit"
       )
-
-    # Check if the processing necessary for the diff is applied.
-    if(getOmicsTypes(object) == "RNAseq"){
-      object.p <- getProcessedData(object, filter = TRUE)
-      if(!.isFiltered(object.p))
-        stop("The RNAseq data must be filtered and normalized ",
-             "before performing the differential analysis.")
-    }else{
-      object.p <- getProcessedData(object, norm = TRUE)
-      if(!.isNormalized(object.p))
-        stop("The ",getOmicsTypes(object)," data must be transformed and ",
-             "normalized before performing the differential analysis.")
-    }
-
-    # check modelFormula
-    if(is.null(modelFormula))
-      modelFormula <- getModelFormula(object.p)
-    
-    # check contrasts
-    contrast.sel <- getSelectedContrasts(object.p)
-    if(nrow(contrast.sel) == 0 || is.null(contrast.sel))
-      stop("No contrasts defined in the ", getDatasetNames(object.p), " object.")
-
-    # get contrast
-    if(is.null(contrastList))
-      contrastList <- getSelectedContrasts(object.p)
-    else {
-        # contrastList <- intersect(contrastList, contrast.sel)
-        # contrastList <- merge(contrastList, contrast.sel,
-        #                       all = FALSE)
-    }
-    
-    if(length(contrastList) == 0)
-      stop("The specified contrasts do not match the selected contrasts")
-
-    # check method
     if (is.null(method)) method <- default.methods
     if (isFALSE(method %in% default.methods))
       stop("The value '", method, "' is not supported for the argument 'method'.
            It is recommended to use the value '",default.methods[1],
-           "' for '",getOmicsTypes(object.p), "' data")
+           "' for '",getOmicsTypes(object), "' data")
 
     # set settings
     DiffExpAnal[["settings"]][["method"]]           <- method
@@ -171,15 +157,15 @@ setMethod(
     }
     else{
       #check_arg(selectedModality)
-      target <- getDesignMat(object.p)
+      target <- getDesignMat(object)
       
-      FactorNames <- getFactorNames(object.p)
+      FactorNames <- getFactorNames(object)
       FactorName <- 
         FactorNames[sapply(FactorNames, function(x) 
           grepl(paste0("^", x), selectedModality))]
       
       FactorModalities <- 
-        getFactorModalities(object.p, factorName = FactorName)
+        getFactorModalities(object, factorName = FactorName)
 
       FactorModalitie <- 
         FactorModalities[sapply(FactorModalities, function(x) 
@@ -188,11 +174,11 @@ setMethod(
       sample_to_keep <- 
         target[target[[FactorName]] == FactorModalitie,"samples"]
       
-      object.p <- object.p[, sample_to_keep]
+      object <- object[, sample_to_keep]
     }
     
     ## check completness
-    Completeness <- checkExpDesignCompleteness(object.p)
+    Completeness <- checkExpDesignCompleteness(object)
     if (isTRUE(Completeness[["error"]])){
       DiffExpAnal[["errors"]] <- Completeness[["messages"]]
 
@@ -200,7 +186,7 @@ setMethod(
 
       ## getcontrast
       DiffExpAnal[["settings"]][["contrastCoef"]] <-
-        generateContrastMatrix(object.p, 
+        generateContrastMatrix(object, 
                                modelFormula = modelFormula, 
                                contrastList = contrastList)
 
@@ -210,7 +196,7 @@ setMethod(
           "edgeRglmfit" =
             .tryRflomics(
               .edgeRAnaDiff(
-                object          = object.p,
+                object          = object,
                 modelFormula    = modelFormula, 
                 Contrasts.Coeff = DiffExpAnal[["settings"]][["contrastCoef"]],
                 FDR             = 1,
@@ -219,7 +205,7 @@ setMethod(
           "limmalmFit" =
             .tryRflomics(
               .limmaAnaDiff(
-                object          = object.p,
+                object          = object,
                 modelFormula    = modelFormula, 
                 Contrasts.Coeff = DiffExpAnal[["settings"]][["contrastCoef"]],
                 p.adj.cutoff    = 1,
@@ -295,7 +281,7 @@ setMethod(
                         selectedModality = NULL,
                         cmd              = FALSE,
                         ...){
-
+    
     # all verifications are done in this method
     object[[SE.name]] <-
       runDiffAnalysis(object           = object[[SE.name]],
@@ -660,12 +646,7 @@ setMethod(
                         modalities = NULL,
                         drawArgs = list(),
                         heatmapArgs = list()){
-
-    object <-
-      getProcessedData(object,
-                       norm = TRUE,
-                       log  = ifelse(getOmicsTypes(object) == "RNAseq",
-                                     TRUE, FALSE))
+    
 
     Groups      <- getDesignMat(object)
     DiffExpAnal <- 
@@ -859,12 +840,7 @@ setMethod(
       return(p)
     }
 
-    object <-
-      getProcessedData(
-        object,
-        filter = TRUE,
-        norm = !raw,
-        log = ifelse(getOmicsTypes(object) == "RNAseq", TRUE, FALSE))
+    if(isTRUE(raw)) object <- initRawRflomicsSE(object)
 
     Groups <- getDesignMat(object)
 

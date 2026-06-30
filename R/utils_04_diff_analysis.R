@@ -41,10 +41,10 @@
     #norm.factors <- getCoeffNorm(object)$norm.factors
 
     target       <- getDesignMat(object)
-    coeffNorm    <- getCoeffNorm(object)
+    #coeffNorm    <- getCoeffNorm(object)
     group        <- target$groups
-    lib.size     <- coeffNorm[coeffNorm$group %in% group,]$lib.size
-    norm.factors <- coeffNorm[coeffNorm$group %in% group,]$norm.factors
+    #lib.size     <- coeffNorm[coeffNorm$group %in% group,]$lib.size
+    #norm.factors <- coeffNorm[coeffNorm$group %in% group,]$norm.factors
     
     z <- y <- NULL
 
@@ -53,8 +53,8 @@
     # Construct the DGE obect
     dge <- DGEList(counts       = count_matrix,
                    group        = group,
-                   lib.size     = lib.size,
-                   norm.factors = norm.factors)
+                   #lib.size     = lib.size,
+                   norm.factors = rep(1, ncol(count_matrix)))
 
     # Run the model
     if (cmd) message("[RFLOMICS] [cmd] dge <- edgeR::estimateDisp(dge, design=model_matrix)")

@@ -47,6 +47,7 @@ Suggests:
 VignetteBuilder: knitr
 Imports:
     vroom,
+    biomaRt,
     org.At.tair.db,
     AnnotationDbi,
     clusterProfiler,
@@ -83,3 +84,4 @@ Imports:
     tidyselect,
     UpSetR,
 SystemRequirements: Python (>=3), numpy, pandas, h5py, scipy, argparse, sklearn, mofapy2 (>=0.7.1)
+LazyData: true

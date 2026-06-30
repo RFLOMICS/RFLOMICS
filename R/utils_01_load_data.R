@@ -51,8 +51,7 @@ createRflomicsMAE <- function(projectName = NULL,
   # check arg
   ## => projectName
   if(is.null(projectName)) stop("projectName is mandatory.")
-  projectName <-
-    str_replace_all(string = projectName, pattern = "[# /-]", replacement = "")
+  projectName <- gsub("[# /\\-]", "", projectName)
 
   ## => omicsData
   if (is.null(omicsData))
@@ -77,8 +76,7 @@ createRflomicsMAE <- function(projectName = NULL,
     if(any(!omicsNames %in% names(omicsData)))
       stop("the omicsNames values must match the names of omicsData object.")
 
-  omicsNames <-
-    str_replace_all(string = omicsNames, pattern = "[# /-]", replacement = "")
+  omicsNames <- gsub("[# /\\-]", "", omicsNames)
   if (isTRUE(any(duplicated(omicsNames))))
     stop("presence of duplicates in the omicsNames")
 
@@ -104,8 +102,7 @@ createRflomicsMAE <- function(projectName = NULL,
       )
 
     colnames(omicsData.df[[dataName]]) <-
-      str_replace_all(string = colnames(omicsData.df[[dataName]]),
-                      pattern = "[# /-]", replacement = "")
+      gsub("[# /\\-]", "", colnames(omicsData.df[[dataName]]))
   }
 
   ## => omicsTypes
@@ -131,8 +128,7 @@ createRflomicsMAE <- function(projectName = NULL,
   if (nrow(ExpDesign) == 0 || ncol(ExpDesign) == 0)
     stop("the ExpDesign is mandatory.")
 
-  designRownames <-
-    str_replace_all(string = rownames(ExpDesign), pattern = "[*# -/]", replacement = "")
+  designRownames <- gsub("[*# /\\-]", "", rownames(ExpDesign))
   if (isTRUE(any(duplicated(designRownames))))
     stop("presence of duplicates in the ExpDesign colnames")
 
@@ -160,23 +156,23 @@ createRflomicsMAE <- function(projectName = NULL,
       factorType = c(factorInfo$factorType, rep("Meta", length(metaFactors))))
   }
 
-  factorBio   <- filter(factorInfo, factorType == "Bio")$factorName
-  factorBatch <- filter(factorInfo, factorType == "batch")$factorName
+  factorBio   <- factorInfo[factorInfo$factorType == "Bio", "factorName"]
+  factorBatch <- factorInfo[factorInfo$factorType == "batch", "factorName"]
 
   ## set ref and levels to ExpDesign
   # refList <- vector()
-  for (i in 1:nrow(factorInfo)){
+  for (i in seq_len(nrow(factorInfo))){
 
     if(factorInfo$factorType[i] == "Meta") next
 
     ExpDesign[[factorInfo[i,]$factorName]] <-
-      str_replace_all(string = ExpDesign[[factorInfo[i,]$factorName]],
-                      pattern = "[*# -/]", replacement = "")
+      gsub("[-*# /]", "", ExpDesign[[factorInfo[i, "factorName"]]])
 
     # set level
     if (!is.null(factorInfo$factorLevels)){
-      levels <- str_split(factorInfo[i,]$factorLevels, ",") |>
-        unlist() %>% str_remove(" ")
+      
+      levels <- unlist(strsplit(factorInfo[i, "factorLevels"], ","))
+      levels <- trimws(levels)
 
       if(any(!levels %in% ExpDesign[[factorInfo[i,]$factorName]]))
         stop("The factor levels: ", factorInfo[i,]$factorLevels, " don't exist")
@@ -217,9 +213,9 @@ createRflomicsMAE <- function(projectName = NULL,
                  Model.formula = vector(),
                  Contrasts.Sel = data.frame())
 
-  ExpDesign   <- mutate(ExpDesign, samples=row.names(ExpDesign)) |>
-    unite("groups", all_of(factorBio), sep = "_", remove = FALSE)
-
+  ExpDesign$samples <- row.names(ExpDesign)
+  ExpDesign$groups  <- apply(ExpDesign[factorBio], 1, paste, collapse = "_")
+  
   order_levels <-
     with(ExpDesign, do.call(order, ExpDesign[c(factorBio, factorBatch)]))
   ExpDesign$samples <-
@@ -245,9 +241,8 @@ createRflomicsMAE <- function(projectName = NULL,
         ExpDesign = ExpDesign,
         design    = typeList)
 
-    #### run PCA for raw count
-    SummarizedExperimentList[[data]] <- runOmicsPCA(RflomicsSE, raw = TRUE)
-
+    SummarizedExperimentList[[data]] <- RflomicsSE
+    
     # metadata for sampleMap for RflomicsMAE
     listmap[[data]] <- data.frame(
       primary = as.vector(colData(SummarizedExperimentList[[data]])$samples),
@@ -335,41 +330,50 @@ RflomicsMAE <- function(experiments = ExperimentList(),
   names(pal) <- unlist(omicList)
 
   # annotation !!!!! brouillon à ameliorer 
-  if(!is.null(species)){
-    
-    mart <- 
-      useEnsemblGenomes(
-        biomart = "plants_mart",
-        dataset = species
-      )
-    
-    annot <- getBM(
-      attributes = c(
-        "ensembl_gene_id",
-        "go_id",
-        "name_1006",
-        "definition_1006",
-        "namespace_1003"
-      ),
-      mart = mart
-    )
-    annot <- annot[annot$namespace_1003 != "",]
-    names(annot) <- 
-      c("gene_id", "go_id", "go_name", "go_definition", "go_domain")
-      
-    go.map <- list()
-    go.map <-
-      lapply(unique(annot$go_domain), function(x){
-        data.frame(
-          term = annot[annot$go_domain == x,]$go_name,
-          gene = annot[annot$go_domain == x,]$gene_id
-        )
-      })
-    names(go.map) <- unique(annot$go_domain)
-    
-  }else{
-    go.map <- NULL
-  }
+  # if(!is.null(species)){
+  #   
+  #   mart <- useMart(
+  #     biomart = "plants_mart",
+  #     host = "https://plants.ensembl.org"
+  #   )
+  #   
+  #   mart <- useDataset(species, mart = mart)
+  #   # 
+  #   # mart <- 
+  #   #   useEnsemblGenomes(
+  #   #     biomart = "plants_mart",
+  #   #     dataset = species,
+  #   #     host = "https://plants.ensembl.org" # host = "https://www.ensembl.org"
+  #   #   )
+  #   
+  #   annot <- getBM(
+  #     attributes = c(
+  #       "ensembl_gene_id",
+  #       "go_id",
+  #       "name_1006",
+  #       "definition_1006",
+  #       "namespace_1003"
+  #     ),
+  #     mart = mart
+  #   )
+  #   annot <- annot[annot$namespace_1003 != "",]
+  #   names(annot) <- 
+  #     c("gene_id", "go_id", "go_name", "go_definition", "go_domain")
+  #     
+  #   go.map <- list()
+  #   go.map <-
+  #     lapply(unique(annot$go_domain), function(x){
+  #       data.frame(
+  #         term = annot[annot$go_domain == x,]$go_name,
+  #         gene = annot[annot$go_domain == x,]$gene_id
+  #       )
+  #     })
+  #   names(go.map) <- unique(annot$go_domain)
+  #   
+  # }else{
+  #   go.map <- NULL
+  # }
+  go.map <- NULL
 
   # set metadata slot
   metadata <- list(
@@ -393,7 +397,7 @@ RflomicsMAE <- function(experiments = ExperimentList(),
   return(rflomicsMAE)
 }
 
-# ----  RflomicsSE CLASS ----
+# ---- RflomicsSE CLASS ----
 ## ---- createRflomicsSE: create RflomicsSE object from loaded data ----
 #' @title createRflomicsSE
 #' @description This function initializes an object of
@@ -503,26 +507,29 @@ createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
 
   dataProcessing <-
     list(rowSumsZero      = genes_flt0,
-         selectedSamples  = colData$samples,
          featureFiltering = list(),
          Normalization    = list(),
          Transformation   = list(),
          Imputation       = list(),
-         log = NULL)
+         log              = NULL)
 
   Design <- list(
     factorType = design[intersect(names(design), names(colData))],
     Model.formula = vector(),
     Contrasts.Sel = data.frame())
 
-  rflomicsSE <-
+  rflomics.se <-
     RflomicsSE(assays         = matrix.filt,
                colData        = DataFrame(colData),
                omicType       = omicType,
                design         = Design,
                DataProcessing = dataProcessing)
+  
+  rflomics.se <- runOmicsPCA(rflomics.se)
+  
+  metadata(rflomics.se)[["rawRflomicsSE"]] <- rflomics.se
 
-  return(rflomicsSE)
+  return(rflomics.se)
 }
 
 ## ---- RflomicsSE: construct RflomicsSE object ----
@@ -538,19 +545,22 @@ createRflomicsSE <- function(omicData, omicType, ExpDesign, design){
 #' @seealso \link{RflomicsSE-class}
 #' @keywords internal
 #' @noRd
-RflomicsSE <- function(assays = NULL, colData = NULL,
-                       omicType = NULL,
-                       design   = list() ,
+RflomicsSE <- function(assays         = NULL, 
+                       colData        = NULL,
+                       omicType       = NULL,
+                       design         = list() ,
                        DataProcessing = list() ,
-                       PCAlist        = list() ,
+                       PCA            = list() ,
                        DiffExpAnal    = list() ,
                        CoExpAnal      = list() ,
                        DiffExpEnrichAnal = list() ,
                        CoExpEnrichAnal   = list()){
 
 
-  if(!is.null(assays))
-    assays <- SimpleList(abundance = as.matrix(assays))
+  if(!is.null(assays)){
+    rawdata <- as.matrix(assays)
+    assays  <- SimpleList(abundance = as.matrix(assays))
+  }
 
   SE <- SummarizedExperiment( assays  = assays,
                               colData = colData)
@@ -561,10 +571,10 @@ RflomicsSE <- function(assays = NULL, colData = NULL,
   }
 
   metadata(rflomicsSE) <-
-    list("omicType" = omicType ,
-         "design"   = design ,
+    list("omicType"       = omicType ,
+         "design"         = design ,
          "DataProcessing" = DataProcessing ,
-         "PCAlist"        = PCAlist ,
+         "PCA"            = PCA,
          "DiffExpAnal"    = DiffExpAnal ,
          "CoExpAnal"      = CoExpAnal ,
          "DiffExpEnrichAnal" = DiffExpEnrichAnal ,

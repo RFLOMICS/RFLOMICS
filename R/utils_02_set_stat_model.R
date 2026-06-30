@@ -66,6 +66,41 @@ NULL
   return(formulae)
 }
 
+# ---- .updateModelFormula ----
+#' @title .updateModelFormula
+#' @description 
+#' Update model formula according to changes in the design
+#' @param modelFormula model formula to update.
+#' @return a object of class formula
+#' @keywords internal
+#' @noRd
+.updateModelFormula <- function(object, modelFormula = NULL){
+  
+  modelFormula <- as.formula(modelFormula)
+  var2keep <- getFactorNames(object)
+  
+  #terms <- attr(terms(modelFormula), "term.labels")
+  var2rm <- 
+    setdiff(
+      all.vars(terms(modelFormula), "term.labels"),
+      var2keep
+    )
+  
+  if(length(var2rm) == 0) return(modelFormula)
+  
+  term_labels <- attr(modelFormula, "term.labels")
+  
+  for(var in var2rm){
+    term_labels <- term_labels[!grepl(var, term_labels)]
+  }
+  model_LM    <- reformulate(term_labels)
+  model_LM    <- deparse(model_LM)
+  names(model_LM) <- model_LM
+  
+  return(model_LM)
+}
+
+
 # ---- contrastName2contrastDir ----
 
 ## contrastName to name of contrast directory

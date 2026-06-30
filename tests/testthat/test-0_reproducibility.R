@@ -65,16 +65,16 @@ MAE <- setSelectedContrasts(MAE, contrastList = selectedContrasts)
 ## Interface function, mostly
 MAE <- MAE |>
   runDataProcessing(SE.name = "RNAtest", samples = sampleToKeep, 
-                    lowCountFilter = list(filterMethod = "CPM", 
-                                          filterStrategy = "NbReplicates", 
+                    lowCountFilter = list(method = "CPM", 
+                                          strategy = "NbReplicates", 
                                           cpmCutoff = 1),
                     normalize = list(normMethod = "TMM")) |>
   runDataProcessing(SE.name = "protetest", samples = NULL,
-                    normalize = list(normMethod = "none"), 
-                    transform = list(transformMethod = "none")) |>
+                    normalize = list(method = "none"), 
+                    transform = list(method = "none")) |>
   runDataProcessing(SE.name = "metatest", samples = NULL,
-                    normalize = list(normMethod = NULL), 
-                    transform = list(transformMethod = "log2"))
+                    normalize = list(method = NULL), 
+                    transform = list(method = "log2"))
 
 
 test_that("Test generateReport", {

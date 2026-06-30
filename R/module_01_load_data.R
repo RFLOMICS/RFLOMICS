@@ -10,6 +10,15 @@
 #' @importFrom shinyBS bsTooltip popify
 
 
+# ----- popify info ------
+info1 <- "Upload a file containing the correspondence between
+gene identifiers used in the dataset and identifiers
+recognized by BioMart annotation databases.
+This file can also contain ortholog mappings when
+the studied species is not available in BioMart.
+Useful for custom, alias, transcript, or non-standard gene names."
+
+
 # ---- modCreateRflomicsObject UI ----
 .modLoadOmicDataUI <- function(id) {
   ns <- NS(id)
@@ -120,7 +129,10 @@
 .modLoadDataUI <- function(id) {
   ns <- NS(id)
   
-  mart     <- useEnsemblGenomes(biomart = "plants_mart")
+  mart     <- useMart(
+    biomart = "plants_mart",
+    host = "https://plants.ensembl.org"
+  )
   datasets <- listDatasets(mart)
   species_choices <- setNames(
     datasets$dataset,
@@ -177,7 +189,7 @@
         solidHeader = TRUE,
         fluidRow(
           column(
-            8,
+            4,
             # omic type
             selectInput(
               inputId = ns('species'),
@@ -185,6 +197,35 @@
                                    content = "..."),
               choices = c("None" = "", species_choices),
               selected = ""
+            )
+          ),
+          column(
+            4,
+            fileInput(
+              inputId = ns("ID_corresp"),
+              label   = .addBSpopify(
+                label   = "Feature ID mapping file (tsv)",
+                title   = "...",
+                content = paste(
+                  "Upload a file containing the correspondence between",
+                  "gene identifiers used in the dataset and identifiers",
+                  "recognized by BioMart annotation databases.",
+                  "This file can also contain ortholog mappings when",
+                  "the studied species is not available in BioMart.",
+                  "Useful for custom, alias, transcript, or non-standard gene names."
+                )
+              )
+            )
+          ),
+          column(
+            4,
+            fileInput(
+              inputId = ns("customAnnot"),
+              label   = .addBSpopify(
+                label   = "Custom annotation (tsv) ",
+                title   = "...",
+                content = "..."
+              )
             )
           )
         )
@@ -860,3 +901,4 @@
       return(title.res)
     return(res)
   }
+

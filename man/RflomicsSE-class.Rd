@@ -14,6 +14,7 @@
 \alias{getBatchFactors,RflomicsSE-method}
 \alias{getMetaFactors,RflomicsSE-method}
 \alias{getFactorModalities,RflomicsSE-method}
+\alias{initRawRflomicsSE,RflomicsSE-method}
 \title{RflomicsSE Class}
 \usage{
 \S4method{getDesignMat}{RflomicsSE}(object)
@@ -33,6 +34,8 @@
 \S4method{getMetaFactors}{RflomicsSE}(object)
 
 \S4method{getFactorModalities}{RflomicsSE}(object, factorName)
+
+\S4method{initRawRflomicsSE}{RflomicsSE}(object)
 }
 \arguments{
 \item{object}{An object of class \link{RflomicsSE}}
@@ -106,6 +109,10 @@ The slot metadata is structured as follows:
 \itemize{
    \item getFactorModalities: return a vector with the modality names of
    selected factor.}
+
+
+\itemize{
+   \item initRawRflomicsSE: Return an RflomicsSE-initialized object.}
 }
 
 \seealso{

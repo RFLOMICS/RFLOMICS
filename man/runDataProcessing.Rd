@@ -25,9 +25,6 @@
 \alias{checkExpDesignCompleteness}
 \alias{checkExpDesignCompleteness,RflomicsSE-method}
 \alias{checkExpDesignCompleteness,RflomicsMAE-method}
-\alias{getProcessedData}
-\alias{getProcessedData,RflomicsSE-method}
-\alias{getProcessedData,RflomicsMAE-method}
 \alias{getTransSettings}
 \alias{getTransSettings,RflomicsSE-method}
 \alias{getTransSettings,RflomicsMAE-method}
@@ -72,13 +69,12 @@
 \S4method{runDataProcessing}{RflomicsSE}(
   object,
   samples = NULL,
-  lowCountFilter = list(filterMethod = "filterByExpr", filterStrategy = "groups",
-    cpmCutoff = NULL),
-  missingValueFilter = list(MVencoding = "NA", method = "none", globalProp = NULL,
-    nbCondition = NULL, propPerCondition = NULL),
-  transform = list(transformMethod = "none", userTransMethod = "unknown"),
-  normalize = list(normMethod = "none", userNormMethod = "unknown"),
-  impute = list(imputMethod = "none", factor = NULL),
+  MVencoding = "NA",
+  lowCountFilter = list(method = NULL, strategy = NULL, cpmCutoff = NULL),
+  missingValueFilter = list(method = NULL, proportion = NULL, nbCondition = NULL),
+  transform = list(method = NULL),
+  normalize = list(method = NULL),
+  impute = list(method = NULL, factor = NULL),
   ...
 )
 
@@ -86,13 +82,12 @@
   object,
   SE.name,
   samples = NULL,
-  lowCountFilter = list(filterMethod = "filterByExpr", filterStrategy = "groups",
-    cpmCutoff = NULL),
-  missingValueFilter = list(MVencoding = "NA", method = "none", globalProp = NULL,
-    nbCondition = NULL, propPerCondition = NULL),
-  transform = list(transformMethod = "none", userTransMethod = "unknown"),
-  normalize = list(normMethod = "none", userNormMethod = "unknown"),
-  impute = list(imputMethod = "none", factor = NULL)
+  MVencoding = "NA",
+  lowCountFilter = list(method = NULL, strategy = NULL, cpmCutoff = NULL),
+  missingValueFilter = list(method = NULL, proportion = NULL, nbCondition = NULL),
+  transform = list(method = NULL),
+  normalize = list(method = NULL),
+  impute = list(method = NULL, factor = NULL)
 )
 
 \S4method{runSampleFiltering}{RflomicsSE}(object, samples = NULL)
@@ -101,69 +96,44 @@
 
 \S4method{runFeatureFiltering}{RflomicsSE}(
   object,
-  lowCountFilter = list(filterMethod = "filterByExpr", filterStrategy = "groups",
-    cpmCutoff = NULL),
-  missingValueFilter = list(MVencoding = "NA", method = "GlobalFiltering", globalProp =
-    0.5, nbCondition = NULL, propPerCondition = NULL)
+  lowCountFilter = list(method = c("filterByExpr", "CPM", "none"), strategy = NULL,
+    cpmCutoff = 1),
+  missingValueFilter = list(method = c("GlobalFiltering", "ConditionFiltering", "none"),
+    proportion = 0.5, nbCondition = 1)
 )
 
 \S4method{runFeatureFiltering}{RflomicsMAE}(
   object,
   SE.name,
-  lowCountFilter = list(filterMethod = "filterByExpr", filterStrategy = "groups",
-    cpmCutoff = NULL),
-  missingValueFilter = list(MVencoding = "NA", globalProp = 0.5, nbCondition = NULL,
-    propPerCondition = NULL)
+  lowCountFilter = list(method = c("filterByExpr", "CPM", "none"), strategy = NULL,
+    cpmCutoff = 1),
+  missingValueFilter = list(method = c("GlobalFiltering", "ConditionFiltering", "none"),
+    proportion = 0.5, nbCondition = 1)
 )
 
-\S4method{runTransformData}{RflomicsSE}(object, transformMethod = NULL, userTransMethod = "unknown")
+\S4method{runTransformData}{RflomicsSE}(object, method = NULL)
 
 \S4method{runTransformData}{RflomicsMAE}(
   object,
   SE.name,
-  transformMethod = NULL,
-  userTransMethod = "unknown"
+  method = c("log10", "log1p", "log2", "squareroot", "none")
 )
 
-\S4method{runNormalization}{RflomicsSE}(object, normMethod = NULL, userNormMethod = "unknown")
+\S4method{runNormalization}{RflomicsSE}(object, method = NULL)
 
-\S4method{runNormalization}{RflomicsMAE}(
-  object,
-  SE.name,
-  normMethod = NULL,
-  userNormMethod = "unknown"
-)
+\S4method{runNormalization}{RflomicsMAE}(object, SE.name, method = NULL)
 
-\S4method{runMVImputation}{RflomicsSE}(object, imputMethod = "minFeatureValue", factor = 1.8)
+\S4method{runMVImputation}{RflomicsSE}(object, method = c("minFeatureValue", "none"), factor = 1.8)
 
-\S4method{runMVImputation}{RflomicsMAE}(object, SE.name, imputMethod = "minFeatureValue", factor = 0.1)
+\S4method{runMVImputation}{RflomicsMAE}(object, SE.name, method = "minFeatureValue", factor = 1.8)
 
-\S4method{runOmicsPCA}{RflomicsSE}(object, ncomp = 5, raw = FALSE)
+\S4method{runOmicsPCA}{RflomicsSE}(object, ncomp = 5)
 
-\S4method{runOmicsPCA}{RflomicsMAE}(object, SE.name, ncomp = 5, raw = FALSE)
+\S4method{runOmicsPCA}{RflomicsMAE}(object, SE.name, ncomp = 5)
 
 \S4method{checkExpDesignCompleteness}{RflomicsSE}(object, sampleList = NULL)
 
 \S4method{checkExpDesignCompleteness}{RflomicsMAE}(object, omicName, sampleList = NULL)
-
-\S4method{getProcessedData}{RflomicsSE}(
-  object,
-  filter = FALSE,
-  trans = FALSE,
-  norm = FALSE,
-  imput = FALSE,
-  log = FALSE
-)
-
-\S4method{getProcessedData}{RflomicsMAE}(
-  object,
-  SE.name,
-  filter = FALSE,
-  trans = FALSE,
-  norm = FALSE,
-  imput = FALSE,
-  log = FALSE
-)
 
 \S4method{getTransSettings}{RflomicsSE}(object)
 
@@ -177,9 +147,9 @@
 
 \S4method{getImputSettings}{RflomicsMAE}(object, SE.name)
 
-\S4method{getFilteredFeatures}{RflomicsSE}(object)
+\S4method{getFilteredFeatures}{RflomicsSE}(object, count = FALSE)
 
-\S4method{getFilteredFeatures}{RflomicsMAE}(object, SE.name)
+\S4method{getFilteredFeatures}{RflomicsMAE}(object, count = FALSE, SE.name)
 
 \S4method{getSelectedSamples}{RflomicsSE}(object)
 
@@ -239,19 +209,19 @@
 \arguments{
 \item{object}{An object of class \link{RflomicsSE-class}.}
 
-\item{samples}{samples to keep.}
+\item{samples}{list of sample names to keep (is NULL, do not change anything.)}
 
 \item{lowCountFilter}{A list specifying parameters for \strong{RNA-seq} 
 low-count filtering.
-\code{filterMethod} defines the filtering approach and supports two options:
+\code{method} defines the filtering approach and supports two options:
 \describe{
   \item{\code{"filterByExpr"} (default)}{
-    Uses \code{edgeR::filterByExpr()}. In this case, \strong{filterStrategy} must be
+    Uses \code{edgeR::filterByExpr()}. In this case, \strong{strategy} must be
     \code{"groups"} (default and only supported value), and \strong{cpmCutoff} is not used
     (should be \code{NULL}).
   }
   \item{\code{"CPM"}}{
-    Applies a CPM-based filtering approach. The \strong{filterStrategy} parameter controls
+    Applies a CPM-based filtering approach. The \strong{strategy} parameter controls
     how features are retained: \code{"NbReplicates"} (default) keeps features expressed
     in at least a minimum number of replicates, while \code{"NbConditions"} keeps features
     expressed in a minimum number of conditions. The \strong{cpmCutoff} defines the CPM
@@ -272,13 +242,13 @@ If \code{"0"} is used, zero values are converted to \code{NA} in the processed d
 \describe{
   \item{\code{"GlobalFiltering"}}{
     Filters features based on the overall proportion of missing values.
-    The \strong{globalProp} parameter defines the maximum allowed proportion
+    The \strong{proportion} parameter defines the maximum allowed proportion
     of missing values across all samples (default: \code{0.5}).
   }
   \item{\code{"ConditionFiltering"}}{
     Filters features based on missing values within conditions.
     The \strong{nbCondition} parameter defines the minimum number of conditions
-    required (default: \code{1}), and \strong{propPerCondition} defines the maximum
+    required (default: \code{1}), and \strong{proportion} defines the maximum
     allowed proportion of missing values per condition (default: \code{0.7}).
   }
   \item{\code{"none"}}{
@@ -296,40 +266,20 @@ If \code{"0"} is used, zero values are converted to \code{NA} in the processed d
 
 \item{SE.name}{the name of the data the normalization have to be applied to.}
 
-\item{transformMethod}{The transformation method to store in the metadata}
-
-\item{userTransMethod}{to rm}
-
-\item{normMethod}{Normalization method. Accepted values: TMM for RNAseq, and
-median, totalSum, or none for proteomics and metabolomics data.
-Default values: TMM for RNAseq data and median for proteomics and metabolomics
-data}
-
-\item{userNormMethod}{to rm}
-
-\item{imputMethod}{The imputation method ("minFeatureValue") for proteomics and
+\item{method}{The imputation method ("minFeatureValue") for proteomics and
 metabolomics data.}
 
 \item{factor}{factor}
 
 \item{ncomp}{Number of components to compute. Default is 5.}
 
-\item{raw}{a boolean}
-
 \item{sampleList}{list of samples to check.}
 
 \item{omicName}{a character string with the name of the dataset}
 
-\item{filter}{boolean. If TRUE, check if data is filtered (low counts/RNAseq)}
+\item{count}{number of filtered features}
 
-\item{trans}{boolean. If TRUE, check if data is transformed}
-
-\item{norm}{boolean. If TRUE, check if data is normalized}
-
-\item{imput}{boolean. If TRUE, returned imputed data}
-
-\item{log}{boolean. If TRUE, check if the data has been log-transformed
-(RNAseq).}
+\item{raw}{a boolean}
 
 \item{plot}{plot type ("boxplot" or "density")}
 
@@ -337,6 +287,15 @@ metabolomics data.}
 factorial map}
 
 \item{groupColor}{All combination of level's factor}
+
+\item{filter}{boolean. If TRUE, check if data is filtered (low counts/RNAseq)}
+
+\item{trans}{boolean. If TRUE, check if data is transformed}
+
+\item{norm}{boolean. If TRUE, check if data is normalized}
+
+\item{log}{boolean. If TRUE, check if the data has been log-transformed
+(RNAseq).}
 }
 \value{
 An object of class \link{RflomicsSE} or class \link{RflomicsSE}
@@ -425,11 +384,6 @@ method.
 }
 \section{Accessors}{
 
-
-
-\itemize{
-   \item getProcessedData: return RflomicsSE object with a processed data
-   (filtering, normalization and/or transformation)}
 
 
 \itemize{
@@ -594,7 +548,6 @@ Plant Methods 16, 68 (2020).
 \seealso{
 \link{RflomicsMAE-class}
 \link{RflomicsSE-class}
-\link{getProcessedData}
 \link{getTransSettings}
 \link{getFilterSettings}
 \link{getFilteredFeatures}

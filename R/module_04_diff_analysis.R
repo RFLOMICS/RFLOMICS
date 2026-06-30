@@ -12,7 +12,6 @@
 #' tabItem renderMenu tabItems sidebarMenu menuSubItem
 #' @rawNamespace import(shiny, except = renderDataTable)
 #' @importFrom shinyWidgets pickerInput materialSwitch
-#' @importFrom purrr reduce
 #' @importFrom magrittr "%>%"
 
 # ---- main module ----
@@ -192,15 +191,14 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
         )
         
     })
+    
+    # choice to keep the full matrix or split it by category
     observeEvent(input$split_factor, {
       
       dataset.SE <-  session$userData$FlomicsMultiAssay[[dataset]]
 
       # get common selected contrasts
-      contrastList.df <- rea.values$Contrasts.Sel
-        # getSelectedContrasts(
-        #   getProcessedData(dataset.SE, filter = TRUE)
-        # )
+      contrastList.df     <- rea.values$Contrasts.Sel
       contrastList        <- contrastList.df$contrastName
       names(contrastList) <- paste0("[",contrastList.df$tag, "] ", 
                                     contrastList.df$contrastName)
@@ -224,7 +222,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
         dataset.SE <- 
           setModelFormula(dataset.SE, modelFormula = model_LM)
         
-        contrastList.df <- Reduce(rbind, generateExpressionContrast(dataset.SE))
+        contrastList.df <- generateExpressionContrast(dataset.SE)
         contrastList    <- contrastList.df$contrastName
         names(contrastList) <- paste0("[",contrastList.df$tag, "] ", 
                                       contrastList.df$contrastName)
@@ -247,7 +245,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
       local.rea.values$selectedContrasts[[input$split_factor]] <- contrastList.df
     })
     
-    # filter param
+    # contrast result validation
     output$validateUI <- renderUI({
 
         if (rea.values[[dataset]]$diffAnal == FALSE) return()
@@ -289,10 +287,6 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     # Run the differential analysis for each contrast set
     # Filter
     #   -> return a dynamic user interface with a collapsible box for each contrast
-    #         - Pvalue graph
-    #         - MAplot
-    #         - Table of the DE genes
-    #   -> combine data : union or intersection
     observeEvent(input$runAnaDiff, {
       
         # list of chosen parameters
@@ -359,6 +353,8 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                 contrastList     = contrastList,
                 cmd              = TRUE)
             dataset.se(new.dataset.SE)
+            
+            toto <<- dataset.se()
             
             # -----  run ORA ----- !!! brouillon à changer
             message("[RFLOMICS] # 04- GO ORA Analysis... ", 
@@ -1044,7 +1040,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
       newDataset.SE <- dataset.se()
       if(modality != "all"){
         newDataset.SE <- 
-          miniRflomicsSE(newDataset.SE, selectedModality = modality)
+          splitRflomicsSE(newDataset.SE, selectedModality = modality)
       }
       
       callModule(module       = .modVariablePCA,
