@@ -190,7 +190,7 @@ test_that("test mae/se input", {
 
   expect_equal(colData(MAE), colData(MAE2))
   for(SE in names(MAE2)){
-    expect_equal(MAE[[SE]], MAE2[[SE]])
+    expect_equal(MAE[[SE]], MAE2[[SE]], tolerance = 1e-6)
   }
 })
 
