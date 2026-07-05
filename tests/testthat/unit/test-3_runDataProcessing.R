@@ -22,6 +22,8 @@ MAE <- RFLOMICS::createRflomicsMAE(
   omicsTypes  = c("RNAseq","metabolomics"),
   factorInfo  = factorInfo)
 
+MAE <- setModelFormula(MAE, modelFormula = "~Repeat + temperature")
+
 rna.se  <- MAE[["RNAtest"]]
 meta.se <- MAE[["metatest"]]
 

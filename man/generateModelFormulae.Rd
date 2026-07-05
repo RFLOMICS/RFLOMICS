@@ -21,7 +21,7 @@
 
 \S4method{getModelFormula}{RflomicsMAE}(object)
 
-\S4method{getModelFormula}{RflomicsSE}(object, analysisName = NULL)
+\S4method{getModelFormula}{RflomicsSE}(object)
 
 \S4method{updateModelFormula}{RflomicsMAE}(object, SE.name = NULL)
 

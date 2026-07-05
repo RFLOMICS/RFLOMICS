@@ -7,23 +7,30 @@ library(RFLOMICS)
 
 # ---- Construction of objects for the tests ----
 # load ecoseed data
-data(ecoseed.mini.mae)
+data(ecoseed.mae)
 
 factorInfo <- data.frame(
-  "factorName"   = c("Repeat", "temperature"),
-  "factorType"   = c("batch", "Bio")
+  "factorName"   = c("Repeat", "temperature", "imbibition"),
+  "factorType"   = c("batch", "Bio", "Bio")
 )
+
+keep <- 
+  colData(ecoseed.mae)$imbibition  != "EI" &
+  colData(ecoseed.mae)$temperature != "Medium"
+
+ecoseed.mae.mini <- ecoseed.mae[, keep]
 
 # create rflomicsMAE object with ecoseed data
 MAE <- RFLOMICS::createRflomicsMAE(
   projectName = "Tests",
-  omicsData   = ecoseed.mini.mae,
+  omicsData   = ecoseed.mae.mini,
+  omicsNames  = c("RNAtest", "metatest"),
   omicsTypes  = c("RNAseq","metabolomics"),
   factorInfo  = factorInfo)
 
-generateModelFormulae(MAE)
+MAE <- setModelFormula(MAE, modelFormula = "~Repeat + temperature + imbibition")
 
-MAE <- setModelFormula(MAE, modelFormula = "~Repeat + temperature")
+selectedContrast <- "(temperatureElevated - temperatureLow) in mean"
 MAE <- setSelectedContrasts(MAE, contrastNames = selectedContrast)
 
 MAE[["RNAtest"]]  <- 
@@ -40,12 +47,11 @@ MAE[["metatest"]] <-
     transform = list(method = "log2")
   )
 
-selectedContrast <- "(temperatureElevated - temperatureMedium)"
 
 rna.se  <- MAE[["RNAtest"]]
 meta.se <- MAE[["metatest"]]
   
-test_that("runDiffAnalyis: RNAseq", {
+test_that("runDiffAnalyis: RNAseq, all", {
   
   MAE1 <-
     runDiffAnalysis(
@@ -57,13 +63,68 @@ test_that("runDiffAnalyis: RNAseq", {
       rna.se
     )
   
-  getDiffSettings(rna.se1)
+  expect_identical(MAE1[["RNAtest"]], rna.se1)
   
-  meta.se1 <-
+  diffSettings <- getDiffSettings(rna.se1)
+  
+  expect_identical(diffSettings$Model.formula, "~Repeat + temperature + imbibition")
+  expect_identical(diffSettings$contrastNames, selectedContrast)
+  expect_identical(diffSettings$method, "edgeRglmfit")
+  expect_null(diffSettings$validContrasts)
+  
+  
+  # test contrasts input
+  expect_error(
     runDiffAnalysis(
-      meta.se
+      rna.se, contrastNames = "toto"
     )
+  )
   
-  getDiffSettings(meta.se1)
+  # "(imbibitionLI - imbibitionDS) in mean" no selected
+  expect_no_error(
+    runDiffAnalysis(
+      rna.se, contrastNames = "(imbibitionLI - imbibitionDS) in mean"
+    )
+  )
+  
+  # validate
+  rna.se1 <-
+    validateContrasts(
+      rna.se1, 
+      analysisName = "all", 
+      contrastNames = selectedContrast
+    )
+  diffSettings <- getDiffSettings(rna.se1)
+  expect_equal(diffSettings$validContrasts, selectedContrast)
   
 })
+
+
+test_that("runDiffAnalyis: RNAseq, split", {
+  
+  rna.se1 <-
+    runDiffAnalysis(
+      rna.se, splitBy = "imbibition"
+    )
+  
+  expect_identical(MAE1[["RNAtest"]], rna.se1)
+  
+  diffSettings <- getDiffSettings(rna.se1)
+  
+  expect_identical(diffSettings$Model.formula, "~Repeat + temperature")
+  expect_identical(diffSettings$Contrasts.Sel$contrastName, selectedContrast)
+  expect_identical(diffSettings$method, "edgeRglmfit")
+  expect_null(diffSettings$validContrasts)
+  
+  rna.se1 <-
+    validateContrasts(
+      rna.se1, 
+      analysisName = "all", 
+      contrastNames = selectedContrast
+    )
+  diffSettings <- getDiffSettings(rna.se1)
+  expect_equal(diffSettings$validContrasts, selectedContrast)
+})
+
+
+

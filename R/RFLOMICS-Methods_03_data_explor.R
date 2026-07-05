@@ -72,7 +72,12 @@ setMethod(
                         ){
     
     object <- initRawRflomicsSE(object)
-    done   <- NULL
+    
+    if(is.null(getModelFormula(object)))
+      stop("A model formula must be set (see generateModelFormula() 
+           and setModelFormula()).")
+    
+    done <- NULL
     
     # keep selected samples
     if(!is.null(samples)){

@@ -204,7 +204,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                                     contrastList.df$contrastName)
       
       # get common selected model
-      model_LM <- getModelFormula(session$userData$FlomicsMultiAssay)
+      model_LM <- getModelFormula(dataset.SE)
       names(model_LM) <- model_LM
       
       if(input$split_factor != "all"){
@@ -349,8 +349,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                 p.adj.cutoff     = input$p.adj.cutoff,
                 logFC.cutoff     = input$abs.logFC.cutoff,
                 selectedModality = analysisName,
-                modelFormula     = input$LMmodel,
-                contrastList     = contrastList,
+                contrastNames    = contrastList$contrastName,
                 cmd              = TRUE)
             dataset.se(new.dataset.SE)
             
@@ -492,7 +491,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
             }
           )
         
-        DiffExpAnals <- getAnalysis(dataset.se(), name = "DiffExpAnal")
+        dataset.se.n <- dataset.se()
         
         # get validated contrast !!!! brouillon à metter au propre 
         contrastNames <- vector()
@@ -502,33 +501,42 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
             input[[paste0("DiffResults-", analysisName, "-checkbox_", x)]]
           }) |> unlist()
           
+          dataset.se.n <- 
+            validateContrasts(
+              dataset.se.n, 
+              analysisName  = analysisName, 
+              contrastNames = names(index)[index]
+            )
+          
           contrastNames <- c(contrastNames, names(index)[index])
           
-          contrastList <- DiffExpAnals[[analysisName]]$settings$Contrasts.Sel
+          #contrastList <- DiffExpAnals[[analysisName]]$settings$Contrasts.Sel
           
-          DiffExpAnals[[analysisName]]$settings$Validcontrasts <- 
-            contrastList[index,]
+          # DiffExpAnals[[analysisName]]$settings$Validcontrasts <- 
+          #   contrastList[index,]
           
-          DiffExpAnals[[analysisName]]$results$mergeDEF <- 
-            DiffExpAnals[[analysisName]]$results$mergeDEF[,c("DEF", input$contrastList[index])]
-          DiffExpAnals[[analysisName]]$results$RawDEFres <- 
-            DiffExpAnals[[analysisName]]$results$RawDEFres[input$contrastList[index]]
-          DiffExpAnals[[analysisName]]$results$DEF <- 
-            DiffExpAnals[[analysisName]]$results$DEF[input$contrastList[index]]
-          DiffExpAnals[[analysisName]]$results$TopDEF <- 
-            DiffExpAnals[[analysisName]]$results$TopDEF[input$contrastList[index]]
+          # DiffExpAnals[[analysisName]]$results$mergeDEF <- 
+          #   DiffExpAnals[[analysisName]]$results$mergeDEF[,c("DEF", input$contrastList[index])]
+          # DiffExpAnals[[analysisName]]$results$RawDEFres <- 
+          #   DiffExpAnals[[analysisName]]$results$RawDEFres[input$contrastList[index]]
+          # DiffExpAnals[[analysisName]]$results$DEF <- 
+          #   DiffExpAnals[[analysisName]]$results$DEF[input$contrastList[index]]
+          # DiffExpAnals[[analysisName]]$results$TopDEF <- 
+          #   DiffExpAnals[[analysisName]]$results$TopDEF[input$contrastList[index]]
         }
         
         contrastNames <- unique(contrastNames)
-        contrastList <- local.rea.values$selectedContrasts[[input$split_factor]]
         
-        rea.values[[dataset]]$DiffValidContrast <- 
+        contrastList <- local.rea.values$selectedContrasts[[input$split_factor]]
+        rea.values[[dataset]]$DiffValidContrast <- #contrastNames
           contrastList[contrastList$contrastName %in% contrastNames,]
         
-        dataset.se.n <- setElementToMetadata(dataset.se(),
-                                             name = "DiffExpAnal", 
-                                             content = DiffExpAnals) 
+        # dataset.se.n <- setElementToMetadata(dataset.se(),
+        #                                      name = "DiffExpAnal", 
+        #                                      content = DiffExpAnals) 
         session$userData$FlomicsMultiAssay[[dataset]] <- dataset.se.n
+        
+        #session$userData$FlomicsMultiAssay[[dataset]] <- dataset.se()
         
         # reset reactive values
         rea.values$datasetDiff <-
@@ -665,8 +673,9 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                         subMAE <- subRflomicsMAE(MAE_tmp, dataset)
 
                         contrasts <- local.rea.values$selectedContrasts[[input$split_factor]]
+                        
                         # subMAE <-
-                        #     setValidContrasts(
+                        #     validateContrasts(
                         #         object       = subMAE,
                         #         omicName     = dataset,
                         #         contrastList = getSelectedContrasts(subMAE[[dataset]]))
@@ -825,7 +834,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
   output$ContrastsResults <- renderUI({
     
     #req(dataset.se())
-    selectedContrasts <- getSelectedContrasts(dataset.se(), analysisName = modality)
+    selectedContrasts <- getDiffSettings(dataset.se(), analysisName = modality)$Contrasts.Sel
     diffExpAnal       <- getAnalysis(dataset.se(), name = "DiffExpAnal", subName = modality)
     
     if (rea.values[[dataset]]$diffAnal == FALSE ||
@@ -1020,7 +1029,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
   observe({
     
     req(dataset.se())
-    selectedContrasts <- getSelectedContrasts(dataset.se(), analysisName = modality)
+    selectedContrasts <- getDiffSettings(dataset.se(), analysisName = modality)$Contrasts.Sel
     diffExpAnal       <- getAnalysis(dataset.se(), name = "DiffExpAnal", subName = modality)
     
     if (rea.values[[dataset]]$diffAnal == FALSE ||

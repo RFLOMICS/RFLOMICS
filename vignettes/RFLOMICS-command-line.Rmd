@@ -208,10 +208,11 @@ form <- generateModelFormulae(MAE)
 form
 
 
-MAE <- setModelFormula(MAE, form[2])
+MAE <- setModelFormula(MAE, form[[2]])
 
 
 getModelFormula(MAE)
+getSelectedContrasts(MAE, all = TRUE)
 ```
 
 Given the formula chosen, all the hypotheses (contrasts) can be obtained using 
@@ -225,10 +226,10 @@ contrasts.
 -   set contrasts:
 
 ```{r contr}
-possibleContrasts <- generateExpressionContrast(MAE)
-possibleContrasts$averaged$contrastName
+possibleContrasts <- generateExpressionContrast(MAE, contrastType = "averaged")
+possibleContrasts$contrastName
 
-MAE <- setSelectedContrasts(MAE, contrastList = possibleContrasts$averaged[1:3])
+MAE <- setSelectedContrasts(MAE, contrastNames = possibleContrasts$contrastName)
 
 getSelectedContrasts(MAE)[, -c(1, 3)]
 ```
@@ -252,18 +253,18 @@ MAE <- runDataProcessing(
   object = MAE,
   SE.name = "RNAtest",
   samples = colnames(MAE[["RNAtest"]])[-1],
-  lowCountFilter = list(filterMethod = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 1),
-  normalize = list(normMethod = "TMM")
+  lowCountFilter = list(method = "CPM", strategy = "NbReplicates", cpmCutoff = 1),
+  normalize = list(method = "TMM")
 ) |>
   runDataProcessing(
     SE.name = "metatest", 
-    normalize = list(normMethod = "median"),
-    transform = list(transformMethod = "log2")
+    normalize = list(method = "median"),
+    transform = list(method = "log2")
   ) |>
   runDataProcessing(
     SE.name = "protetest", 
-    normalize = list(normMethod = "none"),
-    transform = list(transformMethod = "log2")
+    normalize = list(method = "none"),
+    transform = list(method = "log2")
   ) |>
   runOmicsPCA(SE.name = "metatest")
 
@@ -352,7 +353,7 @@ The results can be plot using the `getCoExpAnalysesSummary` method.
 A co-expression profile can be plotted for a given cluster using the 
 `plotCoExpressionProfile` function.
 
-```{r coexp}
+```{r coexp, eval=FALSE}
 MAE <- runCoExpression(MAE,
   SE.name = "protetest",
   K = 2:5, replicates = 5,
@@ -413,7 +414,7 @@ with the mixOmics package (block.plsda function).
 `prepareForIntegration` does not return a RflomicsMAE object, it returns the 
 corresponding type to be an input for either MOFA2 or mixOmics functions.
 
-```{r}
+```{r, eval=FALSE}
 listIntegration <- prepareForIntegration(MAE,
   omicsNames = c("protetest", "metatest"),
   variableLists = rownames(MAE),
@@ -431,7 +432,7 @@ MAE <- runOmicsIntegration(
 
 Visualizing results is made through the original package functions.
 
-```{r, fig.width = 10, fig.align = "center"}
+```{r, fig.width = 10, fig.align = "center", eval=FALSE}
 mixOmics::plotIndiv(getMixOmics(MAE, response = "temperature"))
 ```
 

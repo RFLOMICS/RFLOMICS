@@ -132,6 +132,49 @@ contrastName2contrastDir <- function(contrastName){
 
 # ---- .getExpressionContrast : function generating contrast expression devlopped by CPL ----
 
+
+#' generateExpressionContrast from SE ou MAE
+#'
+#' @param object object from SE or MAE
+#' @param contrastType type of contrasts from which the possible 
+#' @return a list of dataframe with all contrasts per type
+#' @keywords internal
+#' @noRd
+.generateExpressionContrast <- function(object, contrastType = NULL){
+  
+  contrastTypes <- c("simple", "averaged", "interaction")
+  
+  # check model
+  modelFormula <- getModelFormula(object)
+  
+  if (is.null(modelFormula)) 
+    stop("Model formula is required (see generateModelFormulae() and setModelFormula()).")
+  
+  if (is(modelFormula, "formula"))
+    modelFormula <- deparse(modelFormula)
+  
+  # check contarst type
+  if(is.null(contrastType))
+    contrastType <- contrastTypes
+  
+  if(any(!contrastType %in% contrastTypes))
+    stop("The contrastType argument must be one of the following values: ", 
+         contrastTypes)
+  
+  # args for getExpressionContrastF()
+  factorBio <- getBioFactors(object)
+  ExpDesign <- getDesignMat(object)
+  
+  Contrasts.List <- 
+    .getExpressionContrastF(ExpDesign, factorBio, modelFormula)
+  
+  allcontrast <- Reduce("rbind", Contrasts.List[contrastType])
+  allcontrast <- as.data.frame(allcontrast)
+  allcontrast$selected <- rep("no", nrow(allcontrast))
+  
+  return(allcontrast)
+}
+
 #' get contrast expression
 #'
 #' @param ExpDesign data.frame with only bio factors

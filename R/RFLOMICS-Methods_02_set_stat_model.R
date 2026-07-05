@@ -75,7 +75,7 @@ setMethod(
     metadata(object)$design$Model.formula <- modelFormula
     
     metadata(object)$design$Contrasts.Sel <- 
-      generateExpressionContrast(object, modelFormula = modelFormula)
+      generateExpressionContrast(object)
     
     for(name in names(object)){
       # current SE
@@ -123,7 +123,10 @@ setMethod(f          = "setModelFormula",
             
             # check model formula validity
             possibleFormula <- 
-              .generateModelFormulae(getBioFactors(object), getBatchFactors(object))
+              .generateModelFormulae(
+                getBioFactors(object), 
+                getBatchFactors(object)
+              )
             
             if(isFALSE(modelFormula %in% sapply(possibleFormula, function(x) deparse(x)))){
               warning("Invalid formula. See generateModelFormulae() 
@@ -134,7 +137,7 @@ setMethod(f          = "setModelFormula",
             metadata(object)$design$Model.formula <- modelFormula
             
             metadata(object)$design$Contrasts.Sel <- 
-              generateExpressionContrast(object, modelFormula = modelFormula)
+              generateExpressionContrast(object)
             
             return(object)
           })
@@ -152,7 +155,10 @@ setMethod(f          = "getModelFormula",
           signature  = "RflomicsMAE",
           definition = function(object){
             
-            return(metadata(object)$design$Model.formula)
+            Model <- metadata(object)$design$Model.formula
+            if(length(Model) == 0) return(NULL)
+            
+            return(Model)
           })
 
 #' @exportMethod getModelFormula
@@ -161,9 +167,12 @@ setMethod(f          = "getModelFormula",
 #' @aliases getModelFormula,RflomicsSE-method
 setMethod(f          = "getModelFormula",
           signature  = "RflomicsSE",
-          definition = function(object, analysisName = NULL){
+          definition = function(object){
             
-            return(metadata(object)$design$Model.formula)
+            Model <- metadata(object)$design$Model.formula
+            if(length(Model) == 0) return(NULL)
+            
+            return(Model)
           })
 
 
@@ -219,7 +228,6 @@ setMethod(f          = "updateModelFormula",
 #' }}
 #' @param object an object of class \link{RflomicsSE} or 
 #' class \link{RflomicsMAE-class}
-#' @param modelFormula modelFormula
 #' @param contrastType type of contrasts from which the possible 
 #' contrasts are extracted ("average", "simple", "interaction"). 
 #' Default is all contrasts types.
@@ -229,40 +237,13 @@ setMethod(f          = "updateModelFormula",
 setMethod(f          = "generateExpressionContrast",
           signature  = "RflomicsSE",
           definition = function(object, 
-                                modelFormula = NULL,
                                 contrastType = NULL){
             
-            contrastTypes <- c("simple", "averaged", "interaction")
-            
-            # check model
-            if (is.null(modelFormula)) 
-                modelFormula <- getModelFormula(object)
-            
-            if (is.null(modelFormula)) 
-              stop("model formula is mandatory.")
-            
-            if (is(modelFormula, "formula"))
-              modelFormula <- 
-              paste(as.character(modelFormula), collapse = " ")
-            
-            # check contarst type
-            if(is.null(contrastType))
-              contrastType <- contrastTypes
-            
-            if(any(!contrastType %in% contrastTypes))
-              stop("The contrastType argument must be one of the following values: ", 
-                   contrastTypes)
-            
-            # args for getExpressionContrastF()
-            factorBio <- getBioFactors(object)
-            ExpDesign <- getDesignMat(object)
-            
-            Contrasts.List <- 
-              .getExpressionContrastF(ExpDesign, factorBio, modelFormula)
-            
-            allcontrast <- Reduce("rbind", Contrasts.List[contrastType])
-            allcontrast <- as.data.frame(allcontrast)
-            allcontrast$selected <- rep("no", nrow(allcontrast))
+            allcontrast <- 
+              .generateExpressionContrast(
+                object,
+                contrastType = contrastType
+              )
             
             #metadata(object)$design$Contrasts.Sel <- allcontrast
             
@@ -276,40 +257,13 @@ setMethod(f          = "generateExpressionContrast",
 setMethod(f          = "generateExpressionContrast",
           signature  = "RflomicsMAE",
           definition = function(object, 
-                                modelFormula = NULL,
                                 contrastType = NULL){
             
-            contrastTypes <- c("simple", "averaged", "interaction")
-            
-            # check model
-            if (is.null(modelFormula)) 
-              modelFormula <- getModelFormula(object)
-            
-            if (is.null(modelFormula)) 
-              stop("model formula is mandatory.")
-            
-            if (is(modelFormula, "formula"))
-              modelFormula <- 
-                paste(as.character(modelFormula), collapse = " ")
-            
-            # check contarst type
-            if(is.null(contrastType))
-              contrastType <- contrastTypes
-            
-            if(any(!contrastType %in% contrastTypes))
-              stop("The contrastType argument must be one of the following values: ", 
-                   contrastTypes)
-            
-            # args for getExpressionContrastF()
-            factorBio <- getBioFactors(object)
-            ExpDesign <- getDesignMat(object)
-            
-            Contrasts.List <- 
-              .getExpressionContrastF(ExpDesign, factorBio, modelFormula)
-            
-            allcontrast <- Reduce("rbind", Contrasts.List[contrastType])
-            allcontrast <- as.data.frame(allcontrast)
-            allcontrast$selected <- rep("no", nrow(allcontrast))
+            allcontrast <- 
+              .generateExpressionContrast(
+                object,
+                contrastType = contrastType
+              )
             
             #metadata(object)$design$Contrasts.Sel <- allcontrast
             

@@ -12,9 +12,9 @@
 \alias{getSelectedContrasts,RflomicsSE-method}
 \title{Contrast expressions}
 \usage{
-\S4method{generateExpressionContrast}{RflomicsSE}(object, modelFormula = NULL, contrastType = NULL)
+\S4method{generateExpressionContrast}{RflomicsSE}(object, contrastType = NULL)
 
-\S4method{generateExpressionContrast}{RflomicsMAE}(object, modelFormula = NULL, contrastType = NULL)
+\S4method{generateExpressionContrast}{RflomicsMAE}(object, contrastType = NULL)
 
 \S4method{setSelectedContrasts}{RflomicsMAE}(object, contrastNames = NULL)
 
@@ -27,8 +27,6 @@
 \arguments{
 \item{object}{an object of class \link{RflomicsSE} or 
 class \link{RflomicsMAE-class}}
-
-\item{modelFormula}{modelFormula}
 
 \item{contrastType}{type of contrasts from which the possible 
 contrasts are extracted ("average", "simple", "interaction"). 

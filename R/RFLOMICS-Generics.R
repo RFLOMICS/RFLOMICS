@@ -411,21 +411,21 @@ setGeneric(
 setGeneric(
   name = "runDiffAnalysis",
   def  = function(object,
-                  contrastList     = NULL,
-                  modelFormula     = NULL,
+                  contrastNames     = NULL,
                   method           = NULL,
                   p.adj.method     = "BH",
                   p.adj.cutoff     = 0.05,
                   logFC.cutoff     = 0,
-                  selectedModality = "all",
-                  cmd = FALSE,
+                  splitBy          = "all",
+                  cmd              = FALSE,
                   ...)
     standardGeneric("runDiffAnalysis")
 )
 
 setGeneric(
   name = "generateContrastMatrix",
-  def  = function(object, modelFormula = NULL, contrastList=NULL, ...)
+  def  = function(object, 
+                  contrastNames = NULL, ...)
     standardGeneric("generateContrastMatrix")
 )
 
@@ -523,12 +523,12 @@ setGeneric(
 
 
 setGeneric(
-  name = "setValidContrasts",
+  name = "validateContrasts",
   def  = function(object,
-                  analysisName = "all",
-                  contrastList = NULL,
+                  analysisName  = "all",
+                  contrastNames = NULL,
                   ...)
-    standardGeneric("setValidContrasts")
+    standardGeneric("validateContrasts")
 )
 
 setGeneric(

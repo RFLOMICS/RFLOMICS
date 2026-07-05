@@ -7,9 +7,9 @@
 \alias{filterDiffAnalysis}
 \alias{filterDiffAnalysis,RflomicsSE-method}
 \alias{filterDiffAnalysis,RflomicsMAE-method}
-\alias{setValidContrasts}
-\alias{setValidContrasts,RflomicsSE-method}
-\alias{setValidContrasts,RflomicsMAE-method}
+\alias{validateContrasts}
+\alias{validateContrasts,RflomicsSE-method}
+\alias{validateContrasts,RflomicsMAE-method}
 \alias{plotDiffAnalysis}
 \alias{plotDiffAnalysis,RflomicsSE-method}
 \alias{plotDiffAnalysis,RflomicsMAE-method}
@@ -40,13 +40,12 @@
 \usage{
 \S4method{runDiffAnalysis}{RflomicsSE}(
   object,
-  contrastList = NULL,
-  modelFormula = NULL,
+  contrastNames = NULL,
   method = NULL,
   p.adj.method = "BH",
   p.adj.cutoff = 0.05,
   logFC.cutoff = 0,
-  selectedModality = NULL,
+  splitBy = "all",
   cmd = FALSE,
   ...
 )
@@ -54,13 +53,12 @@
 \S4method{runDiffAnalysis}{RflomicsMAE}(
   object,
   SE.name,
-  contrastList = NULL,
-  modelFormula = NULL,
+  contrastNames = NULL,
   method = NULL,
   p.adj.method = "BH",
   p.adj.cutoff = 0.05,
   logFC.cutoff = 0,
-  selectedModality = NULL,
+  splitBy = "all",
   cmd = FALSE,
   ...
 )
@@ -80,13 +78,13 @@
   logFC.cutoff = 0
 )
 
-\S4method{setValidContrasts}{RflomicsSE}(object, analysisName = "all", contrastList = NULL)
+\S4method{validateContrasts}{RflomicsSE}(object, analysisName = "all", contrastNames = NULL)
 
-\S4method{setValidContrasts}{RflomicsMAE}(
+\S4method{validateContrasts}{RflomicsMAE}(
   object,
   omicName = NULL,
   analysisName = "all",
-  contrastList = NULL
+  contrastNames = NULL
 )
 
 \S4method{plotDiffAnalysis}{RflomicsSE}(
@@ -178,7 +176,7 @@
 \item{object}{An object of class \link{RflomicsSE} or
 class \link{RflomicsMAE-class}}
 
-\item{contrastList}{A data.frame of contrast}
+\item{contrastNames}{A data.frame of contrast}
 
 \item{method}{A character vector giving the name of the differential
 analysis method to run. Either "edgeRglmfit" or "limmalmFit".}
@@ -191,8 +189,6 @@ the differential analysis.}
 
 \item{logFC.cutoff}{cutoff for absolute value of log2FC. Default is the
 parameter from the differential analysis.}
-
-\item{selectedModality}{apply differential analysis only on this modality.}
 
 \item{cmd}{Boolean. Used in the interface. If TRUE, print cmd for the user.}
 
@@ -247,6 +243,8 @@ Defines the operation to perform on the DE lists from the contrasts.}
 \item{nbMaxLabel}{number of labels to print}
 
 \item{interface}{Boolean. Is this plot for the interface or commandline?}
+
+\item{selectedModality}{apply differential analysis only on this modality.}
 }
 \value{
 A \link{RflomicsSE} or a \link{RflomicsMAE-class} object.
@@ -297,7 +295,7 @@ function/model of the \code{limma} package is applied.
    new cutoff for p-value and fold change.}
 
 \itemize{
-   \item setValidContrasts: Set the valid contrasts stored in \code{metadata} slot.}
+   \item validateContrasts: Set the valid contrasts stored in \code{metadata} slot.}
 }
 \details{
 Functions and parameters used for RNAseq are those recommended in DiCoExpress
