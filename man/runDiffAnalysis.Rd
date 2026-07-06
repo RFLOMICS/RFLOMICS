@@ -45,7 +45,7 @@
   p.adj.method = "BH",
   p.adj.cutoff = 0.05,
   logFC.cutoff = 0,
-  splitBy = "all",
+  splitByFactor = NULL,
   cmd = FALSE,
   ...
 )
@@ -58,7 +58,7 @@
   p.adj.method = "BH",
   p.adj.cutoff = 0.05,
   logFC.cutoff = 0,
-  splitBy = "all",
+  splitByFactor = NULL,
   cmd = FALSE,
   ...
 )

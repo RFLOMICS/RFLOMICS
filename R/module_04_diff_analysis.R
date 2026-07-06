@@ -48,8 +48,8 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
             abs.logFC.cutoff  = 0,
             selectedContrasts = NULL,
             generalModel      = NULL,
-            #DiffExpAnal       = NULL,
-            split_modality    = "all"
+            #DiffExpAnal      = NULL,
+            split_factor      = "all"
             )
     
     # initialize dataset.se() once processing done
@@ -195,13 +195,14 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     # choice to keep the full matrix or split it by category
     observeEvent(input$split_factor, {
       
-      dataset.SE <-  session$userData$FlomicsMultiAssay[[dataset]]
+      local.rea.values$split_factor <- input$split_factor
+      dataset.SE <- session$userData$FlomicsMultiAssay[[dataset]]
 
       # get common selected contrasts
-      contrastList.df     <- rea.values$Contrasts.Sel
-      contrastList        <- contrastList.df$contrastName
-      names(contrastList) <- paste0("[",contrastList.df$tag, "] ", 
-                                    contrastList.df$contrastName)
+      contrastList         <- rea.values$Contrasts.Sel
+      contrastNames        <- contrastList$contrastName
+      names(contrastNames) <- paste0("[",contrastList$tag, "] ", 
+                                     contrastList$contrastName)
       
       # get common selected model
       model_LM <- getModelFormula(dataset.SE)
@@ -209,23 +210,27 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
       
       if(input$split_factor != "all"){
         
+        factorBio   <- getBioFactors(dataset.SE)
+        factorBio   <- factorBio[factorBio != input$split_factor]
+        factorBatch <- getBatchFactors(dataset.SE)
+        
         # update model
-        model_f     <- as.formula(model_LM)
-        terms_obj   <- terms(model_f)
-        term_labels <- attr(terms_obj, "term.labels")
-        keep        <- term_labels[!grepl(input$split_factor, term_labels)]
-        model_LM    <- reformulate(keep)
-        model_LM    <- deparse(model_LM)
+        designFactors   <- c(factorBio, factorBatch)
+        model_LM        <- .updateModelFormula(designFactors, model_LM)
         names(model_LM) <- model_LM
         
         # update contrasts
-        dataset.SE <- 
-          setModelFormula(dataset.SE, modelFormula = model_LM)
+        ExpDesign <- getDesignMat(dataset.SE)
+        ExpDesign[[input$split_factor]] <- NULL
         
-        contrastList.df <- generateExpressionContrast(dataset.SE)
-        contrastList    <- contrastList.df$contrastName
-        names(contrastList) <- paste0("[",contrastList.df$tag, "] ", 
-                                      contrastList.df$contrastName)
+        Contrasts.List <- 
+          .getExpressionContrastF(ExpDesign, factorBio, model_LM)
+        
+        contrastList <- Reduce("rbind", Contrasts.List)
+        contrastList <- as.data.frame(contrastList)
+        
+        contrastNames <- contrastList$contrastName
+        names(contrastNames) <- contrastNames
       }
       
       shinyWidgets::updatePickerInput(
@@ -238,11 +243,11 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
       shinyWidgets::updatePickerInput(
         session  = session,
         inputId  = "contrastList",
-        choices  = contrastList,
-        selected = contrastList
+        choices  = contrastNames,
+        selected = contrastNames
       )
       
-      local.rea.values$selectedContrasts[[input$split_factor]] <- contrastList.df
+      local.rea.values$selectedContrasts[[input$split_factor]] <- contrastList
     })
     
     # contrast result validation
@@ -263,7 +268,11 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
             input$split_factor,
             "all" = "all",
             {
-              FactorModalities <- getFactorModalities(dataset.se(), factorName = input$split_factor)
+              FactorModalities <- 
+                getFactorModalities(
+                  dataset.se(), 
+                  factorName = input$split_factor
+                  )
               paste0(input$split_factor, FactorModalities)
             }
           )
@@ -331,70 +340,31 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
         contrastList <- local.rea.values$selectedContrasts[[input$split_factor]]
         contrastList <- contrastList[contrastList$contrastName %in% input$contrastList,]
         
-        for(analysisName in analysisNames){
+        # Run the analysis only if the 'diff' object is empty
+        if (!any(analysisNames %in% names(DiffExpAnals))){
           
-          # Run the analysis only if the 'diff' object is empty
-          if (!analysisName %in% names(DiffExpAnals)) {
-            
-            message("[RFLOMICS] # 04- Differential Analysis... ", 
-                    dataset, "-",analysisName)
-            
-            # run diff analysis with selected method
-            new.dataset.SE <-
-              runDiffAnalysis(
-                object           = dataset.se(),
-                p.adj.method     = "BH", 
-                method           = input$AnaDiffMethod,
-                # clustermq      = input$clustermq,
-                p.adj.cutoff     = input$p.adj.cutoff,
-                logFC.cutoff     = input$abs.logFC.cutoff,
-                selectedModality = analysisName,
-                contrastNames    = contrastList$contrastName,
-                cmd              = TRUE)
-            dataset.se(new.dataset.SE)
-            
-            toto <<- dataset.se()
-            
-            # -----  run ORA ----- !!! brouillon à changer
-            message("[RFLOMICS] # 04- GO ORA Analysis... ", 
-                    dataset, "-",analysisName)
-            DiffExpAnal <- 
-              getAnalysis(dataset.se(), 
-                          name = "DiffExpAnal", 
-                          subName = analysisName)
-            
-            # for each contrast
-            for(contrastName in contrastList$contrastName){
-              # get DEG list
-              DEG <- 
-                getDEList(dataset.se(), 
-                          contrasts = contrastName, 
-                          analysisName = analysisName)             
-              
-              # run ORA
-              ego <- list()
-              for(domain in names(go.map)){
-                
-                ego[[domain]] <- enricher(
-                  gene = DEG,
-                  TERM2GENE = go.map[[domain]],
-                  pAdjustMethod = "BH",
-                  pvalueCutoff = 0.10
-                )
-              }
-              
-              DiffExpAnal[["results"]][["ORA"]][[contrastName]] <- ego
-            }
-            dataset.se(
-              setElementToMetadata(dataset.se(), 
-                                   name = "DiffExpAnal",
-                                   subName = analysisName,
-                                   content = DiffExpAnal)
-            )
-            # --------------------- !!! brouillon à changer
-          }
-          else{
-            
+          # run diff analysis with selected method
+          message("[RFLOMICS] # 04- Differential Analysis... ", dataset)
+          dataset.se(
+            runDiffAnalysis(
+              object           = dataset.se(),
+              p.adj.method     = "BH", 
+              method           = input$AnaDiffMethod,
+              # clustermq      = input$clustermq,
+              p.adj.cutoff     = input$p.adj.cutoff,
+              logFC.cutoff     = input$abs.logFC.cutoff,
+              splitByFactor    = input$split_factor,
+              contrastNames    = contrastList$contrastName,
+              cmd              = TRUE)
+          )
+          
+          message("[RFLOMICS] # 04- GO ORA Analysis... ", dataset)
+          dataset.se(annot_draft(dataset.se(), go.map))
+          
+        }
+        else{
+          
+          for(analysisName in analysisNames){
             # If the differential analysis has already run, do not run it again
             message("[RFLOMICS] # 04 => Filtering differential analysis... ", 
                     dataset, "-",analysisName)
@@ -406,46 +376,11 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
                 p.adj.cutoff  = input$p.adj.cutoff,
                 logFC.cutoff  = input$abs.logFC.cutoff)
             dataset.se(new.dataset.SE)
-            
-            # -----  run ORA ----- !!! brouillon à changer
-            message("[RFLOMICS] # 04- GO ORA Analysis... ", 
-                    dataset, "-",analysisName)
-            DiffExpAnal <- 
-              getAnalysis(dataset.se(), 
-                          name = "DiffExpAnal", 
-                          subName = analysisName)
-            
-            # for each contrast
-            for(contrastName in contrastList$contrastName){
-              # get DEG list
-              DEG <- 
-                getDEList(dataset.se(), 
-                          contrasts = contrastName, 
-                          analysisName = analysisName)             
-              
-              # run ORA
-              ego <- list()
-              for(domain in names(go.map)){
-                
-                ego[[domain]] <- enricher(
-                  gene = DEG,
-                  TERM2GENE = go.map[[domain]],
-                  pAdjustMethod = "BH",
-                  pvalueCutoff = 0.10
-                )
-              }
-              
-              DiffExpAnal[["results"]][["ORA"]][[contrastName]] <- ego
-            }
-            dataset.se(
-              setElementToMetadata(dataset.se(), 
-                                   name = "DiffExpAnal",
-                                   subName = analysisName,
-                                   content = DiffExpAnal)
-            )
-            # --------------------- !!! brouillon à changer
-            
           }
+          # -----  run ORA ----- !!! brouillon à changer
+          message("[RFLOMICS] # 04- GO ORA Analysis... ", dataset)
+          dataset.se(annot_draft(dataset.se(), go.map))
+          
         }
         
         #session$userData$FlomicsMultiAssay[[dataset]] <- dataset.SE
@@ -600,6 +535,7 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
       analysisNames <- names(diffExpAnals)
       analysisNames <- analysisNames[grep(input$split_factor, analysisNames)]
       
+      print(paste0("analysisNames : ", analysisNames))
       if (length(analysisNames) == 0) return()
       
       lapply(analysisNames, function(analysisName){
@@ -925,7 +861,6 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
           )
         ## headmap, boxplot and table of DE only if DE nb > 0
         if (length(DEList) > 0){
-          
           tabPanel.list <-
             c(tabPanel.list,
               list(
@@ -1034,10 +969,25 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
     
     if (rea.values[[dataset]]$diffAnal == FALSE ||
         is.null(diffExpAnal[["results"]][["DEF"]])) return()
+
+    print(paste0("local.rea.values$split_factor : ", local.rea.values$split_factor))
+
+    newDataset.SE <- dataset.se()
+    if(modality != "all"){
+      print(paste0("modality : ", modality))
+      level <- sub(local.rea.values$split_factor, "", modality)
+      print(paste0("level : ",level))
+      newDataset.SE <- 
+        subsetRflomicsSE(
+          newDataset.SE, 
+          bioFactor = local.rea.values$split_factor, 
+          level = level
+          )
+    }
     
     lapply(seq_len(nrow(selectedContrasts)), function(i) {
       
-      vect     <- unlist(selectedContrasts[i,])
+      vect <- unlist(selectedContrasts[i,])
       
       # PCA axis for plot
       # update/adapt PCA axis
@@ -1045,12 +995,6 @@ DiffExpAnalysis <- function(input, output, session, dataset, rea.values){
       
       DEList <- 
         getDEList(dataset.se(), analysisName = modality ,contrasts = vect["contrastName"])
-      
-      newDataset.SE <- dataset.se()
-      if(modality != "all"){
-        newDataset.SE <- 
-          splitRflomicsSE(newDataset.SE, selectedModality = modality)
-      }
       
       callModule(module       = .modVariablePCA,
                  id           = paste0(vect["contrastName"],"-DE-", modality),
@@ -1474,3 +1418,51 @@ info2 <- "Statistical model formula adapted to the dataset content."
 info3 <- "Contrasts/hypotheses on which to run the differential analysis."
 info4 <- "Differential analysis method. Fixed parameter according to omics type."
 info5 <- "The adjusted p-value cut-off. Pvalues are adjusted using Benjamini-Hochberg method."
+
+
+## ----- brouillon !!!!!!!! -------
+annot_draft <- function(object, go.map = NULL){
+  
+  DiffExpAnals <- 
+    getAnalysis(object, name = "DiffExpAnal")
+  
+  for(analysisName in names(DiffExpAnals)){
+    
+    DiffExpAnal <- DiffExpAnals[[analysisName]]
+    
+    diffSettings <- 
+      getDiffSettings(object, analysisName = analysisName)
+    
+    # for each contrast
+    for(contrastName in diffSettings$Contrasts.Sel$contrastName){
+      # get DEG list
+      DEG <- 
+        getDEList(object, 
+                  contrasts = contrastName, 
+                  analysisName = analysisName)             
+      
+      # run ORA
+      ego <- list()
+      for(domain in names(go.map)){
+        
+        ego[[domain]] <- enricher(
+          gene = DEG,
+          TERM2GENE = go.map[[domain]],
+          pAdjustMethod = "BH",
+          pvalueCutoff = 0.10
+        )
+      }
+      
+      DiffExpAnal[["results"]][["ORA"]][[contrastName]] <- ego
+    }
+    object <- 
+      setElementToMetadata(object, 
+                           name = "DiffExpAnal",
+                           subName = analysisName,
+                           content = DiffExpAnal)
+    
+    # --------------------- !!! brouillon à changer
+  }
+  
+  return(object)
+}

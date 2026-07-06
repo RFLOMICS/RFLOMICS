@@ -206,9 +206,9 @@ setGeneric(
 #---- 03 data processing ----
 
 setGeneric(
-  name = "splitRflomicsSE",
-  def  = function(object, selectedModality = NULL)
-    standardGeneric("splitRflomicsSE")
+  name = "subsetRflomicsSE",
+  def  = function(object, bioFactor = NULL, level = NULL)
+    standardGeneric("subsetRflomicsSE")
 )
 
 setGeneric(
@@ -416,7 +416,7 @@ setGeneric(
                   p.adj.method     = "BH",
                   p.adj.cutoff     = 0.05,
                   logFC.cutoff     = 0,
-                  splitBy          = "all",
+                  splitByFactor    = NULL,
                   cmd              = FALSE,
                   ...)
     standardGeneric("runDiffAnalysis")

@@ -97,7 +97,7 @@ setMethod(
     p.adj.method     = "BH",
     p.adj.cutoff     = 0.05,
     logFC.cutoff     = 0,
-    splitBy          = "all",
+    splitByFactor    = NULL,
     cmd = FALSE,
     ...){
     
@@ -122,7 +122,7 @@ setMethod(
     
     # split data
     objects <- list()
-    if(is.null(splitBy) || splitBy == "all"){
+    if(is.null(splitByFactor) || splitByFactor == "all"){
       
       splitLevels   <- "all"
       analysisNames <- "all" 
@@ -131,19 +131,19 @@ setMethod(
     else{
       bioFactors <- getBioFactors(object)
       
-      if(!splitBy %in% bioFactors) stop("No bio factor called ",splitBy," found.")
+      if(!splitByFactor %in% bioFactors) 
+        stop("No bio factor called ",splitByFactor," found.")
       
       splitLevels <- 
-        getFactorModalities(object, factorName = splitBy)
+        getFactorModalities(object, factorName = splitByFactor)
       
       analysisNames <- vector()
       for(splitLevel in splitLevels){
         
-        analysisName <- paste(splitBy, splitLevel, sep = "")
+        analysisName <- paste(splitByFactor, splitLevel, sep = "")
         
-        keep <- colData(object)[[splitBy]] == splitLevel
-        
-        objects[[analysisName]] <- object[, keep]
+        objects[[analysisName]] <-
+          subsetRflomicsSE(object, bioFactor = splitByFactor, level = splitLevel)
         
         analysisNames <- c(analysisNames, analysisName)
       }
@@ -301,7 +301,7 @@ setMethod(
                         p.adj.method     = "BH",
                         p.adj.cutoff     = 0.05,
                         logFC.cutoff     = 0,
-                        splitBy          = "all",
+                        splitByFactor    = NULL,
                         cmd              = FALSE,
                         ...){
     
@@ -313,7 +313,7 @@ setMethod(
                       method           = method,
                       p.adj.cutoff     = p.adj.cutoff,
                       logFC.cutoff     = logFC.cutoff,
-                      splitBy          = splitBy,
+                      splitByFactor    = splitByFactor,
                       cmd = cmd)
 
     object <-

@@ -71,24 +71,23 @@ NULL
 #' @description 
 #' Update model formula according to changes in the design
 #' @param modelFormula model formula to update.
+#' @param designFactors names of design factors (bio and batch factors)
 #' @return a object of class formula
 #' @keywords internal
 #' @noRd
-.updateModelFormula <- function(object, modelFormula = NULL){
+.updateModelFormula <- function(designFactors = NULL, modelFormula = NULL){
   
   modelFormula <- as.formula(modelFormula)
-  var2keep <- getFactorNames(object)
-  
-  #terms <- attr(terms(modelFormula), "term.labels")
+
   var2rm <- 
     setdiff(
       all.vars(terms(modelFormula), "term.labels"),
-      var2keep
+      designFactors
     )
   
   if(length(var2rm) == 0) return(modelFormula)
   
-  term_labels <- attr(modelFormula, "term.labels")
+  term_labels <- attr(terms(modelFormula), "term.labels")
   
   for(var in var2rm){
     term_labels <- term_labels[!grepl(var, term_labels)]

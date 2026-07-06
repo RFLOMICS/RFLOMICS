@@ -68,7 +68,7 @@ setMethod(
     
     if(isFALSE(modelFormula %in% sapply(possibleFormula, function(x) deparse(x)))){
       warning("Invalid formula. See generateModelFormulae() 
-              for the list of available formulas.")
+              for the list of possible formulas.")
       return(object)
     }
       
@@ -79,9 +79,10 @@ setMethod(
     
     for(name in names(object)){
       # current SE
+      designFactors <- getFactorNames(object[[name]])
       modelFormula2 <- 
         .updateModelFormula(
-          object[[name]], 
+          designFactors, 
           modelFormula = modelFormula
         )
       object[[name]] <- 
@@ -91,9 +92,11 @@ setMethod(
         )
       
       # raw SE
+      designFactors <- 
+        getFactorNames(metadata(object[[name]])[["rawRflomicsSE"]])
       modelFormula3 <- 
         .updateModelFormula(
-          metadata(object[[name]])[["rawRflomicsSE"]], 
+          designFactors, 
           modelFormula = modelFormula
         )
       metadata(object[[name]])[["rawRflomicsSE"]] <-
@@ -200,8 +203,11 @@ setMethod(f          = "updateModelFormula",
           signature  = "RflomicsSE",
           definition = function(object){
             
-            model_LM  <- getModelFormula(object)
-            model_LM2 <- .updateModelFormula(object, model_LM)
+            model_LM      <- getModelFormula(object)
+            designFactors <- getFactorNames(object)
+            
+            model_LM2 <- 
+              .updateModelFormula(designFactors, model_LM)
             
             if(deparse(model_LM2) == model_LM)
               return(object)

@@ -977,50 +977,51 @@ setMethod(f          = "runOmicsPCA",
             return(object)
           })
 
-### ==== splitRflomicsSE ====
-#' @name splitRflomicsSE
+### ==== subsetRflomicsSE ====
+#' @name subsetRflomicsSE
 #' @description
 #' \itemize{
-#'    \item splitRflomicsSE...}
-#' @param name description
+#'    \item subsetRflomicsSE 
+#'    Extract a subset of an RflomicsSE object based on a factor and its level.}
+#' @param bioFactor design factor used to extract a subset of the object.
+#' @param level Level of the factor used to extract a subset of the object.
 #' @keywords internal
 #' @noRd
 setMethod(
-  f         = "splitRflomicsSE",
+  f         = "subsetRflomicsSE",
   signature = "RflomicsSE",
-  definition <- function(object, selectedModality = NULL){
+  definition <- function(object, 
+                         bioFactor = NULL,
+                         level     = NULL){
     
-    Target     <- getDesignMat(object)
-    BioFactors <- getBioFactors(object)
-    BioFactor  <- 
-      BioFactors[unlist(lapply(BioFactors, function(x){grepl(x, selectedModality)}))]
+    if(is.null(bioFactor))  stop("Argument 'bioFactor' is required.")
     
-    Modalities <- getFactorModalities(object, factorName = BioFactor)
-    Modalitie  <- 
-      Modalities[unlist(lapply(Modalities, function(x){grepl(x, selectedModality)}))]
+    levels <- getFactorModalities(object, factorName = bioFactor)
+    if(is.null(level) || !any(level %in% levels)) 
+      stop("Argument 'level' is required.")
     
-    Ssamples   <- Target[Target[[BioFactor]] == Modalitie,]$samples
+    keep <- 
+      colData(object)[[bioFactor]] != level
+    mini.object <- object[, keep]
     
-    object.f <- object[, Ssamples]
-    object.f@colData[[BioFactor]] <- NULL
-    for(i in colnames(object.f@colData)){
-     object.f@colData[[i]] <- 
-       factor(object.f@colData[[i]], 
-              levels = unique(object.f@colData[[i]]))
-    }
+    # update design
+    # remove bioFactor from colData
+    colData(object)[[bioFactor]] <- NULL
     
-    object.f@metadata$DataProcessing$selectedSamples <- as.vector(Ssamples)
-    object.f@metadata$design$factorType <- 
-      object.f@metadata$design$factorType[names(object.f@metadata$design$factorType) != BioFactor]
+    # remove bioFactor from factorType
+    design <- metadata(mini.object)$design
+    design$factorType <- design$factorType[
+      names(design$factorType) != bioFactor
+    ]
+    metadata(mini.object)$design <- design
     
-    object.f@metadata$DataProcessing$Normalization$results$coefNorm <-
-      object.f@metadata$DataProcessing$Normalization$results$coefNorm[as.vector(Ssamples),]
+    # model / contrasts
+    mini.object <- updateModelFormula(mini.object)
     
-    return(object.f)
+    return(mini.object)
   })
 
 ## ---- checkExpDesignCompleteness ----
-
 #' @name checkExpDesignCompleteness
 #' @aliases checkExpDesignCompleteness,RflomicsSE-method
 #' @rdname runDataProcessing

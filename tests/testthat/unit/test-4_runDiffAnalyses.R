@@ -68,7 +68,7 @@ test_that("runDiffAnalyis: RNAseq, all", {
   diffSettings <- getDiffSettings(rna.se1)
   
   expect_identical(diffSettings$Model.formula, "~Repeat + temperature + imbibition")
-  expect_identical(diffSettings$contrastNames, selectedContrast)
+  expect_identical(diffSettings$Contrasts.Sel$contrastName, selectedContrast)
   expect_identical(diffSettings$method, "edgeRglmfit")
   expect_null(diffSettings$validContrasts)
   
@@ -107,23 +107,31 @@ test_that("runDiffAnalyis: RNAseq, split", {
       rna.se, splitBy = "imbibition"
     )
   
-  expect_identical(MAE1[["RNAtest"]], rna.se1)
-  
-  diffSettings <- getDiffSettings(rna.se1)
+  diffSettings <- getDiffSettings(rna.se1, analysisName = "imbibitionDS")
   
   expect_identical(diffSettings$Model.formula, "~Repeat + temperature")
-  expect_identical(diffSettings$Contrasts.Sel$contrastName, selectedContrast)
+  expect_identical(diffSettings$Contrasts.Sel$contrastName, 
+                   "(temperatureElevated - temperatureLow)")
   expect_identical(diffSettings$method, "edgeRglmfit")
   expect_null(diffSettings$validContrasts)
   
   rna.se1 <-
     validateContrasts(
       rna.se1, 
-      analysisName = "all", 
+      analysisName = "imbibitionDS", 
+      contrastNames = "(temperatureElevated - temperatureLow)"
+    )
+  diffSettings <- getDiffSettings(rna.se1, analysisName = "imbibitionDS")
+  expect_equal(diffSettings$validContrasts, "(temperatureElevated - temperatureLow)")
+  
+  expect_error(
+    validateContrasts(
+      rna.se1, 
+      analysisName = "imbibitionDS", 
       contrastNames = selectedContrast
     )
-  diffSettings <- getDiffSettings(rna.se1)
-  expect_equal(diffSettings$validContrasts, selectedContrast)
+  )
+
 })
 
 
