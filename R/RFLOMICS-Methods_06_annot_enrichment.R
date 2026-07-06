@@ -101,7 +101,7 @@ setMethod(
         param.list[["maxGSSize"]] <- maxGSSize
 
         if (is.null(universe))
-            param.list[["universe"]] <- names(getProcessedData(object, filter = TRUE))
+            param.list[["universe"]] <- names(object)
 
         # check args
         ## database

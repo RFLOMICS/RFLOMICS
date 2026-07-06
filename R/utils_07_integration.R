@@ -152,8 +152,6 @@
                           SEname,
                           correctBatch = TRUE,
                           variableNames = NULL,
-                          type = "union",
-                          choice = "DE",
                           cmd = FALSE) {
     omicsDat <- object[[SEname]]
     metadata(omicsDat)[["correction_batch"]] <- correctBatch

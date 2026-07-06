@@ -231,18 +231,20 @@
                   DEList
                 } ,
                 "CV" = {
-                    # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
-                    #                                  raw = FALSE)
                     transformedSE <-
-                        switch (
-                            getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
-                            "RNAseq" =
-                                getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                                 filter = TRUE, log = TRUE ),
-                            getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                             norm = TRUE)
-                        )
-                    transformedSE <- assay(transformedSE)
+                      switch (
+                        getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
+                        "RNAseq" =
+                          {
+                            assay(
+                              .applyTrans_readcounts(
+                                session$userData$FlomicsMultiAssay[[set]],
+                                method = "log2")
+                            )
+                            
+                          },
+                          assay(session$userData$FlomicsMultiAssay[[set]])
+                      )
 
                     cv_vect <- unlist(
                         lapply(seq_len(nrow(transformedSE)),
@@ -824,16 +826,19 @@
             } else if (input[[paste0("selectmethode", set)]] == "CV") {
                 # transformedSE <- .checkTransNorm(session$userData$FlomicsMultiAssay[[set]],
                 #                                  raw = FALSE)
-                transformedSE <-
-                    switch (
-                        getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
-                        "RNAseq" =
-                            getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                             filter = TRUE, log = TRUE ),
-                        getProcessedData(session$userData$FlomicsMultiAssay[[set]],
-                                         norm = TRUE)
-                    )
-                transformedSE <- assay(transformedSE)
+              transformedSE <-
+                switch (
+                  getOmicsTypes(session$userData$FlomicsMultiAssay[[set]]),
+                  "RNAseq" =
+                    {
+                      assay(
+                        .applyTrans_readcounts(
+                          session$userData$FlomicsMultiAssay[[set]],
+                          method = "log2")
+                      )
+                    },
+                  assay(session$userData$FlomicsMultiAssay[[set]])
+                )
                 cv_vect <- unlist(
                     lapply(seq_len(nrow(transformedSE)),
                            FUN = function(row_i){

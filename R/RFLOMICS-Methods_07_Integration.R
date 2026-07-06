@@ -47,7 +47,6 @@ setMethod(
                         variableLists = NULL,
                         group = NULL,
                         method = "MOFA",
-                        transformData = TRUE,
                         cmd = FALSE) {
     method <- switch(
       toupper(method),
@@ -74,18 +73,6 @@ setMethod(
       correct_batch <- TRUE
     }
 
-    # Transformation before anything else, except for RNAseq data.
-    if (transformData) {
-      for (SEname in omicsNames) {
-        if (getOmicsTypes(object[[SEname]]) != "RNAseq") {
-          #object[[SEname]] <- .checkTransNorm(object[[SEname]])
-          object[[SEname]] <- getProcessedData(object[[SEname]], norm = TRUE)
-        }
-        else{
-          object[[SEname]] <- getProcessedData(object[[SEname]], filter = TRUE)
-        }
-      }
-    }
     # On each selected omics, according to its type,
     # apply transformation if demanded.
     # Filter DE entities (or not)

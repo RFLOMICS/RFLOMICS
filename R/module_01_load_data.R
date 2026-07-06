@@ -129,15 +129,18 @@ Useful for custom, alias, transcript, or non-standard gene names."
 .modLoadDataUI <- function(id) {
   ns <- NS(id)
   
-  mart     <- useMart(
-    biomart = "plants_mart",
-    host = "https://plants.ensembl.org"
-  )
-  datasets <- listDatasets(mart)
-  species_choices <- setNames(
-    datasets$dataset,
-    datasets$description
-  )
+  # mart     <- useMart(
+  #   biomart = "plants_mart",
+  #   host = "https://plants.ensembl.org"
+  # )
+  # datasets <- listDatasets(mart)
+  # species_choices <- setNames(
+  #   datasets$dataset,
+  #   datasets$description
+  # )
+  
+  datasets <- NULL
+  species_choices <- NULL
   
   tagList(
     fluidRow(

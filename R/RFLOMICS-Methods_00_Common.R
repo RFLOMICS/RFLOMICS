@@ -471,11 +471,6 @@ setMethod(
       ""
     )
 
-    # apply processing on matrix
-    for(SE.name in names(object)){
-      object[[SE.name]] <- getProcessedData(object[[SE.name]], norm = TRUE)
-    }
-
     # contruct MAE from rflomicsMAE
     MAE <- MultiAssayExperiment(experiments = experiments(object),
                                 colData     = colData(object),

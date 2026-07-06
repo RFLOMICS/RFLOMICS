@@ -129,7 +129,7 @@ setMethod(
           "RNAseq" = {
             list(
               transformation   = "arcsin",
-              normFactors      = "TMM",
+              normFactors      = "none", # TMM RNAseq déjà norm
               meanFilterCutoff = 50,
               GaussianModel = "Gaussian_pk_Lk_Ck",
               scale = FALSE
@@ -231,18 +231,7 @@ setMethod(
            "s must be greater than ", min.data.size)
 
     # set default parameters based on data type
-    counts <-
-      switch(
-        getOmicsTypes(object),
-        "RNAseq" = {
-          object2 <- getProcessedData(object, filter = TRUE)
-          assay(object2)[geneList,]
-        },
-        {
-          object2 <- getProcessedData(object, norm = TRUE)
-          assay(object2)[geneList,]
-        }
-      )
+    counts <- assay(object)[geneList,]
 
     if(isTRUE(scale)){
 
@@ -348,7 +337,7 @@ setMethod(
 
     for (data in omicNames) {
 
-      SE <- getProcessedData(object[[data]], filter = TRUE)
+      SE <- object[[data]]
 
       CoExpAnal <- getAnalysis(SE, name = "CoExpAnal")$results
 
@@ -410,8 +399,6 @@ setMethod(
   f="plotCoExpression",
   signature="RflomicsSE",
   definition <- function(object){
-
-    object <- getProcessedData(object, filter = TRUE)
 
     CoExpAnal <- getAnalysis(object, name = "CoExpAnal")$results
 
@@ -511,7 +498,6 @@ setMethod(
                         condition="groups",
                         features=NULL){
 
-    object <- getProcessedData(object, filter = TRUE)
     Groups <- getDesignMat(object)
 
     CoExpAnal <- getAnalysis(object, name = "CoExpAnal")$results

@@ -12,7 +12,6 @@
   variableLists = NULL,
   group = NULL,
   method = "MOFA",
-  transformData = TRUE,
   cmd = FALSE
 )
 }
@@ -36,11 +35,11 @@ keeping all features.}
 \item{method}{one of MOFA or mixOmics.
 Method for which the object is prepared.}
 
+\item{cmd}{used in the interface. Print cmd lines.}
+
 \item{transformData}{boolean.
 Transform the data with the transform and normalization method?
 Default is TRUE.}
-
-\item{cmd}{used in the interface. Print cmd lines.}
 }
 \value{
 An untrained MOFA object or a list of dataset
