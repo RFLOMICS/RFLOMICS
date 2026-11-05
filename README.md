@@ -30,8 +30,7 @@ You can access the RFLOMICS app on Sk8 using this url:
 
 https://RFLOMICS.sk8.inrae.fr/
 
-WARNING: only 2 Gb of ram available per app, we recommend using the SK8 solution 
-only if your data have a small number of samples and features. 
+Note: Depending on the use case, the planned computational resources (RAM and CPU) may become a limiting factor for some analysis steps.
 
 ### Locally 
 
