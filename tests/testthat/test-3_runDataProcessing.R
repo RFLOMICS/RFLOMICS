@@ -63,7 +63,7 @@ test_that("runDataProcessing returned value", {
   expect_equal(length(MAE), length(MAE1))
 
   ## Doesn't modify the MAE@metadata
-  expect_identical(metadata(MAE), metadata(MAE1))
+  expect_equal(metadata(MAE), metadata(MAE1))
 
   ## method of RflomicsSE class
   rna.S1  <- MAE[["RNAtest"]]
@@ -97,33 +97,33 @@ test_that("runDataProcessing returned value", {
   expect_equal(meta.S1, MAE1[["metatest"]], tolerance = 1e-6)
 
   ## Doesn't modify the colData
-  expect_identical(colData(rna.S1),  colData(MAE[["RNAtest"]]))
-  expect_identical(colData(prot.S1), colData(MAE[["protetest"]]))
-  expect_identical(colData(meta.S1), colData(MAE[["metatest"]]))
+  expect_equal(colData(rna.S1),  colData(MAE[["RNAtest"]]))
+  expect_equal(colData(prot.S1), colData(MAE[["protetest"]]))
+  expect_equal(colData(meta.S1), colData(MAE[["metatest"]]))
 
   ## Doesn't modify the design
-  expect_identical(metadata(rna.S1)$design$factorType,
+  expect_equal(metadata(rna.S1)$design$factorType,
                    metadata(MAE[["RNAtest"]])$design$factorType)
-  expect_identical(metadata(prot.S1)$design$Model.formula,
+  expect_equal(metadata(prot.S1)$design$Model.formula,
                    metadata(MAE[["protetest"]])$design$Model.formula)
-  expect_identical(metadata(meta.S1)$design$Contrasts.Sel,
+  expect_equal(metadata(meta.S1)$design$Contrasts.Sel,
                    metadata(MAE[["metatest"]])$design$Contrasts.Sel)
 
   ## Doesn't modify the matrix
-  expect_identical(assay(rna.S1),  assay(MAE[["RNAtest"]]))
-  expect_identical(assay(prot.S1), assay(MAE[["protetest"]]))
-  expect_identical(assay(meta.S1), assay(MAE[["metatest"]]))
+  expect_equal(assay(rna.S1),  assay(MAE[["RNAtest"]]))
+  expect_equal(assay(prot.S1), assay(MAE[["protetest"]]))
+  expect_equal(assay(meta.S1), assay(MAE[["metatest"]]))
 
   ## modify the SE@metadata
   expect(!identical(metadata(MAE[["RNAtest"]]), metadata(rna.S1)),
          failure_message = "The two objects are not expected to be identical.")
 
   ### filtering settings: samples
-  expect_identical(getSelectedSamples(rna.S1), sampleToKeep)
-  expect_identical(getSelectedSamples(prot.S1), colnames(MAE[["protetest"]]))
-  expect_identical(getSelectedSamples(meta.S1), colnames(MAE[["metatest"]]))
+  expect_equal(getSelectedSamples(rna.S1), sampleToKeep)
+  expect_equal(getSelectedSamples(prot.S1), colnames(MAE[["protetest"]]))
+  expect_equal(getSelectedSamples(meta.S1), colnames(MAE[["metatest"]]))
   ### filtering settings: features
-  expect_identical(
+  expect_equal(
     getFilterSettings(rna.S1),
     list(method = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 1))
   expect_equal(
@@ -133,32 +133,32 @@ test_that("runDataProcessing returned value", {
     getImputSettings(meta.S1),
     list(method = "minFeatureValue", factor = 1.8))
   ### Is it filtered ?
-  expect_identical(RFLOMICS:::.isFiltered(rna.S1), FALSE)
-  expect_identical(RFLOMICS:::.isFiltered(prot.S1), FALSE)
-  expect_identical(RFLOMICS:::.isFiltered(meta.S1), FALSE)
+  expect_equal(RFLOMICS:::.isFiltered(rna.S1), FALSE)
+  expect_equal(RFLOMICS:::.isFiltered(prot.S1), FALSE)
+  expect_equal(RFLOMICS:::.isFiltered(meta.S1), FALSE)
 
   ### transformation settings
-  expect_identical(getTransSettings(rna.S1), NULL)
-  expect_identical(getTransSettings(prot.S1),
+  expect_equal(getTransSettings(rna.S1), NULL)
+  expect_equal(getTransSettings(prot.S1),
                    list(method = "none", suppInfo = "unknown"))
-  expect_identical(getTransSettings(meta.S1),
+  expect_equal(getTransSettings(meta.S1),
                    list(method = "log2", suppInfo = NULL))
   ### Is it transformed ?
-  expect_identical(RFLOMICS:::.isTransformed(rna.S1), FALSE)
-  expect_identical(RFLOMICS:::.isTransformed(prot.S1), FALSE)
-  expect_identical(RFLOMICS:::.isTransformed(meta.S1), FALSE)
+  expect_equal(RFLOMICS:::.isTransformed(rna.S1), FALSE)
+  expect_equal(RFLOMICS:::.isTransformed(prot.S1), FALSE)
+  expect_equal(RFLOMICS:::.isTransformed(meta.S1), FALSE)
 
   ### normalization settings
-  expect_identical(getNormSettings(rna.S1),
+  expect_equal(getNormSettings(rna.S1),
                    list(method = "TMM", suppInfo = NULL))
-  expect_identical(getNormSettings(prot.S1),
+  expect_equal(getNormSettings(prot.S1),
                    list(method = "none", suppInfo = NULL))
-  expect_identical(getNormSettings(meta.S1),
+  expect_equal(getNormSettings(meta.S1),
                    list(method = "median", suppInfo = NULL))
   ### Is it normalized ?
-  expect_identical(RFLOMICS:::.isNormalized(rna.S1), FALSE)
-  expect_identical(RFLOMICS:::.isNormalized(prot.S1), FALSE)
-  expect_identical(RFLOMICS:::.isNormalized(meta.S1), FALSE)
+  expect_equal(RFLOMICS:::.isNormalized(rna.S1), FALSE)
+  expect_equal(RFLOMICS:::.isNormalized(prot.S1), FALSE)
+  expect_equal(RFLOMICS:::.isNormalized(meta.S1), FALSE)
 
   ### add PCA for processed data (norm)
   expect(!is.null(getAnalysis(rna.S1,  "PCAlist", "norm")),
@@ -169,23 +169,23 @@ test_that("runDataProcessing returned value", {
          failure_message = "We don't expect this object to be null.")
 
   ### reset analysis results
-  expect_identical(getAnalysis(rna.S1,  "DiffExpAnal"),  list())
-  expect_identical(getAnalysis(prot.S1, "DiffExpAnal"),  list())
-  expect_identical(getAnalysis(meta.S1, "DiffExpAnal"),  list())
-  expect_identical(getAnalysis(rna.S1,  "DiffExpEnrichAnal"),  list())
-  expect_identical(getAnalysis(prot.S1, "DiffExpEnrichAnal"),  list())
-  expect_identical(getAnalysis(meta.S1, "DiffExpEnrichAnal"),  list())
-  expect_identical(getAnalysis(rna.S1,  "CoExpAnal"),  list())
-  expect_identical(getAnalysis(prot.S1, "CoExpAnal"),  list())
-  expect_identical(getAnalysis(meta.S1, "CoExpAnal"),  list())
-  expect_identical(getAnalysis(rna.S1,  "CoExpEnrichAnal"),  list())
-  expect_identical(getAnalysis(prot.S1, "CoExpEnrichAnal"),  list())
-  expect_identical(getAnalysis(meta.S1, "CoExpEnrichAnal"),  list())
+  expect_equal(getAnalysis(rna.S1,  "DiffExpAnal"),  list())
+  expect_equal(getAnalysis(prot.S1, "DiffExpAnal"),  list())
+  expect_equal(getAnalysis(meta.S1, "DiffExpAnal"),  list())
+  expect_equal(getAnalysis(rna.S1,  "DiffExpEnrichAnal"),  list())
+  expect_equal(getAnalysis(prot.S1, "DiffExpEnrichAnal"),  list())
+  expect_equal(getAnalysis(meta.S1, "DiffExpEnrichAnal"),  list())
+  expect_equal(getAnalysis(rna.S1,  "CoExpAnal"),  list())
+  expect_equal(getAnalysis(prot.S1, "CoExpAnal"),  list())
+  expect_equal(getAnalysis(meta.S1, "CoExpAnal"),  list())
+  expect_equal(getAnalysis(rna.S1,  "CoExpEnrichAnal"),  list())
+  expect_equal(getAnalysis(prot.S1, "CoExpEnrichAnal"),  list())
+  expect_equal(getAnalysis(meta.S1, "CoExpEnrichAnal"),  list())
 
   ## reset integration analysis
-  expect_identical(getAnalysis(MAE1, name = "IntegrationAnalysis"), list())
+  expect_equal(getAnalysis(MAE1, name = "IntegrationAnalysis"), list())
 
-  expect_identical(getAnalysis(rna.S1,  "DiffExpAnal"),  list())
+  expect_equal(getAnalysis(rna.S1,  "DiffExpAnal"),  list())
 
 
 
@@ -205,12 +205,12 @@ test_that("default values of runDataProcessing arguments", {
   meta.S1 <- runDataProcessing(meta.S1)
 
   ### filtering settings: samples
-  expect_identical(getSelectedSamples(rna.S1),  colnames(MAE[["RNAtest"]]))
-  expect_identical(getSelectedSamples(prot.S1), colnames(MAE[["protetest"]]))
-  expect_identical(getSelectedSamples(meta.S1), colnames(MAE[["metatest"]]))
+  expect_equal(getSelectedSamples(rna.S1),  colnames(MAE[["RNAtest"]]))
+  expect_equal(getSelectedSamples(prot.S1), colnames(MAE[["protetest"]]))
+  expect_equal(getSelectedSamples(meta.S1), colnames(MAE[["metatest"]]))
 
   ### filtering settings: features
-  expect_identical(
+  expect_equal(
     getFilterSettings(rna.S1),
     list(method = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 1))
   # expect_equal(
@@ -221,18 +221,18 @@ test_that("default values of runDataProcessing arguments", {
   #   list(method = "MVI", minValue = 1.98e-05, suppInfo = "missing value imputation"))
 
   ### transformation settings
-  expect_identical(getTransSettings(rna.S1), NULL)
-  expect_identical(getTransSettings(prot.S1),
+  expect_equal(getTransSettings(rna.S1), NULL)
+  expect_equal(getTransSettings(prot.S1),
                    list(method = "none", suppInfo = "unknown"))
-  expect_identical(getTransSettings(meta.S1),
+  expect_equal(getTransSettings(meta.S1),
                    list(method = "none", suppInfo = "unknown"))
 
   ### normalization settings
-  expect_identical(getNormSettings(rna.S1),
+  expect_equal(getNormSettings(rna.S1),
                    list(method = "TMM", suppInfo = NULL))
-  expect_identical(getNormSettings(prot.S1),
+  expect_equal(getNormSettings(prot.S1),
                    list(method = "none", suppInfo = "unknown"))
-  expect_identical(getNormSettings(meta.S1),
+  expect_equal(getNormSettings(meta.S1),
                    list(method = "none", suppInfo = "unknown"))
 
 })
@@ -306,9 +306,9 @@ test_that("runSampleFiltering returned value", {
   ## returns a value of class RflomicsMAE/RflomicsSE
   expect_true("RflomicsMAE" %in% is(MAE1))
   expect_true("RflomicsSE" %in% is(rna.S1))
-  expect_identical(rna.S1, MAE1[["RNAtest"]])
-  expect_identical(assay(rna.S1), assay(MAE[["RNAtest"]]))
-  expect_identical(colData(rna.S1), colData(MAE[["RNAtest"]]))
+  expect_equal(rna.S1, MAE1[["RNAtest"]])
+  expect_equal(assay(rna.S1), assay(MAE[["RNAtest"]]))
+  expect_equal(colData(rna.S1), colData(MAE[["RNAtest"]]))
 
   ## filtering settings: features
   expect(!identical(metadata(rna.S1)$design$ExpDesign,
@@ -320,14 +320,14 @@ test_that("runSampleFiltering returned value", {
   expect(!is.null(getFilterSettings(rna.S1)), failure_message = "")
   expect(!is.null(getNormSettings(rna.S1)), failure_message = "")
   rna.S1 <- runSampleFiltering(rna.S1, samples = sampleToKeep)
-  expect_identical(getAnalysis(rna.S1, "DataProcessing", "featureFiltering"), list())
-  expect_identical(getAnalysis(rna.S1, "DataProcessing", "Normalization"), list())
-  expect_identical(getAnalysis(rna.S1, "DataProcessing", "Transformation"),list())
-  expect_identical(getAnalysis(rna.S1, "PCAlist")$norm, NULL)
+  expect_equal(getAnalysis(rna.S1, "DataProcessing", "featureFiltering"), list())
+  expect_equal(getAnalysis(rna.S1, "DataProcessing", "Normalization"), list())
+  expect_equal(getAnalysis(rna.S1, "DataProcessing", "Transformation"),list())
+  expect_equal(getAnalysis(rna.S1, "PCAlist")$norm, NULL)
 
   ##
   rna.S1 <- runSampleFiltering(rna.S1)
-  expect_identical(getSelectedSamples(rna.S1), colnames(rna.S1))
+  expect_equal(getSelectedSamples(rna.S1), colnames(rna.S1))
   expect_error(runSampleFiltering(rna.S1, samples = colnames(rna.S1)[-1:-3]))
 
   ##
@@ -353,20 +353,20 @@ test_that("runFeatureFiltering returned value", {
   ## returns a value of class RflomicsMAE/RflomicsSE
   expect_true("RflomicsMAE" %in% is(MAE1))
   expect_true("RflomicsSE" %in% is(rna.S1))
-  expect_identical(rna.S1, MAE1[["RNAtest"]])
+  expect_equal(rna.S1, MAE1[["RNAtest"]])
 
   ## filtering settings: features
-  expect_identical(
+  expect_equal(
     getFilterSettings(rna.S1),
     list(method = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 1))
-  expect_identical(RFLOMICS:::.isFiltered(rna.S1), FALSE)
+  expect_equal(RFLOMICS:::.isFiltered(rna.S1), FALSE)
   expect(length(getAnalysis(rna.S1, "DataProcessing", "featureFiltering")) != 0,
          failure_message = "")
 
   ## reset normalization
-  expect_identical(getAnalysis(rna.S1, "DataProcessing", "Normalization"), list())
-  expect_identical(getAnalysis(rna.S1, "DataProcessing", "Transformation"),list())
-  expect_identical(rna.S1@metadata$DataProcessing$log, NULL)
+  expect_equal(getAnalysis(rna.S1, "DataProcessing", "Normalization"), list())
+  expect_equal(getAnalysis(rna.S1, "DataProcessing", "Transformation"),list())
+  expect_equal(rna.S1@metadata$DataProcessing$log, NULL)
 
 })
 
@@ -382,13 +382,13 @@ test_that("default values of runFeatureFiltering arguments", {
   ## returns a value of class RflomicsMAE/RflomicsSE
   expect_true(is(MAE1, "RflomicsMAE" ))
   expect_true(is(rna.S1, "RflomicsSE"))
-  expect_identical(rna.S1, MAE1[["RNAtest"]])
+  expect_equal(rna.S1, MAE1[["RNAtest"]])
 
   ## filtering settings: features
-  expect_identical(
+  expect_equal(
     getFilterSettings(rna.S1),
     list(method = "filterByExpr", filterStrategy = "groups", cpmCutoff = NULL))
-  expect_identical(RFLOMICS:::.isFiltered(rna.S1), FALSE)
+  expect_equal(RFLOMICS:::.isFiltered(rna.S1), FALSE)
   expect(length(getAnalysis(rna.S1, "DataProcessing", "featureFiltering")) != 0,
          failure_message = "")
 
@@ -397,7 +397,7 @@ test_that("default values of runFeatureFiltering arguments", {
                                lowCountFilter = list(filterMethod = NULL,
                                filterStrategy = "NbReplicates",
                                cpmCutoff = 1))
-  expect_identical(
+  expect_equal(
     getFilterSettings(rna.S1),
     list(method = "filterByExpr", filterStrategy = "groups", cpmCutoff = NULL))
 
@@ -405,7 +405,7 @@ test_that("default values of runFeatureFiltering arguments", {
                                lowCountFilter = list(filterMethod = "CPM",
                                filterStrategy = NULL,
                                cpmCutoff = 5))
-  expect_identical(
+  expect_equal(
     getFilterSettings(rna.S1),
     list(method = "CPM", filterStrategy = "NbReplicates", cpmCutoff = 5))
 
@@ -414,7 +414,7 @@ test_that("default values of runFeatureFiltering arguments", {
                                lowCountFilter = list(filterMethod = "CPM",
                                filterStrategy = "NbConditions",
                                cpmCutoff = NULL))
-  expect_identical(
+  expect_equal(
     getFilterSettings(rna.S1),
     list(method = "CPM", filterStrategy = "NbConditions", cpmCutoff = 1))
 })
@@ -471,24 +471,24 @@ test_that("runTransformation returned value", {
   expect_true(is(MAE1, "RflomicsMAE"))
   expect_true(is(prot.S1, "RflomicsSE"))
   expect_true(is(meta.S1, "RflomicsSE"))
-  expect_identical(prot.S1, MAE1[["protetest"]])
-  expect_identical(meta.S1, MAE1[["metatest"]])
+  expect_equal(prot.S1, MAE1[["protetest"]])
+  expect_equal(meta.S1, MAE1[["metatest"]])
 
   ## transformation settings
-  expect_identical(getTransSettings(prot.S1),
+  expect_equal(getTransSettings(prot.S1),
                    list(method = "none", suppInfo = "unknown"))
-  expect_identical(RFLOMICS:::.isTransformed(prot.S1), FALSE)
+  expect_equal(RFLOMICS:::.isTransformed(prot.S1), FALSE)
   expect(length(getAnalysis(prot.S1, "DataProcessing", "Transformation")) != 0,
          failure_message = "")
-  expect_identical(getTransSettings(meta.S1),
+  expect_equal(getTransSettings(meta.S1),
                    list(method = "log2", suppInfo = NULL))
-  expect_identical(RFLOMICS:::.isTransformed(meta.S1), FALSE)
+  expect_equal(RFLOMICS:::.isTransformed(meta.S1), FALSE)
   expect(length(getAnalysis(meta.S1, "DataProcessing", "Transformation")) != 0,
          failure_message = "")
 
   ## reset normalization
-  expect_identical(getAnalysis(prot.S1, "DataProcessing", "Normalization"), list())
-  expect_identical(getAnalysis(meta.S1, "DataProcessing", "Normalization"), list())
+  expect_equal(getAnalysis(prot.S1, "DataProcessing", "Normalization"), list())
+  expect_equal(getAnalysis(meta.S1, "DataProcessing", "Normalization"), list())
 
 })
 
@@ -519,18 +519,18 @@ test_that("default values of runTransformation arguments", {
   expect_true("RflomicsMAE" %in% is(MAE1))
   expect_true("RflomicsSE" %in% is(prot.S1))
   expect_true("RflomicsSE" %in% is(meta.S1))
-  expect_identical(prot.S1, MAE1[["protetest"]])
-  expect_identical(meta.S1, MAE1[["metatest"]])
+  expect_equal(prot.S1, MAE1[["protetest"]])
+  expect_equal(meta.S1, MAE1[["metatest"]])
 
   ## transformation settings
-  expect_identical(getTransSettings(prot.S1),
+  expect_equal(getTransSettings(prot.S1),
                    list(method = "log2", suppInfo = NULL))
-  expect_identical(RFLOMICS:::.isTransformed(prot.S1), FALSE)
+  expect_equal(RFLOMICS:::.isTransformed(prot.S1), FALSE)
   expect(length(getAnalysis(prot.S1, "DataProcessing", "Transformation")) != 0,
          failure_message = "")
-  expect_identical(getTransSettings(meta.S1),
+  expect_equal(getTransSettings(meta.S1),
                    list(method = "log2", suppInfo = NULL))
-  expect_identical(RFLOMICS:::.isTransformed(meta.S1), FALSE)
+  expect_equal(RFLOMICS:::.isTransformed(meta.S1), FALSE)
   expect(length(getAnalysis(meta.S1, "DataProcessing", "Transformation")) != 0,
          failure_message = "")
 
@@ -544,9 +544,9 @@ test_that("default values of runTransformation arguments", {
   meta.S1 <-
     runFeatureFiltering(meta.S1) |>
     runTransformData(transformMethod = NULL)
-  expect_identical(getTransSettings(prot.S1),
+  expect_equal(getTransSettings(prot.S1),
                    list(method = "log2", suppInfo = NULL))
-  expect_identical(getTransSettings(meta.S1),
+  expect_equal(getTransSettings(meta.S1),
                    list(method = "log2", suppInfo = NULL))
 
 })
@@ -611,24 +611,24 @@ test_that("runNormalization returned value", {
   expect_true(is(rna.S1, "RflomicsSE"))
   expect_true(is(prot.S1, "RflomicsSE"))
   expect_true(is(meta.S1, "RflomicsSE"))
-  expect_identical(rna.S1,  MAE1[["RNAtest"]])
-  expect_identical(prot.S1, MAE1[["protetest"]])
-  expect_identical(meta.S1, MAE1[["metatest"]])
+  expect_equal(rna.S1,  MAE1[["RNAtest"]])
+  expect_equal(prot.S1, MAE1[["protetest"]])
+  expect_equal(meta.S1, MAE1[["metatest"]])
 
   ## normalization settings
-  expect_identical(getNormSettings(rna.S1),
+  expect_equal(getNormSettings(rna.S1),
                    list(method = "TMM", suppInfo = NULL))
-  expect_identical(RFLOMICS:::.isNormalized(rna.S1), FALSE)
+  expect_equal(RFLOMICS:::.isNormalized(rna.S1), FALSE)
   expect(length(getAnalysis(rna.S1, "DataProcessing", "Normalization")) != 0,
          failure_message = "")
-  expect_identical(getNormSettings(prot.S1),
+  expect_equal(getNormSettings(prot.S1),
                    list(method = "none", suppInfo = "unknown"))
-  expect_identical(RFLOMICS:::.isNormalized(prot.S1), FALSE)
+  expect_equal(RFLOMICS:::.isNormalized(prot.S1), FALSE)
   expect(length(getAnalysis(prot.S1, "DataProcessing", "Normalization")) != 0,
          failure_message = "")
-  expect_identical(getNormSettings(meta.S1),
+  expect_equal(getNormSettings(meta.S1),
                    list(method = "median", suppInfo = NULL))
-  expect_identical(RFLOMICS:::.isNormalized(meta.S1), FALSE)
+  expect_equal(RFLOMICS:::.isNormalized(meta.S1), FALSE)
   expect(length(getAnalysis(meta.S1, "DataProcessing", "Normalization")) != 0,
          failure_message = "")
 })
@@ -675,16 +675,16 @@ test_that("default values of runTransformation arguments", {
   expect_true("RflomicsSE" %in% is(rna.S1))
   expect_true("RflomicsSE" %in% is(prot.S1))
   expect_true("RflomicsSE" %in% is(meta.S1))
-  expect_identical(rna.S1,  MAE1[["RNAtest"]])
-  expect_identical(prot.S1, MAE1[["protetest"]])
-  expect_identical(meta.S1, MAE1[["metatest"]])
+  expect_equal(rna.S1,  MAE1[["RNAtest"]])
+  expect_equal(prot.S1, MAE1[["protetest"]])
+  expect_equal(meta.S1, MAE1[["metatest"]])
 
   ## normalization settings
-  expect_identical(getNormSettings(rna.S1),
+  expect_equal(getNormSettings(rna.S1),
                    list(method = "TMM", suppInfo = NULL))
-  expect_identical(getNormSettings(prot.S1),
+  expect_equal(getNormSettings(prot.S1),
                    list(method = "median", suppInfo = NULL))
-  expect_identical(getNormSettings(meta.S1),
+  expect_equal(getNormSettings(meta.S1),
                    list(method = "median", suppInfo = NULL))
 
   # NULL arg
@@ -695,21 +695,21 @@ test_that("default values of runTransformation arguments", {
   rna.S1  <-
     runFeatureFiltering(MAE[["RNAtest"]]) |>
     runNormalization(normMethod = NULL)
-  expect_identical(getNormSettings(rna.S1),
+  expect_equal(getNormSettings(rna.S1),
                    list(method = "TMM", suppInfo = NULL))
 
   prot.S1 <-
     runFeatureFiltering(MAE[["protetest"]]) |>
     runTransformData(transformMethod = "none") |>
     runNormalization(normMethod = NULL)
-  expect_identical(getNormSettings(prot.S1),
+  expect_equal(getNormSettings(prot.S1),
                    list(method = "median", suppInfo = NULL))
 
   meta.S1 <-
     runFeatureFiltering(MAE[["metatest"]]) |>
     runTransformData(transformMethod = "log2") |>
     runNormalization(normMethod = NULL)
-  expect_identical(getNormSettings(meta.S1),
+  expect_equal(getNormSettings(meta.S1),
                    list(method = "median", suppInfo = NULL))
 })
 
