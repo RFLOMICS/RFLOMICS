@@ -13,3 +13,12 @@ SIGNIFICANT USER-VISIBLE CHANGES
 BUG FIXES
 
     o Updated compatibility with recent versions of clusterProfiler.
+    
+CHANGES IN VERSION 1.5.0
+-------------------------
+
+BUG FIXES
+
+    o Replace expect_identical with expect_equal in tests for BioC 3.24 devel compatibility
+    o Revise RAM warning and add note on resources
+    
